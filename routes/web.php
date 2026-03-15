@@ -34,6 +34,8 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
     // Beneficiaries
     Route::resource('beneficiaries', BeneficiaryController::class);
+    Route::post('beneficiaries/{beneficiary}/send-sms', [BeneficiaryController::class, 'sendSms'])
+        ->name('beneficiaries.sendSms');
 
     // Resource Types
     Route::resource('resource-types', ResourceTypeController::class)->only(['index', 'store', 'update', 'destroy']);

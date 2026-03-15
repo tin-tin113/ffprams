@@ -161,4 +161,28 @@ class BeneficiaryController extends Controller
         return redirect()->route('beneficiaries.index')
             ->with('success', 'Beneficiary deleted successfully.');
     }
+
+    /**
+     * Send a custom SMS to a beneficiary.
+     */
+    public function sendSms(Request $request, Beneficiary $beneficiary): RedirectResponse
+    {
+        $request->validate([
+            'message' => ['required', 'string', 'max:300'],
+        ]);
+
+        if (empty($beneficiary->contact_number)) {
+            return redirect()->back()
+                ->with('error', 'This beneficiary has no contact number on file.');
+        }
+
+        $sent = $this->sms->sendSms(
+            $beneficiary->contact_number,
+            $request->message,
+            $beneficiary->id,
+        );
+
+        return redirect()->route('beneficiaries.show', $beneficiary)
+            ->with($sent ? 'success' : 'error', $sent ? 'SMS sent successfully.' : 'Failed to send SMS. Please try again.');
+    }
 }

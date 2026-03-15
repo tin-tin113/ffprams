@@ -20,6 +20,18 @@ class SemaphoreService
 
     public function sendSms(string $number, string $message, ?int $beneficiaryId = null): bool
     {
+        if (empty($this->apiKey)) {
+            Log::warning('SemaphoreService: API key is not configured.');
+            return false;
+        }
+
+        if (empty(trim($number))) {
+            Log::warning('SemaphoreService: Cannot send SMS — contact number is empty.', [
+                'beneficiary_id' => $beneficiaryId,
+            ]);
+            return false;
+        }
+
         try {
             $response = Http::asForm()->post($this->endpoint, [
                 'apikey'     => $this->apiKey,

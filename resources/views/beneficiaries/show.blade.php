@@ -273,6 +273,37 @@
         </div>
     </div>
 
+    {{-- Send SMS --}}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white fw-semibold">
+            <i class="bi bi-send me-1"></i> Send SMS
+        </div>
+        <div class="card-body">
+            @if($beneficiary->contact_number)
+                <form action="{{ route('beneficiaries.sendSms', $beneficiary) }}" method="POST" data-submit-spinner>
+                    @csrf
+                    <div class="mb-3">
+                        <label for="sms-message" class="form-label">Message</label>
+                        <textarea name="message" id="sms-message" class="form-control @error('message') is-invalid @enderror"
+                                  rows="3" maxlength="300" placeholder="Type your message here..." data-char-counter>{{ old('message') }}</textarea>
+                        @error('message')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <div class="form-text">Max 300 characters. Will be sent to {{ $beneficiary->contact_number }}</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-send me-1"></i> Send SMS
+                    </button>
+                </form>
+            @else
+                <p class="text-muted mb-0">
+                    <i class="bi bi-exclamation-circle me-1"></i>
+                    No contact number on file. Please update the beneficiary profile to send SMS.
+                </p>
+            @endif
+        </div>
+    </div>
+
     {{-- SMS History --}}
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white fw-semibold">
