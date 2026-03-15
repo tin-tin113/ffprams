@@ -1,0 +1,231 @@
+@extends('layouts.app')
+
+@section('title', 'Distribution Events')
+
+@section('breadcrumb')
+    <li class="breadcrumb-item active">Distribution Events</li>
+@endsection
+
+@section('content')
+<div class="container-fluid">
+
+    {{-- Page Header --}}
+    <div class="d-flex justify-content-between align-items-center mb-1">
+        <div>
+            <h1 class="h3 mb-0">Distribution Events</h1>
+            <p class="text-muted mb-0">Manage resource distribution events across barangays</p>
+        </div>
+        @if(in_array(Auth::user()->role, ['admin', 'staff']))
+            <a href="{{ route('distribution-events.create') }}" class="btn btn-success">
+                <i class="bi bi-plus-lg me-1"></i> Create New Event
+            </a>
+        @endif
+    </div>
+
+    {{-- Summary Cards --}}
+    <div class="row g-3 mb-4 mt-2">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-3 bg-primary bg-opacity-10 p-3 me-3">
+                        <i class="bi bi-calendar-event text-primary fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Total Events</div>
+                        <div class="fs-4 fw-bold">{{ number_format($total) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-3 bg-info bg-opacity-10 p-3 me-3">
+                        <i class="bi bi-hourglass-split text-info fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Pending</div>
+                        <div class="fs-4 fw-bold">{{ number_format($pending) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-3 bg-warning bg-opacity-10 p-3 me-3">
+                        <i class="bi bi-arrow-repeat text-warning fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Ongoing</div>
+                        <div class="fs-4 fw-bold">{{ number_format($ongoing) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3">
+                        <i class="bi bi-check-circle text-success fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Completed</div>
+                        <div class="fs-4 fw-bold">{{ number_format($completed) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Filter Bar --}}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ route('distribution-events.index') }}">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-2">
+                        <label class="form-label">Barangay</label>
+                        <select class="form-select" name="barangay_id">
+                            <option value="">All Barangays</option>
+                            @foreach($barangays as $barangay)
+                                <option value="{{ $barangay->id }}" {{ request('barangay_id') == $barangay->id ? 'selected' : '' }}>
+                                    {{ $barangay->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Resource Type</label>
+                        <select class="form-select" name="resource_type_id">
+                            <option value="">All Types</option>
+                            @foreach($resourceTypes as $type)
+                                <option value="{{ $type->id }}" {{ request('resource_type_id') == $type->id ? 'selected' : '' }}>
+                                    {{ $type->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status">
+                            <option value="">All Statuses</option>
+                            @foreach(['Pending', 'Ongoing', 'Completed'] as $status)
+                                <option value="{{ $status }}" {{ request('status') === $status ? 'selected' : '' }}>
+                                    {{ $status }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">From</label>
+                        <input type="date" class="form-control" name="from" value="{{ request('from') }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">To</label>
+                        <input type="date" class="form-control" name="to" value="{{ request('to') }}">
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-search me-1"></i> Search
+                        </button>
+                        <a href="{{ route('distribution-events.index') }}" class="btn btn-outline-secondary">Clear</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Results Table --}}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body pb-0">
+            <p class="text-muted mb-2">{{ $events->total() }} {{ Str::plural('event', $events->total()) }} found</p>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Barangay</th>
+                            <th>Resource Type</th>
+                            <th>Source Agency</th>
+                            <th>Distribution Date</th>
+                            <th>Status</th>
+                            <th class="text-center">Beneficiaries</th>
+                            <th>Created By</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($events as $event)
+                            <tr>
+                                <td class="text-muted">{{ $events->firstItem() + $loop->index }}</td>
+                                <td>{{ $event->barangay->name }}</td>
+                                <td>{{ $event->resourceType->name }}</td>
+                                <td>
+                                    @php
+                                        $agencyBadge = match($event->resourceType->source_agency) {
+                                            'DA'   => 'bg-success',
+                                            'BFAR' => 'bg-primary',
+                                            'DAR'  => 'bg-warning text-dark',
+                                            'LGU'  => 'bg-secondary',
+                                            default => 'bg-secondary',
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $agencyBadge }}">{{ $event->resourceType->source_agency }}</span>
+                                </td>
+                                <td>{{ $event->distribution_date->format('M d, Y') }}</td>
+                                <td>
+                                    @php
+                                        $statusBadge = match($event->status) {
+                                            'Pending'   => 'bg-info',
+                                            'Ongoing'   => 'bg-warning text-dark',
+                                            'Completed' => 'bg-success',
+                                            default     => 'bg-secondary',
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $statusBadge }}">{{ $event->status }}</span>
+                                </td>
+                                <td class="text-center">{{ $event->allocations_count }}</td>
+                                <td>{{ $event->createdBy->name }}</td>
+                                <td class="text-end text-nowrap">
+                                    <a href="{{ route('distribution-events.show', $event) }}" class="btn btn-sm btn-outline-info me-1" title="View">
+                                        <i class="bi bi-eye"></i> <span class="btn-action-label">View</span>
+                                    </a>
+                                    @if($event->status === 'Pending')
+                                        <a href="{{ route('distribution-events.edit', $event) }}" class="btn btn-sm btn-outline-warning me-1" title="Edit">
+                                            <i class="bi bi-pencil-square"></i> <span class="btn-action-label">Edit</span>
+                                        </a>
+                                        @if(Auth::user()->role === 'admin')
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger" title="Delete"
+                                                    onclick="confirmAction('Confirm Deletion', 'Are you sure you want to delete event in {{ addslashes($event->barangay->name) }} on {{ $event->distribution_date->format('M d, Y') }}? This action cannot be undone.', '{{ route('distribution-events.destroy', $event) }}', 'DELETE')">
+                                                <i class="bi bi-trash"></i> <span class="btn-action-label">Delete</span>
+                                            </button>
+                                        @endif
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                                    No distribution events found.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {{-- Pagination --}}
+    @if($events->hasPages())
+        <div class="d-flex justify-content-center mt-4">
+            {{ $events->links() }}
+        </div>
+    @endif
+</div>
+
+@endsection

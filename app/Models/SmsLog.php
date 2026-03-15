@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class SmsLog extends Model
+{
+    protected $fillable = [
+        'beneficiary_id',
+        'message',
+        'status',
+        'response',
+        'sent_at',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'sent_at' => 'datetime',
+        ];
+    }
+
+    public function beneficiary(): BelongsTo
+    {
+        return $this->belongsTo(Beneficiary::class);
+    }
+}
