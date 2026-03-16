@@ -1,59 +1,192 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# FFPRAMS - Farmer-Fisherfolk Precision Resource Allocation Management System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A web-based management system built for the **Municipal Agriculture Office of Enrique B. Magalona, Negros Occidental, Philippines**. It streamlines the registration of farmer and fisherfolk beneficiaries, tracks resource distribution events (physical and financial), conducts field assessments, sends SMS notifications, and provides geographic mapping with comprehensive reporting.
 
-## About Laravel
+## Tech Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Backend:** PHP 8.2+ / Laravel 12
+- **Frontend:** Bootstrap 5, Alpine.js 3, Vite 7
+- **Database:** MySQL
+- **Mapping:** Leaflet.js with OpenStreetMap tiles
+- **SMS:** Semaphore-compatible API gateway
+- **Authentication:** Laravel Breeze
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Features
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Beneficiary Management
+- Registration of farmers, fisherfolk, or dual-classified beneficiaries
+- Comprehensive profiles: RSBSA number (DA), FishR number (BFAR), farm details (ownership, size, type, commodity), fisherfolk details (type, gear, vessel), civil status, education, income, emergency contacts, and association membership
+- Government ID uniqueness enforcement across active and soft-deleted records
+- Filter and search by barangay, classification, status, or name/ID
 
-## Learning Laravel
+### Distribution Events
+- Two types: **Physical** (resource quantities) and **Financial** (monetary amounts)
+- Status workflow: Pending &rarr; Ongoing &rarr; Completed
+- Linked to a specific barangay and resource type
+- Total fund tracking for financial events
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### Resource Allocation
+- Single and bulk allocation of resources or funds to beneficiaries
+- Barangay matching validation (beneficiary must belong to the event's barangay)
+- Duplicate prevention with soft-delete awareness
+- Mark individual allocations as distributed with timestamp tracking
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Field Assessments
+- Staff-initiated field visit assessments for beneficiaries
+- Two-stage review: eligibility determination followed by admin approval
+- Links to recommended assistance purpose and amount
+- Locked after admin review to preserve integrity
 
-## Laravel Sponsors
+### SMS Notifications
+- Individual and broadcast messaging to beneficiaries
+- Target by: all active, by barangay, by classification, or selected individuals
+- Preview recipients before sending
+- Automatic notifications on: registration, allocation, and assessment approval
+- Full SMS log with delivery status tracking
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Geographic Map (GeoMap)
+- Interactive Leaflet.js map of all 23 barangays of E.B. Magalona
+- Color-coded pins by distribution status (Completed, Ongoing, Pending, No Distribution)
+- Detailed per-barangay panel: beneficiary breakdown, household data, event counts, allocation stats, coverage rate, financial totals, resource types distributed, and timeline
 
-### Premium Partners
+### Reports
+1. Beneficiaries per Barangay (with farmer/fisherfolk/both breakdown)
+2. Resource Distribution Summary
+3. Distribution Status per Barangay
+4. Unreached Beneficiaries (zero allocations)
+5. Monthly Distribution Summary
+6. Financial Assistance Summary by Resource Type
+7. Financial Assistance per Barangay
+8. Field Assessment Summary by Staff
+9. Assistance by Purpose
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Admin System Settings
+- **Agencies** &ndash; Manage government agencies (DA, BFAR, DSWD, LGU, etc.)
+- **Assistance Purposes** &ndash; Categorized purposes (agricultural, fishery, livelihood, medical, emergency, other)
+- **Resource Types** &ndash; Manage resources with agency linking
+- **Form Field Options** &ndash; Configurable dropdown values for beneficiary forms with drag-and-drop reorder
 
-## Contributing
+### Audit Logging
+- All CRUD operations logged with user, action, table, old/new values (JSON)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### User Management
+- Role-based access: **Admin** (full access) and **Staff** (day-to-day operations)
+- Admin-only actions: complete events, approve/reject assessments, delete allocations, manage users and settings
 
-## Code of Conduct
+## Installation
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Prerequisites
+- PHP 8.2+
+- Composer
+- Node.js & npm
+- MySQL
 
-## Security Vulnerabilities
+### Setup
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+# Clone the repository
+git clone <repository-url>
+cd ffprams
+
+# Install dependencies, configure environment, and build assets
+composer setup
+```
+
+The `composer setup` command will:
+1. Install PHP and Node.js dependencies
+2. Copy `.env.example` to `.env`
+3. Generate the application key
+4. Run database migrations
+5. Build frontend assets
+
+### Configure Environment
+
+Edit `.env` and set your database and SMS credentials:
+
+```env
+DB_DATABASE=ffprams
+DB_USERNAME=root
+DB_PASSWORD=
+
+SMS_API_URL=https://your-sms-api-endpoint
+SMS_API_KEY=your-api-key
+SMS_SENDER_NAME=FFPRAMS
+```
+
+### Seed the Database
+
+```bash
+php artisan db:seed
+```
+
+This seeds default users, 23 barangays with GPS coordinates, agencies, resource types, assistance purposes, and form field options.
+
+### Default Accounts
+
+| Role  | Email              | Password     |
+|-------|--------------------|--------------|
+| Admin | admin@ffprams.com  | Admin@1234   |
+| Staff | staff@ffprams.com  | Staff@1234   |
+
+## Development
+
+```bash
+# Start dev server, queue worker, log viewer, and Vite concurrently
+composer dev
+```
+
+## Testing
+
+```bash
+composer test
+```
+
+## Project Structure
+
+```
+app/
+├── Http/
+│   ├── Controllers/
+│   │   ├── Admin/           # User management, system settings
+│   │   ├── Auth/            # Laravel Breeze auth controllers
+│   │   ├── AllocationController.php
+│   │   ├── BeneficiaryController.php
+│   │   ├── DashboardController.php
+│   │   ├── DistributionEventController.php
+│   │   ├── FieldAssessmentController.php
+│   │   ├── GeoMapController.php
+│   │   ├── ReportsController.php
+│   │   ├── ResourceTypeController.php
+│   │   └── SmsController.php
+│   ├── Middleware/
+│   │   └── CheckRole.php    # Role-based access control
+│   └── Requests/            # Form request validation
+├── Models/                  # Eloquent models (11 total)
+└── Services/
+    ├── AuditLogService.php  # Centralized audit logging
+    └── SemaphoreService.php # SMS API integration
+
+database/
+├── migrations/              # Schema definitions
+└── seeders/                 # Default data seeders
+
+resources/views/
+├── admin/                   # Admin panels (users, settings)
+├── beneficiaries/           # Beneficiary CRUD views
+├── distribution_events/     # Distribution event views
+├── field_assessments/       # Field assessment views
+├── geo-map/                 # Leaflet map view
+├── reports/                 # Reports dashboard
+├── sms/                     # SMS broadcast and logs
+└── layouts/                 # App and guest layouts
+```
+
+## Municipality Coverage
+
+The system covers all **23 barangays** of Enrique B. Magalona (formerly Saravia), Negros Occidental:
+
+Alacaygan, Alicante, Batea, Canlusong, Consing, Cudangdang, Damgo, Gahit, Latasan, Madalag, Manta-angan, Nanca, Pasil, Poblacion I, Poblacion II, Poblacion III, San Isidro, San Jose, Santo Nino, Tabigue, Tanza, Tomongtong, Tuburan
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is proprietary software developed for the Municipal Agriculture Office of Enrique B. Magalona, Negros Occidental.
