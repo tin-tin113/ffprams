@@ -1,5 +1,8 @@
 {{-- $beneficiary is null on create, populated on edit --}}
-@php $editing = isset($beneficiary); @endphp
+@php
+    $editing = isset($beneficiary);
+    $fo = $fieldOptions ?? [];
+@endphp
 
 {{-- SECTION 1 — Personal Information --}}
 <div class="card border-0 shadow-sm mb-4">
@@ -26,8 +29,8 @@
                 <select class="form-select @error('civil_status') is-invalid @enderror"
                         id="civil_status" name="civil_status" required>
                     <option value="" disabled {{ old('civil_status', $beneficiary->civil_status ?? '') === '' ? 'selected' : '' }}>Select...</option>
-                    @foreach(['Single', 'Married', 'Widowed', 'Separated'] as $status)
-                        <option value="{{ $status }}" {{ old('civil_status', $beneficiary->civil_status ?? '') === $status ? 'selected' : '' }}>{{ $status }}</option>
+                    @foreach(($fo['civil_status'] ?? collect(['Single', 'Married', 'Widowed', 'Separated'])->map(fn($v) => (object)['value' => $v, 'label' => $v])) as $opt)
+                        <option value="{{ $opt->value ?? $opt }}" {{ old('civil_status', $beneficiary->civil_status ?? '') == ($opt->value ?? $opt) ? 'selected' : '' }}>{{ $opt->label ?? $opt }}</option>
                     @endforeach
                 </select>
                 @error('civil_status')
@@ -41,8 +44,8 @@
                 <select class="form-select @error('highest_education') is-invalid @enderror"
                         id="highest_education" name="highest_education" required>
                     <option value="" disabled {{ old('highest_education', $beneficiary->highest_education ?? '') === '' ? 'selected' : '' }}>Select...</option>
-                    @foreach(['No Formal Education', 'Elementary', 'High School', 'Vocational', 'College', 'Post Graduate'] as $edu)
-                        <option value="{{ $edu }}" {{ old('highest_education', $beneficiary->highest_education ?? '') === $edu ? 'selected' : '' }}>{{ $edu }}</option>
+                    @foreach(($fo['highest_education'] ?? collect(['No Formal Education', 'Elementary', 'High School', 'Vocational', 'College', 'Post Graduate'])->map(fn($v) => (object)['value' => $v, 'label' => $v])) as $opt)
+                        <option value="{{ $opt->value ?? $opt }}" {{ old('highest_education', $beneficiary->highest_education ?? '') == ($opt->value ?? $opt) ? 'selected' : '' }}>{{ $opt->label ?? $opt }}</option>
                     @endforeach
                 </select>
                 @error('highest_education')
@@ -133,8 +136,8 @@
                 <select class="form-select @error('id_type') is-invalid @enderror"
                         id="id_type" name="id_type" required>
                     <option value="" disabled {{ old('id_type', $beneficiary->id_type ?? '') === '' ? 'selected' : '' }}>Select...</option>
-                    @foreach(['PhilSys ID', "Voter's ID", "Driver's License", 'Passport', 'Senior Citizen ID', 'PWD ID', 'Postal ID', 'TIN ID'] as $idType)
-                        <option value="{{ $idType }}" {{ old('id_type', $beneficiary->id_type ?? '') === $idType ? 'selected' : '' }}>{{ $idType }}</option>
+                    @foreach(($fo['id_type'] ?? collect(['PhilSys ID', "Voter's ID", "Driver's License", 'Passport', 'Senior Citizen ID', 'PWD ID', 'Postal ID', 'TIN ID'])->map(fn($v) => (object)['value' => $v, 'label' => $v])) as $opt)
+                        <option value="{{ $opt->value ?? $opt }}" {{ old('id_type', $beneficiary->id_type ?? '') == ($opt->value ?? $opt) ? 'selected' : '' }}>{{ $opt->label ?? $opt }}</option>
                     @endforeach
                 </select>
                 @error('id_type')
@@ -221,8 +224,8 @@
                 <select class="form-select @error('farm_ownership') is-invalid @enderror"
                         id="farm_ownership" name="farm_ownership">
                     <option value="" disabled {{ old('farm_ownership', $beneficiary->farm_ownership ?? '') === '' ? 'selected' : '' }}>Select...</option>
-                    @foreach(['Owner', 'Lessee', 'Share Tenant'] as $ownership)
-                        <option value="{{ $ownership }}" {{ old('farm_ownership', $beneficiary->farm_ownership ?? '') === $ownership ? 'selected' : '' }}>{{ $ownership }}</option>
+                    @foreach(($fo['farm_ownership'] ?? collect(['Owner', 'Lessee', 'Share Tenant'])->map(fn($v) => (object)['value' => $v, 'label' => $v])) as $opt)
+                        <option value="{{ $opt->value ?? $opt }}" {{ old('farm_ownership', $beneficiary->farm_ownership ?? '') == ($opt->value ?? $opt) ? 'selected' : '' }}>{{ $opt->label ?? $opt }}</option>
                     @endforeach
                 </select>
                 @error('farm_ownership')
@@ -261,8 +264,8 @@
                 <select class="form-select @error('farm_type') is-invalid @enderror"
                         id="farm_type" name="farm_type">
                     <option value="" disabled {{ old('farm_type', $beneficiary->farm_type ?? '') === '' ? 'selected' : '' }}>Select...</option>
-                    @foreach(['Irrigated', 'Rainfed Lowland', 'Upland'] as $farmType)
-                        <option value="{{ $farmType }}" {{ old('farm_type', $beneficiary->farm_type ?? '') === $farmType ? 'selected' : '' }}>{{ $farmType }}</option>
+                    @foreach(($fo['farm_type'] ?? collect(['Irrigated', 'Rainfed Lowland', 'Upland'])->map(fn($v) => (object)['value' => $v, 'label' => $v])) as $opt)
+                        <option value="{{ $opt->value ?? $opt }}" {{ old('farm_type', $beneficiary->farm_type ?? '') == ($opt->value ?? $opt) ? 'selected' : '' }}>{{ $opt->label ?? $opt }}</option>
                     @endforeach
                 </select>
                 @error('farm_type')
@@ -298,8 +301,8 @@
                 <select class="form-select @error('fisherfolk_type') is-invalid @enderror"
                         id="fisherfolk_type" name="fisherfolk_type">
                     <option value="" disabled {{ old('fisherfolk_type', $beneficiary->fisherfolk_type ?? '') === '' ? 'selected' : '' }}>Select...</option>
-                    @foreach(['Capture Fishing', 'Fish Farming', 'Fish Vendor', 'Fish Worker'] as $fishType)
-                        <option value="{{ $fishType }}" {{ old('fisherfolk_type', $beneficiary->fisherfolk_type ?? '') === $fishType ? 'selected' : '' }}>{{ $fishType }}</option>
+                    @foreach(($fo['fisherfolk_type'] ?? collect(['Capture Fishing', 'Fish Farming', 'Fish Vendor', 'Fish Worker'])->map(fn($v) => (object)['value' => $v, 'label' => $v])) as $opt)
+                        <option value="{{ $opt->value ?? $opt }}" {{ old('fisherfolk_type', $beneficiary->fisherfolk_type ?? '') == ($opt->value ?? $opt) ? 'selected' : '' }}>{{ $opt->label ?? $opt }}</option>
                     @endforeach
                 </select>
                 @error('fisherfolk_type')

@@ -14,23 +14,36 @@ class DistributionEventRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-            'barangay_id'      => ['required', 'exists:barangays,id'],
-            'resource_type_id' => ['required', 'exists:resource_types,id'],
+        $rules = [
+            'barangay_id'       => ['required', 'exists:barangays,id'],
+            'resource_type_id'  => ['required', 'exists:resource_types,id'],
             'distribution_date' => ['required', 'date'],
-            'status'           => ['sometimes', Rule::in(['Pending', 'Ongoing', 'Completed'])],
+            'type'              => ['required', Rule::in(['physical', 'financial'])],
         ];
+
+        if ($this->input('type') === 'financial') {
+            $rules['total_fund_amount'] = ['required', 'numeric', 'min:1', 'max:9999999999.99'];
+        } else {
+            $rules['total_fund_amount'] = ['nullable'];
+        }
+
+        return $rules;
     }
 
     public function messages(): array
     {
         return [
-            'barangay_id.required'      => 'Please select a barangay.',
-            'barangay_id.exists'        => 'Please select a valid barangay.',
-            'resource_type_id.required' => 'Please select a resource type.',
-            'resource_type_id.exists'   => 'Please select a valid resource type.',
+            'barangay_id.required'       => 'Please select a barangay.',
+            'barangay_id.exists'         => 'Please select a valid barangay.',
+            'resource_type_id.required'  => 'Please select a resource type.',
+            'resource_type_id.exists'    => 'Please select a valid resource type.',
             'distribution_date.required' => 'The distribution date is required.',
-            'distribution_date.date'    => 'Please enter a valid date.',
+            'distribution_date.date'     => 'Please enter a valid date.',
+            'type.required'              => 'Please select a distribution type.',
+            'type.in'                    => 'Invalid distribution type.',
+            'total_fund_amount.required' => 'Total fund budget is required for financial assistance.',
+            'total_fund_amount.min'      => 'Total fund budget must be at least 1.',
+            'total_fund_amount.max'      => 'Total fund budget must not exceed 9,999,999,999.99.',
         ];
     }
 }

@@ -19,23 +19,19 @@
         @endif
     </div>
 
-    @php
-        $agencies = ['DA' => 'Department of Agriculture', 'BFAR' => 'Bureau of Fisheries and Aquatic Resources', 'DAR' => 'Department of Agrarian Reform', 'LGU' => 'Local Government Unit'];
-    @endphp
-
     {{-- Agency Tabs --}}
     <ul class="nav nav-tabs mb-3" id="agencyTabs" role="tablist">
-        @foreach($agencies as $code => $label)
+        @foreach($agencies as $agency)
             <li class="nav-item" role="presentation">
                 <button class="nav-link {{ $loop->first ? 'active' : '' }}"
-                        id="tab-{{ $code }}"
+                        id="tab-{{ $agency->name }}"
                         data-bs-toggle="tab"
-                        data-bs-target="#panel-{{ $code }}"
+                        data-bs-target="#panel-{{ $agency->name }}"
                         type="button" role="tab"
-                        aria-controls="panel-{{ $code }}"
+                        aria-controls="panel-{{ $agency->name }}"
                         aria-selected="{{ $loop->first ? 'true' : 'false' }}">
-                    {{ $code }}
-                    <span class="badge bg-secondary ms-1">{{ isset($resourceTypes[$code]) ? $resourceTypes[$code]->count() : 0 }}</span>
+                    {{ $agency->name }}
+                    <span class="badge bg-secondary ms-1">{{ isset($resourceTypes[$agency->name]) ? $resourceTypes[$agency->name]->count() : 0 }}</span>
                 </button>
             </li>
         @endforeach
@@ -43,13 +39,13 @@
 
     {{-- Tab Content --}}
     <div class="tab-content" id="agencyTabContent">
-        @foreach($agencies as $code => $label)
+        @foreach($agencies as $agency)
             <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}"
-                 id="panel-{{ $code }}" role="tabpanel" aria-labelledby="tab-{{ $code }}">
+                 id="panel-{{ $agency->name }}" role="tabpanel" aria-labelledby="tab-{{ $agency->name }}">
 
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white">
-                        <h5 class="mb-0">{{ $label }} ({{ $code }})</h5>
+                        <h5 class="mb-0">{{ $agency->full_name }} ({{ $agency->name }})</h5>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
@@ -63,7 +59,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($resourceTypes[$code] ?? [] as $type)
+                                @forelse($resourceTypes[$agency->name] ?? [] as $type)
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
                                         <td>{{ $type->name }}</td>
@@ -77,7 +73,7 @@
                                                     data-id="{{ $type->id }}"
                                                     data-name="{{ $type->name }}"
                                                     data-unit="{{ $type->unit }}"
-                                                    data-source-agency="{{ $type->source_agency }}"
+                                                    data-agency-id="{{ $type->agency_id }}"
                                                     data-description="{{ $type->description }}"
                                                     data-action="{{ route('resource-types.update', $type) }}">
                                                 <i class="bi bi-pencil-square"></i> <span class="btn-action-label">Edit</span>
@@ -95,7 +91,7 @@
                                     <tr>
                                         <td colspan="5" class="text-center py-4 text-muted">
                                             <i class="bi bi-inbox fs-3 d-block mb-2"></i>
-                                            No resource types found for {{ $code }}.
+                                            No resource types found for {{ $agency->name }}.
                                         </td>
                                     </tr>
                                 @endforelse
@@ -126,16 +122,32 @@
                     </div>
                     <div class="mb-3">
                         <label for="add-unit" class="form-label">Unit <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="add-unit" name="unit" value="{{ old('unit') }}" required maxlength="50" placeholder="e.g., kg, bags, pcs">
+                        <select class="form-select" id="add-unit" name="unit" required>
+                            <option value="">Select Unit</option>
+                            <optgroup label="Physical Resources">
+                                <option value="kg" {{ old('unit') === 'kg' ? 'selected' : '' }}>kg (Kilograms)</option>
+                                <option value="bags" {{ old('unit') === 'bags' ? 'selected' : '' }}>bags</option>
+                                <option value="pcs" {{ old('unit') === 'pcs' ? 'selected' : '' }}>pcs (Pieces)</option>
+                                <option value="units" {{ old('unit') === 'units' ? 'selected' : '' }}>units</option>
+                                <option value="heads" {{ old('unit') === 'heads' ? 'selected' : '' }}>heads</option>
+                                <option value="sets" {{ old('unit') === 'sets' ? 'selected' : '' }}>sets</option>
+                                <option value="liters" {{ old('unit') === 'liters' ? 'selected' : '' }}>liters</option>
+                                <option value="bottles" {{ old('unit') === 'bottles' ? 'selected' : '' }}>bottles</option>
+                                <option value="sacks" {{ old('unit') === 'sacks' ? 'selected' : '' }}>sacks</option>
+                                <option value="trays" {{ old('unit') === 'trays' ? 'selected' : '' }}>trays</option>
+                            </optgroup>
+                            <optgroup label="Financial Assistance">
+                                <option value="PHP" {{ old('unit') === 'PHP' ? 'selected' : '' }}>PHP (Philippine Peso)</option>
+                            </optgroup>
+                        </select>
                     </div>
                     <div class="mb-3">
-                        <label for="add-source-agency" class="form-label">Source Agency <span class="text-danger">*</span></label>
-                        <select class="form-select" id="add-source-agency" name="source_agency" required>
+                        <label for="add-agency-id" class="form-label">Source Agency <span class="text-danger">*</span></label>
+                        <select class="form-select" id="add-agency-id" name="agency_id" required>
                             <option value="">Select Agency</option>
-                            <option value="DA" {{ old('source_agency') === 'DA' ? 'selected' : '' }}>DA</option>
-                            <option value="BFAR" {{ old('source_agency') === 'BFAR' ? 'selected' : '' }}>BFAR</option>
-                            <option value="DAR" {{ old('source_agency') === 'DAR' ? 'selected' : '' }}>DAR</option>
-                            <option value="LGU" {{ old('source_agency') === 'LGU' ? 'selected' : '' }}>LGU</option>
+                            @foreach($agencies as $agency)
+                                <option value="{{ $agency->id }}" {{ old('agency_id') == $agency->id ? 'selected' : '' }}>{{ $agency->name }} — {{ $agency->full_name }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="mb-3">
@@ -170,15 +182,30 @@
                     </div>
                     <div class="mb-3">
                         <label for="edit-unit" class="form-label">Unit <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="edit-unit" name="unit" required maxlength="50">
+                        <select class="form-select" id="edit-unit" name="unit" required>
+                            <optgroup label="Physical Resources">
+                                <option value="kg">kg (Kilograms)</option>
+                                <option value="bags">bags</option>
+                                <option value="pcs">pcs (Pieces)</option>
+                                <option value="units">units</option>
+                                <option value="heads">heads</option>
+                                <option value="sets">sets</option>
+                                <option value="liters">liters</option>
+                                <option value="bottles">bottles</option>
+                                <option value="sacks">sacks</option>
+                                <option value="trays">trays</option>
+                            </optgroup>
+                            <optgroup label="Financial Assistance">
+                                <option value="PHP">PHP (Philippine Peso)</option>
+                            </optgroup>
+                        </select>
                     </div>
                     <div class="mb-3">
-                        <label for="edit-source-agency" class="form-label">Source Agency <span class="text-danger">*</span></label>
-                        <select class="form-select" id="edit-source-agency" name="source_agency" required>
-                            <option value="DA">DA</option>
-                            <option value="BFAR">BFAR</option>
-                            <option value="DAR">DAR</option>
-                            <option value="LGU">LGU</option>
+                        <label for="edit-agency-id" class="form-label">Source Agency <span class="text-danger">*</span></label>
+                        <select class="form-select" id="edit-agency-id" name="agency_id" required>
+                            @foreach($agencies as $agency)
+                                <option value="{{ $agency->id }}">{{ $agency->name }} — {{ $agency->full_name }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="mb-3">
@@ -207,7 +234,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('editForm').setAttribute('action', button.getAttribute('data-action'));
         document.getElementById('edit-name').value = button.getAttribute('data-name');
         document.getElementById('edit-unit').value = button.getAttribute('data-unit');
-        document.getElementById('edit-source-agency').value = button.getAttribute('data-source-agency');
+        document.getElementById('edit-agency-id').value = button.getAttribute('data-agency-id');
         document.getElementById('edit-description').value = button.getAttribute('data-description') || '';
     });
 

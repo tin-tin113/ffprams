@@ -24,7 +24,7 @@
 
     {{-- Summary Cards --}}
     <div class="row g-3 mb-4 mt-2">
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-sm-6 col-xl-2">
             <div class="card border-0 shadow-sm">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-3 bg-primary bg-opacity-10 p-3 me-3">
@@ -37,7 +37,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-sm-6 col-xl-2">
             <div class="card border-0 shadow-sm">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-3 bg-info bg-opacity-10 p-3 me-3">
@@ -50,7 +50,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-sm-6 col-xl-2">
             <div class="card border-0 shadow-sm">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-3 bg-warning bg-opacity-10 p-3 me-3">
@@ -63,7 +63,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-sm-6 col-xl-2">
             <div class="card border-0 shadow-sm">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3">
@@ -76,6 +76,32 @@
                 </div>
             </div>
         </div>
+        <div class="col-sm-6 col-xl-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3">
+                        <i class="bi bi-cash-stack text-success fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Financial Events</div>
+                        <div class="fs-4 fw-bold">{{ number_format($totalFinancialEvents) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-3 p-3 me-3" style="background-color: rgba(25, 135, 84, 0.1);">
+                        <i class="bi bi-currency-exchange text-success fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Cash Disbursed</div>
+                        <div class="fs-5 fw-bold">&#8369;{{ number_format($totalCashDisbursed, 2) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     {{-- Filter Bar --}}
@@ -83,7 +109,7 @@
         <div class="card-body">
             <form method="GET" action="{{ route('distribution-events.index') }}">
                 <div class="row g-3 align-items-end">
-                    <div class="col-md-2">
+                    <div class="col-md">
                         <label class="form-label">Barangay</label>
                         <select class="form-select" name="barangay_id">
                             <option value="">All Barangays</option>
@@ -94,7 +120,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md">
                         <label class="form-label">Resource Type</label>
                         <select class="form-select" name="resource_type_id">
                             <option value="">All Types</option>
@@ -105,7 +131,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md">
                         <label class="form-label">Status</label>
                         <select class="form-select" name="status">
                             <option value="">All Statuses</option>
@@ -116,15 +142,23 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md">
+                        <label class="form-label">Type</label>
+                        <select class="form-select" name="type">
+                            <option value="">All</option>
+                            <option value="physical" {{ request('type') === 'physical' ? 'selected' : '' }}>Physical</option>
+                            <option value="financial" {{ request('type') === 'financial' ? 'selected' : '' }}>Financial</option>
+                        </select>
+                    </div>
+                    <div class="col-md">
                         <label class="form-label">From</label>
                         <input type="date" class="form-control" name="from" value="{{ request('from') }}">
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md">
                         <label class="form-label">To</label>
                         <input type="date" class="form-control" name="to" value="{{ request('to') }}">
                     </div>
-                    <div class="col-md-2 d-flex gap-2">
+                    <div class="col-md-auto d-flex gap-2">
                         <button type="submit" class="btn btn-success">
                             <i class="bi bi-search me-1"></i> Search
                         </button>
@@ -149,6 +183,7 @@
                             <th>Barangay</th>
                             <th>Resource Type</th>
                             <th>Source Agency</th>
+                            <th>Type</th>
                             <th>Distribution Date</th>
                             <th>Status</th>
                             <th class="text-center">Beneficiaries</th>
@@ -164,7 +199,8 @@
                                 <td>{{ $event->resourceType->name }}</td>
                                 <td>
                                     @php
-                                        $agencyBadge = match($event->resourceType->source_agency) {
+                                        $agencyName = $event->resourceType->agency->name ?? 'N/A';
+                                        $agencyBadge = match($agencyName) {
                                             'DA'   => 'bg-success',
                                             'BFAR' => 'bg-primary',
                                             'DAR'  => 'bg-warning text-dark',
@@ -172,7 +208,14 @@
                                             default => 'bg-secondary',
                                         };
                                     @endphp
-                                    <span class="badge {{ $agencyBadge }}">{{ $event->resourceType->source_agency }}</span>
+                                    <span class="badge {{ $agencyBadge }}">{{ $agencyName }}</span>
+                                </td>
+                                <td>
+                                    @if($event->type === 'financial')
+                                        <span class="badge bg-success">Financial</span>
+                                    @else
+                                        <span class="badge bg-secondary">Physical</span>
+                                    @endif
                                 </td>
                                 <td>{{ $event->distribution_date->format('M d, Y') }}</td>
                                 <td>
@@ -199,7 +242,7 @@
                                         @if(Auth::user()->role === 'admin')
                                             <button type="button"
                                                     class="btn btn-sm btn-outline-danger" title="Delete"
-                                                    onclick="confirmAction('Confirm Deletion', 'Are you sure you want to delete event in {{ addslashes($event->barangay->name) }} on {{ $event->distribution_date->format('M d, Y') }}? This action cannot be undone.', '{{ route('distribution-events.destroy', $event) }}', 'DELETE')">
+                                                    onclick="confirmAction('Confirm Deletion', 'Are you sure you want to delete event in {{ e($event->barangay->name) }} on {{ $event->distribution_date->format('M d, Y') }}? This action cannot be undone.', '{{ route('distribution-events.destroy', $event) }}', 'DELETE')">
                                                 <i class="bi bi-trash"></i> <span class="btn-action-label">Delete</span>
                                             </button>
                                         @endif
@@ -208,7 +251,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center text-muted py-4">
+                                <td colspan="10" class="text-center text-muted py-4">
                                     <i class="bi bi-inbox fs-3 d-block mb-2"></i>
                                     No distribution events found.
                                 </td>

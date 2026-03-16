@@ -24,7 +24,7 @@ class ResourceTypeRequest extends FormRequest
                 Rule::unique('resource_types', 'name')->ignore($resourceTypeId),
             ],
             'unit' => ['required', 'string', 'max:50'],
-            'source_agency' => ['required', Rule::in(['DA', 'BFAR', 'DAR', 'LGU'])],
+            'agency_id' => ['required', 'exists:agencies,id'],
             'description' => ['nullable', 'string', 'max:500'],
         ];
     }
@@ -35,8 +35,8 @@ class ResourceTypeRequest extends FormRequest
             'name.required' => 'The resource type name is required.',
             'name.unique' => 'A resource type with this name already exists.',
             'unit.required' => 'The unit of measurement is required.',
-            'source_agency.required' => 'The source agency is required.',
-            'source_agency.in' => 'The source agency must be one of: DA, BFAR, DAR, LGU.',
+            'agency_id.required' => 'The source agency is required.',
+            'agency_id.exists' => 'The selected agency is invalid.',
             'description.max' => 'The description must not exceed 500 characters.',
         ];
     }

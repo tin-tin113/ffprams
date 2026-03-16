@@ -14,7 +14,10 @@ class DatabaseSeeder extends Seeder
         $this->call([
             UserSeeder::class,
             BarangaySeeder::class,
+            AgencySeeder::class,
             ResourceTypeSeeder::class,
+            AssistancePurposeSeeder::class,
+            FormFieldOptionSeeder::class,
         ]);
     }
 }

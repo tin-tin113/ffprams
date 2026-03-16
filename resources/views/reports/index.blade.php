@@ -133,7 +133,8 @@
                                 <td>{{ $row->unit }}</td>
                                 <td>
                                     @php
-                                        $agencyBadge = match($row->source_agency) {
+                                        $agencyName = $row->agency_name ?? 'N/A';
+                                        $agencyBadge = match($agencyName) {
                                             'DA'   => 'bg-success',
                                             'BFAR' => 'bg-primary',
                                             'DAR'  => 'bg-warning text-dark',
@@ -141,7 +142,7 @@
                                             default => 'bg-secondary',
                                         };
                                     @endphp
-                                    <span class="badge {{ $agencyBadge }}">{{ $row->source_agency }}</span>
+                                    <span class="badge {{ $agencyBadge }}">{{ $agencyName }}</span>
                                 </td>
                                 <td class="text-center">{{ number_format($row->total_quantity_distributed, 2) }}</td>
                                 <td class="text-center">{{ number_format($row->total_beneficiaries_reached) }}</td>
@@ -345,6 +346,260 @@
                 <canvas id="monthlyChart" height="100"></canvas>
             </div>
         @endif
+    </div>
+
+    {{-- ============================================================ --}}
+    {{-- REPORT 6 — Financial Assistance Summary --}}
+    {{-- ============================================================ --}}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <span class="fw-semibold"><i class="bi bi-cash-stack me-1"></i> Report 6: Financial Assistance Summary (Completed Events)</span>
+            <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i> Print
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Assistance Type</th>
+                            <th>Source Agency</th>
+                            <th class="text-center">Total Events</th>
+                            <th class="text-center">Beneficiaries Reached</th>
+                            <th class="text-end">Total Amount Disbursed (PHP)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($financialSummary as $row)
+                            <tr>
+                                <td class="text-muted">{{ $loop->iteration }}</td>
+                                <td>{{ $row->name }}</td>
+                                <td>
+                                    @php
+                                        $agencyName = $row->agency_name ?? 'N/A';
+                                        $agencyBadge = match($agencyName) {
+                                            'DA'   => 'bg-success',
+                                            'BFAR' => 'bg-primary',
+                                            'DAR'  => 'bg-warning text-dark',
+                                            'LGU'  => 'bg-secondary',
+                                            default => 'bg-secondary',
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $agencyBadge }}">{{ $agencyName }}</span>
+                                </td>
+                                <td class="text-center">{{ number_format($row->total_events) }}</td>
+                                <td class="text-center">{{ number_format($row->total_beneficiaries_reached) }}</td>
+                                <td class="text-end">&#8369;{{ number_format($row->total_amount_disbursed, 2) }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                                    No completed financial assistance events yet.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                    @if($financialSummary->count())
+                        <tfoot class="table-light">
+                            <tr class="fw-bold">
+                                <td colspan="3">Grand Total</td>
+                                <td class="text-center">{{ number_format($financialSummary->sum('total_events')) }}</td>
+                                <td class="text-center">{{ number_format($financialSummary->sum('total_beneficiaries_reached')) }}</td>
+                                <td class="text-end">&#8369;{{ number_format($financialSummary->sum('total_amount_disbursed'), 2) }}</td>
+                            </tr>
+                        </tfoot>
+                    @endif
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {{-- ============================================================ --}}
+    {{-- REPORT 7 — Financial Assistance per Barangay --}}
+    {{-- ============================================================ --}}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <span class="fw-semibold"><i class="bi bi-geo-alt me-1"></i> Report 7: Financial Assistance per Barangay (Completed Events)</span>
+            <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i> Print
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Barangay</th>
+                            <th class="text-center">Total Financial Events</th>
+                            <th class="text-center">Total Beneficiaries</th>
+                            <th class="text-end">Total Amount (PHP)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($financialPerBarangay as $row)
+                            <tr>
+                                <td class="text-muted">{{ $loop->iteration }}</td>
+                                <td>{{ $row->name }}</td>
+                                <td class="text-center">{{ number_format($row->total_financial_events) }}</td>
+                                <td class="text-center">{{ number_format($row->total_beneficiaries) }}</td>
+                                <td class="text-end">&#8369;{{ number_format($row->total_amount, 2) }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                                    No completed financial assistance events yet.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                    @if($financialPerBarangay->count())
+                        <tfoot class="table-light">
+                            <tr class="fw-bold">
+                                <td colspan="2">Grand Total</td>
+                                <td class="text-center">{{ number_format($financialPerBarangay->sum('total_financial_events')) }}</td>
+                                <td class="text-center">{{ number_format($financialPerBarangay->sum('total_beneficiaries')) }}</td>
+                                <td class="text-end">&#8369;{{ number_format($financialPerBarangay->sum('total_amount'), 2) }}</td>
+                            </tr>
+                        </tfoot>
+                    @endif
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {{-- ============================================================ --}}
+    {{-- REPORT 8 — Field Assessment Activity by Staff --}}
+    {{-- ============================================================ --}}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <span class="fw-semibold"><i class="bi bi-clipboard-check me-1"></i> Report 8: Field Assessment Activity by Staff</span>
+            <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i> Print
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Staff Name</th>
+                            <th class="text-center">Total Visits</th>
+                            <th class="text-center">Eligible</th>
+                            <th class="text-center">Not Eligible</th>
+                            <th class="text-center">Pending</th>
+                            <th class="text-center">Approved</th>
+                            <th class="text-center">Rejected</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($assessmentByStaff as $row)
+                            <tr>
+                                <td class="text-muted">{{ $loop->iteration }}</td>
+                                <td>{{ $row->name }}</td>
+                                <td class="text-center fw-bold">{{ number_format($row->total_visits) }}</td>
+                                <td class="text-center"><span class="badge bg-success">{{ $row->eligible_count }}</span></td>
+                                <td class="text-center"><span class="badge bg-secondary">{{ $row->not_eligible_count }}</span></td>
+                                <td class="text-center"><span class="badge bg-warning text-dark">{{ $row->pending_count }}</span></td>
+                                <td class="text-center"><span class="badge bg-primary">{{ $row->approved_count }}</span></td>
+                                <td class="text-center"><span class="badge bg-danger">{{ $row->rejected_count }}</span></td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                                    No field assessment data available.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                    @if($assessmentByStaff->count())
+                        <tfoot class="table-light">
+                            <tr class="fw-bold">
+                                <td colspan="2">Total</td>
+                                <td class="text-center">{{ number_format($assessmentByStaff->sum('total_visits')) }}</td>
+                                <td class="text-center">{{ $assessmentByStaff->sum('eligible_count') }}</td>
+                                <td class="text-center">{{ $assessmentByStaff->sum('not_eligible_count') }}</td>
+                                <td class="text-center">{{ $assessmentByStaff->sum('pending_count') }}</td>
+                                <td class="text-center">{{ $assessmentByStaff->sum('approved_count') }}</td>
+                                <td class="text-center">{{ $assessmentByStaff->sum('rejected_count') }}</td>
+                            </tr>
+                        </tfoot>
+                    @endif
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {{-- ============================================================ --}}
+    {{-- REPORT 9 — Financial Assistance Distribution by Purpose --}}
+    {{-- ============================================================ --}}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <span class="fw-semibold"><i class="bi bi-cash-coin me-1"></i> Report 9: Financial Assistance Distribution by Purpose</span>
+            <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i> Print
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Purpose</th>
+                            <th>Category</th>
+                            <th class="text-center">Beneficiaries</th>
+                            <th class="text-end">Total Amount (PHP)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($assistanceByPurpose as $row)
+                            <tr>
+                                <td class="text-muted">{{ $loop->iteration }}</td>
+                                <td>{{ $row->name }}</td>
+                                <td>
+                                    @php
+                                        $catBadge = match($row->category) {
+                                            'agricultural' => 'bg-success',
+                                            'fishery'      => 'bg-primary',
+                                            'livelihood'   => 'bg-info',
+                                            'medical'      => 'bg-danger',
+                                            'emergency'    => 'bg-warning text-dark',
+                                            default        => 'bg-secondary',
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $catBadge }}">{{ ucfirst($row->category) }}</span>
+                                </td>
+                                <td class="text-center">{{ number_format($row->total_beneficiaries) }}</td>
+                                <td class="text-end">&#8369;{{ number_format($row->total_amount, 2) }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                                    No distributed assistance data available.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                    @if($assistanceByPurpose->count())
+                        <tfoot class="table-light">
+                            <tr class="fw-bold">
+                                <td colspan="3">Grand Total</td>
+                                <td class="text-center">{{ number_format($assistanceByPurpose->sum('total_beneficiaries')) }}</td>
+                                <td class="text-end">&#8369;{{ number_format($assistanceByPurpose->sum('total_amount'), 2) }}</td>
+                            </tr>
+                        </tfoot>
+                    @endif
+                </table>
+            </div>
+        </div>
     </div>
 
 </div>

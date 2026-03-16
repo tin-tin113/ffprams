@@ -55,16 +55,46 @@ class DashboardController extends Controller
             })
             ->count();
 
+        // Field assessment counts
+        $pendingAssessments = DB::table('field_assessments')
+            ->where('approval_status', 'pending')
+            ->count();
+
+        $approvedAssessments = DB::table('field_assessments')
+            ->where('approval_status', 'approved')
+            ->count();
+
+        // Total financial disbursed
+        $totalFinancialDisbursed = DB::table('allocations')
+            ->whereNull('deleted_at')
+            ->whereNotNull('distributed_at')
+            ->sum('amount');
+
+        // Unassessed beneficiaries (active with zero field assessments)
+        $unassessedBeneficiaries = DB::table('beneficiaries')
+            ->whereNull('deleted_at')
+            ->where('status', 'Active')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('field_assessments')
+                    ->whereColumn('field_assessments.beneficiary_id', 'beneficiaries.id');
+            })
+            ->count();
+
         return view('dashboard', [
-            'totalBeneficiaries'        => $totalBeneficiaries,
-            'totalFarmers'              => $totalFarmers,
-            'totalFisherfolk'           => $totalFisherfolk,
-            'totalBoth'                 => $totalBoth,
-            'totalDistributionEvents'   => $totalDistributionEvents,
-            'completedEvents'           => $completedEvents,
-            'ongoingEvents'             => $ongoingEvents,
-            'pendingEvents'             => $pendingEvents,
+            'totalBeneficiaries'         => $totalBeneficiaries,
+            'totalFarmers'               => $totalFarmers,
+            'totalFisherfolk'            => $totalFisherfolk,
+            'totalBoth'                  => $totalBoth,
+            'totalDistributionEvents'    => $totalDistributionEvents,
+            'completedEvents'            => $completedEvents,
+            'ongoingEvents'              => $ongoingEvents,
+            'pendingEvents'              => $pendingEvents,
             'beneficiariesNotYetReached' => $beneficiariesNotYetReached,
+            'pendingAssessments'         => $pendingAssessments,
+            'approvedAssessments'        => $approvedAssessments,
+            'totalFinancialDisbursed'    => $totalFinancialDisbursed,
+            'unassessedBeneficiaries'    => $unassessedBeneficiaries,
         ]);
     }
 }

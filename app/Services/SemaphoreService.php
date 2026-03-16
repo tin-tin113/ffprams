@@ -10,12 +10,13 @@ class SemaphoreService
 {
     private string $apiKey;
     private string $senderName;
-    private string $endpoint = 'https://api.semaphore.co/api/v4/messages';
+    private string $endpoint;
 
     public function __construct()
     {
-        $this->apiKey     = config('services.semaphore.api_key', '');
-        $this->senderName = config('services.semaphore.sender_name', 'FFPRAMS');
+        $this->endpoint   = config('services.sms.api_url', 'https://smsapiph.onrender.com/api/v1/send/sms');
+        $this->apiKey     = config('services.sms.api_key', '');
+        $this->senderName = config('services.sms.sender_name', 'FFPRAMS');
     }
 
     public function sendSms(string $number, string $message, ?int $beneficiaryId = null): bool
@@ -33,14 +34,14 @@ class SemaphoreService
         }
 
         try {
-            $response = Http::asForm()->post($this->endpoint, [
-                'apikey'     => $this->apiKey,
-                'number'     => $number,
-                'message'    => $message,
-                'sendername' => $this->senderName,
+            $response = Http::withHeaders([
+                'x-api-key' => $this->apiKey,
+            ])->post($this->endpoint, [
+                'recipient' => $number,
+                'message'   => $message,
             ]);
 
-            $success = $response->successful();
+            $success = $response->successful() && ($response->json('success') === true);
 
             $this->logSms(
                 beneficiaryId: $beneficiaryId,

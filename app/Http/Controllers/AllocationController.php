@@ -31,8 +31,10 @@ class AllocationController extends Controller
                 ->with('error', 'This beneficiary does not belong to the same barangay as the distribution event.');
         }
 
-        $exists = Allocation::where('distribution_event_id', $event->id)
+        $exists = Allocation::withTrashed()
+            ->where('distribution_event_id', $event->id)
             ->where('beneficiary_id', $beneficiary->id)
+            ->whereNull('deleted_at')
             ->exists();
 
         if ($exists) {
@@ -40,11 +42,18 @@ class AllocationController extends Controller
                 ->with('error', 'This beneficiary has already been allocated for this event.');
         }
 
+        // Permanently remove any soft-deleted allocation so the new one can be created cleanly
+        Allocation::onlyTrashed()
+            ->where('distribution_event_id', $event->id)
+            ->where('beneficiary_id', $beneficiary->id)
+            ->forceDelete();
+
         $allocation = DB::transaction(function () use ($request, $event, $beneficiary) {
             $allocation = Allocation::create([
                 'distribution_event_id' => $event->id,
                 'beneficiary_id'        => $beneficiary->id,
-                'quantity'              => $request->quantity,
+                'quantity'              => $event->isFinancial() ? null : $request->quantity,
+                'amount'                => $event->isFinancial() ? $request->amount : null,
                 'remarks'               => $request->remarks,
             ]);
 
@@ -61,11 +70,19 @@ class AllocationController extends Controller
         });
 
         // SMS notification (outside transaction -- non-critical)
-        $this->sms->sendSms(
-            $beneficiary->contact_number,
-            "Hello {$beneficiary->full_name}, you have been allocated {$allocation->quantity} {$event->resourceType->unit} of {$event->resourceType->name} scheduled on {$event->distribution_date->format('M d, Y')} at Barangay {$event->barangay->name}. Please coordinate with your barangay official for details.",
-            $beneficiary->id,
-        );
+        if ($beneficiary->contact_number) {
+            if ($event->isFinancial()) {
+                $smsMessage = "Hello {$beneficiary->full_name}, you have been allocated PHP {$allocation->amount} for {$event->resourceType->name} scheduled on {$event->distribution_date->format('M d, Y')} at Barangay {$event->barangay->name}. Please coordinate with your barangay official for claiming details.";
+            } else {
+                $smsMessage = "Hello {$beneficiary->full_name}, you have been allocated {$allocation->quantity} {$event->resourceType->unit} of {$event->resourceType->name} scheduled on {$event->distribution_date->format('M d, Y')} at Barangay {$event->barangay->name}. Please coordinate with your barangay official for details.";
+            }
+
+            $this->sms->sendSms(
+                $beneficiary->contact_number,
+                $smsMessage,
+                $beneficiary->id,
+            );
+        }
 
         return redirect()->route('distribution-events.show', $event)
             ->with('success', 'Beneficiary allocated successfully.');
@@ -73,19 +90,33 @@ class AllocationController extends Controller
 
     public function storeBulk(Request $request): RedirectResponse
     {
-        $request->validate([
+        $event = DistributionEvent::with(['barangay', 'resourceType'])->findOrFail($request->distribution_event_id);
+
+        $bulkRules = [
             'distribution_event_id'        => ['required', 'exists:distribution_events,id'],
             'allocations'                  => ['required', 'array', 'min:1'],
             'allocations.*.beneficiary_id' => ['required', 'exists:beneficiaries,id'],
-            'allocations.*.quantity'       => ['required', 'numeric', 'min:0.01', 'max:9999.99'],
             'allocations.*.remarks'        => ['nullable', 'string', 'max:500'],
-        ]);
+        ];
 
-        $event = DistributionEvent::with(['barangay', 'resourceType'])->findOrFail($request->distribution_event_id);
+        if ($event->isFinancial()) {
+            $bulkRules['allocations.*.amount'] = ['required', 'numeric', 'min:1', 'max:9999999999.99'];
+        } else {
+            $bulkRules['allocations.*.quantity'] = ['required', 'numeric', 'min:0.01', 'max:9999.99'];
+        }
 
+        $request->validate($bulkRules);
+
+        // Only check active (non-deleted) allocations
         $existingIds = Allocation::where('distribution_event_id', $event->id)
             ->pluck('beneficiary_id')
             ->toArray();
+
+        // Clean up any soft-deleted allocations for this event so re-allocation works
+        Allocation::onlyTrashed()
+            ->where('distribution_event_id', $event->id)
+            ->whereIn('beneficiary_id', collect($request->input('allocations'))->pluck('beneficiary_id'))
+            ->forceDelete();
 
         $allocated = 0;
         $skipped   = 0;
@@ -108,7 +139,8 @@ class AllocationController extends Controller
                 $allocation = Allocation::create([
                     'distribution_event_id' => $event->id,
                     'beneficiary_id'        => $beneficiary->id,
-                    'quantity'              => $row['quantity'],
+                    'quantity'              => $event->isFinancial() ? null : $row['quantity'],
+                    'amount'                => $event->isFinancial() ? $row['amount'] : null,
                     'remarks'               => $row['remarks'] ?? null,
                 ]);
 
@@ -125,6 +157,7 @@ class AllocationController extends Controller
                     'number'         => $beneficiary->contact_number,
                     'full_name'      => $beneficiary->full_name,
                     'quantity'       => $allocation->quantity,
+                    'amount'         => $allocation->amount,
                     'beneficiary_id' => $beneficiary->id,
                 ];
 
@@ -134,9 +167,19 @@ class AllocationController extends Controller
 
         // SMS notifications (outside transaction -- non-critical)
         foreach ($smsQueue as $sms) {
+            if (! $sms['number']) {
+                continue;
+            }
+
+            if ($event->isFinancial()) {
+                $message = "Hello {$sms['full_name']}, you have been allocated PHP {$sms['amount']} for {$event->resourceType->name} scheduled on {$event->distribution_date->format('M d, Y')} at Barangay {$event->barangay->name}. Please coordinate with your barangay official for claiming details.";
+            } else {
+                $message = "Hello {$sms['full_name']}, you have been allocated {$sms['quantity']} {$event->resourceType->unit} of {$event->resourceType->name} scheduled on {$event->distribution_date->format('M d, Y')} at Barangay {$event->barangay->name}. Please coordinate with your barangay official for details.";
+            }
+
             $this->sms->sendSms(
                 $sms['number'],
-                "Hello {$sms['full_name']}, you have been allocated {$sms['quantity']} {$event->resourceType->unit} of {$event->resourceType->name} scheduled on {$event->distribution_date->format('M d, Y')} at Barangay {$event->barangay->name}. Please coordinate with your barangay official for details.",
+                $message,
                 $sms['beneficiary_id'],
             );
         }
@@ -147,16 +190,26 @@ class AllocationController extends Controller
 
     public function update(Request $request, Allocation $allocation): RedirectResponse
     {
-        $request->validate([
-            'quantity' => ['required', 'numeric', 'min:0.01', 'max:9999.99'],
-            'remarks'  => ['nullable', 'string', 'max:500'],
-        ]);
+        $event = $allocation->distributionEvent;
 
-        DB::transaction(function () use ($request, $allocation) {
+        $rules = ['remarks' => ['nullable', 'string', 'max:500']];
+
+        if ($event->isFinancial()) {
+            $rules['amount']   = ['required', 'numeric', 'min:1', 'max:9999999999.99'];
+            $rules['quantity'] = ['nullable'];
+        } else {
+            $rules['quantity'] = ['required', 'numeric', 'min:0.01', 'max:9999.99'];
+            $rules['amount']   = ['nullable'];
+        }
+
+        $request->validate($rules);
+
+        DB::transaction(function () use ($request, $allocation, $event) {
             $oldValues = $allocation->toArray();
 
             $allocation->update([
-                'quantity' => $request->quantity,
+                'quantity' => $event->isFinancial() ? null : $request->quantity,
+                'amount'   => $event->isFinancial() ? $request->amount : null,
                 'remarks'  => $request->remarks,
             ]);
 

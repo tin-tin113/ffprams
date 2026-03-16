@@ -74,7 +74,17 @@ class Beneficiary extends Model
         return $this->hasMany(SmsLog::class);
     }
 
+    public function fieldAssessments(): HasMany
+    {
+        return $this->hasMany(FieldAssessment::class);
+    }
+
     // ── Helpers ───────────────────────────────────
+
+    public function hasApprovedAssessment(): bool
+    {
+        return $this->fieldAssessments()->where('approval_status', 'approved')->exists();
+    }
 
     public function isFarmer(): bool
     {

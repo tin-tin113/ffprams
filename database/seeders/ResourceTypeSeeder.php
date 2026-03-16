@@ -24,7 +24,25 @@ class ResourceTypeSeeder extends Seeder
             ['name' => 'Life Vest',                   'unit' => 'pcs',   'source_agency' => 'BFAR'],
             ['name' => 'Fingerlings',                 'unit' => 'pcs',   'source_agency' => 'BFAR'],
             ['name' => 'Fishing Boat Assistance',     'unit' => 'units', 'source_agency' => 'BFAR'],
+
+            // LGU Financial Assistance
+            ['name' => 'Cash Ayuda',                  'unit' => 'PHP',   'source_agency' => 'LGU'],
+            ['name' => 'Calamity Assistance',         'unit' => 'PHP',   'source_agency' => 'LGU'],
+            ['name' => 'Livelihood Subsidy',          'unit' => 'PHP',   'source_agency' => 'LGU'],
+            ['name' => 'Educational Assistance',      'unit' => 'PHP',   'source_agency' => 'LGU'],
+            ['name' => 'Medical Assistance',          'unit' => 'PHP',   'source_agency' => 'LGU'],
+
+            // DSWD Financial Assistance
+            ['name' => '4Ps Supplemental Aid',        'unit' => 'PHP',   'source_agency' => 'DSWD'],
+            ['name' => 'AICS (Assistance to Individuals in Crisis Situation)', 'unit' => 'PHP', 'source_agency' => 'DSWD'],
+
+            // DA Financial Programs
+            ['name' => 'SURE-Aid (Survival and Recovery Assistance)', 'unit' => 'PHP', 'source_agency' => 'DA'],
+            ['name' => 'Rice Farmer Financial Assistance (RFFA)',     'unit' => 'PHP', 'source_agency' => 'DA'],
         ];
+
+        // Build agency name => id lookup
+        $agencies = DB::table('agencies')->pluck('id', 'name');
 
         foreach ($types as $type) {
             DB::table('resource_types')->updateOrInsert(
@@ -32,6 +50,7 @@ class ResourceTypeSeeder extends Seeder
                 [
                     'unit'          => $type['unit'],
                     'source_agency' => $type['source_agency'],
+                    'agency_id'     => $agencies[$type['source_agency']] ?? null,
                     'updated_at'    => now(),
                     'created_at'    => now(),
                 ],

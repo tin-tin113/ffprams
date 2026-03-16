@@ -223,7 +223,7 @@
         </button>
 
         <a class="navbar-brand" href="{{ route('dashboard') }}">
-            <i class="bi bi-tsunami me-1"></i> FFPRAMS
+            <i class="bi bi-tsunami me-1"></i> Farmer-Fisherfolk Precision Resource Allocation Management System
         </a>
 
         <div class="d-flex align-items-center ms-auto gap-2">
@@ -287,9 +287,24 @@
                     <i class="bi bi-people"></i> Beneficiaries
                 </a>
 
+                <a class="nav-link {{ request()->routeIs('field-assessments.*') ? 'active' : '' }}"
+                   href="{{ route('field-assessments.index') }}">
+                    <i class="bi bi-clipboard-check"></i> Field Assessments
+                </a>
+
                 <a class="nav-link {{ request()->routeIs('distribution-events.*') ? 'active' : '' }}"
                    href="{{ route('distribution-events.index') }}">
                     <i class="bi bi-calendar-event"></i> Distribution Events
+                </a>
+
+                <a class="nav-link {{ request()->routeIs('sms.*') ? 'active' : '' }}"
+                   href="{{ route('sms.index') }}">
+                    <i class="bi bi-chat-dots-fill"></i> SMS Broadcast
+                </a>
+
+                <a class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}"
+                   href="{{ route('reports.index') }}">
+                    <i class="bi bi-file-earmark-bar-graph"></i> Reports
                 </a>
 
                 <a class="nav-link {{ request()->routeIs('resource-types.*') ? 'active' : '' }}"
@@ -302,17 +317,17 @@
                     <i class="bi bi-geo-alt"></i> Geo-Map
                 </a>
 
-                <a class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}"
-                   href="{{ route('reports.index') }}">
-                    <i class="bi bi-file-earmark-bar-graph"></i> Reports
-                </a>
-
                 @if(Auth::user()->isAdmin())
                     <span class="sidebar-heading">Administration</span>
 
                     <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"
                        href="{{ route('admin.users.index') }}">
                         <i class="bi bi-person-gear"></i> User Management
+                    </a>
+
+                    <a class="nav-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}"
+                       href="{{ route('admin.settings.index') }}">
+                        <i class="bi bi-gear"></i> System Settings
                     </a>
                 @endif
             </nav>

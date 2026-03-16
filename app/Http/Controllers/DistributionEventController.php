@@ -20,11 +20,12 @@ class DistributionEventController extends Controller
 
     public function index(Request $request): View
     {
-        $events = DistributionEvent::with(['barangay', 'resourceType', 'createdBy'])
+        $events = DistributionEvent::with(['barangay', 'resourceType.agency', 'createdBy'])
             ->withCount('allocations')
             ->when($request->filled('barangay_id'), fn ($q) => $q->where('barangay_id', $request->barangay_id))
             ->when($request->filled('resource_type_id'), fn ($q) => $q->where('resource_type_id', $request->resource_type_id))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
+            ->when($request->filled('type'), fn ($q) => $q->where('type', $request->type))
             ->when($request->filled('from'), fn ($q) => $q->whereDate('distribution_date', '>=', $request->from))
             ->when($request->filled('to'), fn ($q) => $q->whereDate('distribution_date', '<=', $request->to))
             ->orderByDesc('distribution_date')
@@ -36,6 +37,16 @@ class DistributionEventController extends Controller
         $ongoing   = DistributionEvent::where('status', 'Ongoing')->count();
         $completed = DistributionEvent::where('status', 'Completed')->count();
 
+        $totalFinancialEvents = DistributionEvent::where('type', 'financial')->count();
+        $totalCashDisbursed = DB::table('allocations')
+            ->join('distribution_events', function ($join) {
+                $join->on('allocations.distribution_event_id', '=', 'distribution_events.id')
+                    ->where('distribution_events.type', '=', 'financial')
+                    ->where('distribution_events.status', '=', 'Completed');
+            })
+            ->whereNull('allocations.deleted_at')
+            ->sum('allocations.amount');
+
         $barangays     = Barangay::orderBy('name')->get();
         $resourceTypes = ResourceType::orderBy('name')->get();
 
@@ -45,6 +56,8 @@ class DistributionEventController extends Controller
             'pending',
             'ongoing',
             'completed',
+            'totalFinancialEvents',
+            'totalCashDisbursed',
             'barangays',
             'resourceTypes',
         ));
@@ -53,7 +66,7 @@ class DistributionEventController extends Controller
     public function create(): View
     {
         $barangays     = Barangay::orderBy('name')->get();
-        $resourceTypes = ResourceType::orderBy('name')->get();
+        $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
 
         return view('distribution_events.create', compact('barangays', 'resourceTypes'));
     }
@@ -86,7 +99,7 @@ class DistributionEventController extends Controller
     {
         $event->load([
             'barangay',
-            'resourceType',
+            'resourceType.agency',
             'createdBy',
             'allocations.beneficiary',
         ]);
@@ -104,13 +117,18 @@ class DistributionEventController extends Controller
         }
 
         $barangays     = Barangay::orderBy('name')->get();
-        $resourceTypes = ResourceType::orderBy('name')->get();
+        $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
 
         return view('distribution_events.edit', compact('event', 'barangays', 'resourceTypes'));
     }
 
     public function update(DistributionEventRequest $request, DistributionEvent $event): RedirectResponse
     {
+        if ($event->status !== 'Pending') {
+            return redirect()->route('distribution-events.index')
+                ->with('error', 'Only Pending events can be edited.');
+        }
+
         DB::transaction(function () use ($request, $event) {
             $oldValues = $event->toArray();
 
@@ -132,6 +150,10 @@ class DistributionEventController extends Controller
 
     public function destroy(DistributionEvent $event): RedirectResponse
     {
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Only admins can delete distribution events.');
+        }
+
         if ($event->status !== 'Pending') {
             return redirect()->route('distribution-events.index')
                 ->with('error', 'Only Pending events can be deleted.');

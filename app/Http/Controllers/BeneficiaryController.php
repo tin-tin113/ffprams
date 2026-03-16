@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Requests\BeneficiaryRequest;
 use App\Models\Barangay;
 use App\Models\Beneficiary;
+use App\Models\FormFieldOption;
 use App\Services\AuditLogService;
 use App\Services\SemaphoreService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -49,8 +51,9 @@ class BeneficiaryController extends Controller
     public function create(): View
     {
         $barangays = Barangay::orderBy('name')->get();
+        $fieldOptions = $this->getFormFieldOptions();
 
-        return view('beneficiaries.create', compact('barangays'));
+        return view('beneficiaries.create', compact('barangays', 'fieldOptions'));
     }
 
     /**
@@ -102,7 +105,7 @@ class BeneficiaryController extends Controller
     {
         $beneficiary->load([
             'barangay',
-            'allocations.distributionEvent.resourceType',
+            'allocations.distributionEvent.resourceType.agency',
             'smsLogs' => fn ($q) => $q->latest('sent_at')->limit(5),
         ]);
 
@@ -115,8 +118,9 @@ class BeneficiaryController extends Controller
     public function edit(Beneficiary $beneficiary): View
     {
         $barangays = Barangay::orderBy('name')->get();
+        $fieldOptions = $this->getFormFieldOptions();
 
-        return view('beneficiaries.edit', compact('beneficiary', 'barangays'));
+        return view('beneficiaries.edit', compact('beneficiary', 'barangays', 'fieldOptions'));
     }
 
     /**
@@ -148,6 +152,10 @@ class BeneficiaryController extends Controller
      */
     public function destroy(Beneficiary $beneficiary): RedirectResponse
     {
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Only admins can delete beneficiaries.');
+        }
+
         $beneficiary->delete();
 
         $this->audit->log(
@@ -184,5 +192,43 @@ class BeneficiaryController extends Controller
 
         return redirect()->route('beneficiaries.show', $beneficiary)
             ->with($sent ? 'success' : 'error', $sent ? 'SMS sent successfully.' : 'Failed to send SMS. Please try again.');
+    }
+
+    public function summary(Beneficiary $beneficiary): JsonResponse
+    {
+        $beneficiary->load('barangay');
+
+        $latestApproved = $beneficiary->fieldAssessments()
+            ->with('recommendedPurpose')
+            ->where('approval_status', 'approved')
+            ->latest('approved_at')
+            ->first();
+
+        return response()->json([
+            'id'                        => $beneficiary->id,
+            'full_name'                 => $beneficiary->full_name,
+            'barangay_name'             => $beneficiary->barangay->name ?? null,
+            'classification'            => $beneficiary->classification,
+            'contact_number'            => $beneficiary->contact_number,
+            'rsbsa_number'              => $beneficiary->isFarmer() ? $beneficiary->rsbsa_number : null,
+            'fishr_number'              => $beneficiary->isFisherfolk() ? $beneficiary->fishr_number : null,
+            'approved_assessments_count' => $beneficiary->fieldAssessments()->where('approval_status', 'approved')->count(),
+            'latest_approved_assessment' => $latestApproved ? [
+                'recommended_purpose_name' => $latestApproved->recommendedPurpose->name ?? null,
+                'recommended_amount'       => $latestApproved->recommended_amount,
+            ] : null,
+        ]);
+    }
+
+    private function getFormFieldOptions(): array
+    {
+        $fields = ['id_type', 'highest_education', 'farm_type', 'farm_ownership', 'fisherfolk_type', 'civil_status'];
+        $options = [];
+
+        foreach ($fields as $field) {
+            $options[$field] = FormFieldOption::optionsFor($field);
+        }
+
+        return $options;
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ResourceTypeRequest;
+use App\Models\Agency;
 use App\Models\ResourceType;
 use App\Services\AuditLogService;
 use Illuminate\Http\RedirectResponse;
@@ -17,15 +18,22 @@ class ResourceTypeController extends Controller
 
     public function index(): View
     {
-        $resourceTypes = ResourceType::orderBy('name')
+        $resourceTypes = ResourceType::with('agency')
+            ->orderBy('name')
             ->get()
-            ->groupBy('source_agency');
+            ->groupBy(fn ($rt) => $rt->agency?->name ?? 'Unassigned');
 
-        return view('resource_types.index', compact('resourceTypes'));
+        $agencies = Agency::where('is_active', true)->orderBy('name')->get();
+
+        return view('resource_types.index', compact('resourceTypes', 'agencies'));
     }
 
     public function store(ResourceTypeRequest $request): RedirectResponse
     {
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Only admins can create resource types.');
+        }
+
         $resourceType = DB::transaction(function () use ($request) {
             $resourceType = ResourceType::create($request->validated());
 
@@ -47,6 +55,10 @@ class ResourceTypeController extends Controller
 
     public function update(ResourceTypeRequest $request, ResourceType $resourceType): RedirectResponse
     {
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Only admins can update resource types.');
+        }
+
         DB::transaction(function () use ($request, $resourceType) {
             $oldValues = $resourceType->toArray();
 
@@ -68,6 +80,10 @@ class ResourceTypeController extends Controller
 
     public function destroy(ResourceType $resourceType): RedirectResponse
     {
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Only admins can delete resource types.');
+        }
+
         if ($resourceType->distributionEvents()->exists()) {
             return redirect()->route('resource-types.index')
                 ->with('error', 'This resource type cannot be deleted because it is linked to existing distribution events.');

@@ -240,7 +240,7 @@
                         @forelse($beneficiary->allocations as $allocation)
                             <tr>
                                 <td class="fw-semibold">{{ $allocation->distributionEvent->resourceType->name ?? '—' }}</td>
-                                <td>{{ $allocation->distributionEvent->resourceType->source_agency ?? '—' }}</td>
+                                <td>{{ $allocation->distributionEvent->resourceType->agency->name ?? '—' }}</td>
                                 <td>{{ $allocation->quantity }}</td>
                                 <td>{{ $allocation->distributionEvent->resourceType->unit ?? '—' }}</td>
                                 <td class="text-muted small">{{ $allocation->distributionEvent->distribution_date?->format('M d, Y') ?? '—' }}</td>

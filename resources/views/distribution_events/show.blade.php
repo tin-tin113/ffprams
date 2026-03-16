@@ -10,6 +10,14 @@
 @section('content')
 <div class="container-fluid">
 
+    @php
+        $availableBeneficiaries = \App\Models\Beneficiary::where('barangay_id', $event->barangay_id)
+            ->where('status', 'Active')
+            ->whereNotIn('id', $allocatedBeneficiaryIds)
+            ->orderBy('full_name')
+            ->get(['id', 'full_name', 'classification']);
+    @endphp
+
     {{-- ============================================================ --}}
     {{-- 1. EVENT HEADER CARD                                         --}}
     {{-- ============================================================ --}}
@@ -20,7 +28,8 @@
             'Completed' => 'bg-success',
             default     => 'bg-secondary',
         };
-        $agencyBadge = match($event->resourceType->source_agency) {
+        $agencyName = $event->resourceType->agency->name ?? 'N/A';
+        $agencyBadge = match($agencyName) {
             'DA'   => 'bg-success',
             'BFAR' => 'bg-primary',
             'DAR'  => 'bg-warning text-dark',
@@ -38,7 +47,12 @@
                 <h1 class="h3 mb-1">{{ $event->barangay->name }}</h1>
                 <div class="d-flex gap-2 align-items-center">
                     <span class="badge {{ $statusBadge }}">{{ $event->status }}</span>
-                    <span class="badge {{ $agencyBadge }}">{{ $event->resourceType->source_agency }}</span>
+                    <span class="badge {{ $agencyBadge }}">{{ $agencyName }}</span>
+                    @if($event->isFinancial())
+                        <span class="badge bg-success">Financial</span>
+                    @else
+                        <span class="badge bg-secondary">Physical</span>
+                    @endif
                 </div>
             </div>
         </div>
@@ -95,7 +109,17 @@
                 </div>
                 <div class="col-md-4">
                     <div class="text-muted small">Source Agency</div>
-                    <div class="fw-semibold"><span class="badge {{ $agencyBadge }}">{{ $event->resourceType->source_agency }}</span></div>
+                    <div class="fw-semibold"><span class="badge {{ $agencyBadge }}">{{ $agencyName }}</span></div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted small">Distribution Type</div>
+                    <div class="fw-semibold">
+                        @if($event->isFinancial())
+                            <span class="badge bg-success">Financial Assistance</span>
+                        @else
+                            <span class="badge bg-secondary">Physical Resources</span>
+                        @endif
+                    </div>
                 </div>
                 <div class="col-md-4">
                     <div class="text-muted small">Distribution Date</div>
@@ -105,6 +129,20 @@
                     <div class="text-muted small">Status</div>
                     <div class="fw-semibold"><span class="badge {{ $statusBadge }}">{{ $event->status }}</span></div>
                 </div>
+                @if($event->isFinancial())
+                    <div class="col-md-4">
+                        <div class="text-muted small">Total Fund Budget</div>
+                        <div class="fw-semibold">&#8369;{{ number_format($event->total_fund_amount, 2) }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">Total Disbursed</div>
+                        <div class="fw-semibold">&#8369;{{ number_format($event->allocations->sum('amount'), 2) }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">Remaining Budget</div>
+                        <div class="fw-semibold">&#8369;{{ number_format($event->total_fund_amount - $event->allocations->sum('amount'), 2) }}</div>
+                    </div>
+                @endif
                 <div class="col-md-4">
                     <div class="text-muted small">Created By</div>
                     <div class="fw-semibold">{{ $event->createdBy->name }}</div>
@@ -122,51 +160,115 @@
     {{-- ============================================================ --}}
     @php
         $totalAllocated  = $event->allocations->count();
-        $totalQuantity   = $event->allocations->sum('quantity');
         $totalDistributed = $event->allocations->whereNotNull('distributed_at')->count();
     @endphp
 
-    <div class="row g-3 mb-4">
-        <div class="col-sm-6 col-xl-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-3 bg-primary bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-people-fill text-primary fs-4"></i>
+    @if($event->isFinancial())
+        @php
+            $totalAmountAllocated = $event->allocations->sum('amount');
+            $totalClaimed = $event->allocations->whereNotNull('distributed_at')->count();
+            $remainingBudget = $event->total_fund_amount - $totalAmountAllocated;
+        @endphp
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="rounded-3 bg-primary bg-opacity-10 p-3 me-3">
+                            <i class="bi bi-people-fill text-primary fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Beneficiaries Allocated</div>
+                            <div class="fs-4 fw-bold">{{ number_format($totalAllocated) }}</div>
+                        </div>
                     </div>
-                    <div>
-                        <div class="text-muted small">Total Beneficiaries Allocated</div>
-                        <div class="fs-4 fw-bold">{{ number_format($totalAllocated) }}</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="rounded-3 bg-info bg-opacity-10 p-3 me-3">
+                            <i class="bi bi-cash-stack text-info fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Total Amount Allocated</div>
+                            <div class="fs-4 fw-bold">&#8369;{{ number_format($totalAmountAllocated, 2) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3">
+                            <i class="bi bi-check2-all text-success fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Total Claimed</div>
+                            <div class="fs-4 fw-bold">{{ number_format($totalClaimed) }} / {{ number_format($totalAllocated) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="rounded-3 bg-warning bg-opacity-10 p-3 me-3">
+                            <i class="bi bi-wallet2 text-warning fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Remaining Budget</div>
+                            <div class="fs-4 fw-bold">&#8369;{{ number_format($remainingBudget, 2) }}</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-3 bg-info bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-box-seam text-info fs-4"></i>
+    @else
+        @php
+            $totalQuantity = $event->allocations->sum('quantity');
+        @endphp
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-xl-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="rounded-3 bg-primary bg-opacity-10 p-3 me-3">
+                            <i class="bi bi-people-fill text-primary fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Total Beneficiaries Allocated</div>
+                            <div class="fs-4 fw-bold">{{ number_format($totalAllocated) }}</div>
+                        </div>
                     </div>
-                    <div>
-                        <div class="text-muted small">Total Quantity to Distribute</div>
-                        <div class="fs-4 fw-bold">{{ number_format($totalQuantity, 2) }} {{ $event->resourceType->unit }}</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="rounded-3 bg-info bg-opacity-10 p-3 me-3">
+                            <i class="bi bi-box-seam text-info fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Total Quantity to Distribute</div>
+                            <div class="fs-4 fw-bold">{{ number_format($totalQuantity, 2) }} {{ $event->resourceType->unit }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3">
+                            <i class="bi bi-check2-all text-success fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Total Distributed</div>
+                            <div class="fs-4 fw-bold">{{ number_format($totalDistributed) }} / {{ number_format($totalAllocated) }}</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-check2-all text-success fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Total Distributed</div>
-                        <div class="fs-4 fw-bold">{{ number_format($totalDistributed) }} / {{ number_format($totalAllocated) }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    @endif
 
     {{-- ============================================================ --}}
     {{-- 3. ADD BENEFICIARIES SECTION                                 --}}
@@ -198,7 +300,11 @@
                             <th>Beneficiary Name</th>
                             <th>Classification</th>
                             <th>Contact Number</th>
-                            <th>Quantity</th>
+                            @if($event->isFinancial())
+                                <th>Amount (PHP)</th>
+                            @else
+                                <th>Quantity</th>
+                            @endif
                             <th>Distributed At</th>
                             <th>Remarks</th>
                             <th class="text-end">Actions</th>
@@ -225,7 +331,11 @@
                                     @endif
                                 </td>
                                 <td>{{ $allocation->beneficiary->contact_number ?? '—' }}</td>
-                                <td>{{ number_format($allocation->quantity, 2) }} {{ $event->resourceType->unit }}</td>
+                                @if($event->isFinancial())
+                                    <td>&#8369;{{ number_format($allocation->amount, 2) }}</td>
+                                @else
+                                    <td>{{ number_format($allocation->quantity, 2) }} {{ $event->resourceType->unit }}</td>
+                                @endif
                                 <td>
                                     @if($allocation->distributed_at)
                                         <span class="text-success">
@@ -233,7 +343,7 @@
                                             {{ $allocation->distributed_at->format('M d, Y h:i A') }}
                                         </span>
                                     @else
-                                        <span class="text-muted">Not yet distributed</span>
+                                        <span class="text-muted">Not yet {{ $event->isFinancial() ? 'claimed' : 'distributed' }}</span>
                                     @endif
                                 </td>
                                 <td>{{ $allocation->remarks ?? '—' }}</td>
@@ -244,7 +354,7 @@
                                               class="d-inline">
                                             @csrf
                                             <button type="submit" class="btn btn-sm btn-outline-success me-1">
-                                                <i class="bi bi-check2"></i> Distribute
+                                                <i class="bi bi-check2"></i> {{ $event->isFinancial() ? 'Mark as Claimed' : 'Distribute' }}
                                             </button>
                                         </form>
                                     @endif
@@ -252,7 +362,7 @@
                                     @if($event->status !== 'Completed' && Auth::user()->role === 'admin')
                                         <button type="button"
                                                 class="btn btn-sm btn-outline-danger"
-                                                onclick="confirmAction('Confirm Removal', 'Are you sure you want to remove {{ addslashes($allocation->beneficiary->full_name) }} from this distribution event?', '{{ route('allocations.destroy', $allocation) }}', 'DELETE')">
+                                                onclick="confirmAction('Confirm Removal', 'Are you sure you want to remove {{ e($allocation->beneficiary->full_name) }} from this distribution event?', '{{ route('allocations.destroy', $allocation) }}', 'DELETE')">
                                             <i class="bi bi-trash"></i> Remove
                                         </button>
                                     @endif
@@ -324,18 +434,33 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="mb-3">
-                        <label for="quantity" class="form-label">
-                            Quantity <span class="text-danger">*</span>
-                            <span class="badge bg-secondary ms-1">{{ $event->resourceType->unit }}</span>
-                        </label>
-                        <input type="number" step="0.01" min="0.01" max="9999.99"
-                               class="form-control @error('quantity') is-invalid @enderror"
-                               id="quantity" name="quantity" value="{{ old('quantity') }}" required>
-                        @error('quantity')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
+                    @if($event->isFinancial())
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">
+                                Amount (PHP) <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" step="0.01" min="1"
+                                   class="form-control @error('amount') is-invalid @enderror"
+                                   id="amount" name="amount" value="{{ old('amount') }}"
+                                   placeholder="e.g. 1000.00" required>
+                            @error('amount')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    @else
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label">
+                                Quantity <span class="text-danger">*</span>
+                                <span class="badge bg-secondary ms-1">{{ $event->resourceType->unit }}</span>
+                            </label>
+                            <input type="number" step="0.01" min="0.01" max="9999.99"
+                                   class="form-control @error('quantity') is-invalid @enderror"
+                                   id="quantity" name="quantity" value="{{ old('quantity') }}" required>
+                            @error('quantity')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    @endif
                     <div class="mb-3">
                         <label for="remarks" class="form-label">Remarks</label>
                         <input type="text" class="form-control" id="remarks" name="remarks"
@@ -371,7 +496,11 @@
                                 <tr>
                                     <th>Beneficiary Name</th>
                                     <th>Classification</th>
-                                    <th style="width: 150px;">Quantity ({{ $event->resourceType->unit }}) <span class="text-danger">*</span></th>
+                                    @if($event->isFinancial())
+                                        <th style="width: 150px;">Amount (PHP) <span class="text-danger">*</span></th>
+                                    @else
+                                        <th style="width: 150px;">Quantity ({{ $event->resourceType->unit }}) <span class="text-danger">*</span></th>
+                                    @endif
                                     <th style="width: 200px;">Remarks</th>
                                 </tr>
                             </thead>
@@ -415,13 +544,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ---- Beneficiary data for modals ----
-    const beneficiaries = @json(
-        \App\Models\Beneficiary::where('barangay_id', $event->barangay_id)
-            ->where('status', 'Active')
-            ->whereNotIn('id', $allocatedBeneficiaryIds)
-            ->orderBy('full_name')
-            ->get(['id', 'full_name', 'classification'])
-    );
+    const beneficiaries = @json($availableBeneficiaries);
+
+    const isFinancial = @json($event->isFinancial());
 
     // Populate single-add dropdown
     (function populateSingleSelect() {
@@ -461,6 +586,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 ? `<span class="badge" style="background-color: #6f42c1;">Both</span>`
                 : `<span class="badge ${classificationBadge}">${b.classification}</span>`;
 
+            const valueInput = isFinancial
+                ? `<input type="number" step="0.01" min="1"
+                          class="form-control form-control-sm"
+                          name="allocations[${i}][amount]" placeholder="e.g. 1000.00" required>`
+                : `<input type="number" step="0.01" min="0.01" max="9999.99"
+                          class="form-control form-control-sm"
+                          name="allocations[${i}][quantity]" required>`;
+
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>
@@ -468,11 +601,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <input type="hidden" name="allocations[${i}][beneficiary_id]" value="${b.id}">
                 </td>
                 <td>${badgeHtml}</td>
-                <td>
-                    <input type="number" step="0.01" min="0.01" max="9999.99"
-                           class="form-control form-control-sm"
-                           name="allocations[${i}][quantity]" required>
-                </td>
+                <td>${valueInput}</td>
                 <td>
                     <input type="text" class="form-control form-control-sm"
                            name="allocations[${i}][remarks]" maxlength="500">

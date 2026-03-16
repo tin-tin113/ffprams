@@ -34,6 +34,26 @@
             </div>
             <div class="card-body">
                 <div class="row g-3">
+                    {{-- Distribution Type --}}
+                    <div class="col-md-12">
+                        <label class="form-label">Distribution Type <span class="text-danger">*</span></label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="type" id="type_physical" value="physical"
+                                   {{ old('type', $event->type) === 'physical' ? 'checked' : '' }}>
+                            <label class="btn btn-outline-secondary" for="type_physical">
+                                <i class="bi bi-box-seam me-1"></i> Physical Resources
+                            </label>
+                            <input type="radio" class="btn-check" name="type" id="type_financial" value="financial"
+                                   {{ old('type', $event->type) === 'financial' ? 'checked' : '' }}>
+                            <label class="btn btn-outline-success" for="type_financial">
+                                <i class="bi bi-cash-stack me-1"></i> Financial Assistance
+                            </label>
+                        </div>
+                        @error('type')
+                            <div class="text-danger small mt-1">{{ $message }}</div>
+                        @enderror
+                    </div>
+
                     {{-- Barangay --}}
                     <div class="col-md-6">
                         <label for="barangay_id" class="form-label">Barangay <span class="text-danger">*</span></label>
@@ -62,7 +82,7 @@
                                     <option value="{{ $type->id }}"
                                             data-unit="{{ $type->unit }}"
                                             {{ old('resource_type_id', $event->resource_type_id) == $type->id ? 'selected' : '' }}>
-                                        {{ $type->name }} ({{ $type->unit }}) — {{ $type->source_agency }}
+                                        {{ $type->name }} ({{ $type->unit }}) — {{ $type->agency->name ?? 'N/A' }}
                                     </option>
                                 @endforeach
                             </select>
@@ -81,6 +101,19 @@
                                id="distribution_date" name="distribution_date"
                                value="{{ old('distribution_date', $event->distribution_date->format('Y-m-d')) }}" required>
                         @error('distribution_date')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    {{-- Total Fund Budget (Financial only) --}}
+                    <div class="col-md-6 d-none" id="totalFundGroup">
+                        <label for="total_fund_amount" class="form-label">Total Fund Budget (PHP) <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" min="1" max="9999999999.99"
+                               class="form-control @error('total_fund_amount') is-invalid @enderror"
+                               id="total_fund_amount" name="total_fund_amount"
+                               value="{{ old('total_fund_amount', $event->total_fund_amount) }}"
+                               placeholder="e.g. 500000.00">
+                        @error('total_fund_amount')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
@@ -104,6 +137,10 @@
 document.addEventListener('DOMContentLoaded', function () {
     const resourceSelect = document.getElementById('resource_type_id');
     const unitDisplay = document.getElementById('unitDisplay');
+    const totalFundGroup = document.getElementById('totalFundGroup');
+    const totalFundInput = document.getElementById('total_fund_amount');
+    const typeRadios = document.querySelectorAll('input[name="type"]');
+    const allOptions = Array.from(resourceSelect.options);
 
     function updateUnit() {
         const selected = resourceSelect.options[resourceSelect.selectedIndex];
@@ -115,8 +152,49 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function toggleType() {
+        const isFinancial = document.querySelector('input[name="type"]:checked').value === 'financial';
+
+        // Show/hide total fund amount
+        if (isFinancial) {
+            totalFundGroup.classList.remove('d-none');
+            totalFundInput.required = true;
+        } else {
+            totalFundGroup.classList.add('d-none');
+            totalFundInput.required = false;
+        }
+
+        // Filter resource type options
+        const currentValue = resourceSelect.value;
+        resourceSelect.innerHTML = '';
+
+        allOptions.forEach(function (opt) {
+            if (opt.value === '') {
+                resourceSelect.appendChild(opt.cloneNode(true));
+            } else if (isFinancial && opt.dataset.unit === 'PHP') {
+                resourceSelect.appendChild(opt.cloneNode(true));
+            } else if (!isFinancial && opt.dataset.unit !== 'PHP') {
+                resourceSelect.appendChild(opt.cloneNode(true));
+            }
+        });
+
+        // Restore selection if still valid
+        const exists = Array.from(resourceSelect.options).some(o => o.value === currentValue);
+        if (exists) {
+            resourceSelect.value = currentValue;
+        } else {
+            resourceSelect.selectedIndex = 0;
+        }
+
+        updateUnit();
+    }
+
+    typeRadios.forEach(function (radio) {
+        radio.addEventListener('change', toggleType);
+    });
+
     resourceSelect.addEventListener('change', updateUnit);
-    updateUnit();
+    toggleType();
 });
 </script>
 @endpush
