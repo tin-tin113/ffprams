@@ -9,13 +9,15 @@ use App\Http\Controllers\ResourceTypeController;
 use App\Http\Controllers\DistributionEventController;
 use App\Http\Controllers\AllocationController;
 use App\Http\Controllers\GeoMapController;
-use App\Http\Controllers\FieldAssessmentController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\SmsController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+    return redirect()->route('login');
 });
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
@@ -35,19 +37,18 @@ Route::middleware('auth')->group(function () {
 | Both admin and staff can access these routes.
 */
 Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
-    // Beneficiaries
-    Route::resource('beneficiaries', BeneficiaryController::class);
+    // Beneficiaries (create, store, edit, update, destroy)
+    Route::resource('beneficiaries', BeneficiaryController::class)->except(['index', 'show']);
     Route::post('beneficiaries/{beneficiary}/send-sms', [BeneficiaryController::class, 'sendSms'])
         ->name('beneficiaries.sendSms');
-    Route::get('api/beneficiaries/{beneficiary}/summary', [BeneficiaryController::class, 'summary'])
-        ->name('beneficiaries.summary');
 
     // Resource Types
     Route::resource('resource-types', ResourceTypeController::class)->only(['index', 'store', 'update', 'destroy']);
 
-    // Distribution Events
+    // Distribution Events (create, store, edit, update, destroy)
     Route::resource('distribution-events', DistributionEventController::class)
-        ->parameters(['distribution-events' => 'event']);
+        ->parameters(['distribution-events' => 'event'])
+        ->except(['index', 'show']);
     Route::post('distribution-events/{event}/status', [DistributionEventController::class, 'updateStatus'])
         ->name('distribution-events.updateStatus');
 
@@ -61,14 +62,28 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
     Route::post('allocations/{allocation}/distribute', [AllocationController::class, 'markDistributed'])
         ->name('allocations.markDistributed');
 
-    // Field Assessments
-    Route::resource('field-assessments', FieldAssessmentController::class)
-        ->parameters(['field-assessments' => 'fieldAssessment']);
-
     // SMS Broadcast
     Route::get('sms', [SmsController::class, 'index'])->name('sms.index');
     Route::post('sms/preview', [SmsController::class, 'preview'])->name('sms.preview');
     Route::post('sms/send', [SmsController::class, 'send'])->name('sms.send');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Read-Only Routes (Admin, Staff & Viewer)
+|--------------------------------------------------------------------------
+| Admin, staff, and viewer (Agency View-Only) can access these read-only routes.
+*/
+Route::middleware(['auth', 'verified', 'role:admin,staff,viewer'])->group(function () {
+    // Beneficiaries (index, show)
+    Route::get('beneficiaries', [BeneficiaryController::class, 'index'])->name('beneficiaries.index');
+    Route::get('beneficiaries/{beneficiary}', [BeneficiaryController::class, 'show'])->name('beneficiaries.show');
+    Route::get('api/beneficiaries/{beneficiary}/summary', [BeneficiaryController::class, 'summary'])
+        ->name('beneficiaries.summary');
+
+    // Distribution Events (index, show)
+    Route::get('distribution-events', [DistributionEventController::class, 'index'])->name('distribution-events.index');
+    Route::get('distribution-events/{event}', [DistributionEventController::class, 'show'])->name('distribution-events.show');
 
     // Reports
     Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
@@ -86,12 +101,6 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
 Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::delete('allocations/{allocation}', [AllocationController::class, 'destroy'])
         ->name('allocations.destroy');
-
-    // Field Assessment Approval (Admin Only)
-    Route::post('field-assessments/{fieldAssessment}/approve', [FieldAssessmentController::class, 'approve'])
-        ->name('field-assessments.approve');
-    Route::post('field-assessments/{fieldAssessment}/reject', [FieldAssessmentController::class, 'reject'])
-        ->name('field-assessments.reject');
 });
 
 /*
@@ -109,6 +118,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('settings/agencies/list', [SystemSettingsController::class, 'listAgencies'])->name('settings.agencies.list');
     Route::get('settings/purposes/list', [SystemSettingsController::class, 'listPurposes'])->name('settings.purposes.list');
     Route::get('settings/resource-types/list', [SystemSettingsController::class, 'listResourceTypes'])->name('settings.resource-types.list');
+    Route::get('settings/program-names/list', [SystemSettingsController::class, 'listProgramNames'])->name('settings.program-names.list');
 
     // Settings — Agencies
     Route::post('settings/agencies', [SystemSettingsController::class, 'storeAgency'])->name('settings.agencies.store');
@@ -124,6 +134,11 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('settings/resource-types', [SystemSettingsController::class, 'storeResourceType'])->name('settings.resource-types.store');
     Route::put('settings/resource-types/{resourceType}', [SystemSettingsController::class, 'updateResourceType'])->name('settings.resource-types.update');
     Route::delete('settings/resource-types/{resourceType}', [SystemSettingsController::class, 'destroyResourceType'])->name('settings.resource-types.destroy');
+
+    // Settings — Program Names
+    Route::post('settings/program-names', [SystemSettingsController::class, 'storeProgramName'])->name('settings.program-names.store');
+    Route::put('settings/program-names/{programName}', [SystemSettingsController::class, 'updateProgramName'])->name('settings.program-names.update');
+    Route::delete('settings/program-names/{programName}', [SystemSettingsController::class, 'destroyProgramName'])->name('settings.program-names.destroy');
 
     // Settings — Form Fields
     Route::get('settings/form-fields/list', [SystemSettingsController::class, 'listFormFields'])->name('settings.form-fields.list');

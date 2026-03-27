@@ -4,115 +4,31 @@
     $fo = $fieldOptions ?? [];
 @endphp
 
-{{-- SECTION 1 — Personal Information --}}
+{{-- SECTION 1 — Agency & Personal Information --}}
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-white fw-semibold">
-        <i class="bi bi-person me-1"></i> Personal Information
+        <i class="bi bi-building me-1"></i> Agency & Personal Information
     </div>
     <div class="card-body">
         <div class="row g-3">
-            {{-- Full Name --}}
-            <div class="col-md-6">
-                <label for="full_name" class="form-label">Full Name <span class="text-danger">*</span></label>
-                <input type="text"
-                       class="form-control @error('full_name') is-invalid @enderror"
-                       id="full_name" name="full_name"
-                       value="{{ old('full_name', $beneficiary->full_name ?? '') }}" required>
-                @error('full_name')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-
-            {{-- Civil Status --}}
-            <div class="col-md-3">
-                <label for="civil_status" class="form-label">Civil Status <span class="text-danger">*</span></label>
-                <select class="form-select @error('civil_status') is-invalid @enderror"
-                        id="civil_status" name="civil_status" required>
-                    <option value="" disabled {{ old('civil_status', $beneficiary->civil_status ?? '') === '' ? 'selected' : '' }}>Select...</option>
-                    @foreach(($fo['civil_status'] ?? collect(['Single', 'Married', 'Widowed', 'Separated'])->map(fn($v) => (object)['value' => $v, 'label' => $v])) as $opt)
-                        <option value="{{ $opt->value ?? $opt }}" {{ old('civil_status', $beneficiary->civil_status ?? '') == ($opt->value ?? $opt) ? 'selected' : '' }}>{{ $opt->label ?? $opt }}</option>
-                    @endforeach
-                </select>
-                @error('civil_status')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-
-            {{-- Highest Education --}}
-            <div class="col-md-3">
-                <label for="highest_education" class="form-label">Highest Education <span class="text-danger">*</span></label>
-                <select class="form-select @error('highest_education') is-invalid @enderror"
-                        id="highest_education" name="highest_education" required>
-                    <option value="" disabled {{ old('highest_education', $beneficiary->highest_education ?? '') === '' ? 'selected' : '' }}>Select...</option>
-                    @foreach(($fo['highest_education'] ?? collect(['No Formal Education', 'Elementary', 'High School', 'Vocational', 'College', 'Post Graduate'])->map(fn($v) => (object)['value' => $v, 'label' => $v])) as $opt)
-                        <option value="{{ $opt->value ?? $opt }}" {{ old('highest_education', $beneficiary->highest_education ?? '') == ($opt->value ?? $opt) ? 'selected' : '' }}>{{ $opt->label ?? $opt }}</option>
-                    @endforeach
-                </select>
-                @error('highest_education')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-
-            {{-- Number of Dependents --}}
-            <div class="col-md-3">
-                <label for="number_of_dependents" class="form-label">Number of Dependents <span class="text-danger">*</span></label>
-                <input type="number"
-                       class="form-control @error('number_of_dependents') is-invalid @enderror"
-                       id="number_of_dependents" name="number_of_dependents"
-                       value="{{ old('number_of_dependents', $beneficiary->number_of_dependents ?? '') }}" min="0" required>
-                @error('number_of_dependents')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-
-            {{-- Contact Number --}}
-            <div class="col-md-3">
-                <label for="contact_number" class="form-label">Contact Number <span class="text-danger">*</span></label>
-                <input type="text"
-                       class="form-control @error('contact_number') is-invalid @enderror"
-                       id="contact_number" name="contact_number"
-                       placeholder="09XXXXXXXXX"
-                       value="{{ old('contact_number', $beneficiary->contact_number ?? '') }}" required>
-                @error('contact_number')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-
-            {{-- Main Source of Income --}}
-            <div class="col-md-6">
-                <label for="main_income_source" class="form-label">Main Source of Income <span class="text-danger">*</span></label>
-                <input type="text"
-                       class="form-control @error('main_income_source') is-invalid @enderror"
-                       id="main_income_source" name="main_income_source"
-                       value="{{ old('main_income_source', $beneficiary->main_income_source ?? '') }}" required>
-                @error('main_income_source')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- SECTION 2 — Location & Registration --}}
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-white fw-semibold">
-        <i class="bi bi-geo-alt me-1"></i> Location &amp; Registration
-    </div>
-    <div class="card-body">
-        <div class="row g-3">
-            {{-- Barangay --}}
+            {{-- Agency Selection --}}
             <div class="col-md-4">
-                <label for="barangay_id" class="form-label">Barangay <span class="text-danger">*</span></label>
-                <select class="form-select @error('barangay_id') is-invalid @enderror"
-                        id="barangay_id" name="barangay_id" required>
-                    <option value="" disabled {{ old('barangay_id', $beneficiary->barangay_id ?? '') === '' ? 'selected' : '' }}>Select barangay...</option>
-                    @foreach($barangays as $barangay)
-                        <option value="{{ $barangay->id }}" {{ (int) old('barangay_id', $beneficiary->barangay_id ?? '') === $barangay->id ? 'selected' : '' }}>{{ $barangay->name }}</option>
+                <label for="agency_id" class="form-label">Source Agency <span class="text-danger">*</span></label>
+                <select class="form-select @error('agency_id') is-invalid @enderror"
+                        id="agency_id" name="agency_id" required>
+                    <option value="" disabled {{ old('agency_id', $beneficiary->agency_id ?? '') === '' ? 'selected' : '' }}>Select agency...</option>
+                    @foreach($agencies as $agency)
+                        <option value="{{ $agency->id }}"
+                                data-name="{{ strtoupper($agency->name) }}"
+                                {{ (int) old('agency_id', $beneficiary->agency_id ?? '') === $agency->id ? 'selected' : '' }}>
+                            {{ $agency->name }} - {{ $agency->full_name }}
+                        </option>
                     @endforeach
                 </select>
-                @error('barangay_id')
+                @error('agency_id')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
+                <small class="text-muted">Determines which fields are required</small>
             </div>
 
             {{-- Classification --}}
@@ -130,48 +46,8 @@
                 @enderror
             </div>
 
-            {{-- Government ID Type --}}
-            <div class="col-md-4">
-                <label for="id_type" class="form-label">Government ID Type <span class="text-danger">*</span></label>
-                <select class="form-select @error('id_type') is-invalid @enderror"
-                        id="id_type" name="id_type" required>
-                    <option value="" disabled {{ old('id_type', $beneficiary->id_type ?? '') === '' ? 'selected' : '' }}>Select...</option>
-                    @foreach(($fo['id_type'] ?? collect(['PhilSys ID', "Voter's ID", "Driver's License", 'Passport', 'Senior Citizen ID', 'PWD ID', 'Postal ID', 'TIN ID'])->map(fn($v) => (object)['value' => $v, 'label' => $v])) as $opt)
-                        <option value="{{ $opt->value ?? $opt }}" {{ old('id_type', $beneficiary->id_type ?? '') == ($opt->value ?? $opt) ? 'selected' : '' }}>{{ $opt->label ?? $opt }}</option>
-                    @endforeach
-                </select>
-                @error('id_type')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-
-            {{-- Government ID Number --}}
-            <div class="col-md-4">
-                <label for="government_id" class="form-label">Government ID Number <span class="text-danger">*</span></label>
-                <input type="text"
-                       class="form-control @error('government_id') is-invalid @enderror"
-                       id="government_id" name="government_id"
-                       value="{{ old('government_id', $beneficiary->government_id ?? '') }}"
-                       {{ $editing ? 'readonly' : '' }} required>
-                @error('government_id')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-
-            {{-- Registration Date --}}
-            <div class="col-md-4">
-                <label for="registered_at" class="form-label">Registration Date <span class="text-danger">*</span></label>
-                <input type="date"
-                       class="form-control @error('registered_at') is-invalid @enderror"
-                       id="registered_at" name="registered_at"
-                       value="{{ old('registered_at', isset($beneficiary) ? $beneficiary->registered_at->format('Y-m-d') : '') }}" required>
-                @error('registered_at')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-
             {{-- Status --}}
-            <div class="col-md-2">
+            <div class="col-md-4">
                 <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
                 <select class="form-select @error('status') is-invalid @enderror"
                         id="status" name="status" required>
@@ -184,219 +60,292 @@
                 @enderror
             </div>
 
-            {{-- Household Size --}}
-            <div class="col-md-2">
-                <label for="household_size" class="form-label">Household Size <span class="text-danger">*</span></label>
-                <input type="number"
-                       class="form-control @error('household_size') is-invalid @enderror"
-                       id="household_size" name="household_size"
-                       value="{{ old('household_size', $beneficiary->household_size ?? '') }}" min="1" max="20" required>
-                @error('household_size')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
+            {{-- Full Name --}}
+            <div class="col-md-6">
+                <label for="full_name" class="form-label">Full Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control @error('full_name') is-invalid @enderror"
+                       id="full_name" name="full_name"
+                       value="{{ old('full_name', $beneficiary->full_name ?? '') }}" required>
+                @error('full_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+
+            {{-- Sex --}}
+            <div class="col-md-3">
+                <label for="sex" class="form-label">Sex <span class="text-danger">*</span></label>
+                <select class="form-select @error('sex') is-invalid @enderror" id="sex" name="sex" required>
+                    <option value="" disabled {{ old('sex', $beneficiary->sex ?? '') === '' ? 'selected' : '' }}>Select...</option>
+                    @foreach(['Male', 'Female'] as $opt)
+                        <option value="{{ $opt }}" {{ old('sex', $beneficiary->sex ?? '') === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                    @endforeach
+                </select>
+                @error('sex')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+
+            {{-- Date of Birth --}}
+            <div class="col-md-3">
+                <label for="date_of_birth" class="form-label">Date of Birth <span class="text-danger">*</span></label>
+                <input type="date" class="form-control @error('date_of_birth') is-invalid @enderror"
+                       id="date_of_birth" name="date_of_birth"
+                       value="{{ old('date_of_birth', isset($beneficiary) && $beneficiary->date_of_birth ? $beneficiary->date_of_birth->format('Y-m-d') : '') }}" required>
+                @error('date_of_birth')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+
+            {{-- Civil Status --}}
+            <div class="col-md-3">
+                <label for="civil_status" class="form-label">Civil Status <span class="text-danger">*</span></label>
+                <select class="form-select @error('civil_status') is-invalid @enderror" id="civil_status" name="civil_status" required>
+                    <option value="" disabled {{ old('civil_status', $beneficiary->civil_status ?? '') === '' ? 'selected' : '' }}>Select...</option>
+                    @foreach(['Single', 'Married', 'Widowed', 'Separated'] as $opt)
+                        <option value="{{ $opt }}" {{ old('civil_status', $beneficiary->civil_status ?? '') === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                    @endforeach
+                </select>
+                @error('civil_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+
+            {{-- Contact Number --}}
+            <div class="col-md-3">
+                <label for="contact_number" class="form-label">Contact Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control @error('contact_number') is-invalid @enderror"
+                       id="contact_number" name="contact_number" placeholder="09XXXXXXXXX"
+                       value="{{ old('contact_number', $beneficiary->contact_number ?? '') }}" required>
+                @error('contact_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+
+            {{-- Registration Date --}}
+            <div class="col-md-3">
+                <label for="registered_at" class="form-label">Registration Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control @error('registered_at') is-invalid @enderror"
+                       id="registered_at" name="registered_at"
+                       value="{{ old('registered_at', isset($beneficiary) ? $beneficiary->registered_at->format('Y-m-d') : '') }}" required>
+                @error('registered_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+
+            <input type="hidden" name="photo_path" value="{{ old('photo_path', $beneficiary->photo_path ?? '') }}">
+        </div>
+    </div>
+</div>
+
+{{-- SECTION 2 — Address Information --}}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-geo-alt me-1"></i> Address Information</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-8">
+                <label for="home_address" class="form-label">Home Address <span class="text-danger">*</span></label>
+                <input type="text" class="form-control @error('home_address') is-invalid @enderror"
+                       id="home_address" name="home_address" placeholder="House No., Street, Purok/Sitio"
+                       value="{{ old('home_address', $beneficiary->home_address ?? '') }}" required>
+                @error('home_address')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-md-4">
+                <label for="barangay_id" class="form-label">Barangay <span class="text-danger">*</span></label>
+                <select class="form-select @error('barangay_id') is-invalid @enderror" id="barangay_id" name="barangay_id" required>
+                    <option value="" disabled {{ old('barangay_id', $beneficiary->barangay_id ?? '') === '' ? 'selected' : '' }}>Select barangay...</option>
+                    @foreach($barangays as $barangay)
+                        <option value="{{ $barangay->id }}" {{ (int) old('barangay_id', $beneficiary->barangay_id ?? '') === $barangay->id ? 'selected' : '' }}>{{ $barangay->name }}</option>
+                    @endforeach
+                </select>
+                @error('barangay_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
         </div>
     </div>
 </div>
 
-{{-- SECTION 3 — Farmer Information (toggle via JS) --}}
+{{-- SECTION 3 — DA/RSBSA Information (Farmer) --}}
 <div class="card border-0 shadow-sm mb-4" id="farmer-section" style="display: none;">
-    <div class="card-header bg-white fw-semibold">
-        <i class="bi bi-tree me-1"></i> Farmer Information
-    </div>
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-tree me-1"></i> DA/RSBSA Information (Farmer)</div>
     <div class="card-body">
         <div class="row g-3">
-            {{-- RSBSA Number --}}
             <div class="col-md-4">
-                <label for="rsbsa_number" class="form-label">RSBSA Number <span class="text-danger">*</span></label>
-                <input type="text"
-                       class="form-control @error('rsbsa_number') is-invalid @enderror"
-                       id="rsbsa_number" name="rsbsa_number"
-                       value="{{ old('rsbsa_number', $beneficiary->rsbsa_number ?? '') }}">
-                @error('rsbsa_number')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
+                <label for="rsbsa_number" class="form-label">RSBSA Number</label>
+                <input type="text" class="form-control @error('rsbsa_number') is-invalid @enderror"
+                       id="rsbsa_number" name="rsbsa_number" value="{{ old('rsbsa_number', $beneficiary->rsbsa_number ?? '') }}">
+                @error('rsbsa_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                <small class="text-muted">Can be added after registration</small>
             </div>
-
-            {{-- Farm Ownership --}}
             <div class="col-md-4">
-                <label for="farm_ownership" class="form-label">Farm Ownership <span class="text-danger">*</span></label>
-                <select class="form-select @error('farm_ownership') is-invalid @enderror"
-                        id="farm_ownership" name="farm_ownership">
+                <label for="farm_ownership" class="form-label">Land Ownership / Tenure <span class="text-danger">*</span></label>
+                <select class="form-select @error('farm_ownership') is-invalid @enderror" id="farm_ownership" name="farm_ownership">
                     <option value="" disabled {{ old('farm_ownership', $beneficiary->farm_ownership ?? '') === '' ? 'selected' : '' }}>Select...</option>
-                    @foreach(($fo['farm_ownership'] ?? collect(['Owner', 'Lessee', 'Share Tenant'])->map(fn($v) => (object)['value' => $v, 'label' => $v])) as $opt)
-                        <option value="{{ $opt->value ?? $opt }}" {{ old('farm_ownership', $beneficiary->farm_ownership ?? '') == ($opt->value ?? $opt) ? 'selected' : '' }}>{{ $opt->label ?? $opt }}</option>
+                    @foreach(['Registered Owner', 'Tenant', 'Lessee'] as $opt)
+                        <option value="{{ $opt }}" {{ old('farm_ownership', $beneficiary->farm_ownership ?? '') === $opt ? 'selected' : '' }}>{{ $opt }}</option>
                     @endforeach
                 </select>
-                @error('farm_ownership')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
+                @error('farm_ownership')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-
-            {{-- Farm Size --}}
             <div class="col-md-4">
-                <label for="farm_size_hectares" class="form-label">Farm Size (Hectares) <span class="text-danger">*</span></label>
-                <input type="number"
-                       class="form-control @error('farm_size_hectares') is-invalid @enderror"
+                <label for="farm_size_hectares" class="form-label">Farm Area (Hectares) <span class="text-danger">*</span></label>
+                <input type="number" class="form-control @error('farm_size_hectares') is-invalid @enderror"
                        id="farm_size_hectares" name="farm_size_hectares"
                        value="{{ old('farm_size_hectares', $beneficiary->farm_size_hectares ?? '') }}" step="0.01" min="0.01">
-                @error('farm_size_hectares')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
+                @error('farm_size_hectares')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-
-            {{-- Primary Commodity --}}
             <div class="col-md-6">
-                <label for="primary_commodity" class="form-label">Primary Commodity <span class="text-danger">*</span></label>
-                <input type="text"
-                       class="form-control @error('primary_commodity') is-invalid @enderror"
-                       id="primary_commodity" name="primary_commodity"
-                       placeholder="e.g. Rice, Corn, Vegetables"
+                <label for="primary_commodity" class="form-label">Crop Type / Commodity <span class="text-danger">*</span></label>
+                <input type="text" class="form-control @error('primary_commodity') is-invalid @enderror"
+                       id="primary_commodity" name="primary_commodity" placeholder="e.g. Rice, Corn, Vegetables"
                        value="{{ old('primary_commodity', $beneficiary->primary_commodity ?? '') }}">
-                @error('primary_commodity')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
+                @error('primary_commodity')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-
-            {{-- Farm Type --}}
             <div class="col-md-6">
-                <label for="farm_type" class="form-label">Farm Type <span class="text-danger">*</span></label>
-                <select class="form-select @error('farm_type') is-invalid @enderror"
-                        id="farm_type" name="farm_type">
+                <label for="farm_type" class="form-label">Farm Type / Irrigation <span class="text-danger">*</span></label>
+                <select class="form-select @error('farm_type') is-invalid @enderror" id="farm_type" name="farm_type">
                     <option value="" disabled {{ old('farm_type', $beneficiary->farm_type ?? '') === '' ? 'selected' : '' }}>Select...</option>
-                    @foreach(($fo['farm_type'] ?? collect(['Irrigated', 'Rainfed Lowland', 'Upland'])->map(fn($v) => (object)['value' => $v, 'label' => $v])) as $opt)
-                        <option value="{{ $opt->value ?? $opt }}" {{ old('farm_type', $beneficiary->farm_type ?? '') == ($opt->value ?? $opt) ? 'selected' : '' }}>{{ $opt->label ?? $opt }}</option>
+                    @foreach(['Irrigated', 'Rainfed Upland', 'Rainfed Lowland'] as $opt)
+                        <option value="{{ $opt }}" {{ old('farm_type', $beneficiary->farm_type ?? '') === $opt ? 'selected' : '' }}>{{ $opt }}</option>
                     @endforeach
                 </select>
-                @error('farm_type')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
+                @error('farm_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-md-6">
+                <label for="organization_membership" class="form-label">Organization / Cooperative Membership</label>
+                <input type="text" class="form-control @error('organization_membership') is-invalid @enderror"
+                       id="organization_membership" name="organization_membership"
+                       value="{{ old('organization_membership', $beneficiary->organization_membership ?? '') }}">
+                @error('organization_membership')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
         </div>
     </div>
 </div>
 
-{{-- SECTION 4 — Fisherfolk Information (toggle via JS) --}}
+{{-- SECTION 4 — BFAR/FishR Information (Fisherfolk) --}}
 <div class="card border-0 shadow-sm mb-4" id="fisherfolk-section" style="display: none;">
-    <div class="card-header bg-white fw-semibold">
-        <i class="bi bi-water me-1"></i> Fisherfolk Information
-    </div>
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-water me-1"></i> BFAR/FishR Information (Fisherfolk)</div>
     <div class="card-body">
         <div class="row g-3">
-            {{-- FishR Number --}}
             <div class="col-md-4">
-                <label for="fishr_number" class="form-label">FishR Number <span class="text-danger">*</span></label>
-                <input type="text"
-                       class="form-control @error('fishr_number') is-invalid @enderror"
-                       id="fishr_number" name="fishr_number"
-                       value="{{ old('fishr_number', $beneficiary->fishr_number ?? '') }}">
-                @error('fishr_number')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
+                <label for="fishr_number" class="form-label">FishR Number</label>
+                <input type="text" class="form-control @error('fishr_number') is-invalid @enderror"
+                       id="fishr_number" name="fishr_number" value="{{ old('fishr_number', $beneficiary->fishr_number ?? '') }}">
+                @error('fishr_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                <small class="text-muted">Can be added after registration</small>
             </div>
-
-            {{-- Fisherfolk Type --}}
             <div class="col-md-4">
-                <label for="fisherfolk_type" class="form-label">Fisherfolk Type <span class="text-danger">*</span></label>
-                <select class="form-select @error('fisherfolk_type') is-invalid @enderror"
-                        id="fisherfolk_type" name="fisherfolk_type">
+                <label for="fisherfolk_type" class="form-label">Type of Fishing Activity <span class="text-danger">*</span></label>
+                <select class="form-select @error('fisherfolk_type') is-invalid @enderror" id="fisherfolk_type" name="fisherfolk_type">
                     <option value="" disabled {{ old('fisherfolk_type', $beneficiary->fisherfolk_type ?? '') === '' ? 'selected' : '' }}>Select...</option>
-                    @foreach(($fo['fisherfolk_type'] ?? collect(['Capture Fishing', 'Fish Farming', 'Fish Vendor', 'Fish Worker'])->map(fn($v) => (object)['value' => $v, 'label' => $v])) as $opt)
-                        <option value="{{ $opt->value ?? $opt }}" {{ old('fisherfolk_type', $beneficiary->fisherfolk_type ?? '') == ($opt->value ?? $opt) ? 'selected' : '' }}>{{ $opt->label ?? $opt }}</option>
+                    @foreach(['Capture Fishing', 'Aquaculture', 'Post-Harvest'] as $opt)
+                        <option value="{{ $opt }}" {{ old('fisherfolk_type', $beneficiary->fisherfolk_type ?? '') === $opt ? 'selected' : '' }}>{{ $opt }}</option>
                     @endforeach
                 </select>
-                @error('fisherfolk_type')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
+                @error('fisherfolk_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-
-            {{-- Main Fishing Gear --}}
             <div class="col-md-4">
-                <label for="main_fishing_gear" class="form-label">Main Fishing Gear</label>
-                <input type="text"
-                       class="form-control @error('main_fishing_gear') is-invalid @enderror"
-                       id="main_fishing_gear" name="main_fishing_gear"
-                       value="{{ old('main_fishing_gear', $beneficiary->main_fishing_gear ?? '') }}">
-                @error('main_fishing_gear')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
+                <label for="length_of_residency_months" class="form-label">Residency (Months) <span class="text-danger">*</span></label>
+                <input type="number" class="form-control @error('length_of_residency_months') is-invalid @enderror"
+                       id="length_of_residency_months" name="length_of_residency_months"
+                       value="{{ old('length_of_residency_months', $beneficiary->length_of_residency_months ?? '') }}" min="6">
+                @error('length_of_residency_months')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                <small class="text-muted">Min 6 months per RA 8550</small>
             </div>
-
-            {{-- Has Fishing Vessel --}}
             <div class="col-md-4">
+                <label for="main_fishing_gear" class="form-label">Fishing Gear Type</label>
+                <input type="text" class="form-control @error('main_fishing_gear') is-invalid @enderror"
+                       id="main_fishing_gear" name="main_fishing_gear" value="{{ old('main_fishing_gear', $beneficiary->main_fishing_gear ?? '') }}">
+                @error('main_fishing_gear')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-md-2">
                 <div class="form-check mt-4">
                     <input type="hidden" name="has_fishing_vessel" value="0">
-                    <input type="checkbox"
-                           class="form-check-input @error('has_fishing_vessel') is-invalid @enderror"
-                           id="has_fishing_vessel" name="has_fishing_vessel" value="1"
+                    <input type="checkbox" class="form-check-input" id="has_fishing_vessel" name="has_fishing_vessel" value="1"
                            {{ old('has_fishing_vessel', $beneficiary->has_fishing_vessel ?? false) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="has_fishing_vessel">Has Fishing Vessel</label>
-                    @error('has_fishing_vessel')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
+                    <label class="form-check-label" for="has_fishing_vessel">Has Vessel</label>
                 </div>
+            </div>
+            <div class="col-md-3" id="vessel-type-wrapper" style="display: none;">
+                <label for="fishing_vessel_type" class="form-label">Vessel Type</label>
+                <input type="text" class="form-control" id="fishing_vessel_type" name="fishing_vessel_type"
+                       value="{{ old('fishing_vessel_type', $beneficiary->fishing_vessel_type ?? '') }}">
+            </div>
+            <div class="col-md-3" id="vessel-tonnage-wrapper" style="display: none;">
+                <label for="fishing_vessel_tonnage" class="form-label">Gross Tonnage</label>
+                <input type="number" class="form-control" id="fishing_vessel_tonnage" name="fishing_vessel_tonnage"
+                       value="{{ old('fishing_vessel_tonnage', $beneficiary->fishing_vessel_tonnage ?? '') }}" step="0.01" min="0">
             </div>
         </div>
     </div>
 </div>
 
-{{-- SECTION 5 — Association & Emergency Contact --}}
-<div class="card border-0 shadow-sm mb-4">
+{{-- SECTION 5 — DAR/ARB Information --}}
+<div class="card border-0 shadow-sm mb-4" id="dar-section" style="display: none;">
     <div class="card-header bg-white fw-semibold">
-        <i class="bi bi-shield-check me-1"></i> Association &amp; Emergency Contact
+        <i class="bi bi-file-earmark-text me-1"></i> DAR/ARB Information
+        <span class="badge bg-warning text-dark ms-2">CLOA/EP Required</span>
     </div>
     <div class="card-body">
+        <div class="alert alert-warning mb-3">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            <strong>Note:</strong> CLOA or EP number is REQUIRED for DAR beneficiaries as it is the legal proof of land award issued by the MARO/PARO.
+        </div>
         <div class="row g-3">
-            {{-- Association Member --}}
+            <div class="col-md-4">
+                <label for="cloa_ep_number" class="form-label">CLOA / EP Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control @error('cloa_ep_number') is-invalid @enderror"
+                       id="cloa_ep_number" name="cloa_ep_number" value="{{ old('cloa_ep_number', $beneficiary->cloa_ep_number ?? '') }}">
+                @error('cloa_ep_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-md-4">
+                <label for="arb_classification" class="form-label">ARB Classification <span class="text-danger">*</span></label>
+                <select class="form-select @error('arb_classification') is-invalid @enderror" id="arb_classification" name="arb_classification">
+                    <option value="" disabled {{ old('arb_classification', $beneficiary->arb_classification ?? '') === '' ? 'selected' : '' }}>Select...</option>
+                    @foreach(['Agricultural Lessee', 'Regular Farmworker', 'Seasonal Farmworker', 'Other Farmworker', 'Actual Tiller', 'Collective/Cooperative', 'Others'] as $opt)
+                        <option value="{{ $opt }}" {{ old('arb_classification', $beneficiary->arb_classification ?? '') === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                    @endforeach
+                </select>
+                @error('arb_classification')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-md-4">
+                <label for="ownership_scheme" class="form-label">Ownership Scheme <span class="text-danger">*</span></label>
+                <select class="form-select @error('ownership_scheme') is-invalid @enderror" id="ownership_scheme" name="ownership_scheme">
+                    <option value="" disabled {{ old('ownership_scheme', $beneficiary->ownership_scheme ?? '') === '' ? 'selected' : '' }}>Select...</option>
+                    @foreach(['Individual', 'Collective', 'Cooperative'] as $opt)
+                        <option value="{{ $opt }}" {{ old('ownership_scheme', $beneficiary->ownership_scheme ?? '') === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                    @endforeach
+                </select>
+                @error('ownership_scheme')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-md-8">
+                <label for="landholding_description" class="form-label">Landholding Description <span class="text-danger">*</span></label>
+                <textarea class="form-control @error('landholding_description') is-invalid @enderror"
+                          id="landholding_description" name="landholding_description" rows="2">{{ old('landholding_description', $beneficiary->landholding_description ?? '') }}</textarea>
+                @error('landholding_description')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-md-4">
+                <label for="land_area_awarded_hectares" class="form-label">Land Area Awarded (Ha) <span class="text-danger">*</span></label>
+                <input type="number" class="form-control @error('land_area_awarded_hectares') is-invalid @enderror"
+                       id="land_area_awarded_hectares" name="land_area_awarded_hectares"
+                       value="{{ old('land_area_awarded_hectares', $beneficiary->land_area_awarded_hectares ?? '') }}" step="0.01" min="0.01">
+                @error('land_area_awarded_hectares')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-md-6">
+                <label for="barc_membership_status" class="form-label">BARC Membership Status</label>
+                <input type="text" class="form-control @error('barc_membership_status') is-invalid @enderror"
+                       id="barc_membership_status" name="barc_membership_status"
+                       value="{{ old('barc_membership_status', $beneficiary->barc_membership_status ?? '') }}">
+                @error('barc_membership_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- SECTION 6 — Association Membership --}}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-people me-1"></i> Association Membership</div>
+    <div class="card-body">
+        <div class="row g-3">
             <div class="col-md-6">
                 <div class="form-check form-switch mt-2">
                     <input type="hidden" name="association_member" value="0">
-                    <input type="checkbox"
-                           class="form-check-input @error('association_member') is-invalid @enderror"
-                           id="association_member" name="association_member" value="1"
+                    <input type="checkbox" class="form-check-input" id="association_member" name="association_member" value="1"
                            {{ old('association_member', $beneficiary->association_member ?? false) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="association_member">Association Member</label>
-                    @error('association_member')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
+                    <label class="form-check-label" for="association_member">Member of Farmers/Fisherfolk Association</label>
                 </div>
             </div>
-
-            {{-- Association Name (toggle via JS) --}}
             <div class="col-md-6" id="association-name-wrapper" style="display: none;">
                 <label for="association_name" class="form-label">Association Name <span class="text-danger">*</span></label>
-                <input type="text"
-                       class="form-control @error('association_name') is-invalid @enderror"
-                       id="association_name" name="association_name"
-                       value="{{ old('association_name', $beneficiary->association_name ?? '') }}">
-                @error('association_name')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-
-            {{-- Emergency Contact Name --}}
-            <div class="col-md-6">
-                <label for="emergency_contact_name" class="form-label">Emergency Contact Name <span class="text-danger">*</span></label>
-                <input type="text"
-                       class="form-control @error('emergency_contact_name') is-invalid @enderror"
-                       id="emergency_contact_name" name="emergency_contact_name"
-                       value="{{ old('emergency_contact_name', $beneficiary->emergency_contact_name ?? '') }}" required>
-                @error('emergency_contact_name')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-
-            {{-- Emergency Contact Number --}}
-            <div class="col-md-6">
-                <label for="emergency_contact_number" class="form-label">Emergency Contact Number <span class="text-danger">*</span></label>
-                <input type="text"
-                       class="form-control @error('emergency_contact_number') is-invalid @enderror"
-                       id="emergency_contact_number" name="emergency_contact_number"
-                       placeholder="09XXXXXXXXX"
-                       value="{{ old('emergency_contact_number', $beneficiary->emergency_contact_number ?? '') }}" required>
-                @error('emergency_contact_number')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
+                <input type="text" class="form-control @error('association_name') is-invalid @enderror"
+                       id="association_name" name="association_name" value="{{ old('association_name', $beneficiary->association_name ?? '') }}">
+                @error('association_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
         </div>
     </div>
@@ -412,29 +361,52 @@
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const classification       = document.getElementById('classification');
-        const farmerSection        = document.getElementById('farmer-section');
-        const fisherfolkSection    = document.getElementById('fisherfolk-section');
-        const associationCheckbox  = document.getElementById('association_member');
-        const associationWrapper   = document.getElementById('association-name-wrapper');
+document.addEventListener('DOMContentLoaded', function () {
+    const agencySelect = document.getElementById('agency_id');
+    const classification = document.getElementById('classification');
+    const farmerSection = document.getElementById('farmer-section');
+    const fisherfolkSection = document.getElementById('fisherfolk-section');
+    const darSection = document.getElementById('dar-section');
+    const associationCheckbox = document.getElementById('association_member');
+    const associationWrapper = document.getElementById('association-name-wrapper');
+    const hasVesselCheckbox = document.getElementById('has_fishing_vessel');
+    const vesselTypeWrapper = document.getElementById('vessel-type-wrapper');
+    const vesselTonnageWrapper = document.getElementById('vessel-tonnage-wrapper');
 
-        function toggleSections() {
-            const val = classification.value;
-            farmerSection.style.display     = (val === 'Farmer' || val === 'Both') ? '' : 'none';
-            fisherfolkSection.style.display  = (val === 'Fisherfolk' || val === 'Both') ? '' : 'none';
-        }
+    function getSelectedAgencyName() {
+        const selected = agencySelect.options[agencySelect.selectedIndex];
+        return selected ? (selected.dataset.name || '').toUpperCase() : '';
+    }
 
-        function toggleAssociation() {
-            associationWrapper.style.display = associationCheckbox.checked ? '' : 'none';
-        }
+    function toggleSections() {
+        const agencyName = getSelectedAgencyName();
+        const classVal = classification.value;
+        const showFarmer = agencyName === 'DA' || classVal === 'Farmer' || classVal === 'Both';
+        const showFisherfolk = agencyName === 'BFAR' || classVal === 'Fisherfolk' || classVal === 'Both';
+        const showDar = agencyName === 'DAR';
+        farmerSection.style.display = showFarmer ? '' : 'none';
+        fisherfolkSection.style.display = showFisherfolk ? '' : 'none';
+        darSection.style.display = showDar ? '' : 'none';
+    }
 
-        classification.addEventListener('change', toggleSections);
-        associationCheckbox.addEventListener('change', toggleAssociation);
+    function toggleAssociation() {
+        associationWrapper.style.display = associationCheckbox.checked ? '' : 'none';
+    }
 
-        // Run on page load to restore state from old() / $beneficiary
-        toggleSections();
-        toggleAssociation();
-    });
+    function toggleVesselFields() {
+        const show = hasVesselCheckbox.checked;
+        vesselTypeWrapper.style.display = show ? '' : 'none';
+        vesselTonnageWrapper.style.display = show ? '' : 'none';
+    }
+
+    agencySelect.addEventListener('change', toggleSections);
+    classification.addEventListener('change', toggleSections);
+    associationCheckbox.addEventListener('change', toggleAssociation);
+    hasVesselCheckbox.addEventListener('change', toggleVesselFields);
+
+    toggleSections();
+    toggleAssociation();
+    toggleVesselFields();
+});
 </script>
 @endpush

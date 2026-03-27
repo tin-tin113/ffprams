@@ -74,6 +74,7 @@
                                 @foreach($resourceTypes as $type)
                                     <option value="{{ $type->id }}"
                                             data-unit="{{ $type->unit }}"
+                                            data-agency-id="{{ $type->agency_id }}"
                                             {{ old('resource_type_id') == $type->id ? 'selected' : '' }}>
                                         {{ $type->name }} ({{ $type->unit }}) — {{ $type->agency->name ?? 'N/A' }}
                                     </option>
@@ -84,6 +85,26 @@
                         @error('resource_type_id')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
+                    </div>
+
+                    {{-- Program Name --}}
+                    <div class="col-md-6">
+                        <label for="program_name_id" class="form-label">Program Name <span class="text-danger">*</span></label>
+                        <select class="form-select @error('program_name_id') is-invalid @enderror"
+                                id="program_name_id" name="program_name_id" required>
+                            <option value="" disabled {{ old('program_name_id') ? '' : 'selected' }}>Select Program Name</option>
+                            @foreach($programNames as $program)
+                                <option value="{{ $program->id }}"
+                                        data-agency-id="{{ $program->agency_id }}"
+                                        {{ old('program_name_id') == $program->id ? 'selected' : '' }}>
+                                    {{ $program->name }} — {{ $program->agency->name ?? 'N/A' }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('program_name_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <small class="text-muted">Filtered by resource type's agency</small>
                     </div>
 
                     {{-- Distribution Date --}}
@@ -129,11 +150,13 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const resourceSelect = document.getElementById('resource_type_id');
+    const programSelect = document.getElementById('program_name_id');
     const unitDisplay = document.getElementById('unitDisplay');
     const totalFundGroup = document.getElementById('totalFundGroup');
     const totalFundInput = document.getElementById('total_fund_amount');
     const typeRadios = document.querySelectorAll('input[name="type"]');
-    const allOptions = Array.from(resourceSelect.options);
+    const allResourceOptions = Array.from(resourceSelect.options);
+    const allProgramOptions = Array.from(programSelect.options);
 
     function updateUnit() {
         const selected = resourceSelect.options[resourceSelect.selectedIndex];
@@ -142,6 +165,30 @@ document.addEventListener('DOMContentLoaded', function () {
             unitDisplay.classList.remove('d-none');
         } else {
             unitDisplay.classList.add('d-none');
+        }
+    }
+
+    function filterProgramsByAgency() {
+        const selected = resourceSelect.options[resourceSelect.selectedIndex];
+        const agencyId = selected ? selected.dataset.agencyId : '';
+        const currentValue = programSelect.value;
+
+        programSelect.innerHTML = '';
+
+        allProgramOptions.forEach(function (opt) {
+            if (opt.value === '') {
+                programSelect.appendChild(opt.cloneNode(true));
+            } else if (!agencyId || opt.dataset.agencyId === agencyId) {
+                programSelect.appendChild(opt.cloneNode(true));
+            }
+        });
+
+        // Restore selection if still valid
+        const exists = Array.from(programSelect.options).some(o => o.value === currentValue);
+        if (exists) {
+            programSelect.value = currentValue;
+        } else {
+            programSelect.selectedIndex = 0;
         }
     }
 
@@ -161,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const currentValue = resourceSelect.value;
         resourceSelect.innerHTML = '';
 
-        allOptions.forEach(function (opt) {
+        allResourceOptions.forEach(function (opt) {
             if (opt.value === '') {
                 resourceSelect.appendChild(opt.cloneNode(true));
             } else if (isFinancial && opt.dataset.unit === 'PHP') {
@@ -180,13 +227,18 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         updateUnit();
+        filterProgramsByAgency();
     }
 
     typeRadios.forEach(function (radio) {
         radio.addEventListener('change', toggleType);
     });
 
-    resourceSelect.addEventListener('change', updateUnit);
+    resourceSelect.addEventListener('change', function () {
+        updateUnit();
+        filterProgramsByAgency();
+    });
+
     toggleType();
 });
 </script>

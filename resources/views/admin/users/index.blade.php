@@ -36,7 +36,7 @@
                                 <td class="fw-semibold">{{ $user->name }}</td>
                                 <td>{{ $user->email }}</td>
                                 <td>
-                                    <span class="badge {{ $user->role === 'admin' ? 'bg-danger' : 'bg-primary' }}">
+                                    <span class="badge {{ $user->role === 'admin' ? 'bg-danger' : ($user->role === 'viewer' ? 'badge-viewer' : 'bg-primary') }}">
                                         {{ ucfirst($user->role) }}
                                     </span>
                                 </td>

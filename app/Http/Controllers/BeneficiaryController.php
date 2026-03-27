@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\BeneficiaryRequest;
+use App\Models\Agency;
 use App\Models\Barangay;
 use App\Models\Beneficiary;
 use App\Models\FormFieldOption;
 use App\Services\AuditLogService;
+use App\Services\DuplicateDetectionService;
 use App\Services\SemaphoreService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -19,6 +21,7 @@ class BeneficiaryController extends Controller
     public function __construct(
         private AuditLogService $audit,
         private SemaphoreService $sms,
+        private DuplicateDetectionService $duplicateService,
     ) {}
 
     /**
@@ -26,14 +29,17 @@ class BeneficiaryController extends Controller
      */
     public function index(Request $request): View
     {
-        $beneficiaries = Beneficiary::with('barangay')
+        $beneficiaries = Beneficiary::with(['barangay', 'agency'])
             ->when($request->filled('barangay_id'), fn ($q) => $q->where('barangay_id', $request->barangay_id))
+            ->when($request->filled('agency_id'), fn ($q) => $q->where('agency_id', $request->agency_id))
             ->when($request->filled('classification'), fn ($q) => $q->where('classification', $request->classification))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->when($request->filled('search'), function ($q) use ($request) {
                 $q->where(function ($q) use ($request) {
                     $q->where('full_name', 'like', "%{$request->search}%")
-                      ->orWhere('government_id', 'like', "%{$request->search}%");
+                      ->orWhere('rsbsa_number', 'like', "%{$request->search}%")
+                      ->orWhere('fishr_number', 'like', "%{$request->search}%")
+                      ->orWhere('cloa_ep_number', 'like', "%{$request->search}%");
                 });
             })
             ->orderByDesc('created_at')
@@ -41,8 +47,9 @@ class BeneficiaryController extends Controller
             ->withQueryString();
 
         $barangays = Barangay::orderBy('name')->get();
+        $agencies = Agency::active()->orderBy('name')->get();
 
-        return view('beneficiaries.index', compact('beneficiaries', 'barangays'));
+        return view('beneficiaries.index', compact('beneficiaries', 'barangays', 'agencies'));
     }
 
     /**
@@ -51,9 +58,10 @@ class BeneficiaryController extends Controller
     public function create(): View
     {
         $barangays = Barangay::orderBy('name')->get();
+        $agencies = Agency::active()->orderBy('name')->get();
         $fieldOptions = $this->getFormFieldOptions();
 
-        return view('beneficiaries.create', compact('barangays', 'fieldOptions'));
+        return view('beneficiaries.create', compact('barangays', 'agencies', 'fieldOptions'));
     }
 
     /**
@@ -61,19 +69,30 @@ class BeneficiaryController extends Controller
      */
     public function store(BeneficiaryRequest $request): RedirectResponse
     {
-        // Check duplicate government_id including soft-deleted records
-        $duplicate = Beneficiary::withTrashed()
-            ->where('government_id', $request->government_id)
-            ->exists();
+        $validated = $request->validated();
 
-        if ($duplicate) {
-            return back()->withInput()->withErrors([
-                'government_id' => 'A beneficiary with this Government ID already exists.',
-            ]);
+        // Check for potential duplicates before creating - BLOCK if found
+        $duplicates = $this->duplicateService->findPotentialDuplicates($validated);
+
+        if ($duplicates->isNotEmpty()) {
+            // Get the highest-scoring match
+            $bestMatch = $duplicates->sortByDesc('score')->first();
+            $existing = $bestMatch['beneficiary'];
+
+            $message = "Registration blocked: A potential duplicate record already exists. ";
+            $message .= "Existing beneficiary: {$existing->full_name}";
+            if ($existing->barangay) {
+                $message .= " (Barangay {$existing->barangay->name})";
+            }
+            $message .= ". Match type: {$bestMatch['match_type']}, Score: {$bestMatch['score']}%.";
+
+            return redirect()->route('beneficiaries.show', $existing)
+                ->with('warning', $message . ' Please verify and update this existing record if needed.');
         }
 
-        $beneficiary = DB::transaction(function () use ($request) {
-            $beneficiary = Beneficiary::create($request->validated());
+        // No duplicates - proceed with registration
+        $beneficiary = DB::transaction(function () use ($validated) {
+            $beneficiary = Beneficiary::create(array_merge($validated, ['status' => 'Active']));
 
             $this->audit->log(
                 auth()->id(),
@@ -87,10 +106,11 @@ class BeneficiaryController extends Controller
             return $beneficiary;
         });
 
-        // SMS notification (outside transaction — non-critical)
+        // Send SMS notification
+        $agencyName = $beneficiary->agency?->name ?? 'government';
         $this->sms->sendSms(
             $beneficiary->contact_number,
-            "Hello {$beneficiary->full_name}, you have been successfully registered as a {$beneficiary->classification} beneficiary of Enrique B. Magalona. For inquiries, contact the Municipal Agriculture Office.",
+            "Hello {$beneficiary->full_name}, you have been successfully registered as a {$beneficiary->classification} beneficiary under {$agencyName} in Enrique B. Magalona. For inquiries, contact the Municipal Agriculture Office.",
             $beneficiary->id,
         );
 
@@ -105,6 +125,7 @@ class BeneficiaryController extends Controller
     {
         $beneficiary->load([
             'barangay',
+            'agency',
             'allocations.distributionEvent.resourceType.agency',
             'smsLogs' => fn ($q) => $q->latest('sent_at')->limit(5),
         ]);
@@ -118,9 +139,10 @@ class BeneficiaryController extends Controller
     public function edit(Beneficiary $beneficiary): View
     {
         $barangays = Barangay::orderBy('name')->get();
+        $agencies = Agency::active()->orderBy('name')->get();
         $fieldOptions = $this->getFormFieldOptions();
 
-        return view('beneficiaries.edit', compact('beneficiary', 'barangays', 'fieldOptions'));
+        return view('beneficiaries.edit', compact('beneficiary', 'barangays', 'agencies', 'fieldOptions'));
     }
 
     /**
@@ -198,12 +220,6 @@ class BeneficiaryController extends Controller
     {
         $beneficiary->load('barangay');
 
-        $latestApproved = $beneficiary->fieldAssessments()
-            ->with('recommendedPurpose')
-            ->where('approval_status', 'approved')
-            ->latest('approved_at')
-            ->first();
-
         return response()->json([
             'id'                        => $beneficiary->id,
             'full_name'                 => $beneficiary->full_name,
@@ -212,23 +228,56 @@ class BeneficiaryController extends Controller
             'contact_number'            => $beneficiary->contact_number,
             'rsbsa_number'              => $beneficiary->isFarmer() ? $beneficiary->rsbsa_number : null,
             'fishr_number'              => $beneficiary->isFisherfolk() ? $beneficiary->fishr_number : null,
-            'approved_assessments_count' => $beneficiary->fieldAssessments()->where('approval_status', 'approved')->count(),
-            'latest_approved_assessment' => $latestApproved ? [
-                'recommended_purpose_name' => $latestApproved->recommendedPurpose->name ?? null,
-                'recommended_amount'       => $latestApproved->recommended_amount,
-            ] : null,
         ]);
     }
 
     private function getFormFieldOptions(): array
     {
-        $fields = ['id_type', 'highest_education', 'farm_type', 'farm_ownership', 'fisherfolk_type', 'civil_status'];
+        $fields = [
+            'farm_type',
+            'farm_ownership',
+            'fisherfolk_type',
+            'civil_status',
+            'arb_classification',
+            'ownership_scheme',
+        ];
         $options = [];
 
         foreach ($fields as $field) {
-            $options[$field] = FormFieldOption::optionsFor($field);
+            $dbOptions = FormFieldOption::optionsFor($field);
+
+            // If no DB options, use reference document defaults
+            if ($dbOptions->isEmpty()) {
+                $options[$field] = $this->getDefaultOptions($field);
+            } else {
+                $options[$field] = $dbOptions;
+            }
         }
 
         return $options;
+    }
+
+    private function getDefaultOptions(string $field): \Illuminate\Support\Collection
+    {
+        $defaults = [
+            'farm_ownership' => ['Registered Owner', 'Tenant', 'Lessee'],
+            'farm_type' => ['Irrigated', 'Rainfed Upland', 'Rainfed Lowland'],
+            'fisherfolk_type' => ['Capture Fishing', 'Aquaculture', 'Post-Harvest'],
+            'civil_status' => ['Single', 'Married', 'Widowed', 'Separated'],
+            'arb_classification' => [
+                'Agricultural Lessee',
+                'Regular Farmworker',
+                'Seasonal Farmworker',
+                'Other Farmworker',
+                'Actual Tiller',
+                'Collective/Cooperative',
+                'Others',
+            ],
+            'ownership_scheme' => ['Individual', 'Collective', 'Cooperative'],
+        ];
+
+        $values = $defaults[$field] ?? [];
+
+        return collect($values)->map(fn ($v) => (object) ['value' => $v, 'label' => $v]);
     }
 }

@@ -28,11 +28,6 @@ class AssistancePurpose extends Model
         return $this->hasMany(Allocation::class);
     }
 
-    public function fieldAssessments(): HasMany
-    {
-        return $this->hasMany(FieldAssessment::class, 'recommended_assistance_purpose_id');
-    }
-
     // ── Scopes ────────────────────────────────────
 
     public function scopeActive(Builder $query): Builder

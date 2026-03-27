@@ -2,16 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Agency extends Model
+class ProgramName extends Model
 {
     protected $fillable = [
+        'agency_id',
         'name',
-        'full_name',
-        'description',
         'is_active',
     ];
 
@@ -24,24 +24,14 @@ class Agency extends Model
 
     // ── Relationships ─────────────────────────────
 
-    public function resourceTypes(): HasMany
+    public function agency(): BelongsTo
     {
-        return $this->hasMany(ResourceType::class);
+        return $this->belongsTo(Agency::class);
     }
 
-    public function programNames(): HasMany
+    public function distributionEvents(): HasMany
     {
-        return $this->hasMany(ProgramName::class);
-    }
-
-    public function beneficiaries(): HasMany
-    {
-        return $this->hasMany(Beneficiary::class);
-    }
-
-    public function users(): HasMany
-    {
-        return $this->hasMany(User::class);
+        return $this->hasMany(DistributionEvent::class);
     }
 
     // ── Scopes ────────────────────────────────────
@@ -49,5 +39,10 @@ class Agency extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
+    }
+
+    public function scopeForAgency(Builder $query, int $agencyId): Builder
+    {
+        return $query->where('agency_id', $agencyId);
     }
 }

@@ -19,8 +19,6 @@ class Allocation extends Model
         'distributed_at',
         'remarks',
         'assistance_purpose_id',
-        'field_assessment_id',
-        'assessed_by',
     ];
 
     protected function casts(): array
@@ -56,15 +54,5 @@ class Allocation extends Model
     public function assistancePurpose(): BelongsTo
     {
         return $this->belongsTo(AssistancePurpose::class);
-    }
-
-    public function fieldAssessment(): BelongsTo
-    {
-        return $this->belongsTo(FieldAssessment::class);
-    }
-
-    public function assessedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'assessed_by');
     }
 }

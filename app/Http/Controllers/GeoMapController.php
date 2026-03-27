@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Agency;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -13,20 +15,29 @@ class GeoMapController extends Controller
      */
     public function index(): View
     {
-        return view('geo-map.index');
+        $agencies = Agency::active()->orderBy('name')->get();
+
+        return view('geo-map.index', compact('agencies'));
     }
 
     /**
      * Return aggregated barangay data as JSON for the Leaflet map.
      */
-    public function mapData(): JsonResponse
+    public function mapData(Request $request): JsonResponse
     {
+        $agencyFilter = $request->input('agency_id');
+
         $barangays = DB::table('barangays')
-            ->leftJoin('beneficiaries', function ($join) {
+            ->leftJoin('beneficiaries', function ($join) use ($agencyFilter) {
                 $join->on('barangays.id', '=', 'beneficiaries.barangay_id')
                     ->whereNull('beneficiaries.deleted_at')
                     ->where('beneficiaries.status', '=', 'Active');
+
+                if ($agencyFilter) {
+                    $join->where('beneficiaries.agency_id', '=', $agencyFilter);
+                }
             })
+            ->leftJoin('agencies', 'beneficiaries.agency_id', '=', 'agencies.id')
             ->leftJoin('distribution_events', function ($join) {
                 $join->on('barangays.id', '=', 'distribution_events.barangay_id')
                     ->whereNull('distribution_events.deleted_at');
@@ -48,8 +59,11 @@ class GeoMapController extends Controller
             ->selectRaw("COUNT(DISTINCT CASE WHEN beneficiaries.classification = 'Both' THEN beneficiaries.id END) as total_both")
             ->selectRaw("COUNT(DISTINCT CASE WHEN beneficiaries.classification IN ('Farmer', 'Both') THEN beneficiaries.id END) as total_farmers")
             ->selectRaw("COUNT(DISTINCT CASE WHEN beneficiaries.classification IN ('Fisherfolk', 'Both') THEN beneficiaries.id END) as total_fisherfolk")
-            // Household
-            ->selectRaw('COALESCE(SUM(DISTINCT CASE WHEN beneficiaries.id IS NOT NULL THEN beneficiaries.household_size ELSE 0 END), 0) as total_household_members')
+            // Agency breakdown
+            ->selectRaw("COUNT(DISTINCT CASE WHEN UPPER(agencies.name) = 'DA' THEN beneficiaries.id END) as total_da")
+            ->selectRaw("COUNT(DISTINCT CASE WHEN UPPER(agencies.name) = 'BFAR' THEN beneficiaries.id END) as total_bfar")
+            ->selectRaw("COUNT(DISTINCT CASE WHEN UPPER(agencies.name) = 'DAR' THEN beneficiaries.id END) as total_dar")
+            ->selectRaw("COUNT(DISTINCT CASE WHEN agencies.name IS NULL THEN beneficiaries.id END) as total_unassigned")
             // Distribution events
             ->selectRaw('COUNT(DISTINCT distribution_events.id) as total_events')
             ->selectRaw("COUNT(DISTINCT CASE WHEN distribution_events.status = 'Completed' THEN distribution_events.id END) as events_completed")
@@ -84,18 +98,7 @@ class GeoMapController extends Controller
             ->groupBy('distribution_events.barangay_id')
             ->pluck('resource_names', 'barangay_id');
 
-        // Compute household sizes (need separate query to avoid DISTINCT issues)
-        $householdData = DB::table('beneficiaries')
-            ->whereNull('deleted_at')
-            ->where('status', 'Active')
-            ->select('barangay_id')
-            ->selectRaw('SUM(household_size) as total_household')
-            ->selectRaw('ROUND(AVG(household_size), 1) as avg_household')
-            ->groupBy('barangay_id')
-            ->get()
-            ->keyBy('barangay_id');
-
-        $result = $barangays->map(function ($barangay) use ($resourcesByBarangay, $householdData) {
+        $result = $barangays->map(function ($barangay) use ($resourcesByBarangay) {
             if ($barangay->has_completed) {
                 $status = 'completed';
                 $pinColor = '#28a745';
@@ -113,7 +116,6 @@ class GeoMapController extends Controller
             $totalBeneficiaries = (int) $barangay->total_beneficiaries;
             $totalDistributed = (int) $barangay->total_distributed;
             $totalAllocations = (int) $barangay->total_allocations;
-            $hh = $householdData[$barangay->id] ?? null;
 
             // Coverage rate: what % of beneficiaries have received at least one distribution
             $coverageRate = $totalBeneficiaries > 0
@@ -125,16 +127,18 @@ class GeoMapController extends Controller
                 'name'                   => $barangay->name,
                 'latitude'               => $barangay->latitude,
                 'longitude'              => $barangay->longitude,
-                // Beneficiary breakdown
+                // Beneficiary breakdown by classification
                 'total_beneficiaries'    => $totalBeneficiaries,
                 'total_farmers'          => (int) $barangay->total_farmers,
                 'total_fisherfolk'       => (int) $barangay->total_fisherfolk,
                 'total_farmers_only'     => (int) $barangay->total_farmers_only,
                 'total_fisherfolk_only'  => (int) $barangay->total_fisherfolk_only,
                 'total_both'             => (int) $barangay->total_both,
-                // Household
-                'total_household_members' => $hh ? (int) $hh->total_household : 0,
-                'avg_household_size'      => $hh ? (float) $hh->avg_household : 0,
+                // Beneficiary breakdown by agency
+                'total_da'               => (int) $barangay->total_da,
+                'total_bfar'             => (int) $barangay->total_bfar,
+                'total_dar'              => (int) $barangay->total_dar,
+                'total_unassigned'       => (int) $barangay->total_unassigned,
                 // Distribution events breakdown
                 'total_events'           => (int) $barangay->total_events,
                 'events_completed'       => (int) $barangay->events_completed,

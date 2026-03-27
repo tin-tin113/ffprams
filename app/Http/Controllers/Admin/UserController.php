@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UserStoreRequest;
 use App\Http\Requests\UserUpdateRequest;
+use App\Models\Agency;
 use App\Models\User;
 use App\Services\AuditLogService;
 use Illuminate\Http\RedirectResponse;
@@ -18,26 +19,35 @@ class UserController extends Controller
 
     public function index(): View
     {
-        $users = User::orderBy('created_at', 'desc')->get();
+        $users = User::with('agency')->orderBy('created_at', 'desc')->get();
 
         return view('admin.users.index', compact('users'));
     }
 
     public function create(): View
     {
-        return view('admin.users.create');
+        $agencies = Agency::active()->orderBy('name')->get();
+
+        return view('admin.users.create', compact('agencies'));
     }
 
     public function store(UserStoreRequest $request): RedirectResponse
     {
-        $user = User::create($request->validated());
+        $data = $request->validated();
+
+        // Only set agency_id for viewer role
+        if ($request->input('role') !== 'viewer') {
+            $data['agency_id'] = null;
+        }
+
+        $user = User::create($data);
 
         $this->audit->log(
             userId:    $request->user()->id,
             action:    'created',
             tableName: 'users',
             recordId:  $user->id,
-            newValues: ['name' => $user->name, 'email' => $user->email, 'role' => $user->role],
+            newValues: ['name' => $user->name, 'email' => $user->email, 'role' => $user->role, 'agency_id' => $user->agency_id],
         );
 
         return redirect()
@@ -47,14 +57,21 @@ class UserController extends Controller
 
     public function edit(User $user): View
     {
-        return view('admin.users.edit', compact('user'));
+        $agencies = Agency::active()->orderBy('name')->get();
+
+        return view('admin.users.edit', compact('user', 'agencies'));
     }
 
     public function update(UserUpdateRequest $request, User $user): RedirectResponse
     {
-        $oldValues = $user->only(['name', 'email', 'role']);
+        $oldValues = $user->only(['name', 'email', 'role', 'agency_id']);
 
-        $data = $request->safe()->only(['name', 'email', 'role']);
+        $data = $request->safe()->only(['name', 'email', 'role', 'agency_id']);
+
+        // Only set agency_id for viewer role
+        if ($request->input('role') !== 'viewer') {
+            $data['agency_id'] = null;
+        }
 
         if ($request->filled('password')) {
             $data['password'] = $request->validated('password');
@@ -68,7 +85,7 @@ class UserController extends Controller
             tableName: 'users',
             recordId:  $user->id,
             oldValues: $oldValues,
-            newValues: $user->only(['name', 'email', 'role']),
+            newValues: $user->only(['name', 'email', 'role', 'agency_id']),
         );
 
         return redirect()
@@ -91,7 +108,7 @@ class UserController extends Controller
             action:    'deleted',
             tableName: 'users',
             recordId:  $user->id,
-            oldValues: $user->only(['name', 'email', 'role']),
+            oldValues: $user->only(['name', 'email', 'role', 'agency_id']),
         );
 
         $user->delete();

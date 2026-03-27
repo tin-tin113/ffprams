@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             BarangaySeeder::class,
             AgencySeeder::class,
+            ProgramNameSeeder::class,
             ResourceTypeSeeder::class,
             AssistancePurposeSeeder::class,
             FormFieldOptionSeeder::class,

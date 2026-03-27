@@ -473,75 +473,11 @@
     </div>
 
     {{-- ============================================================ --}}
-    {{-- REPORT 8 — Field Assessment Activity by Staff --}}
+    {{-- REPORT 8 — Financial Assistance Distribution by Purpose --}}
     {{-- ============================================================ --}}
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <span class="fw-semibold"><i class="bi bi-clipboard-check me-1"></i> Report 8: Field Assessment Activity by Staff</span>
-            <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
-                <i class="bi bi-printer me-1"></i> Print
-            </button>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>#</th>
-                            <th>Staff Name</th>
-                            <th class="text-center">Total Visits</th>
-                            <th class="text-center">Eligible</th>
-                            <th class="text-center">Not Eligible</th>
-                            <th class="text-center">Pending</th>
-                            <th class="text-center">Approved</th>
-                            <th class="text-center">Rejected</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($assessmentByStaff as $row)
-                            <tr>
-                                <td class="text-muted">{{ $loop->iteration }}</td>
-                                <td>{{ $row->name }}</td>
-                                <td class="text-center fw-bold">{{ number_format($row->total_visits) }}</td>
-                                <td class="text-center"><span class="badge bg-success">{{ $row->eligible_count }}</span></td>
-                                <td class="text-center"><span class="badge bg-secondary">{{ $row->not_eligible_count }}</span></td>
-                                <td class="text-center"><span class="badge bg-warning text-dark">{{ $row->pending_count }}</span></td>
-                                <td class="text-center"><span class="badge bg-primary">{{ $row->approved_count }}</span></td>
-                                <td class="text-center"><span class="badge bg-danger">{{ $row->rejected_count }}</span></td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="8" class="text-center text-muted py-4">
-                                    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
-                                    No field assessment data available.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                    @if($assessmentByStaff->count())
-                        <tfoot class="table-light">
-                            <tr class="fw-bold">
-                                <td colspan="2">Total</td>
-                                <td class="text-center">{{ number_format($assessmentByStaff->sum('total_visits')) }}</td>
-                                <td class="text-center">{{ $assessmentByStaff->sum('eligible_count') }}</td>
-                                <td class="text-center">{{ $assessmentByStaff->sum('not_eligible_count') }}</td>
-                                <td class="text-center">{{ $assessmentByStaff->sum('pending_count') }}</td>
-                                <td class="text-center">{{ $assessmentByStaff->sum('approved_count') }}</td>
-                                <td class="text-center">{{ $assessmentByStaff->sum('rejected_count') }}</td>
-                            </tr>
-                        </tfoot>
-                    @endif
-                </table>
-            </div>
-        </div>
-    </div>
-
-    {{-- ============================================================ --}}
-    {{-- REPORT 9 — Financial Assistance Distribution by Purpose --}}
-    {{-- ============================================================ --}}
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <span class="fw-semibold"><i class="bi bi-cash-coin me-1"></i> Report 9: Financial Assistance Distribution by Purpose</span>
+            <span class="fw-semibold"><i class="bi bi-cash-coin me-1"></i> Report 8: Financial Assistance Distribution by Purpose</span>
             <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> Print
             </button>

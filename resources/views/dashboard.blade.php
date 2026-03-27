@@ -144,43 +144,11 @@
         </div>
     </div>
 
-    {{-- ROW 3 — Field Assessments --}}
+    {{-- ROW 3 — Financial Summary --}}
     <h6 class="text-muted text-uppercase fw-semibold small mb-3 mt-4">
-        <i class="bi bi-clipboard-check me-1"></i> Field Assessments
+        <i class="bi bi-cash-coin me-1"></i> Financial Summary
     </h6>
     <div class="row g-3">
-        <!-- Pending Assessments -->
-        <div class="col-sm-6 col-xl-3">
-            <a href="{{ route('field-assessments.index', ['approval_status' => 'pending']) }}" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="rounded-circle bg-warning bg-opacity-10 p-3 me-3">
-                            <i class="bi bi-clipboard-check text-warning fs-4"></i>
-                        </div>
-                        <div>
-                            <div class="text-muted small">Pending Assessments</div>
-                            <div class="fs-4 fw-bold text-dark">{{ number_format($pendingAssessments) }}</div>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-
-        <!-- Approved Assessments -->
-        <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-check-circle-fill text-success fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Approved Assessments</div>
-                        <div class="fs-4 fw-bold">{{ number_format($approvedAssessments) }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Total Cash Disbursed -->
         <div class="col-sm-6 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
@@ -194,23 +162,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Unassessed Beneficiaries -->
-        <div class="col-sm-6 col-xl-3">
-            <a href="{{ route('beneficiaries.index') }}" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="rounded-circle bg-secondary bg-opacity-10 p-3 me-3">
-                            <i class="bi bi-person-exclamation text-secondary fs-4"></i>
-                        </div>
-                        <div>
-                            <div class="text-muted small">Unassessed Beneficiaries</div>
-                            <div class="fs-4 fw-bold text-dark">{{ number_format($unassessedBeneficiaries) }}</div>
-                        </div>
-                    </div>
-                </div>
-            </a>
         </div>
     </div>
 @endsection

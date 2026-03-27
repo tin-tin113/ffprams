@@ -7,7 +7,6 @@ use App\Models\AssistancePurpose;
 use App\Models\Barangay;
 use App\Models\Beneficiary;
 use App\Models\DistributionEvent;
-use App\Models\FieldAssessment;
 use App\Models\ResourceType;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -126,20 +125,7 @@ class ReportsController extends Controller
             ->orderByDesc('total_amount')
             ->get();
 
-        // REPORT 8 — Field Assessment Summary by Staff
-        $assessmentByStaff = User::select('users.id', 'users.name')
-            ->selectRaw('COUNT(field_assessments.id) as total_visits')
-            ->selectRaw("SUM(CASE WHEN field_assessments.eligibility_status = 'eligible' THEN 1 ELSE 0 END) as eligible_count")
-            ->selectRaw("SUM(CASE WHEN field_assessments.eligibility_status = 'not_eligible' THEN 1 ELSE 0 END) as not_eligible_count")
-            ->selectRaw("SUM(CASE WHEN field_assessments.approval_status = 'pending' THEN 1 ELSE 0 END) as pending_count")
-            ->selectRaw("SUM(CASE WHEN field_assessments.approval_status = 'approved' THEN 1 ELSE 0 END) as approved_count")
-            ->selectRaw("SUM(CASE WHEN field_assessments.approval_status = 'rejected' THEN 1 ELSE 0 END) as rejected_count")
-            ->join('field_assessments', 'users.id', '=', 'field_assessments.assessed_by')
-            ->groupBy('users.id', 'users.name')
-            ->orderByDesc('total_visits')
-            ->get();
-
-        // REPORT 9 — Assistance by Purpose
+        // REPORT 8 — Assistance by Purpose
         $assistanceByPurpose = AssistancePurpose::select(
                 'assistance_purposes.name',
                 'assistance_purposes.category',
@@ -164,7 +150,6 @@ class ReportsController extends Controller
             'currentYear',
             'financialSummary',
             'financialPerBarangay',
-            'assessmentByStaff',
             'assistanceByPurpose',
         ));
     }

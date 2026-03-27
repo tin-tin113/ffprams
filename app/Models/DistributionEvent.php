@@ -14,6 +14,7 @@ class DistributionEvent extends Model
     protected $fillable = [
         'barangay_id',
         'resource_type_id',
+        'program_name_id',
         'distribution_date',
         'status',
         'created_by',
@@ -47,6 +48,11 @@ class DistributionEvent extends Model
     public function resourceType(): BelongsTo
     {
         return $this->belongsTo(ResourceType::class);
+    }
+
+    public function programName(): BelongsTo
+    {
+        return $this->belongsTo(ProgramName::class);
     }
 
     public function createdBy(): BelongsTo

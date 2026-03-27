@@ -12,52 +12,67 @@ class Beneficiary extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'agency_id',
         'full_name',
+        'sex',
+        'date_of_birth',
+        'photo_path',
+        'home_address',
         'barangay_id',
         'classification',
         'contact_number',
-        'household_size',
-        'id_type',
-        'government_id',
         'status',
         'registered_at',
+        'civil_status',
+        'association_member',
+        'association_name',
 
-        // Farmer-Specific (DA RSBSA)
+        // DA/RSBSA fields
         'rsbsa_number',
         'farm_ownership',
         'farm_size_hectares',
         'primary_commodity',
         'farm_type',
+        'organization_membership',
 
-        // Fisherfolk-Specific (BFAR FishR)
+        // BFAR/FishR fields
         'fishr_number',
         'fisherfolk_type',
         'main_fishing_gear',
         'has_fishing_vessel',
+        'fishing_vessel_type',
+        'fishing_vessel_tonnage',
+        'length_of_residency_months',
 
-        // Common
-        'civil_status',
-        'highest_education',
-        'number_of_dependents',
-        'main_income_source',
-        'emergency_contact_name',
-        'emergency_contact_number',
-        'association_member',
-        'association_name',
+        // DAR/ARB fields
+        'cloa_ep_number',
+        'arb_classification',
+        'landholding_description',
+        'land_area_awarded_hectares',
+        'ownership_scheme',
+        'barc_membership_status',
     ];
 
     protected function casts(): array
     {
         return [
-            'registered_at'         => 'date',
-            'has_fishing_vessel'    => 'boolean',
-            'association_member'    => 'boolean',
-            'number_of_dependents'  => 'integer',
-            'farm_size_hectares'    => 'decimal:2',
+            'registered_at'              => 'date',
+            'date_of_birth'              => 'date',
+            'has_fishing_vessel'         => 'boolean',
+            'association_member'         => 'boolean',
+            'farm_size_hectares'         => 'decimal:2',
+            'fishing_vessel_tonnage'     => 'decimal:2',
+            'land_area_awarded_hectares' => 'decimal:2',
+            'length_of_residency_months' => 'integer',
         ];
     }
 
     // ── Relationships ─────────────────────────────
+
+    public function agency(): BelongsTo
+    {
+        return $this->belongsTo(Agency::class);
+    }
 
     public function barangay(): BelongsTo
     {
@@ -74,17 +89,7 @@ class Beneficiary extends Model
         return $this->hasMany(SmsLog::class);
     }
 
-    public function fieldAssessments(): HasMany
-    {
-        return $this->hasMany(FieldAssessment::class);
-    }
-
     // ── Helpers ───────────────────────────────────
-
-    public function hasApprovedAssessment(): bool
-    {
-        return $this->fieldAssessments()->where('approval_status', 'approved')->exists();
-    }
 
     public function isFarmer(): bool
     {
@@ -94,5 +99,20 @@ class Beneficiary extends Model
     public function isFisherfolk(): bool
     {
         return in_array($this->classification, ['Fisherfolk', 'Both'], true);
+    }
+
+    public function isDar(): bool
+    {
+        return $this->agency && strtoupper($this->agency->name) === 'DAR';
+    }
+
+    public function isDa(): bool
+    {
+        return $this->agency && strtoupper($this->agency->name) === 'DA';
+    }
+
+    public function isBfar(): bool
+    {
+        return $this->agency && strtoupper($this->agency->name) === 'BFAR';
     }
 }

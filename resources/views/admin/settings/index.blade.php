@@ -34,6 +34,12 @@
             </button>
         </li>
         <li class="nav-item" role="presentation">
+            <button class="nav-link" id="program-names-tab" data-bs-toggle="tab"
+                    data-bs-target="#programNames" type="button" role="tab">
+                <i class="bi bi-journal-text me-1"></i> Program Names
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
             <button class="nav-link" id="form-fields-tab" data-bs-toggle="tab"
                     data-bs-target="#formFields" type="button" role="tab">
                 <i class="bi bi-ui-checks me-1"></i> Form Fields
@@ -224,7 +230,75 @@
         </div>
 
         {{-- ══════════════════════════════════════════ --}}
-        {{-- TAB 4: FORM FIELDS                        --}}
+        {{-- TAB 4: PROGRAM NAMES                      --}}
+        {{-- ══════════════════════════════════════════ --}}
+        <div class="tab-pane fade" id="programNames" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <span class="fw-semibold"><i class="bi bi-journal-text me-1"></i> Program Names</span>
+                    <button class="btn btn-success btn-sm" onclick="openProgramNameModal()">
+                        <i class="bi bi-plus-lg me-1"></i> Add Program Name
+                    </button>
+                </div>
+                <div class="card-body p-0" id="programNamesContainer">
+                    @php
+                        $groupedPrograms = $programNames->groupBy(fn($pn) => $pn->agency?->name ?? 'Unassigned');
+                    @endphp
+                    @foreach($groupedPrograms as $agencyName => $items)
+                        <div class="px-3 pt-3 pb-1">
+                            <h6 class="text-uppercase text-muted small fw-bold mb-0">
+                                <i class="bi bi-building me-1"></i> {{ $agencyName }}
+                            </h6>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Program Name</th>
+                                        <th>Description</th>
+                                        <th>Status</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($items as $pn)
+                                        <tr id="pn-row-{{ $pn->id }}">
+                                            <td class="fw-semibold">{{ $pn->name }}</td>
+                                            <td class="text-muted small">{{ $pn->description ?? '—' }}</td>
+                                            <td>
+                                                <span class="badge {{ $pn->is_active ? 'bg-success' : 'bg-secondary' }}">
+                                                    {{ $pn->is_active ? 'Active' : 'Inactive' }}
+                                                </span>
+                                            </td>
+                                            <td class="text-end text-nowrap">
+                                                <button class="btn btn-sm btn-outline-warning me-1"
+                                                        onclick="openProgramNameModal({{ $pn->id }}, {{ Js::from($pn) }})">
+                                                    <i class="bi bi-pencil-square"></i> <span class="btn-action-label">Edit</span>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger"
+                                                        onclick="deleteProgramName({{ $pn->id }}, '{{ addslashes($pn->name) }}')">
+                                                    <i class="bi bi-trash"></i> <span class="btn-action-label">Delete</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endforeach
+
+                    @if($programNames->isEmpty())
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                            No program names found.
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        {{-- ══════════════════════════════════════════ --}}
+        {{-- TAB 5: FORM FIELDS                        --}}
         {{-- ══════════════════════════════════════════ --}}
         <div class="tab-pane fade" id="formFields" role="tabpanel">
             <div class="card border-0 shadow-sm">
@@ -444,6 +518,52 @@
     </div>
 
     {{-- ══════════════════════════════════════════════ --}}
+    {{-- PROGRAM NAME MODAL                             --}}
+    {{-- ══════════════════════════════════════════════ --}}
+    <div class="modal fade" id="programNameModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pnModalTitle">Add Program Name</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="pnId">
+                    <div class="mb-3">
+                        <label for="pnName" class="form-label">Program Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="pnName" maxlength="255" placeholder="e.g. Rice Seed Program" required>
+                        <div class="invalid-feedback" id="pnNameError"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="pnAgencyId" class="form-label">Agency <span class="text-danger">*</span></label>
+                        <select class="form-select" id="pnAgencyId" required>
+                            <option value="" disabled selected>Select agency...</option>
+                            @foreach($agencies->where('is_active', true) as $a)
+                                <option value="{{ $a->id }}">{{ $a->name }} — {{ $a->full_name }}</option>
+                            @endforeach
+                        </select>
+                        <div class="invalid-feedback" id="pnAgencyIdError"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="pnDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="pnDescription" rows="2" maxlength="500" placeholder="Optional description..."></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="pnIsActive" checked>
+                        <label class="form-check-label" for="pnIsActive">Active</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" id="pnSaveBtn" onclick="saveProgramName()">
+                        <i class="bi bi-check-lg me-1"></i> Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ══════════════════════════════════════════════ --}}
     {{-- FORM FIELD OPTION MODAL                       --}}
     {{-- ══════════════════════════════════════════════ --}}
     <div class="modal fade" id="formFieldModal" tabindex="-1" aria-hidden="true">
@@ -634,6 +754,20 @@ function renderAgenciesTable(agencies) {
         }
     });
     if (currentVal) rtSelect.value = currentVal;
+
+    // Also refresh the program name modal agency dropdown
+    var pnSelect = document.getElementById('pnAgencyId');
+    var pnCurrentVal = pnSelect.value;
+    pnSelect.innerHTML = '<option value="" disabled selected>Select agency...</option>';
+    agencies.forEach(function (a) {
+        if (a.is_active) {
+            var opt = document.createElement('option');
+            opt.value = a.id;
+            opt.textContent = a.name + ' \u2014 ' + a.full_name;
+            pnSelect.appendChild(opt);
+        }
+    });
+    if (pnCurrentVal) pnSelect.value = pnCurrentVal;
 }
 
 function openAgencyModal(id, data) {
@@ -932,6 +1066,125 @@ function deleteResourceType(id, name) {
             refreshResourceTypes();
         } else {
             showToast(res.data.message || 'Cannot delete resource type.', 'danger');
+        }
+    })
+    .catch(function () { showToast('An unexpected error occurred.', 'danger'); });
+}
+
+// ══════════════════════════════════════════════
+// PROGRAM NAMES — Render & CRUD
+// ══════════════════════════════════════════════
+
+function refreshProgramNames() {
+    fetch(baseUrl + '/program-names/list', { headers: { 'Accept': 'application/json' } })
+        .then(function (r) { return r.json(); })
+        .then(function (programs) { renderProgramNamesTable(programs); });
+}
+
+function renderProgramNamesTable(programs) {
+    var container = document.getElementById('programNamesContainer');
+
+    if (!programs.length) {
+        container.innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-inbox fs-3 d-block mb-2"></i>No program names found.</div>';
+        return;
+    }
+
+    // Group by agency name
+    var grouped = {};
+    programs.forEach(function (pn) {
+        var key = (pn.agency && pn.agency.name) ? pn.agency.name : 'Unassigned';
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(pn);
+    });
+
+    var html = '';
+    Object.keys(grouped).sort().forEach(function (agencyName) {
+        var items = grouped[agencyName];
+
+        html += '<div class="px-3 pt-3 pb-1"><h6 class="text-uppercase text-muted small fw-bold mb-0">'
+            + '<i class="bi bi-building me-1"></i> ' + esc(agencyName) + '</h6></div>';
+        html += '<div class="table-responsive"><table class="table table-hover align-middle mb-0">'
+            + '<thead class="table-light"><tr><th>Program Name</th><th>Description</th><th>Status</th><th class="text-end">Actions</th></tr></thead><tbody>';
+
+        items.forEach(function (pn) {
+            var statusClass = pn.is_active ? 'bg-success' : 'bg-secondary';
+            var statusLabel = pn.is_active ? 'Active' : 'Inactive';
+            html += '<tr id="pn-row-' + pn.id + '">'
+                + '<td class="fw-semibold">' + esc(pn.name) + '</td>'
+                + '<td class="text-muted small">' + (pn.description ? esc(pn.description) : '—') + '</td>'
+                + '<td><span class="badge ' + statusClass + '">' + statusLabel + '</span></td>'
+                + '<td class="text-end text-nowrap">'
+                + '<button class="btn btn-sm btn-outline-warning me-1" onclick=\'openProgramNameModal(' + pn.id + ', ' + JSON.stringify(pn) + ')\'>'
+                + '<i class="bi bi-pencil-square"></i> <span class="btn-action-label">Edit</span></button>'
+                + '<button class="btn btn-sm btn-outline-danger" onclick="deleteProgramName(' + pn.id + ', \'' + esc(pn.name).replace(/'/g, "\\'") + '\')">'
+                + '<i class="bi bi-trash"></i> <span class="btn-action-label">Delete</span></button>'
+                + '</td></tr>';
+        });
+        html += '</tbody></table></div>';
+    });
+
+    container.innerHTML = html;
+}
+
+function openProgramNameModal(id, data) {
+    document.getElementById('pnModalTitle').textContent = id ? 'Edit Program Name' : 'Add Program Name';
+    document.getElementById('pnId').value = id || '';
+    document.getElementById('pnName').value = data ? data.name : '';
+    document.getElementById('pnAgencyId').value = data ? (data.agency_id || '') : '';
+    document.getElementById('pnDescription').value = data ? (data.description || '') : '';
+    document.getElementById('pnIsActive').checked = data ? data.is_active : true;
+    clearValidation('pn', ['Name', 'AgencyId']);
+    new bootstrap.Modal(document.getElementById('programNameModal')).show();
+}
+
+function saveProgramName() {
+    var id  = document.getElementById('pnId').value;
+    var btn = document.getElementById('pnSaveBtn');
+    var url = id ? baseUrl + '/program-names/' + id : baseUrl + '/program-names';
+
+    clearValidation('pn', ['Name', 'AgencyId']);
+    setButtonLoading(btn, true);
+
+    ajaxFetch(url, {
+        method: id ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+        body: JSON.stringify({
+            name:        document.getElementById('pnName').value,
+            agency_id:   document.getElementById('pnAgencyId').value,
+            description: document.getElementById('pnDescription').value || null,
+            is_active:   document.getElementById('pnIsActive').checked,
+        })
+    })
+    .then(function (res) {
+        setButtonLoading(btn, false);
+        if (!res.ok) {
+            if (res.data.errors) showValidationErrors(res.data.errors, 'pn');
+            else showToast(res.data.message || 'Validation error', 'danger');
+            return;
+        }
+        bootstrap.Modal.getInstance(document.getElementById('programNameModal')).hide();
+        showToast('Program name saved successfully.', 'success');
+        refreshProgramNames();
+    })
+    .catch(function () {
+        setButtonLoading(btn, false);
+        showToast('An unexpected error occurred.', 'danger');
+    });
+}
+
+function deleteProgramName(id, name) {
+    if (!confirm('Are you sure you want to delete "' + name + '"? This cannot be undone.')) return;
+
+    ajaxFetch(baseUrl + '/program-names/' + id, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
+    })
+    .then(function (res) {
+        if (res.data.success) {
+            showToast(res.data.message || 'Program name deleted.', 'success');
+            refreshProgramNames();
+        } else {
+            showToast(res.data.message || 'Cannot delete program name.', 'danger');
         }
     })
     .catch(function () { showToast('An unexpected error occurred.', 'danger'); });

@@ -17,6 +17,7 @@ class DistributionEventRequest extends FormRequest
         $rules = [
             'barangay_id'       => ['required', 'exists:barangays,id'],
             'resource_type_id'  => ['required', 'exists:resource_types,id'],
+            'program_name_id'   => ['required', 'exists:program_names,id'],
             'distribution_date' => ['required', 'date'],
             'type'              => ['required', Rule::in(['physical', 'financial'])],
         ];
@@ -37,6 +38,8 @@ class DistributionEventRequest extends FormRequest
             'barangay_id.exists'         => 'Please select a valid barangay.',
             'resource_type_id.required'  => 'Please select a resource type.',
             'resource_type_id.exists'    => 'Please select a valid resource type.',
+            'program_name_id.required'   => 'Please select a program name.',
+            'program_name_id.exists'     => 'Please select a valid program name.',
             'distribution_date.required' => 'The distribution date is required.',
             'distribution_date.date'     => 'Please enter a valid date.',
             'type.required'              => 'Please select a distribution type.',

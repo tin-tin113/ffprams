@@ -12,213 +12,278 @@
 
     <style>
         :root {
-            --navy: #1a2c4e;
+            --forest-green: #1a3c34;
+            --forest-green-light: #2a5c4a;
+            --accent-green: #28a745;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: url('{{ asset('images/login-bg.jpg') }}');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            background-color: #1a3c34;
+            position: relative;
         }
 
-        .left-panel {
-            background-color: var(--navy);
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.35);
+            z-index: 0;
+        }
+
+        .login-card {
+            background: var(--forest-green);
+            border-radius: 20px;
+            padding: 40px 35px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo-circle {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .system-title {
             color: #fff;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 500;
+            line-height: 1.5;
+            margin-bottom: 30px;
+            opacity: 0.95;
         }
 
-        .left-panel .brand {
-            font-size: 2.5rem;
-            font-weight: 800;
-            letter-spacing: 2px;
+        .input-group-custom {
+            display: flex;
+            align-items: center;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 15px;
         }
 
-        .left-panel .system-name {
-            font-size: 1.05rem;
-            opacity: .85;
-            line-height: 1.6;
+        .input-icon {
+            padding: 12px 15px;
+            color: #666;
+            font-size: 1.1rem;
         }
 
-        .left-panel .divider {
-            width: 60px;
-            height: 2px;
-            background-color: rgba(255, 255, 255, .3);
+        .input-group-custom input {
+            border: none;
+            outline: none;
+            padding: 12px 10px;
+            flex: 1;
+            font-size: 1rem;
+            background: transparent;
         }
 
-        .left-panel .tagline {
-            font-size: .95rem;
-            opacity: .65;
-            font-style: italic;
+        .input-group-custom input::placeholder {
+            color: #999;
         }
 
-        .left-panel .footer-text {
-            font-size: .8rem;
-            opacity: .5;
+        .input-with-btn {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
         }
 
-        .sign-in-title {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--navy);
+        .input-with-btn .input-group-custom {
+            flex: 1;
+            margin-bottom: 0;
         }
 
-        .btn-navy {
-            background-color: var(--navy);
+        .btn-login {
+            background: var(--accent-green);
             color: #fff;
             border: none;
+            border-radius: 8px;
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            white-space: nowrap;
         }
 
-        .btn-navy:hover {
-            background-color: #243a5e;
+        .btn-login:hover {
+            background: #218838;
             color: #fff;
         }
 
-        .form-control:focus {
-            border-color: var(--navy);
-            box-shadow: 0 0 0 .2rem rgba(26, 44, 78, .15);
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
         }
 
-        .mobile-brand {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--navy);
-            letter-spacing: 1px;
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .divider span {
+            color: rgba(255, 255, 255, 0.6);
+            padding: 0 15px;
+            font-size: 0.9rem;
+        }
+
+        .btn-google {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            background: #fff;
+            color: #333;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: not-allowed;
+            opacity: 0.6;
+            transition: all 0.2s ease;
+        }
+
+        .btn-google img {
+            width: 20px;
+            height: 20px;
+        }
+
+        .alert-error {
+            background: rgba(220, 53, 69, 0.2);
+            border: 1px solid rgba(220, 53, 69, 0.5);
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                margin: 15px;
+                padding: 30px 25px;
+            }
+
+            .input-with-btn {
+                flex-direction: column;
+            }
+
+            .btn-login {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
 
-    <div class="container-fluid">
-        <div class="row min-vh-100">
-
-            {{-- Left Column — Branding --}}
-            <div class="col-md-6 d-none d-md-flex left-panel flex-column justify-content-between p-5">
-                <div></div>
-                <div class="text-center">
-                    <div class="brand mb-3">FFPRAMS</div>
-                    <p class="system-name mb-4">
-                        Farmer-Fisherfolk Precision Resource<br>
-                        Allocation Management System<br>
-                        with Geo-Mapping
-                    </p>
-                    <div class="divider mx-auto mb-4"></div>
-                    <p class="tagline">
-                        Precision Resource Allocation<br>
-                        for Farmers and Fisherfolk
-                    </p>
-                </div>
-                <div class="text-center footer-text">
-                    Municipality of Enrique B. Magalona<br>
-                    Negros Occidental, Philippines
-                </div>
-            </div>
-
-            {{-- Right Column — Login Form --}}
-            <div class="col-md-6 d-flex align-items-center justify-content-center bg-white p-4">
-                <div style="width: 100%; max-width: 420px;">
-
-                    {{-- Mobile-only brand label --}}
-                    <div class="text-center mb-4 d-block d-md-none">
-                        <span class="mobile-brand">FFPRAMS</span>
-                    </div>
-
-                    <h1 class="sign-in-title mb-1">Sign In</h1>
-                    <p class="text-muted mb-4">Enter your credentials to continue.</p>
-
-                    {{-- Global error alert --}}
-                    @if ($errors->any())
-                        <div class="alert alert-danger py-2 small">
-                            These credentials do not match our records.
-                        </div>
-                    @endif
-
-                    <form method="POST" action="{{ route('login') }}">
-                        @csrf
-
-                        {{-- Email --}}
-                        <div class="mb-3">
-                            <label for="email" class="form-label fw-semibold">Email Address</label>
-                            <input
-                                type="email"
-                                id="email"
-                                name="email"
-                                class="form-control"
-                                value="{{ old('email') }}"
-                                required
-                                autofocus
-                                autocomplete="email"
-                            >
-                            @foreach ($errors->get('email') as $error)
-                                <div class="text-danger small mt-1">{{ $error }}</div>
-                            @endforeach
-                        </div>
-
-                        {{-- Password --}}
-                        <div class="mb-3">
-                            <label for="password" class="form-label fw-semibold">Password</label>
-                            <div class="input-group">
-                                <input
-                                    type="password"
-                                    id="password"
-                                    name="password"
-                                    class="form-control"
-                                    required
-                                    autocomplete="current-password"
-                                >
-                                <button
-                                    type="button"
-                                    class="btn btn-outline-secondary"
-                                    id="togglePassword"
-                                    tabindex="-1"
-                                >
-                                    <i class="bi bi-eye" id="toggleIcon"></i>
-                                </button>
-                            </div>
-                            @foreach ($errors->get('password') as $error)
-                                <div class="text-danger small mt-1">{{ $error }}</div>
-                            @endforeach
-                        </div>
-
-                        {{-- Remember Me --}}
-                        <div class="form-check mb-4">
-                            <input
-                                type="checkbox"
-                                class="form-check-input"
-                                id="remember"
-                                name="remember"
-                            >
-                            <label class="form-check-label" for="remember">Remember me</label>
-                        </div>
-
-                        {{-- Submit --}}
-                        <button type="submit" class="btn btn-navy w-100 py-2 fw-semibold">
-                            Sign In
-                        </button>
-                    </form>
-
-                    <p class="text-center text-muted small mt-4 mb-0">
-                        For account issues, contact the System Administrator.
-                    </p>
-                </div>
-            </div>
-
+    <div class="login-card">
+        {{-- Logo --}}
+        <div class="logo-container">
+            <img src="{{ asset('images/ebemag logo.jpg') }}" alt="E.B. Magalona Logo" class="logo-circle">
         </div>
+
+        {{-- Title --}}
+        <div class="system-title">
+            Farmer-Fisherfolk Resource<br>
+            Allocation Management System
+        </div>
+
+        {{-- Error Alert --}}
+        @if ($errors->any())
+            <div class="alert-error">
+                <i class="bi bi-exclamation-circle me-2"></i>
+                These credentials do not match our records.
+            </div>
+        @endif
+
+        {{-- Login Form --}}
+        <form method="POST" action="{{ route('login') }}" id="loginForm">
+            @csrf
+
+            {{-- Email Input --}}
+            <div class="input-group-custom">
+                <span class="input-icon"><i class="bi bi-envelope"></i></span>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="Email"
+                    value="{{ old('email') }}"
+                    required
+                    autofocus
+                    autocomplete="email"
+                >
+            </div>
+
+            {{-- Password Input with Login Button --}}
+            <div class="input-with-btn">
+                <div class="input-group-custom">
+                    <span class="input-icon"><i class="bi bi-lock"></i></span>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Password"
+                        required
+                        autocomplete="current-password"
+                    >
+                </div>
+                <button type="submit" class="btn-login">Login</button>
+            </div>
+        </form>
+
+        {{-- Divider --}}
+        <div class="divider">
+            <span>or</span>
+        </div>
+
+        {{-- Google Sign In (Placeholder - Not Implemented) --}}
+        <button type="button" class="btn-google" disabled title="Coming soon">
+            <svg width="20" height="20" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Sign in with Google
+        </button>
+
     </div>
-
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-    <script>
-        document.getElementById('togglePassword').addEventListener('click', function () {
-            var input = document.getElementById('password');
-            var icon = document.getElementById('toggleIcon');
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.replace('bi-eye', 'bi-eye-slash');
-            } else {
-                input.type = 'password';
-                icon.classList.replace('bi-eye-slash', 'bi-eye');
-            }
-        });
-    </script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 # FFPRAMS - Farmer-Fisherfolk Precision Resource Allocation Management System
 
-A web-based management system built for the **Municipal Agriculture Office of Enrique B. Magalona, Negros Occidental, Philippines**. It streamlines the registration of farmer and fisherfolk beneficiaries, tracks resource distribution events (physical and financial), conducts field assessments, sends SMS notifications, and provides geographic mapping with comprehensive reporting.
+A web-based management system built for the **Municipal Agriculture Office of Enrique B. Magalona, Negros Occidental, Philippines**. It streamlines the registration of farmer and fisherfolk beneficiaries, tracks resource distribution events (physical and financial), sends SMS notifications, and provides geographic mapping with comprehensive reporting.
 
 ## Tech Stack
 
@@ -15,9 +15,11 @@ A web-based management system built for the **Municipal Agriculture Office of En
 
 ### Beneficiary Management
 - Registration of farmers, fisherfolk, or dual-classified beneficiaries
-- Comprehensive profiles: RSBSA number (DA), FishR number (BFAR), farm details (ownership, size, type, commodity), fisherfolk details (type, gear, vessel), civil status, education, income, emergency contacts, and association membership
-- Government ID uniqueness enforcement across active and soft-deleted records
-- Filter and search by barangay, classification, status, or name/ID
+- Agency-based field sets: DA/RSBSA, BFAR/FishR, DAR/CARP
+- Comprehensive profiles with agency-specific fields (farm details, fishing operations, land awards)
+- CLOA/EP number required for DAR beneficiaries before saving
+- Automatic duplicate detection blocks registration if matching records found
+- Filter and search by barangay, agency, classification, status, or name/ID
 
 ### Distribution Events
 - Two types: **Physical** (resource quantities) and **Financial** (monetary amounts)
@@ -31,17 +33,11 @@ A web-based management system built for the **Municipal Agriculture Office of En
 - Duplicate prevention with soft-delete awareness
 - Mark individual allocations as distributed with timestamp tracking
 
-### Field Assessments
-- Staff-initiated field visit assessments for beneficiaries
-- Two-stage review: eligibility determination followed by admin approval
-- Links to recommended assistance purpose and amount
-- Locked after admin review to preserve integrity
-
 ### SMS Notifications
 - Individual and broadcast messaging to beneficiaries
 - Target by: all active, by barangay, by classification, or selected individuals
 - Preview recipients before sending
-- Automatic notifications on: registration, allocation, and assessment approval
+- Automatic notifications on: registration and allocation
 - Full SMS log with delivery status tracking
 
 ### Geographic Map (GeoMap)
@@ -57,8 +53,7 @@ A web-based management system built for the **Municipal Agriculture Office of En
 5. Monthly Distribution Summary
 6. Financial Assistance Summary by Resource Type
 7. Financial Assistance per Barangay
-8. Field Assessment Summary by Staff
-9. Assistance by Purpose
+8. Financial Assistance Distribution by Purpose
 
 ### Admin System Settings
 - **Agencies** &ndash; Manage government agencies (DA, BFAR, DSWD, LGU, etc.)
@@ -70,8 +65,9 @@ A web-based management system built for the **Municipal Agriculture Office of En
 - All CRUD operations logged with user, action, table, old/new values (JSON)
 
 ### User Management
-- Role-based access: **Admin** (full access) and **Staff** (day-to-day operations)
-- Admin-only actions: complete events, approve/reject assessments, delete allocations, manage users and settings
+- Role-based access: **Admin** (full access), **Staff** (Modules 1 & 2), and **Viewer** (read-only)
+- Agency View-Only users linked to specific partner agencies for monitoring
+- Admin-only actions: complete events, delete allocations, manage users and settings
 
 ## Installation
 
@@ -153,7 +149,6 @@ app/
 │   │   ├── BeneficiaryController.php
 │   │   ├── DashboardController.php
 │   │   ├── DistributionEventController.php
-│   │   ├── FieldAssessmentController.php
 │   │   ├── GeoMapController.php
 │   │   ├── ReportsController.php
 │   │   ├── ResourceTypeController.php
@@ -174,7 +169,6 @@ resources/views/
 ├── admin/                   # Admin panels (users, settings)
 ├── beneficiaries/           # Beneficiary CRUD views
 ├── distribution_events/     # Distribution event views
-├── field_assessments/       # Field assessment views
 ├── geo-map/                 # Leaflet map view
 ├── reports/                 # Reports dashboard
 ├── sms/                     # SMS broadcast and logs

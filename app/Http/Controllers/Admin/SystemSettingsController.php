@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Agency;
 use App\Models\AssistancePurpose;
 use App\Models\FormFieldOption;
+use App\Models\ProgramName;
 use App\Models\ResourceType;
 use App\Services\AuditLogService;
 use Illuminate\Http\JsonResponse;
@@ -27,9 +28,10 @@ class SystemSettingsController extends Controller
         $agencies   = Agency::orderBy('name')->get();
         $purposes   = AssistancePurpose::orderBy('category')->orderBy('name')->get()->groupBy('category');
         $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
+        $programNames = ProgramName::with('agency')->orderBy('name')->get();
         $formFields = FormFieldOption::orderBy('field_group')->orderBy('sort_order')->orderBy('label')->get()->groupBy('field_group');
 
-        return view('admin.settings.index', compact('agencies', 'purposes', 'resourceTypes', 'formFields'));
+        return view('admin.settings.index', compact('agencies', 'purposes', 'resourceTypes', 'programNames', 'formFields'));
     }
 
     public function listAgencies(): JsonResponse
@@ -45,6 +47,11 @@ class SystemSettingsController extends Controller
     public function listResourceTypes(): JsonResponse
     {
         return response()->json(ResourceType::with('agency')->orderBy('name')->get());
+    }
+
+    public function listProgramNames(): JsonResponse
+    {
+        return response()->json(ProgramName::with('agency')->orderBy('name')->get());
     }
 
     // ── Agencies ─────────────────────────────────
@@ -183,7 +190,7 @@ class SystemSettingsController extends Controller
 
     public function destroyPurpose(AssistancePurpose $purpose): JsonResponse
     {
-        $hasLinked = $purpose->allocations()->exists() || $purpose->fieldAssessments()->exists();
+        $hasLinked = $purpose->allocations()->exists();
 
         DB::transaction(function () use ($purpose) {
             $oldValues = $purpose->toArray();
@@ -197,7 +204,7 @@ class SystemSettingsController extends Controller
         });
 
         $message = $hasLinked
-            ? 'Purpose deactivated. Existing allocations and assessments linked to this purpose are not affected.'
+            ? 'Purpose deactivated. Existing allocations linked to this purpose are not affected.'
             : 'Purpose deactivated successfully.';
 
         return response()->json(['success' => true, 'warning' => $hasLinked, 'message' => $message]);
@@ -270,6 +277,110 @@ class SystemSettingsController extends Controller
         });
 
         return response()->json(['success' => true, 'message' => 'Resource type deleted successfully.']);
+    }
+
+    // ── Program Names ───────────────────────────────
+
+    public function storeProgramName(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name'        => ['required', 'string', 'max:255'],
+            'agency_id'   => ['required', 'exists:agencies,id'],
+            'description' => ['nullable', 'string', 'max:500'],
+            'is_active'   => ['boolean'],
+        ]);
+
+        // Ensure unique name per agency
+        $exists = ProgramName::where('agency_id', $validated['agency_id'])
+            ->where('name', $validated['name'])
+            ->exists();
+
+        if ($exists) {
+            return response()->json([
+                'success' => false,
+                'errors'  => ['name' => ['This program name already exists for this agency.']],
+            ], 422);
+        }
+
+        $programName = DB::transaction(function () use ($validated) {
+            $programName = ProgramName::create([
+                'name'        => $validated['name'],
+                'agency_id'   => $validated['agency_id'],
+                'description' => $validated['description'] ?? null,
+                'is_active'   => $validated['is_active'] ?? true,
+            ]);
+
+            $this->audit->log(
+                auth()->id(), 'created', 'program_names', $programName->id,
+                [], $programName->toArray(),
+            );
+
+            return $programName;
+        });
+
+        return response()->json(['success' => true, 'programName' => $programName->load('agency')]);
+    }
+
+    public function updateProgramName(Request $request, ProgramName $programName): JsonResponse
+    {
+        $validated = $request->validate([
+            'name'        => ['required', 'string', 'max:255'],
+            'agency_id'   => ['required', 'exists:agencies,id'],
+            'description' => ['nullable', 'string', 'max:500'],
+            'is_active'   => ['boolean'],
+        ]);
+
+        // Ensure unique name per agency (exclude self)
+        $exists = ProgramName::where('agency_id', $validated['agency_id'])
+            ->where('name', $validated['name'])
+            ->where('id', '!=', $programName->id)
+            ->exists();
+
+        if ($exists) {
+            return response()->json([
+                'success' => false,
+                'errors'  => ['name' => ['This program name already exists for this agency.']],
+            ], 422);
+        }
+
+        DB::transaction(function () use ($validated, $programName) {
+            $oldValues = $programName->toArray();
+
+            $programName->update([
+                'name'        => $validated['name'],
+                'agency_id'   => $validated['agency_id'],
+                'description' => $validated['description'] ?? null,
+                'is_active'   => $validated['is_active'] ?? true,
+            ]);
+
+            $this->audit->log(
+                auth()->id(), 'updated', 'program_names', $programName->id,
+                $oldValues, $programName->fresh()->toArray(),
+            );
+        });
+
+        return response()->json(['success' => true, 'programName' => $programName->fresh()->load('agency')]);
+    }
+
+    public function destroyProgramName(ProgramName $programName): JsonResponse
+    {
+        if ($programName->distributionEvents()->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This program name cannot be deleted because it is linked to existing distribution events.',
+            ], 422);
+        }
+
+        DB::transaction(function () use ($programName) {
+            $this->audit->log(
+                auth()->id(), 'deleted', 'program_names', $programName->id,
+                $programName->toArray(), [],
+            );
+
+            $programName->delete();
+        });
+
+        return response()->json(['success' => true, 'message' => 'Program name deleted successfully.']);
     }
 
     // ── Form Fields ─────────────────────────────

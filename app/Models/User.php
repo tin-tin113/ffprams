@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -23,6 +24,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'agency_id',
     ];
 
     /**
@@ -48,6 +50,15 @@ class User extends Authenticatable
         ];
     }
 
+    // ── Relationships ─────────────────────────────
+
+    public function agency(): BelongsTo
+    {
+        return $this->belongsTo(Agency::class);
+    }
+
+    // ── Helpers ───────────────────────────────────
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
@@ -56,5 +67,10 @@ class User extends Authenticatable
     public function isStaff(): bool
     {
         return $this->role === 'staff';
+    }
+
+    public function isViewer(): bool
+    {
+        return $this->role === 'viewer';
     }
 }
