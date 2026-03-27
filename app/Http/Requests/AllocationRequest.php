@@ -19,6 +19,7 @@ class AllocationRequest extends FormRequest
         $rules = [
             'distribution_event_id' => ['required', 'exists:distribution_events,id'],
             'beneficiary_id'        => ['required', 'exists:beneficiaries,id'],
+            'assistance_purpose_id' => ['nullable', 'exists:assistance_purposes,id'],
             'remarks'               => ['nullable', 'string', 'max:500'],
         ];
 

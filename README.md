@@ -56,7 +56,7 @@ A web-based management system built for the **Municipal Agriculture Office of En
 8. Financial Assistance Distribution by Purpose
 
 ### Admin System Settings
-- **Agencies** &ndash; Manage government agencies (DA, BFAR, DSWD, LGU, etc.)
+- **Agencies** &ndash; Manage core line agencies (DA, BFAR, DAR)
 - **Assistance Purposes** &ndash; Categorized purposes (agricultural, fishery, livelihood, medical, emergency, other)
 - **Resource Types** &ndash; Manage resources with agency linking
 - **Form Field Options** &ndash; Configurable dropdown values for beneficiary forms with drag-and-drop reorder
@@ -66,8 +66,10 @@ A web-based management system built for the **Municipal Agriculture Office of En
 
 ### User Management
 - Role-based access: **Admin** (full access), **Staff** (Modules 1 & 2), and **Viewer** (read-only)
-- Agency View-Only users linked to specific partner agencies for monitoring
-- Admin-only actions: complete events, delete allocations, manage users and settings
+- Line Agency View-Only users linked to specific partner agencies for monitoring
+- Admin-only actions: complete events, delete allocations, manage users, and manage system settings
+- Staff note: Staff can access the Resource Types module for operational maintenance
+- Self-registration is disabled; user accounts are created and managed by admins
 
 ## Installation
 
@@ -135,6 +137,9 @@ composer dev
 
 ```bash
 composer test
+
+# Custom system checklist
+php test_system.php
 ```
 
 ## Project Structure

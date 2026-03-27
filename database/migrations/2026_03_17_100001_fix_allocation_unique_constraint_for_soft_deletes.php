@@ -9,6 +9,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         Schema::table('allocations', function (Blueprint $table) {
             // Drop FKs that depend on the columns in the unique index
             $table->dropForeign('allocations_distribution_event_id_foreign');
@@ -43,6 +47,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         Schema::table('allocations', function (Blueprint $table) {
             $table->dropForeign('allocations_distribution_event_id_foreign');
             $table->dropForeign('allocations_beneficiary_id_foreign');

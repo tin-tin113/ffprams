@@ -13,6 +13,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'staff', 'viewer') NOT NULL DEFAULT 'staff'");
     }
 
@@ -21,6 +25,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         // First update any viewer users to staff before removing the enum value
         DB::table('users')->where('role', 'viewer')->update(['role' => 'staff']);
 

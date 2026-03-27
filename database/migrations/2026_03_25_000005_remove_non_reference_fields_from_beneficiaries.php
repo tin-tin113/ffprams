@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -21,7 +22,17 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // SQLite fails when dropping a column still referenced by an index.
+        // Drop these legacy unique indexes first if they exist.
+        if (DB::getDriverName() === 'sqlite') {
+            DB::statement('DROP INDEX IF EXISTS beneficiaries_government_id_unique');
+        }
+
         Schema::table('beneficiaries', function (Blueprint $table) {
+            if (DB::getDriverName() !== 'sqlite') {
+                $table->dropUnique('beneficiaries_government_id_unique');
+            }
+
             $table->dropColumn([
                 'household_size',
                 'id_type',

@@ -15,7 +15,7 @@ class GeoMapController extends Controller
      */
     public function index(): View
     {
-        $agencies = Agency::active()->orderBy('name')->get();
+        $agencies = Agency::core()->active()->orderBy('name')->get();
 
         return view('geo-map.index', compact('agencies'));
     }
@@ -25,16 +25,16 @@ class GeoMapController extends Controller
      */
     public function mapData(Request $request): JsonResponse
     {
-        $agencyFilter = $request->input('agency_id');
+        $lineAgencyFilter = $request->input('agency_id');
 
         $barangays = DB::table('barangays')
-            ->leftJoin('beneficiaries', function ($join) use ($agencyFilter) {
+            ->leftJoin('beneficiaries', function ($join) use ($lineAgencyFilter) {
                 $join->on('barangays.id', '=', 'beneficiaries.barangay_id')
                     ->whereNull('beneficiaries.deleted_at')
                     ->where('beneficiaries.status', '=', 'Active');
 
-                if ($agencyFilter) {
-                    $join->where('beneficiaries.agency_id', '=', $agencyFilter);
+                if ($lineAgencyFilter) {
+                    $join->where('beneficiaries.agency_id', '=', $lineAgencyFilter);
                 }
             })
             ->leftJoin('agencies', 'beneficiaries.agency_id', '=', 'agencies.id')
@@ -59,7 +59,7 @@ class GeoMapController extends Controller
             ->selectRaw("COUNT(DISTINCT CASE WHEN beneficiaries.classification = 'Both' THEN beneficiaries.id END) as total_both")
             ->selectRaw("COUNT(DISTINCT CASE WHEN beneficiaries.classification IN ('Farmer', 'Both') THEN beneficiaries.id END) as total_farmers")
             ->selectRaw("COUNT(DISTINCT CASE WHEN beneficiaries.classification IN ('Fisherfolk', 'Both') THEN beneficiaries.id END) as total_fisherfolk")
-            // Agency breakdown
+            // Line agency breakdown
             ->selectRaw("COUNT(DISTINCT CASE WHEN UPPER(agencies.name) = 'DA' THEN beneficiaries.id END) as total_da")
             ->selectRaw("COUNT(DISTINCT CASE WHEN UPPER(agencies.name) = 'BFAR' THEN beneficiaries.id END) as total_bfar")
             ->selectRaw("COUNT(DISTINCT CASE WHEN UPPER(agencies.name) = 'DAR' THEN beneficiaries.id END) as total_dar")
@@ -74,6 +74,7 @@ class GeoMapController extends Controller
             // Allocations
             ->selectRaw('COUNT(DISTINCT allocations.id) as total_allocations')
             ->selectRaw('COUNT(DISTINCT CASE WHEN allocations.distributed_at IS NOT NULL THEN allocations.id END) as total_distributed')
+            ->selectRaw('COUNT(DISTINCT CASE WHEN allocations.distributed_at IS NOT NULL THEN allocations.beneficiary_id END) as beneficiaries_reached')
             ->selectRaw('COUNT(DISTINCT CASE WHEN allocations.distributed_at IS NULL THEN allocations.id END) as total_pending_allocations')
             // Dates
             ->selectRaw('MAX(distribution_events.distribution_date) as last_distribution_date')
@@ -115,11 +116,12 @@ class GeoMapController extends Controller
 
             $totalBeneficiaries = (int) $barangay->total_beneficiaries;
             $totalDistributed = (int) $barangay->total_distributed;
+            $beneficiariesReached = (int) $barangay->beneficiaries_reached;
             $totalAllocations = (int) $barangay->total_allocations;
 
             // Coverage rate: what % of beneficiaries have received at least one distribution
             $coverageRate = $totalBeneficiaries > 0
-                ? round(($totalDistributed / $totalBeneficiaries) * 100, 1)
+                ? round(($beneficiariesReached / $totalBeneficiaries) * 100, 1)
                 : 0;
 
             return [
@@ -134,7 +136,7 @@ class GeoMapController extends Controller
                 'total_farmers_only'     => (int) $barangay->total_farmers_only,
                 'total_fisherfolk_only'  => (int) $barangay->total_fisherfolk_only,
                 'total_both'             => (int) $barangay->total_both,
-                // Beneficiary breakdown by agency
+                // Beneficiary breakdown by line agency
                 'total_da'               => (int) $barangay->total_da,
                 'total_bfar'             => (int) $barangay->total_bfar,
                 'total_dar'              => (int) $barangay->total_dar,
@@ -149,6 +151,7 @@ class GeoMapController extends Controller
                 // Allocations
                 'total_allocations'      => $totalAllocations,
                 'total_distributed'      => $totalDistributed,
+                'beneficiaries_reached'  => $beneficiariesReached,
                 'total_pending_allocations' => (int) $barangay->total_pending_allocations,
                 'coverage_rate'          => $coverageRate,
                 // Dates

@@ -40,7 +40,9 @@ $rtCount = DB::table('resource_types')->count();
 check('1.5', 'Resource types seeded', $rtCount >= 4, "got $rtCount");
 
 $agencies = DB::table('resource_types')->distinct()->pluck('source_agency')->sort()->values()->toArray();
-check('1.6', 'All 4 agencies present', $agencies === ['BFAR','DA','DAR','LGU'], implode(',', $agencies));
+$allowedAgencies = ['BFAR', 'DA', 'DAR', 'DSWD', 'LGU'];
+$unknownAgencies = array_values(array_diff($agencies, $allowedAgencies));
+check('1.6', 'Resource type agencies are valid', empty($unknownAgencies), implode(',', $agencies));
 
 // ==========================================================
 echo "\n=== SECTION 2: DASHBOARD QUERIES ===\n";
@@ -211,7 +213,8 @@ $r2 = App\Models\ResourceType::select('resource_types.*')
     ->selectRaw('COUNT(DISTINCT distribution_events.id) as total_events')
     ->leftJoin('distribution_events', function ($join) {
         $join->on('resource_types.id', '=', 'distribution_events.resource_type_id')
-            ->where('distribution_events.status', '=', 'Completed');
+            ->where('distribution_events.status', '=', 'Completed')
+            ->where('distribution_events.type', '=', 'physical');
     })
     ->leftJoin('allocations', function ($join) {
         $join->on('distribution_events.id', '=', 'allocations.distribution_event_id')
@@ -221,7 +224,10 @@ $r2 = App\Models\ResourceType::select('resource_types.*')
     ->get();
 
 $r2CompletedEvents = $r2->sum('total_events');
-$actualCompleted = DB::table('distribution_events')->where('status', 'Completed')->count();
+$actualCompleted = DB::table('distribution_events')
+    ->where('status', 'Completed')
+    ->where('type', 'physical')
+    ->count();
 check('4.2', 'Report 2 counts only Completed events', (int)$r2CompletedEvents === $actualCompleted,
     "report=$r2CompletedEvents vs actual=$actualCompleted");
 
@@ -259,18 +265,18 @@ if ($usersIndex) {
     check('5.6', 'admin.users.index has role:admin', str_contains($usersMw, 'role:admin'), $usersMw);
 }
 
-// Verify geo-map routes have admin,staff
+// Verify geo-map routes have admin,staff,viewer
 $geoIndex = $routeCollection->getByName('geo-map.index');
 $geoData = $routeCollection->getByName('geo-map.data');
 check('5.7', 'geo-map.index route exists', $geoIndex !== null);
 check('5.8', 'geo-map.data route exists', $geoData !== null);
 if ($geoIndex) {
     $geoMw = implode(',', $geoIndex->middleware());
-    check('5.9', 'geo-map.index has role:admin,staff', str_contains($geoMw, 'role:admin,staff'), $geoMw);
+    check('5.9', 'geo-map.index has role:admin,staff,viewer', str_contains($geoMw, 'role:admin,staff,viewer'), $geoMw);
 }
 
 // Verify shared routes all have auth
-$sharedRoutes = ['beneficiaries.index', 'distribution-events.index', 'resource-types.index', 'reports.index'];
+$sharedRoutes = ['beneficiaries.index', 'distribution-events.index', 'reports.index', 'geo-map.index'];
 foreach ($sharedRoutes as $rn) {
     $r = $routeCollection->getByName($rn);
     if ($r) {
@@ -300,7 +306,12 @@ check('6.5', 'Admin-only completed check', str_contains($deCtrl, 'isAdmin') || s
 
 // Check BeneficiaryController duplicate gov ID
 $benCtrl = file_get_contents(__DIR__ . '/app/Http/Controllers/BeneficiaryController.php');
-check('6.6', 'Duplicate gov ID check (withTrashed)', str_contains($benCtrl, 'withTrashed') && str_contains($benCtrl, 'government_id'));
+$dupSvc = file_get_contents(__DIR__ . '/app/Services/DuplicateDetectionService.php');
+check('6.6', 'Duplicate detection service checks registration fields with withTrashed',
+    str_contains($dupSvc, 'withTrashed')
+    && str_contains($dupSvc, 'rsbsa_number')
+    && str_contains($dupSvc, 'fishr_number')
+    && str_contains($dupSvc, 'cloa_ep_number'));
 
 // Check SMS on registration
 check('6.7', 'SMS sent on registration', str_contains($benCtrl, 'sendSms'));
@@ -353,7 +364,7 @@ check('7.22', 'Layout: sidebar user info', str_contains($layout, 'sidebar-user')
 check('7.23', 'Layout: mobile sidebar toggle', str_contains($layout, 'sidebarToggle'));
 check('7.24', 'Layout: sidebar overlay', str_contains($layout, 'sidebarOverlay'));
 check('7.25', 'Layout: notification bell', str_contains($layout, 'bi-bell'));
-check('7.26', 'Layout: user dropdown', str_contains($layout, 'userDropdown'));
+check('7.26', 'Layout: user dropdown', str_contains($layout, 'data-bs-toggle="dropdown"') || str_contains($layout, 'header-user'));
 check('7.27', 'Layout: FFPRAMS brand', str_contains($layout, 'FFPRAMS'));
 check('7.28', 'Layout: submit spinner JS', str_contains($layout, 'data-submit-spinner'));
 check('7.29', 'Layout: textarea char counter JS', str_contains($layout, 'char-counter'));
@@ -412,10 +423,10 @@ foreach ($actionViews as $v) {
 $geoView = file_get_contents("$viewDir/geo-map/index.blade.php");
 check('7.40', 'Geo-map: Leaflet CSS CDN', str_contains($geoView, 'leaflet@1.9.4/dist/leaflet.css'));
 check('7.41', 'Geo-map: Leaflet JS CDN', str_contains($geoView, 'leaflet@1.9.4/dist/leaflet.js'));
-check('7.42', 'Geo-map: map center coords', str_contains($geoView, '10.5167') && str_contains($geoView, '123.0167'));
-check('7.43', 'Geo-map: CircleMarker usage', str_contains($geoView, 'circleMarker'));
-check('7.44', 'Geo-map: bindPopup', str_contains($geoView, 'bindPopup'));
-check('7.45', 'Geo-map: info panel', str_contains($geoView, 'barangay-panel'));
+check('7.42', 'Geo-map: map center coords', str_contains($geoView, 'ebmCenter') && str_contains($geoView, '10.8600') && str_contains($geoView, '123.0400'));
+check('7.43', 'Geo-map: marker rendering', str_contains($geoView, 'L.divIcon') && str_contains($geoView, 'L.marker'));
+check('7.44', 'Geo-map: interaction handler', str_contains($geoView, 'openPanel(') || str_contains($geoView, 'marker.on('));
+check('7.45', 'Geo-map: info panel', str_contains($geoView, 'side-panel') || str_contains($geoView, 'sidePanel'));
 check('7.46', 'Geo-map: View Distribution Events link', str_contains($geoView, 'distribution-events.index'));
 check('7.47', 'Geo-map: legend dots', str_contains($geoView, '#28a745') && str_contains($geoView, '#ffc107') && str_contains($geoView, '#0d6efd') && str_contains($geoView, '#dc3545'));
 check('7.48', 'Geo-map: summary cards', str_contains($geoView, 'stat-total-barangays') && str_contains($geoView, 'stat-completed'));

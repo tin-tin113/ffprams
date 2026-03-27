@@ -30,17 +30,22 @@ class DashboardController extends Controller
             ->count();
 
         // Distribution event counts
-        $totalDistributionEvents = DB::table('distribution_events')->count();
+        $totalDistributionEvents = DB::table('distribution_events')
+            ->whereNull('deleted_at')
+            ->count();
 
         $completedEvents = DB::table('distribution_events')
+            ->whereNull('deleted_at')
             ->where('status', 'Completed')
             ->count();
 
         $ongoingEvents = DB::table('distribution_events')
+            ->whereNull('deleted_at')
             ->where('status', 'Ongoing')
             ->count();
 
         $pendingEvents = DB::table('distribution_events')
+            ->whereNull('deleted_at')
             ->where('status', 'Pending')
             ->count();
 

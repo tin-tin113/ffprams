@@ -31,13 +31,22 @@ class AllocationController extends Controller
                 ->with('error', 'This beneficiary does not belong to the same barangay as the distribution event.');
         }
 
-        $exists = Allocation::withTrashed()
+        $exists = Allocation::where('distribution_event_id', $event->id)
+            ->where('beneficiary_id', $beneficiary->id)
+            ->exists();
+
+        if ($exists) {
+            return redirect()->back()
+                ->with('error', 'This beneficiary has already been allocated for this event.');
+        }
+
+        $legacyExists = Allocation::withTrashed()
             ->where('distribution_event_id', $event->id)
             ->where('beneficiary_id', $beneficiary->id)
             ->whereNull('deleted_at')
             ->exists();
 
-        if ($exists) {
+        if ($legacyExists) {
             return redirect()->back()
                 ->with('error', 'This beneficiary has already been allocated for this event.');
         }
@@ -54,6 +63,7 @@ class AllocationController extends Controller
                 'beneficiary_id'        => $beneficiary->id,
                 'quantity'              => $event->isFinancial() ? null : $request->quantity,
                 'amount'                => $event->isFinancial() ? $request->amount : null,
+                'assistance_purpose_id' => $request->assistance_purpose_id,
                 'remarks'               => $request->remarks,
             ]);
 
@@ -95,7 +105,8 @@ class AllocationController extends Controller
         $bulkRules = [
             'distribution_event_id'        => ['required', 'exists:distribution_events,id'],
             'allocations'                  => ['required', 'array', 'min:1'],
-            'allocations.*.beneficiary_id' => ['required', 'exists:beneficiaries,id'],
+            'allocations.*.beneficiary_id' => ['required', 'distinct', 'exists:beneficiaries,id'],
+            'allocations.*.assistance_purpose_id' => ['nullable', 'exists:assistance_purposes,id'],
             'allocations.*.remarks'        => ['nullable', 'string', 'max:500'],
         ];
 
@@ -123,6 +134,8 @@ class AllocationController extends Controller
         $smsQueue  = [];
 
         DB::transaction(function () use ($request, $event, $existingIds, &$allocated, &$skipped, &$smsQueue) {
+            $seenInRequest = [];
+
             foreach ($request->input('allocations') as $row) {
                 $beneficiary = Beneficiary::find($row['beneficiary_id']);
 
@@ -136,13 +149,21 @@ class AllocationController extends Controller
                     continue;
                 }
 
+                if (in_array($beneficiary->id, $seenInRequest, true)) {
+                    $skipped++;
+                    continue;
+                }
+
                 $allocation = Allocation::create([
                     'distribution_event_id' => $event->id,
                     'beneficiary_id'        => $beneficiary->id,
                     'quantity'              => $event->isFinancial() ? null : $row['quantity'],
                     'amount'                => $event->isFinancial() ? $row['amount'] : null,
+                    'assistance_purpose_id' => $row['assistance_purpose_id'] ?? null,
                     'remarks'               => $row['remarks'] ?? null,
                 ]);
+
+                $seenInRequest[] = $beneficiary->id;
 
                 $this->audit->log(
                     auth()->id(),
@@ -193,6 +214,7 @@ class AllocationController extends Controller
         $event = $allocation->distributionEvent;
 
         $rules = ['remarks' => ['nullable', 'string', 'max:500']];
+        $rules['assistance_purpose_id'] = ['nullable', 'exists:assistance_purposes,id'];
 
         if ($event->isFinancial()) {
             $rules['amount']   = ['required', 'numeric', 'min:1', 'max:9999999999.99'];
@@ -210,6 +232,7 @@ class AllocationController extends Controller
             $allocation->update([
                 'quantity' => $event->isFinancial() ? null : $request->quantity,
                 'amount'   => $event->isFinancial() ? $request->amount : null,
+                'assistance_purpose_id' => $request->assistance_purpose_id,
                 'remarks'  => $request->remarks,
             ]);
 
