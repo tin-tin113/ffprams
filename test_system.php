@@ -100,7 +100,14 @@ $mapData = DB::table('barangays')
     ->selectRaw('COUNT(DISTINCT beneficiaries.id) as total_beneficiaries')
     ->selectRaw("COUNT(DISTINCT CASE WHEN beneficiaries.classification IN ('Farmer', 'Both') THEN beneficiaries.id END) as total_farmers")
     ->selectRaw("COUNT(DISTINCT CASE WHEN beneficiaries.classification IN ('Fisherfolk', 'Both') THEN beneficiaries.id END) as total_fisherfolk")
-    ->selectRaw('COUNT(DISTINCT CASE WHEN allocations.distributed_at IS NOT NULL THEN allocations.id END) as total_distributed')
+        ->selectRaw("COALESCE((
+                SELECT COUNT(*)
+                FROM allocations a_all
+                INNER JOIN beneficiaries b_all ON b_all.id = a_all.beneficiary_id
+                WHERE b_all.barangay_id = barangays.id
+                    AND a_all.deleted_at IS NULL
+                    AND a_all.distributed_at IS NOT NULL
+        ), 0) as total_distributed")
     ->selectRaw('MAX(distribution_events.distribution_date) as last_distribution_date')
     ->selectRaw("MAX(CASE WHEN distribution_events.status = 'Completed' THEN 1 ELSE 0 END) as has_completed")
     ->selectRaw("MAX(CASE WHEN distribution_events.status = 'Ongoing' THEN 1 ELSE 0 END) as has_ongoing")

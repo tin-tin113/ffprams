@@ -107,12 +107,25 @@ class DistributionEventController extends Controller
             'resourceType.agency',
             'programName',
             'createdBy',
+            'beneficiaryListApprovedBy',
             'allocations.beneficiary',
         ]);
 
         $allocatedBeneficiaryIds = $event->allocations->pluck('beneficiary_id')->toArray();
 
         return view('distribution_events.show', compact('event', 'allocatedBeneficiaryIds'));
+    }
+
+    public function distributionList(DistributionEvent $event): View
+    {
+        $event->load([
+            'barangay',
+            'resourceType.agency',
+            'programName',
+            'allocations.beneficiary',
+        ]);
+
+        return view('distribution_events.distribution_list', compact('event'));
     }
 
     public function edit(DistributionEvent $event): View|RedirectResponse
@@ -208,6 +221,12 @@ class DistributionEventController extends Controller
                 ->with('error', 'Only admin can mark an event as Completed.');
         }
 
+        // Event can only start after admin list approval.
+        if ($newStatus === 'Ongoing' && ! $event->isBeneficiaryListApproved()) {
+            return redirect()->back()
+                ->with('error', 'Approve the beneficiary list before starting this event.');
+        }
+
         DB::transaction(function () use ($event, $newStatus) {
             $oldValues = $event->toArray();
 
@@ -225,5 +244,41 @@ class DistributionEventController extends Controller
 
         return redirect()->back()
             ->with('success', "Distribution event status updated to {$newStatus}.");
+    }
+
+    public function approveBeneficiaryList(DistributionEvent $event): RedirectResponse
+    {
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Only admin can approve the beneficiary list.');
+        }
+
+        if ($event->status !== 'Pending') {
+            return redirect()->back()
+                ->with('error', 'Beneficiary list approval is only allowed while event is Pending.');
+        }
+
+        if ($event->isBeneficiaryListApproved()) {
+            return redirect()->back()->with('info', 'Beneficiary list has already been approved.');
+        }
+
+        DB::transaction(function () use ($event) {
+            $oldValues = $event->toArray();
+
+            $event->update([
+                'beneficiary_list_approved_at' => now(),
+                'beneficiary_list_approved_by' => auth()->id(),
+            ]);
+
+            $this->audit->log(
+                auth()->id(),
+                'updated',
+                'distribution_events',
+                $event->id,
+                $oldValues,
+                $event->fresh()->toArray(),
+            );
+        });
+
+        return redirect()->back()->with('success', 'Beneficiary list approved. You can now start the event.');
     }
 }

@@ -65,12 +65,26 @@
 
             {{-- Status transition buttons --}}
             @if($event->status === 'Pending')
+                @if(!$event->beneficiary_list_approved_at && Auth::user()->role === 'admin')
+                    <form method="POST"
+                          action="{{ route('distribution-events.approveBeneficiaryList', $event) }}"
+                          class="d-inline"
+                          data-confirm-title="Approve Beneficiary List"
+                          data-confirm-message="Confirm beneficiary list review and approval for this event?">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="bi bi-check2-square me-1"></i> Approve Beneficiary List
+                        </button>
+                    </form>
+                @endif
+
                 <button type="button" class="btn btn-warning btn-status-change"
                         data-bs-toggle="modal"
                         data-bs-target="#statusModal"
                         data-status="Ongoing"
                         data-title="Mark as Ongoing"
-                        data-message="Are you sure you want to start this distribution event? The status will change from Pending to Ongoing.">
+                        data-message="Are you sure you want to start this distribution event? The status will change from Pending to Ongoing."
+                        {{ $event->beneficiary_list_approved_at ? '' : 'disabled' }}>
                     <i class="bi bi-play-fill me-1"></i> Mark as Ongoing
                 </button>
             @endif
@@ -89,8 +103,22 @@
             <a href="{{ route('distribution-events.index') }}" class="btn btn-outline-secondary">
                 <i class="bi bi-list-ul me-1"></i> Back to List
             </a>
+            <a href="{{ route('distribution-events.distributionList', $event) }}" class="btn btn-outline-dark">
+                <i class="bi bi-printer me-1"></i> Print Distribution List
+            </a>
         </div>
     </div>
+
+    @if($event->status === 'Completed')
+        <div class="alert alert-info d-flex justify-content-between align-items-center mb-4" role="alert">
+            <div>
+                <strong>Next Step:</strong> Generate and review the distribution summary report for agency submission.
+            </div>
+            <a href="{{ route('reports.index') }}" class="btn btn-sm btn-primary">
+                <i class="bi bi-bar-chart-line me-1"></i> Open Reports
+            </a>
+        </div>
+    @endif
 
     {{-- Event Details Card --}}
     <div class="card border-0 shadow-sm mb-4">
@@ -128,6 +156,22 @@
                 <div class="col-md-4">
                     <div class="text-muted small">Status</div>
                     <div class="fw-semibold"><span class="badge {{ $statusBadge }}">{{ $event->status }}</span></div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted small">Beneficiary List Approval</div>
+                    <div class="fw-semibold">
+                        @if($event->beneficiary_list_approved_at)
+                            <span class="badge bg-success">Approved</span>
+                            <div class="small text-muted mt-1">
+                                {{ $event->beneficiary_list_approved_at->format('M d, Y h:i A') }}
+                                @if($event->beneficiaryListApprovedBy)
+                                    by {{ $event->beneficiaryListApprovedBy->name }}
+                                @endif
+                            </div>
+                        @else
+                            <span class="badge bg-secondary">Pending Approval</span>
+                        @endif
+                    </div>
                 </div>
                 @if($event->isFinancial())
                     <div class="col-md-4">
@@ -342,13 +386,18 @@
                                             <i class="bi bi-check-circle-fill me-1"></i>
                                             {{ $allocation->distributed_at->format('M d, Y h:i A') }}
                                         </span>
+                                    @elseif($allocation->release_outcome === 'not_received')
+                                        <span class="text-danger">
+                                            <i class="bi bi-x-circle-fill me-1"></i>
+                                            Not Received
+                                        </span>
                                     @else
                                         <span class="text-muted">Not yet {{ $event->isFinancial() ? 'claimed' : 'distributed' }}</span>
                                     @endif
                                 </td>
                                 <td>{{ $allocation->remarks ?? '—' }}</td>
                                 <td class="text-end text-nowrap">
-                                    @if(!$allocation->distributed_at && $event->status !== 'Pending')
+                                    @if(!$allocation->distributed_at && $allocation->release_outcome !== 'not_received' && $event->status !== 'Pending')
                                         <form method="POST"
                                               action="{{ route('allocations.markDistributed', $allocation) }}"
                                               class="d-inline"
@@ -359,14 +408,31 @@
                                                 <i class="bi bi-check2"></i> {{ $event->isFinancial() ? 'Mark as Claimed' : 'Distribute' }}
                                             </button>
                                         </form>
+
+                                        <form method="POST"
+                                              action="{{ route('allocations.markNotReceived', $allocation) }}"
+                                              class="d-inline"
+                                              data-confirm-title="Confirm Not Received"
+                                              data-confirm-message="Mark this allocation as Not Received for this release schedule?">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-outline-danger me-1">
+                                                <i class="bi bi-x-lg"></i> Not Received
+                                            </button>
+                                        </form>
                                     @endif
 
                                     @if($event->status !== 'Completed' && Auth::user()->role === 'admin')
-                                        <button type="button"
-                                                class="btn btn-sm btn-outline-danger"
-                                                onclick="confirmAction('Confirm Removal', 'Are you sure you want to remove {{ e($allocation->beneficiary->full_name) }} from this distribution event?', '{{ route('allocations.destroy', $allocation) }}', 'DELETE')">
-                                            <i class="bi bi-trash"></i> Remove
-                                        </button>
+                                        <form method="POST"
+                                              action="{{ route('allocations.destroy', $allocation) }}"
+                                              class="d-inline"
+                                              data-confirm-title="Confirm Removal"
+                                              data-confirm-message="Are you sure you want to remove {{ $allocation->beneficiary->full_name }} from this distribution event?">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash"></i> Remove
+                                            </button>
+                                        </form>
                                     @endif
                                 </td>
                             </tr>

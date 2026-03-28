@@ -143,12 +143,14 @@
                                 <td>
                                     @if($allocation->distributed_at)
                                         <span class="badge bg-success">Released</span>
+                                    @elseif($allocation->release_outcome === 'not_received')
+                                        <span class="badge bg-danger">Not Received</span>
                                     @else
                                         <span class="badge bg-warning text-dark">Planned</span>
                                     @endif
                                 </td>
                                 <td class="text-end">
-                                    @if(!$allocation->distributed_at)
+                                    @if(!$allocation->distributed_at && $allocation->release_outcome !== 'not_received')
                                         <form method="POST"
                                               action="{{ route('allocations.markDistributed', $allocation) }}"
                                               class="d-inline"
@@ -157,6 +159,17 @@
                                             @csrf
                                             <button type="submit" class="btn btn-sm btn-outline-success">
                                                 <i class="bi bi-check2"></i> Mark Released
+                                            </button>
+                                        </form>
+
+                                        <form method="POST"
+                                              action="{{ route('allocations.markNotReceived', $allocation) }}"
+                                              class="d-inline"
+                                              data-confirm-title="Confirm Not Received"
+                                              data-confirm-message="Mark this direct allocation as Not Received?">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-x-lg"></i> Not Received
                                             </button>
                                         </form>
                                     @else

@@ -42,8 +42,8 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
     Route::post('beneficiaries/{beneficiary}/send-sms', [BeneficiaryController::class, 'sendSms'])
         ->name('beneficiaries.sendSms');
 
-    // Resource Types
-    Route::resource('resource-types', ResourceTypeController::class)->only(['index', 'store', 'update', 'destroy']);
+    // Resource Types (read-only for Admin & Staff)
+    Route::resource('resource-types', ResourceTypeController::class)->only(['index']);
 
     // Distribution Events (create, store, edit, update, destroy)
     Route::resource('distribution-events', DistributionEventController::class)
@@ -51,6 +51,8 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
         ->except(['index', 'show']);
     Route::post('distribution-events/{event}/status', [DistributionEventController::class, 'updateStatus'])
         ->name('distribution-events.updateStatus');
+    Route::post('distribution-events/{event}/approve-beneficiary-list', [DistributionEventController::class, 'approveBeneficiaryList'])
+        ->name('distribution-events.approveBeneficiaryList');
 
     // Allocations
     Route::post('allocations', [AllocationController::class, 'store'])
@@ -61,6 +63,8 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
         ->name('allocations.update');
     Route::post('allocations/{allocation}/distribute', [AllocationController::class, 'markDistributed'])
         ->name('allocations.markDistributed');
+    Route::post('allocations/{allocation}/not-received', [AllocationController::class, 'markNotReceived'])
+        ->name('allocations.markNotReceived');
 
     // SMS Broadcast
     Route::get('sms', [SmsController::class, 'index'])->name('sms.index');
@@ -75,6 +79,8 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
         ->name('beneficiaries.summary');
     Route::get('distribution-events', [DistributionEventController::class, 'index'])->name('distribution-events.index');
     Route::get('distribution-events/{event}', [DistributionEventController::class, 'show'])->name('distribution-events.show');
+    Route::get('distribution-events/{event}/distribution-list', [DistributionEventController::class, 'distributionList'])
+        ->name('distribution-events.distributionList');
     Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
     Route::get('geo-map', [GeoMapController::class, 'index'])->name('geo-map.index');
     Route::get('geo-map/data', [GeoMapController::class, 'mapData'])->name('geo-map.data');
@@ -89,6 +95,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     // Admin-only allocation deletion endpoint
     Route::delete('allocations/{allocation}', [AllocationController::class, 'destroy'])
         ->name('allocations.destroy');
+
+    // Resource Types (admin-only write actions)
+    Route::resource('resource-types', ResourceTypeController::class)->only(['store', 'update', 'destroy']);
 });
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {

@@ -373,15 +373,18 @@ class AllocationController extends Controller
                 ->with('error', 'Cannot mark as distributed while event is still Pending.');
         }
 
-        if ($allocation->distributed_at) {
+        if ($allocation->distributed_at || $allocation->release_outcome === 'not_received') {
             return redirect()->back()
-                ->with('error', 'This allocation has already been marked as distributed.');
+            ->with('error', 'This allocation already has a final release outcome.');
         }
 
         DB::transaction(function () use ($allocation) {
             $oldValues = $allocation->toArray();
 
-            $allocation->update(['distributed_at' => Carbon::now()]);
+            $allocation->update([
+                'distributed_at' => Carbon::now(),
+                'release_outcome' => 'received',
+            ]);
 
             $this->audit->log(
                 auth()->id(),
@@ -395,5 +398,41 @@ class AllocationController extends Controller
 
         return redirect()->back()
             ->with('success', 'Allocation marked as distributed.');
+    }
+
+    public function markNotReceived(Allocation $allocation): RedirectResponse
+    {
+        $event = $allocation->distributionEvent;
+
+        if ($event && $event->status === 'Pending') {
+            return redirect()->back()
+                ->with('error', 'Cannot mark as not received while event is still Pending.');
+        }
+
+        if ($allocation->distributed_at || $allocation->release_outcome === 'not_received') {
+            return redirect()->back()
+                ->with('error', 'This allocation already has a final release outcome.');
+        }
+
+        DB::transaction(function () use ($allocation) {
+            $oldValues = $allocation->toArray();
+
+            $allocation->update([
+                'distributed_at' => null,
+                'release_outcome' => 'not_received',
+            ]);
+
+            $this->audit->log(
+                auth()->id(),
+                'updated',
+                'allocations',
+                $allocation->id,
+                $oldValues,
+                $allocation->fresh()->toArray(),
+            );
+        });
+
+        return redirect()->back()
+            ->with('success', 'Allocation marked as not received.');
     }
 }

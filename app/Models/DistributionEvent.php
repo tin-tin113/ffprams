@@ -17,6 +17,8 @@ class DistributionEvent extends Model
         'program_name_id',
         'distribution_date',
         'status',
+        'beneficiary_list_approved_at',
+        'beneficiary_list_approved_by',
         'created_by',
         'type',
         'total_fund_amount',
@@ -27,7 +29,13 @@ class DistributionEvent extends Model
         return [
             'distribution_date'  => 'date',
             'total_fund_amount'  => 'decimal:2',
+            'beneficiary_list_approved_at' => 'datetime',
         ];
+    }
+
+    public function isBeneficiaryListApproved(): bool
+    {
+        return $this->beneficiary_list_approved_at !== null;
     }
 
     public function isFinancial(): bool
@@ -58,6 +66,11 @@ class DistributionEvent extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function beneficiaryListApprovedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'beneficiary_list_approved_by');
     }
 
     public function allocations(): HasMany

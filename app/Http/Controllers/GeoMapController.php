@@ -76,6 +76,38 @@ class GeoMapController extends Controller
             ->selectRaw('COUNT(DISTINCT CASE WHEN allocations.distributed_at IS NOT NULL THEN allocations.id END) as total_distributed')
             ->selectRaw('COUNT(DISTINCT CASE WHEN allocations.distributed_at IS NOT NULL THEN allocations.beneficiary_id END) as beneficiaries_reached')
             ->selectRaw('COUNT(DISTINCT CASE WHEN allocations.distributed_at IS NULL THEN allocations.id END) as total_pending_allocations')
+                        // All allocations by barangay (event + direct)
+                        ->selectRaw("COALESCE((
+                                SELECT COUNT(*)
+                                FROM allocations a_all
+                                INNER JOIN beneficiaries b_all ON b_all.id = a_all.beneficiary_id
+                                WHERE b_all.barangay_id = barangays.id
+                                    AND a_all.deleted_at IS NULL
+                        ), 0) as total_allocations_all")
+                        ->selectRaw("COALESCE((
+                                SELECT COUNT(*)
+                                FROM allocations a_all
+                                INNER JOIN beneficiaries b_all ON b_all.id = a_all.beneficiary_id
+                                WHERE b_all.barangay_id = barangays.id
+                                    AND a_all.deleted_at IS NULL
+                                    AND a_all.distributed_at IS NOT NULL
+                        ), 0) as total_distributed_all")
+                        ->selectRaw("COALESCE((
+                                SELECT COUNT(*)
+                                FROM allocations a_all
+                                INNER JOIN beneficiaries b_all ON b_all.id = a_all.beneficiary_id
+                                WHERE b_all.barangay_id = barangays.id
+                                    AND a_all.deleted_at IS NULL
+                                    AND a_all.distributed_at IS NULL
+                        ), 0) as total_pending_allocations_all")
+                        ->selectRaw("COALESCE((
+                                SELECT COUNT(DISTINCT a_all.beneficiary_id)
+                                FROM allocations a_all
+                                INNER JOIN beneficiaries b_all ON b_all.id = a_all.beneficiary_id
+                                WHERE b_all.barangay_id = barangays.id
+                                    AND a_all.deleted_at IS NULL
+                                    AND a_all.distributed_at IS NOT NULL
+                        ), 0) as beneficiaries_reached_all")
             // Dates
             ->selectRaw('MAX(distribution_events.distribution_date) as last_distribution_date')
             ->selectRaw('MIN(distribution_events.distribution_date) as first_distribution_date')
@@ -115,9 +147,9 @@ class GeoMapController extends Controller
             }
 
             $totalBeneficiaries = (int) $barangay->total_beneficiaries;
-            $totalDistributed = (int) $barangay->total_distributed;
-            $beneficiariesReached = (int) $barangay->beneficiaries_reached;
-            $totalAllocations = (int) $barangay->total_allocations;
+            $totalDistributed = (int) $barangay->total_distributed_all;
+            $beneficiariesReached = (int) $barangay->beneficiaries_reached_all;
+            $totalAllocations = (int) $barangay->total_allocations_all;
 
             // Coverage rate: what % of beneficiaries have received at least one distribution
             $coverageRate = $totalBeneficiaries > 0
@@ -152,7 +184,7 @@ class GeoMapController extends Controller
                 'total_allocations'      => $totalAllocations,
                 'total_distributed'      => $totalDistributed,
                 'beneficiaries_reached'  => $beneficiariesReached,
-                'total_pending_allocations' => (int) $barangay->total_pending_allocations,
+                'total_pending_allocations' => (int) $barangay->total_pending_allocations_all,
                 'coverage_rate'          => $coverageRate,
                 // Dates
                 'first_distribution_date' => $barangay->first_distribution_date,

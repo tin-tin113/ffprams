@@ -36,6 +36,7 @@ class ReportsController extends Controller
                 INNER JOIN distribution_events de1 ON de1.id = a1.distribution_event_id
                 WHERE a1.resource_type_id = resource_types.id
                   AND a1.deleted_at IS NULL
+                                    AND a1.distributed_at IS NOT NULL
                   AND de1.deleted_at IS NULL
                   AND de1.status = 'Completed'
                   AND de1.type = 'physical'
@@ -46,6 +47,7 @@ class ReportsController extends Controller
                 INNER JOIN distribution_events de2 ON de2.id = a2.distribution_event_id
                 WHERE a2.resource_type_id = resource_types.id
                   AND a2.deleted_at IS NULL
+                                    AND a2.distributed_at IS NOT NULL
                   AND de2.deleted_at IS NULL
                   AND de2.status = 'Completed'
                   AND de2.type = 'physical'
@@ -81,6 +83,7 @@ class ReportsController extends Controller
                     INNER JOIN distribution_events de1 ON de1.id = a1.distribution_event_id
                     WHERE a1.resource_type_id = resource_types.id
                       AND a1.deleted_at IS NULL
+                                            AND a1.distributed_at IS NOT NULL
                       AND de1.deleted_at IS NULL
                       AND de1.status = \'Completed\'
                       AND de1.type = \'physical\'
@@ -102,6 +105,7 @@ class ReportsController extends Controller
                     INNER JOIN distribution_events de2 ON de2.id = a2.distribution_event_id
                     WHERE a2.resource_type_id = resource_types.id
                       AND a2.deleted_at IS NULL
+                                            AND a2.distributed_at IS NOT NULL
                       AND de2.deleted_at IS NULL
                       AND de2.status = \'Completed\'
                       AND de2.type = \'physical\'
@@ -152,7 +156,12 @@ class ReportsController extends Controller
 
         // REPORT 4 — Beneficiaries Not Yet Reached
         $unreachedBeneficiaries = Beneficiary::with('barangay')
-            ->whereDoesntHave('allocations')
+            ->whereDoesntHave('allocations', function ($q) {
+                $q->where(function ($q2) {
+                    $q2->whereNotNull('distributed_at')
+                        ->orWhere('release_outcome', 'received');
+                });
+            })
             ->orderBy(
                 Barangay::select('name')
                     ->whereColumn('barangays.id', 'beneficiaries.barangay_id')
@@ -170,8 +179,10 @@ class ReportsController extends Controller
             ->selectRaw('COALESCE(SUM(allocations.quantity), 0) as event_quantity')
             ->leftJoin('allocations', function ($join) {
                 $join->on('distribution_events.id', '=', 'allocations.distribution_event_id')
-                    ->whereNull('allocations.deleted_at');
+                    ->whereNull('allocations.deleted_at')
+                    ->whereNotNull('allocations.distributed_at');
             })
+            ->where('distribution_events.status', 'Completed')
             ->whereYear('distribution_date', $currentYear)
             ->groupBy(DB::raw('MONTH(distribution_date)'))
             ->orderBy('month_number')
@@ -235,6 +246,7 @@ class ReportsController extends Controller
                 INNER JOIN distribution_events de1 ON de1.id = a1.distribution_event_id
                 WHERE a1.resource_type_id = resource_types.id
                   AND a1.deleted_at IS NULL
+                                    AND a1.distributed_at IS NOT NULL
                   AND de1.deleted_at IS NULL
                   AND de1.type = 'financial'
                   AND de1.status = 'Completed'
@@ -245,6 +257,7 @@ class ReportsController extends Controller
                 INNER JOIN distribution_events de2 ON de2.id = a2.distribution_event_id
                 WHERE a2.resource_type_id = resource_types.id
                   AND a2.deleted_at IS NULL
+                                    AND a2.distributed_at IS NOT NULL
                   AND de2.deleted_at IS NULL
                   AND de2.type = 'financial'
                   AND de2.status = 'Completed'
@@ -272,6 +285,7 @@ class ReportsController extends Controller
                     INNER JOIN distribution_events de1 ON de1.id = a1.distribution_event_id
                     WHERE a1.resource_type_id = resource_types.id
                       AND a1.deleted_at IS NULL
+                                            AND a1.distributed_at IS NOT NULL
                       AND de1.deleted_at IS NULL
                       AND de1.type = \'financial\'
                       AND de1.status = \'Completed\'
@@ -293,6 +307,7 @@ class ReportsController extends Controller
                     INNER JOIN distribution_events de2 ON de2.id = a2.distribution_event_id
                     WHERE a2.resource_type_id = resource_types.id
                       AND a2.deleted_at IS NULL
+                                            AND a2.distributed_at IS NOT NULL
                       AND de2.deleted_at IS NULL
                       AND de2.type = \'financial\'
                       AND de2.status = \'Completed\'
@@ -377,7 +392,8 @@ class ReportsController extends Controller
             })
             ->join('allocations', function ($join) {
                 $join->on('distribution_events.id', '=', 'allocations.distribution_event_id')
-                    ->whereNull('allocations.deleted_at');
+                    ->whereNull('allocations.deleted_at')
+                    ->whereNotNull('allocations.distributed_at');
             })
             ->groupBy('barangays.id', 'barangays.name')
             ->orderByDesc('total_amount')

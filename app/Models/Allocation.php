@@ -20,6 +20,7 @@ class Allocation extends Model
         'quantity',
         'amount',
         'distributed_at',
+        'release_outcome',
         'remarks',
         'assistance_purpose_id',
     ];
@@ -30,6 +31,7 @@ class Allocation extends Model
             'quantity'       => 'decimal:2',
             'amount'         => 'decimal:2',
             'distributed_at' => 'datetime',
+            'release_outcome' => 'string',
         ];
     }
 
