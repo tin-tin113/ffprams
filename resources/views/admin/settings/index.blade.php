@@ -317,6 +317,8 @@
                             'farm_type'          => 'Farm Type',
                             'farm_ownership'     => 'Farm Ownership',
                             'fisherfolk_type'    => 'Fisherfolk Type',
+                            'arb_classification' => 'ARB Classification',
+                            'ownership_scheme'   => 'Ownership Scheme',
                         ];
                     @endphp
                     <div class="accordion" id="formFieldsAccordion">
@@ -585,6 +587,8 @@
                             <option value="farm_type">Farm Type</option>
                             <option value="farm_ownership">Farm Ownership</option>
                             <option value="fisherfolk_type">Fisherfolk Type</option>
+                            <option value="arb_classification">ARB Classification</option>
+                            <option value="ownership_scheme">Ownership Scheme</option>
                         </select>
                         <div class="invalid-feedback" id="ffFieldNameError"></div>
                     </div>
@@ -1200,8 +1204,12 @@ var ffFieldLabels = {
     'id_type':          'Government ID Type',
     'farm_type':        'Farm Type',
     'farm_ownership':   'Farm Ownership',
-    'fisherfolk_type':  'Fisherfolk Type'
+    'fisherfolk_type':  'Fisherfolk Type',
+    'arb_classification': 'ARB Classification',
+    'ownership_scheme': 'Ownership Scheme'
 };
+
+var ffOptionsCache = {};
 
 function refreshFormFields() {
     fetch(baseUrl + '/form-fields/list', { headers: { 'Accept': 'application/json' } })
@@ -1210,6 +1218,8 @@ function refreshFormFields() {
 }
 
 function renderFormFieldsTables(options) {
+    ffOptionsCache = {};
+
     // Group by field_group
     var grouped = {};
     Object.keys(ffFieldLabels).forEach(function (k) { grouped[k] = []; });
@@ -1234,6 +1244,8 @@ function renderFormFieldsTables(options) {
 
         var html = '';
         items.forEach(function (opt) {
+            ffOptionsCache[opt.id] = opt;
+
             var statusClass = opt.is_active ? 'bg-success' : 'bg-secondary';
             var statusLabel = opt.is_active ? 'Active' : 'Inactive';
             html += '<tr id="ff-row-' + opt.id + '" data-id="' + opt.id + '">'
@@ -1243,7 +1255,7 @@ function renderFormFieldsTables(options) {
                 + '<td>' + opt.sort_order + '</td>'
                 + '<td><span class="badge ' + statusClass + '">' + statusLabel + '</span></td>'
                 + '<td class="text-end text-nowrap">'
-                + '<button class="btn btn-sm btn-outline-warning me-1" onclick=\'openFormFieldModal(' + opt.id + ', ' + JSON.stringify(opt) + ')\'>'
+                + '<button class="btn btn-sm btn-outline-warning me-1" onclick="openFormFieldModal(' + opt.id + ')">'
                 + '<i class="bi bi-pencil-square"></i></button>'
                 + '<button class="btn btn-sm btn-outline-danger" onclick="deleteFormField(' + opt.id + ', \'' + esc(opt.label).replace(/'/g, "\\'") + '\')">'
                 + '<i class="bi bi-trash"></i></button>'
@@ -1257,6 +1269,10 @@ function renderFormFieldsTables(options) {
 }
 
 function openFormFieldModal(id, data) {
+    if (id && !data && ffOptionsCache[id]) {
+        data = ffOptionsCache[id];
+    }
+
     document.getElementById('ffModalTitle').textContent = id ? 'Edit Option' : 'Add Option';
     document.getElementById('ffId').value = id || '';
     document.getElementById('ffFieldName').value = data ? data.field_group : '';

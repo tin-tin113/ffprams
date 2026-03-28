@@ -226,10 +226,11 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
+                            <th>Method</th>
+                            <th>Program</th>
                             <th>Resource Type</th>
                             <th>Source Agency</th>
-                            <th>Quantity</th>
-                            <th>Unit</th>
+                            <th>Value</th>
                             <th>Distribution Date</th>
                             <th>Event Status</th>
                             <th>Distributed At</th>
@@ -239,18 +240,27 @@
                     <tbody>
                         @forelse($beneficiary->allocations as $allocation)
                             <tr>
-                                <td class="fw-semibold">{{ $allocation->distributionEvent->resourceType->name ?? '—' }}</td>
-                                <td>{{ $allocation->distributionEvent->resourceType->agency->name ?? '—' }}</td>
-                                <td>{{ $allocation->quantity }}</td>
-                                <td>{{ $allocation->distributionEvent->resourceType->unit ?? '—' }}</td>
-                                <td class="text-muted small">{{ $allocation->distributionEvent->distribution_date?->format('M d, Y') ?? '—' }}</td>
+                                <td>
+                                    @if($allocation->isDirect())
+                                        <span class="badge bg-info text-dark">Direct</span>
+                                    @else
+                                        <span class="badge bg-secondary">Event</span>
+                                    @endif
+                                </td>
+                                <td class="fw-semibold">{{ $allocation->programName->name ?? $allocation->distributionEvent->programName->name ?? '—' }}</td>
+                                <td>{{ $allocation->resourceType->name ?? $allocation->distributionEvent->resourceType->name ?? '—' }}</td>
+                                <td>{{ $allocation->resourceType->agency->name ?? $allocation->distributionEvent->resourceType->agency->name ?? '—' }}</td>
+                                <td>{{ $allocation->getDisplayValue() }}</td>
+                                <td class="text-muted small">{{ $allocation->distributionEvent?->distribution_date?->format('M d, Y') ?? $allocation->created_at?->format('M d, Y') ?? '—' }}</td>
                                 <td>
                                     @php
-                                        $eventStatus = $allocation->distributionEvent->status ?? '';
+                                        $eventStatus = $allocation->distributionEvent?->status ?? ($allocation->distributed_at ? 'Released' : 'Planned');
                                         $statusBadge = match($eventStatus) {
                                             'Pending'   => 'bg-primary',
                                             'Ongoing'   => 'bg-warning text-dark',
                                             'Completed' => 'bg-success',
+                                            'Released'  => 'bg-success',
+                                            'Planned'   => 'bg-secondary',
                                             default     => 'bg-secondary',
                                         };
                                     @endphp
@@ -261,7 +271,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4">
+                                <td colspan="9" class="text-center text-muted py-4">
                                     <i class="bi bi-inbox fs-3 d-block mb-2"></i>
                                     No distributions recorded yet.
                                 </td>

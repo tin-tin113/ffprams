@@ -18,7 +18,11 @@
 
     <div class="card border-0 shadow-sm">
         <div class="card-body">
-            <form action="{{ route('admin.users.store') }}" method="POST" data-submit-spinner>
+            <form action="{{ route('admin.users.store') }}"
+                method="POST"
+                data-submit-spinner
+                data-confirm-title="Confirm User Creation"
+                data-confirm-message="Create this user account with the selected role and access?">
                 @csrf
 
                 {{-- Name --}}
@@ -52,30 +56,11 @@
                             id="role" name="role" required>
                         <option value="" disabled {{ old('role') ? '' : 'selected' }}>Select role...</option>
                         <option value="admin" {{ old('role') === 'admin' ? 'selected' : '' }}>LGU Administrator (Full Access)</option>
-                        <option value="staff" {{ old('role') === 'staff' ? 'selected' : '' }}>MAO Staff (Modules 1 & 2)</option>
-                        <option value="viewer" {{ old('role') === 'viewer' ? 'selected' : '' }}>Agency View-Only (Read Only)</option>
+                        <option value="staff" {{ old('role') === 'staff' ? 'selected' : '' }}>Staff</option>
                     </select>
                     @error('role')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
-                </div>
-
-                {{-- Agency (for viewer role) --}}
-                <div class="mb-3" id="agency-group" style="display: none;">
-                    <label for="agency_id" class="form-label">Agency <span class="text-danger">*</span></label>
-                    <select class="form-select @error('agency_id') is-invalid @enderror"
-                            id="agency_id" name="agency_id">
-                        <option value="" disabled {{ old('agency_id') ? '' : 'selected' }}>Select agency...</option>
-                        @foreach($agencies as $agency)
-                            <option value="{{ $agency->id }}" {{ old('agency_id') == $agency->id ? 'selected' : '' }}>
-                                {{ $agency->name }} - {{ $agency->full_name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('agency_id')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                    <small class="text-muted">Required for Agency View-Only users</small>
                 </div>
 
                 {{-- Password --}}
@@ -108,21 +93,3 @@
     </div>
 @endsection
 
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const roleSelect = document.getElementById('role');
-    const agencyGroup = document.getElementById('agency-group');
-    const agencySelect = document.getElementById('agency_id');
-
-    function toggleAgency() {
-        const isViewer = roleSelect.value === 'viewer';
-        agencyGroup.style.display = isViewer ? '' : 'none';
-        agencySelect.required = isViewer;
-    }
-
-    roleSelect.addEventListener('change', toggleAgency);
-    toggleAgency();
-});
-</script>
-@endpush

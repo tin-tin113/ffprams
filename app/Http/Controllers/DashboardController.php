@@ -49,6 +49,29 @@ class DashboardController extends Controller
             ->where('status', 'Pending')
             ->count();
 
+        // Allocation method split
+        $totalEventAllocations = DB::table('allocations')
+            ->whereNull('deleted_at')
+            ->where('release_method', 'event')
+            ->count();
+
+        $totalDirectAllocations = DB::table('allocations')
+            ->whereNull('deleted_at')
+            ->where('release_method', 'direct')
+            ->count();
+
+        $eventDistributed = DB::table('allocations')
+            ->whereNull('deleted_at')
+            ->where('release_method', 'event')
+            ->whereNotNull('distributed_at')
+            ->count();
+
+        $directReleased = DB::table('allocations')
+            ->whereNull('deleted_at')
+            ->where('release_method', 'direct')
+            ->whereNotNull('distributed_at')
+            ->count();
+
         // Beneficiaries not yet reached (zero allocations)
         $beneficiariesNotYetReached = DB::table('beneficiaries')
             ->whereNull('deleted_at')
@@ -60,10 +83,22 @@ class DashboardController extends Controller
             })
             ->count();
 
-        // Total financial disbursed
+        // Total financial disbursed (all methods)
         $totalFinancialDisbursed = DB::table('allocations')
             ->whereNull('deleted_at')
             ->whereNotNull('distributed_at')
+            ->sum('amount');
+
+        $eventFinancialDisbursed = DB::table('allocations')
+            ->whereNull('deleted_at')
+            ->whereNotNull('distributed_at')
+            ->where('release_method', 'event')
+            ->sum('amount');
+
+        $directFinancialDisbursed = DB::table('allocations')
+            ->whereNull('deleted_at')
+            ->whereNotNull('distributed_at')
+            ->where('release_method', 'direct')
             ->sum('amount');
 
         return view('dashboard', [
@@ -75,8 +110,14 @@ class DashboardController extends Controller
             'completedEvents'            => $completedEvents,
             'ongoingEvents'              => $ongoingEvents,
             'pendingEvents'              => $pendingEvents,
+            'totalEventAllocations'      => $totalEventAllocations,
+            'totalDirectAllocations'     => $totalDirectAllocations,
+            'eventDistributed'           => $eventDistributed,
+            'directReleased'             => $directReleased,
             'beneficiariesNotYetReached' => $beneficiariesNotYetReached,
             'totalFinancialDisbursed'    => $totalFinancialDisbursed,
+            'eventFinancialDisbursed'    => $eventFinancialDisbursed,
+            'directFinancialDisbursed'   => $directFinancialDisbursed,
         ]);
     }
 }

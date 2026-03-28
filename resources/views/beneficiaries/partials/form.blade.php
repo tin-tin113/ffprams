@@ -2,6 +2,51 @@
 @php
     $editing = isset($beneficiary);
     $fo = $fieldOptions ?? [];
+
+    $normalizeFieldOptions = function ($items, array $fallback) {
+        if (empty($items) || (is_countable($items) && count($items) === 0)) {
+            return collect($fallback)->map(fn ($value) => (object) ['value' => $value, 'label' => $value]);
+        }
+
+        return collect($items)->map(function ($item) {
+            $value = is_object($item) ? ($item->value ?? $item->label ?? '') : ($item['value'] ?? $item['label'] ?? '');
+            $label = is_object($item) ? ($item->label ?? $item->value ?? '') : ($item['label'] ?? $item['value'] ?? '');
+            return (object) ['value' => $value, 'label' => $label];
+        });
+    };
+
+    $civilStatusOptions = $normalizeFieldOptions($fo['civil_status'] ?? [], ['Single', 'Married', 'Widowed', 'Separated']);
+    $highestEducationOptions = $normalizeFieldOptions($fo['highest_education'] ?? [], [
+        'No Formal Education',
+        'Elementary',
+        'High School',
+        'Vocational',
+        'College',
+        'Post Graduate',
+    ]);
+    $idTypeOptions = $normalizeFieldOptions($fo['id_type'] ?? [], [
+        'PhilSys ID',
+        "Voter's ID",
+        "Driver's License",
+        'Passport',
+        'Senior Citizen ID',
+        'PWD ID',
+        'Postal ID',
+        'TIN ID',
+    ]);
+    $farmOwnershipOptions = $normalizeFieldOptions($fo['farm_ownership'] ?? [], ['Registered Owner', 'Tenant', 'Lessee']);
+    $farmTypeOptions = $normalizeFieldOptions($fo['farm_type'] ?? [], ['Irrigated', 'Rainfed Upland', 'Rainfed Lowland']);
+    $fisherfolkTypeOptions = $normalizeFieldOptions($fo['fisherfolk_type'] ?? [], ['Capture Fishing', 'Aquaculture', 'Post-Harvest']);
+    $arbClassificationOptions = $normalizeFieldOptions($fo['arb_classification'] ?? [], [
+        'Agricultural Lessee',
+        'Regular Farmworker',
+        'Seasonal Farmworker',
+        'Other Farmworker',
+        'Actual Tiller',
+        'Collective/Cooperative',
+        'Others',
+    ]);
+    $ownershipSchemeOptions = $normalizeFieldOptions($fo['ownership_scheme'] ?? [], ['Individual', 'Collective', 'Cooperative']);
 @endphp
 
 {{-- SECTION 1 — Agency & Personal Information --}}
@@ -95,11 +140,35 @@
                 <label for="civil_status" class="form-label">Civil Status <span class="text-danger">*</span></label>
                 <select class="form-select @error('civil_status') is-invalid @enderror" id="civil_status" name="civil_status" required>
                     <option value="" disabled {{ old('civil_status', $beneficiary->civil_status ?? '') === '' ? 'selected' : '' }}>Select...</option>
-                    @foreach(['Single', 'Married', 'Widowed', 'Separated'] as $opt)
-                        <option value="{{ $opt }}" {{ old('civil_status', $beneficiary->civil_status ?? '') === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                    @foreach($civilStatusOptions as $opt)
+                        <option value="{{ $opt->value }}" {{ old('civil_status', $beneficiary->civil_status ?? '') === $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
                     @endforeach
                 </select>
                 @error('civil_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+
+            {{-- Highest Education --}}
+            <div class="col-md-3">
+                <label for="highest_education" class="form-label">Highest Education</label>
+                <select class="form-select @error('highest_education') is-invalid @enderror" id="highest_education" name="highest_education">
+                    <option value="" {{ old('highest_education', $beneficiary->highest_education ?? '') === '' ? 'selected' : '' }}>Select...</option>
+                    @foreach($highestEducationOptions as $opt)
+                        <option value="{{ $opt->value }}" {{ old('highest_education', $beneficiary->highest_education ?? '') === $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
+                    @endforeach
+                </select>
+                @error('highest_education')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+
+            {{-- Government ID Type --}}
+            <div class="col-md-3">
+                <label for="id_type" class="form-label">Government ID Type</label>
+                <select class="form-select @error('id_type') is-invalid @enderror" id="id_type" name="id_type">
+                    <option value="" {{ old('id_type', $beneficiary->id_type ?? '') === '' ? 'selected' : '' }}>Select...</option>
+                    @foreach($idTypeOptions as $opt)
+                        <option value="{{ $opt->value }}" {{ old('id_type', $beneficiary->id_type ?? '') === $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
+                    @endforeach
+                </select>
+                @error('id_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
 
             {{-- Contact Number --}}
@@ -167,8 +236,8 @@
                 <label for="farm_ownership" class="form-label">Land Ownership / Tenure <span class="text-danger">*</span></label>
                 <select class="form-select @error('farm_ownership') is-invalid @enderror" id="farm_ownership" name="farm_ownership">
                     <option value="" disabled {{ old('farm_ownership', $beneficiary->farm_ownership ?? '') === '' ? 'selected' : '' }}>Select...</option>
-                    @foreach(['Registered Owner', 'Tenant', 'Lessee'] as $opt)
-                        <option value="{{ $opt }}" {{ old('farm_ownership', $beneficiary->farm_ownership ?? '') === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                    @foreach($farmOwnershipOptions as $opt)
+                        <option value="{{ $opt->value }}" {{ old('farm_ownership', $beneficiary->farm_ownership ?? '') === $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
                     @endforeach
                 </select>
                 @error('farm_ownership')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -191,8 +260,8 @@
                 <label for="farm_type" class="form-label">Farm Type / Irrigation <span class="text-danger">*</span></label>
                 <select class="form-select @error('farm_type') is-invalid @enderror" id="farm_type" name="farm_type">
                     <option value="" disabled {{ old('farm_type', $beneficiary->farm_type ?? '') === '' ? 'selected' : '' }}>Select...</option>
-                    @foreach(['Irrigated', 'Rainfed Upland', 'Rainfed Lowland'] as $opt)
-                        <option value="{{ $opt }}" {{ old('farm_type', $beneficiary->farm_type ?? '') === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                    @foreach($farmTypeOptions as $opt)
+                        <option value="{{ $opt->value }}" {{ old('farm_type', $beneficiary->farm_type ?? '') === $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
                     @endforeach
                 </select>
                 @error('farm_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -224,8 +293,8 @@
                 <label for="fisherfolk_type" class="form-label">Type of Fishing Activity <span class="text-danger">*</span></label>
                 <select class="form-select @error('fisherfolk_type') is-invalid @enderror" id="fisherfolk_type" name="fisherfolk_type">
                     <option value="" disabled {{ old('fisherfolk_type', $beneficiary->fisherfolk_type ?? '') === '' ? 'selected' : '' }}>Select...</option>
-                    @foreach(['Capture Fishing', 'Aquaculture', 'Post-Harvest'] as $opt)
-                        <option value="{{ $opt }}" {{ old('fisherfolk_type', $beneficiary->fisherfolk_type ?? '') === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                    @foreach($fisherfolkTypeOptions as $opt)
+                        <option value="{{ $opt->value }}" {{ old('fisherfolk_type', $beneficiary->fisherfolk_type ?? '') === $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
                     @endforeach
                 </select>
                 @error('fisherfolk_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -288,8 +357,8 @@
                 <label for="arb_classification" class="form-label">ARB Classification <span class="text-danger">*</span></label>
                 <select class="form-select @error('arb_classification') is-invalid @enderror" id="arb_classification" name="arb_classification">
                     <option value="" disabled {{ old('arb_classification', $beneficiary->arb_classification ?? '') === '' ? 'selected' : '' }}>Select...</option>
-                    @foreach(['Agricultural Lessee', 'Regular Farmworker', 'Seasonal Farmworker', 'Other Farmworker', 'Actual Tiller', 'Collective/Cooperative', 'Others'] as $opt)
-                        <option value="{{ $opt }}" {{ old('arb_classification', $beneficiary->arb_classification ?? '') === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                    @foreach($arbClassificationOptions as $opt)
+                        <option value="{{ $opt->value }}" {{ old('arb_classification', $beneficiary->arb_classification ?? '') === $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
                     @endforeach
                 </select>
                 @error('arb_classification')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -298,8 +367,8 @@
                 <label for="ownership_scheme" class="form-label">Ownership Scheme <span class="text-danger">*</span></label>
                 <select class="form-select @error('ownership_scheme') is-invalid @enderror" id="ownership_scheme" name="ownership_scheme">
                     <option value="" disabled {{ old('ownership_scheme', $beneficiary->ownership_scheme ?? '') === '' ? 'selected' : '' }}>Select...</option>
-                    @foreach(['Individual', 'Collective', 'Cooperative'] as $opt)
-                        <option value="{{ $opt }}" {{ old('ownership_scheme', $beneficiary->ownership_scheme ?? '') === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                    @foreach($ownershipSchemeOptions as $opt)
+                        <option value="{{ $opt->value }}" {{ old('ownership_scheme', $beneficiary->ownership_scheme ?? '') === $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
                     @endforeach
                 </select>
                 @error('ownership_scheme')<div class="invalid-feedback">{{ $message }}</div>@enderror

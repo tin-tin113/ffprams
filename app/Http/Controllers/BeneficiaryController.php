@@ -127,6 +127,9 @@ class BeneficiaryController extends Controller
             'barangay',
             'agency',
             'allocations.distributionEvent.resourceType.agency',
+            'allocations.programName.agency',
+            'allocations.resourceType.agency',
+            'allocations.assistancePurpose',
             'smsLogs' => fn ($q) => $q->latest('sent_at')->limit(5),
         ]);
 
@@ -238,6 +241,8 @@ class BeneficiaryController extends Controller
             'farm_ownership',
             'fisherfolk_type',
             'civil_status',
+            'highest_education',
+            'id_type',
             'arb_classification',
             'ownership_scheme',
         ];
@@ -264,6 +269,24 @@ class BeneficiaryController extends Controller
             'farm_type' => ['Irrigated', 'Rainfed Upland', 'Rainfed Lowland'],
             'fisherfolk_type' => ['Capture Fishing', 'Aquaculture', 'Post-Harvest'],
             'civil_status' => ['Single', 'Married', 'Widowed', 'Separated'],
+            'highest_education' => [
+                'No Formal Education',
+                'Elementary',
+                'High School',
+                'Vocational',
+                'College',
+                'Post Graduate',
+            ],
+            'id_type' => [
+                'PhilSys ID',
+                "Voter's ID",
+                "Driver's License",
+                'Passport',
+                'Senior Citizen ID',
+                'PWD ID',
+                'Postal ID',
+                'TIN ID',
+            ],
             'arb_classification' => [
                 'Agricultural Lessee',
                 'Regular Farmworker',

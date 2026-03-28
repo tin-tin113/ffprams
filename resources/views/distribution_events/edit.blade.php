@@ -24,7 +24,11 @@
         <div>This event can only be edited while its status is Pending.</div>
     </div>
 
-    <form action="{{ route('distribution-events.update', $event) }}" method="POST" data-submit-spinner>
+    <form action="{{ route('distribution-events.update', $event) }}"
+          method="POST"
+          data-submit-spinner
+          data-confirm-title="Confirm Event Update"
+          data-confirm-message="Apply these changes to the scheduled distribution event?">
         @csrf
         @method('PUT')
 

@@ -472,8 +472,6 @@
         /* --- Badge Styles --- */
         .badge-admin { background-color: #dc2626; }
         .badge-staff { background-color: #2563eb; }
-        .badge-viewer { background-color: #7c3aed; }
-
         /* --- Breadcrumb --- */
         .breadcrumb {
             background: transparent;
@@ -590,14 +588,20 @@
                     <i class="bi bi-grid-1x2-fill"></i> Dashboard
                 </a>
 
+                @if(Auth::user()->isStaff() || Auth::user()->isAdmin())
                 <a class="nav-link {{ request()->routeIs('beneficiaries.*') ? 'active' : '' }}"
                    href="{{ route('beneficiaries.index') }}">
                     <i class="bi bi-people-fill"></i> Beneficiaries
                 </a>
 
+                <a class="nav-link {{ request()->routeIs('allocations.*') ? 'active' : '' }}"
+                   href="{{ route('allocations.index') }}">
+                    <i class="bi bi-list-check"></i> Assistance Allocations
+                </a>
+
                 <a class="nav-link {{ request()->routeIs('distribution-events.*') ? 'active' : '' }}"
                    href="{{ route('distribution-events.index') }}">
-                    <i class="bi bi-calendar-event-fill"></i> Distribution Events
+                    <i class="bi bi-calendar-event-fill"></i> Scheduled Events
                 </a>
 
                 <a class="nav-link {{ request()->routeIs('sms.*') ? 'active' : '' }}"
@@ -619,6 +623,7 @@
                    href="{{ route('geo-map.index') }}">
                     <i class="bi bi-geo-alt-fill"></i> Geo-Mapping
                 </a>
+                @endif
 
                 @if(Auth::user()->isAdmin())
                     <span class="sidebar-heading">Administration</span>

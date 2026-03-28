@@ -9,6 +9,7 @@ use App\Models\Agency;
 use App\Models\User;
 use App\Services\AuditLogService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class UserController extends Controller
@@ -35,10 +36,8 @@ class UserController extends Controller
     {
         $data = $request->validated();
 
-        // Only set agency_id for viewer role
-        if ($request->input('role') !== 'viewer') {
-            $data['agency_id'] = null;
-        }
+        // Agency-based access is no longer used in role assignment.
+        $data['agency_id'] = null;
 
         $user = User::create($data);
 
@@ -68,10 +67,8 @@ class UserController extends Controller
 
         $data = $request->safe()->only(['name', 'email', 'role', 'agency_id']);
 
-        // Only set agency_id for viewer role
-        if ($request->input('role') !== 'viewer') {
-            $data['agency_id'] = null;
-        }
+        // Agency-based access is no longer used in role assignment.
+        $data['agency_id'] = null;
 
         if ($request->filled('password')) {
             $data['password'] = $request->validated('password');
@@ -95,7 +92,7 @@ class UserController extends Controller
 
     public function destroy(User $user): RedirectResponse
     {
-        if ($user->id === auth()->id()) {
+        if ($user->id === Auth::id()) {
             return redirect()
                 ->route('admin.users.index')
                 ->with('error', 'You cannot delete your own account.');
@@ -104,7 +101,7 @@ class UserController extends Controller
         $userName = $user->name;
 
         $this->audit->log(
-            userId:    auth()->id(),
+            userId:    Auth::id(),
             action:    'deleted',
             tableName: 'users',
             recordId:  $user->id,

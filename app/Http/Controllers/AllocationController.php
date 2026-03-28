@@ -4,14 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\AllocationRequest;
 use App\Models\Allocation;
+use App\Models\AssistancePurpose;
 use App\Models\Beneficiary;
 use App\Models\DistributionEvent;
+use App\Models\ProgramName;
+use App\Models\ResourceType;
 use App\Services\AuditLogService;
 use App\Services\SemaphoreService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class AllocationController extends Controller
 {
@@ -20,49 +24,122 @@ class AllocationController extends Controller
         private SemaphoreService $sms,
     ) {}
 
+    public function index(): View
+    {
+        $beneficiaries = Beneficiary::with('barangay')
+            ->where('status', 'Active')
+            ->orderBy('full_name')
+            ->get(['id', 'full_name', 'barangay_id']);
+
+        $programNames = ProgramName::with('agency')->active()->orderBy('name')->get();
+        $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
+        $assistancePurposes = AssistancePurpose::active()->orderBy('name')->get();
+
+        $directAllocations = Allocation::with([
+            'beneficiary',
+            'programName',
+            'resourceType',
+            'assistancePurpose',
+        ])
+            ->where('release_method', 'direct')
+            ->latest()
+            ->take(30)
+            ->get();
+
+        return view('allocations.index', compact(
+            'beneficiaries',
+            'programNames',
+            'resourceTypes',
+            'assistancePurposes',
+            'directAllocations',
+        ));
+    }
+
     public function store(AllocationRequest $request): RedirectResponse
     {
-        $event = DistributionEvent::with(['barangay', 'resourceType'])->findOrFail($request->distribution_event_id);
-
         $beneficiary = Beneficiary::findOrFail($request->beneficiary_id);
+        $releaseMethod = $request->input('release_method', 'event');
 
-        if ($beneficiary->barangay_id !== $event->barangay_id) {
-            return redirect()->back()
-                ->with('error', 'This beneficiary does not belong to the same barangay as the distribution event.');
+        if ($releaseMethod === 'event') {
+            $event = DistributionEvent::with(['barangay', 'resourceType'])->findOrFail($request->distribution_event_id);
+
+            if ($beneficiary->barangay_id !== $event->barangay_id) {
+                return redirect()->back()
+                    ->with('error', 'This beneficiary does not belong to the same barangay as the distribution event.');
+            }
+
+            $exists = Allocation::where('distribution_event_id', $event->id)
+                ->where('beneficiary_id', $beneficiary->id)
+                ->exists();
+
+            if ($exists) {
+                return redirect()->back()
+                    ->with('error', 'This beneficiary has already been allocated for this event.');
+            }
+
+            // Permanently remove any soft-deleted allocation so the new one can be created cleanly
+            Allocation::onlyTrashed()
+                ->where('distribution_event_id', $event->id)
+                ->where('beneficiary_id', $beneficiary->id)
+                ->forceDelete();
+
+            $allocation = DB::transaction(function () use ($request, $event, $beneficiary) {
+                $allocation = Allocation::create([
+                    'release_method'        => 'event',
+                    'distribution_event_id' => $event->id,
+                    'beneficiary_id'        => $beneficiary->id,
+                    'program_name_id'       => $event->program_name_id,
+                    'resource_type_id'      => $event->resource_type_id,
+                    'quantity'              => $event->isFinancial() ? null : $request->quantity,
+                    'amount'                => $event->isFinancial() ? $request->amount : null,
+                    'assistance_purpose_id' => $request->assistance_purpose_id,
+                    'remarks'               => $request->remarks,
+                ]);
+
+                $this->audit->log(
+                    auth()->id(),
+                    'created',
+                    'allocations',
+                    $allocation->id,
+                    [],
+                    $allocation->toArray(),
+                );
+
+                return $allocation;
+            });
+
+            // SMS notification (outside transaction -- non-critical)
+            if ($beneficiary->contact_number) {
+                if ($event->isFinancial()) {
+                    $smsMessage = "Hello {$beneficiary->full_name}, you have been allocated PHP {$allocation->amount} for {$event->resourceType->name} scheduled on {$event->distribution_date->format('M d, Y')} at Barangay {$event->barangay->name}. Please coordinate with your barangay official for claiming details.";
+                } else {
+                    $smsMessage = "Hello {$beneficiary->full_name}, you have been allocated {$allocation->quantity} {$event->resourceType->unit} of {$event->resourceType->name} scheduled on {$event->distribution_date->format('M d, Y')} at Barangay {$event->barangay->name}. Please coordinate with your barangay official for details.";
+                }
+
+                $this->sms->sendSms(
+                    $beneficiary->contact_number,
+                    $smsMessage,
+                    $beneficiary->id,
+                );
+            }
+
+            return redirect()->route('distribution-events.show', $event)
+                ->with('success', 'Beneficiary allocated successfully.');
         }
 
-        $exists = Allocation::where('distribution_event_id', $event->id)
-            ->where('beneficiary_id', $beneficiary->id)
-            ->exists();
+        $resourceType = ResourceType::with('agency')->findOrFail($request->resource_type_id);
 
-        if ($exists) {
-            return redirect()->back()
-                ->with('error', 'This beneficiary has already been allocated for this event.');
-        }
+        $allocation = DB::transaction(function () use ($request, $beneficiary, $resourceType) {
+            $isFinancial = $resourceType->unit === 'PHP';
 
-        $legacyExists = Allocation::withTrashed()
-            ->where('distribution_event_id', $event->id)
-            ->where('beneficiary_id', $beneficiary->id)
-            ->whereNull('deleted_at')
-            ->exists();
-
-        if ($legacyExists) {
-            return redirect()->back()
-                ->with('error', 'This beneficiary has already been allocated for this event.');
-        }
-
-        // Permanently remove any soft-deleted allocation so the new one can be created cleanly
-        Allocation::onlyTrashed()
-            ->where('distribution_event_id', $event->id)
-            ->where('beneficiary_id', $beneficiary->id)
-            ->forceDelete();
-
-        $allocation = DB::transaction(function () use ($request, $event, $beneficiary) {
             $allocation = Allocation::create([
-                'distribution_event_id' => $event->id,
+                'release_method'        => 'direct',
+                'distribution_event_id' => null,
                 'beneficiary_id'        => $beneficiary->id,
-                'quantity'              => $event->isFinancial() ? null : $request->quantity,
-                'amount'                => $event->isFinancial() ? $request->amount : null,
+                'program_name_id'       => $request->program_name_id,
+                'resource_type_id'      => $resourceType->id,
+                'quantity'              => $isFinancial ? null : $request->quantity,
+                'amount'                => $isFinancial ? $request->amount : null,
                 'assistance_purpose_id' => $request->assistance_purpose_id,
                 'remarks'               => $request->remarks,
             ]);
@@ -79,23 +156,22 @@ class AllocationController extends Controller
             return $allocation;
         });
 
-        // SMS notification (outside transaction -- non-critical)
         if ($beneficiary->contact_number) {
-            if ($event->isFinancial()) {
-                $smsMessage = "Hello {$beneficiary->full_name}, you have been allocated PHP {$allocation->amount} for {$event->resourceType->name} scheduled on {$event->distribution_date->format('M d, Y')} at Barangay {$event->barangay->name}. Please coordinate with your barangay official for claiming details.";
-            } else {
-                $smsMessage = "Hello {$beneficiary->full_name}, you have been allocated {$allocation->quantity} {$event->resourceType->unit} of {$event->resourceType->name} scheduled on {$event->distribution_date->format('M d, Y')} at Barangay {$event->barangay->name}. Please coordinate with your barangay official for details.";
-            }
+            $value = $resourceType->unit === 'PHP'
+                ? ('PHP ' . number_format((float) $allocation->amount, 2))
+                : (number_format((float) $allocation->quantity, 2) . ' ' . $resourceType->unit);
+
+            $message = "Hello {$beneficiary->full_name}, you have been allocated {$value} of {$resourceType->name} as direct assistance. Please coordinate with the office for release details.";
 
             $this->sms->sendSms(
                 $beneficiary->contact_number,
-                $smsMessage,
+                $message,
                 $beneficiary->id,
             );
         }
 
-        return redirect()->route('distribution-events.show', $event)
-            ->with('success', 'Beneficiary allocated successfully.');
+        return redirect()->route('allocations.index')
+            ->with('success', 'Direct assistance allocation saved successfully.');
     }
 
     public function storeBulk(Request $request): RedirectResponse
@@ -155,8 +231,11 @@ class AllocationController extends Controller
                 }
 
                 $allocation = Allocation::create([
+                    'release_method'        => 'event',
                     'distribution_event_id' => $event->id,
                     'beneficiary_id'        => $beneficiary->id,
+                    'program_name_id'       => $event->program_name_id,
+                    'resource_type_id'      => $event->resource_type_id,
                     'quantity'              => $event->isFinancial() ? null : $row['quantity'],
                     'amount'                => $event->isFinancial() ? $row['amount'] : null,
                     'assistance_purpose_id' => $row['assistance_purpose_id'] ?? null,
@@ -213,6 +292,11 @@ class AllocationController extends Controller
     {
         $event = $allocation->distributionEvent;
 
+        if (! $event) {
+            return redirect()->route('allocations.index')
+                ->with('error', 'Direct allocations can only be edited from the assistance allocation page.');
+        }
+
         $rules = ['remarks' => ['nullable', 'string', 'max:500']];
         $rules['assistance_purpose_id'] = ['nullable', 'exists:assistance_purposes,id'];
 
@@ -254,7 +338,7 @@ class AllocationController extends Controller
     {
         $event = $allocation->distributionEvent;
 
-        if ($event->status === 'Completed') {
+        if ($event && $event->status === 'Completed') {
             return redirect()->back()
                 ->with('error', 'Allocations cannot be removed from a completed event.');
         }
@@ -271,7 +355,12 @@ class AllocationController extends Controller
             );
         });
 
-        return redirect()->route('distribution-events.show', $event)
+        if ($event) {
+            return redirect()->route('distribution-events.show', $event)
+                ->with('success', 'Allocation removed successfully.');
+        }
+
+        return redirect()->route('allocations.index')
             ->with('success', 'Allocation removed successfully.');
     }
 
@@ -279,7 +368,7 @@ class AllocationController extends Controller
     {
         $event = $allocation->distributionEvent;
 
-        if ($event->status === 'Pending') {
+        if ($event && $event->status === 'Pending') {
             return redirect()->back()
                 ->with('error', 'Cannot mark as distributed while event is still Pending.');
         }

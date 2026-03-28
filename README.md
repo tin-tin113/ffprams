@@ -65,8 +65,8 @@ A web-based management system built for the **Municipal Agriculture Office of En
 - All CRUD operations logged with user, action, table, old/new values (JSON)
 
 ### User Management
-- Role-based access: **Admin** (full access), **Staff** (Modules 1 & 2), and **Viewer** (read-only)
-- Line Agency View-Only users linked to specific partner agencies for monitoring
+- Role-based access: **Admin** (user management, system settings, and admin controls) and **Staff** (operational modules)
+- Admin and Staff functions are intentionally separated to avoid overlap in module responsibilities
 - Admin-only actions: complete events, delete allocations, manage users, and manage system settings
 - Staff note: Staff can access the Resource Types module for operational maintenance
 - Self-registration is disabled; user accounts are created and managed by admins

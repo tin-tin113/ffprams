@@ -22,8 +22,12 @@
 </div>
 
 <script>
+let pendingConfirmForm = null;
+
 function confirmAction(title, message, actionUrl, method) {
     method = method || 'POST';
+    pendingConfirmForm = null;
+
     document.getElementById('confirmModalLabel').textContent = title;
     document.getElementById('confirmMessage').textContent = message;
     document.getElementById('confirmForm').setAttribute('action', actionUrl);
@@ -32,4 +36,45 @@ function confirmAction(title, message, actionUrl, method) {
     var modal = new bootstrap.Modal(document.getElementById('confirmModal'));
     modal.show();
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    var confirmModalEl = document.getElementById('confirmModal');
+    var confirmModal = new bootstrap.Modal(confirmModalEl);
+    var confirmForm = document.getElementById('confirmForm');
+    var confirmBtn = document.getElementById('confirmBtn');
+
+    // Intercept forms marked with data-confirm-* attributes.
+    document.querySelectorAll('form[data-confirm-message]').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            if (form.dataset.skipConfirm === '1') {
+                return;
+            }
+
+            e.preventDefault();
+            pendingConfirmForm = form;
+
+            document.getElementById('confirmModalLabel').textContent = form.dataset.confirmTitle || 'Confirm Action';
+            document.getElementById('confirmMessage').textContent = form.dataset.confirmMessage;
+
+            confirmModal.show();
+        });
+    });
+
+    confirmBtn.addEventListener('click', function (e) {
+        if (!pendingConfirmForm) {
+            return;
+        }
+
+        e.preventDefault();
+        var form = pendingConfirmForm;
+        pendingConfirmForm = null;
+        form.dataset.skipConfirm = '1';
+        confirmModal.hide();
+        form.submit();
+    });
+
+    confirmModalEl.addEventListener('hidden.bs.modal', function () {
+        pendingConfirmForm = null;
+    });
+});
 </script>

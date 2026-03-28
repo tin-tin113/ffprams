@@ -11,10 +11,11 @@ use App\Http\Controllers\AllocationController;
 use App\Http\Controllers\GeoMapController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\SmsController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    if (auth()->check()) {
+    if (Auth::check()) {
         return redirect()->route('dashboard');
     }
     return redirect()->route('login');
@@ -32,9 +33,8 @@ Route::middleware('auth')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Shared Routes (Admin & Staff)
+| Operational Routes (Admin & Staff)
 |--------------------------------------------------------------------------
-| Both admin and staff can access these routes.
 */
 Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
     // Beneficiaries (create, store, edit, update, destroy)
@@ -66,49 +66,31 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
     Route::get('sms', [SmsController::class, 'index'])->name('sms.index');
     Route::post('sms/preview', [SmsController::class, 'preview'])->name('sms.preview');
     Route::post('sms/send', [SmsController::class, 'send'])->name('sms.send');
-});
 
-/*
-|--------------------------------------------------------------------------
-| Read-Only Routes (Admin, Staff & Viewer)
-|--------------------------------------------------------------------------
-| Admin, staff, and viewer (Agency View-Only) can access these read-only routes.
-*/
-Route::middleware(['auth', 'verified', 'role:admin,staff,viewer'])->group(function () {
-    // Beneficiaries (index, show)
+    // Operational read pages
+    Route::get('allocations', [AllocationController::class, 'index'])->name('allocations.index');
     Route::get('beneficiaries', [BeneficiaryController::class, 'index'])->name('beneficiaries.index');
     Route::get('beneficiaries/{beneficiary}', [BeneficiaryController::class, 'show'])->name('beneficiaries.show');
     Route::get('api/beneficiaries/{beneficiary}/summary', [BeneficiaryController::class, 'summary'])
         ->name('beneficiaries.summary');
-
-    // Distribution Events (index, show)
     Route::get('distribution-events', [DistributionEventController::class, 'index'])->name('distribution-events.index');
     Route::get('distribution-events/{event}', [DistributionEventController::class, 'show'])->name('distribution-events.show');
-
-    // Reports
     Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
-
-    // Geo Map
     Route::get('geo-map', [GeoMapController::class, 'index'])->name('geo-map.index');
     Route::get('geo-map/data', [GeoMapController::class, 'mapData'])->name('geo-map.data');
 });
 
 /*
 |--------------------------------------------------------------------------
-| Admin-Only Allocation Deletion
+| Admin-Only Routes
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
+    // Admin-only allocation deletion endpoint
     Route::delete('allocations/{allocation}', [AllocationController::class, 'destroy'])
         ->name('allocations.destroy');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Admin-Only Routes
-|--------------------------------------------------------------------------
-| Only users with the admin role can access these routes.
-*/
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     // User Management
     Route::resource('users', UserController::class)->except(['show']);

@@ -26,45 +26,106 @@ return new class extends Migration
 			return;
 		}
 
-		Schema::table('allocations', function (Blueprint $table) {
-			$table->dropForeign('allocations_distribution_event_id_foreign');
-			$table->dropForeign('allocations_beneficiary_id_foreign');
-		});
+		try {
+			Schema::table('allocations', function (Blueprint $table) {
+				$table->dropForeign('allocations_distribution_event_id_foreign');
+			});
+		} catch (\Throwable) {
+			// Ignore if the FK does not exist in current DB state.
+		}
 
-		DB::statement('ALTER TABLE allocations DROP INDEX allocation_event_beneficiary_unique');
+		try {
+			Schema::table('allocations', function (Blueprint $table) {
+				$table->dropForeign('allocations_beneficiary_id_foreign');
+			});
+		} catch (\Throwable) {
+			// Ignore if the FK does not exist in current DB state.
+		}
 
-		DB::statement(
-			'ALTER TABLE allocations '
-			. 'ADD COLUMN active_beneficiary_id BIGINT '
-			. 'GENERATED ALWAYS AS (CASE WHEN deleted_at IS NULL THEN beneficiary_id ELSE NULL END) STORED'
-		);
+		try {
+			DB::statement('ALTER TABLE allocations DROP INDEX allocation_event_beneficiary_unique');
+		} catch (\Throwable) {
+			// Ignore if the index does not exist in current DB state.
+		}
 
-		DB::statement(
-			'CREATE UNIQUE INDEX allocation_event_active_beneficiary_unique '
-			. 'ON allocations (distribution_event_id, active_beneficiary_id)'
-		);
+		if (! Schema::hasColumn('allocations', 'active_beneficiary_id')) {
+			DB::statement(
+				'ALTER TABLE allocations '
+				. 'ADD COLUMN active_beneficiary_id BIGINT '
+				. 'GENERATED ALWAYS AS (CASE WHEN deleted_at IS NULL THEN beneficiary_id ELSE NULL END) STORED'
+			);
+		}
 
-		Schema::table('allocations', function (Blueprint $table) {
-			$table->foreign('distribution_event_id')
-				->references('id')->on('distribution_events')
-				->cascadeOnDelete();
-			$table->foreign('beneficiary_id')
-				->references('id')->on('beneficiaries')
-				->cascadeOnDelete();
-		});
+		try {
+			DB::statement(
+				'CREATE UNIQUE INDEX allocation_event_active_beneficiary_unique '
+				. 'ON allocations (distribution_event_id, active_beneficiary_id)'
+			);
+		} catch (\Throwable) {
+			// Ignore if the index already exists in current DB state.
+		}
+
+		// Remove orphan rows before re-adding strict FKs.
+		DB::statement('DELETE a FROM allocations a LEFT JOIN distribution_events d ON d.id = a.distribution_event_id WHERE d.id IS NULL');
+		DB::statement('DELETE a FROM allocations a LEFT JOIN beneficiaries b ON b.id = a.beneficiary_id WHERE b.id IS NULL');
+
+		try {
+			Schema::table('allocations', function (Blueprint $table) {
+				$table->foreign('distribution_event_id')
+					->references('id')->on('distribution_events')
+					->cascadeOnDelete();
+			});
+		} catch (\Throwable) {
+			// Ignore if already present or not re-creatable in this DB state.
+		}
+
+		try {
+			Schema::table('allocations', function (Blueprint $table) {
+				$table->foreign('beneficiary_id')
+					->references('id')->on('beneficiaries')
+					->cascadeOnDelete();
+			});
+		} catch (\Throwable) {
+			// Ignore if already present or not re-creatable in this DB state.
+		}
 	}
 
 	public function down(): void
 	{
 		if (DB::getDriverName() === 'mysql') {
-			Schema::table('allocations', function (Blueprint $table) {
-				$table->dropForeign('allocations_distribution_event_id_foreign');
-				$table->dropForeign('allocations_beneficiary_id_foreign');
-			});
+			try {
+				Schema::table('allocations', function (Blueprint $table) {
+					$table->dropForeign('allocations_distribution_event_id_foreign');
+				});
+			} catch (\Throwable) {
+				// Ignore if the FK does not exist in current DB state.
+			}
 
-			DB::statement('ALTER TABLE allocations DROP INDEX allocation_event_active_beneficiary_unique');
-			DB::statement('ALTER TABLE allocations DROP COLUMN active_beneficiary_id');
-			DB::statement('CREATE UNIQUE INDEX allocation_event_beneficiary_unique ON allocations (distribution_event_id, beneficiary_id, deleted_at)');
+			try {
+				Schema::table('allocations', function (Blueprint $table) {
+					$table->dropForeign('allocations_beneficiary_id_foreign');
+				});
+			} catch (\Throwable) {
+				// Ignore if the FK does not exist in current DB state.
+			}
+
+			try {
+				DB::statement('ALTER TABLE allocations DROP INDEX allocation_event_active_beneficiary_unique');
+			} catch (\Throwable) {
+				// Ignore if the index does not exist in current DB state.
+			}
+
+			try {
+				DB::statement('ALTER TABLE allocations DROP COLUMN active_beneficiary_id');
+			} catch (\Throwable) {
+				// Ignore if the generated column does not exist in current DB state.
+			}
+
+			try {
+				DB::statement('CREATE UNIQUE INDEX allocation_event_beneficiary_unique ON allocations (distribution_event_id, beneficiary_id, deleted_at)');
+			} catch (\Throwable) {
+				// Ignore if the index already exists in current DB state.
+			}
 
 			Schema::table('allocations', function (Blueprint $table) {
 				$table->foreign('distribution_event_id')

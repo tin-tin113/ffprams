@@ -13,7 +13,10 @@ class Allocation extends Model
 
     protected $fillable = [
         'distribution_event_id',
+        'release_method',
         'beneficiary_id',
+        'program_name_id',
+        'resource_type_id',
         'quantity',
         'amount',
         'distributed_at',
@@ -32,13 +35,33 @@ class Allocation extends Model
 
     public function getDisplayValue(): string
     {
-        if ($this->distributionEvent && $this->distributionEvent->isFinancial()) {
+        $isFinancial = false;
+
+        if ($this->distributionEvent) {
+            $isFinancial = $this->distributionEvent->isFinancial();
+        } elseif (($this->resourceType?->unit ?? null) === 'PHP') {
+            $isFinancial = true;
+        }
+
+        if ($isFinancial) {
             return '₱' . number_format((float) $this->amount, 2);
         }
 
-        $unit = $this->distributionEvent?->resourceType?->unit ?? '';
+        $unit = $this->distributionEvent?->resourceType?->unit
+            ?? $this->resourceType?->unit
+            ?? '';
 
         return number_format((float) $this->quantity, 2) . ' ' . $unit;
+    }
+
+    public function isDirect(): bool
+    {
+        return $this->release_method === 'direct';
+    }
+
+    public function isEventBased(): bool
+    {
+        return $this->release_method === 'event';
     }
 
     public function beneficiary(): BelongsTo
@@ -49,6 +72,16 @@ class Allocation extends Model
     public function distributionEvent(): BelongsTo
     {
         return $this->belongsTo(DistributionEvent::class);
+    }
+
+    public function programName(): BelongsTo
+    {
+        return $this->belongsTo(ProgramName::class);
+    }
+
+    public function resourceType(): BelongsTo
+    {
+        return $this->belongsTo(ResourceType::class);
     }
 
     public function assistancePurpose(): BelongsTo

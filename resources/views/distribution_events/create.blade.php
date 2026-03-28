@@ -18,7 +18,11 @@
         <h1 class="h3 mb-0">Create Distribution Event</h1>
     </div>
 
-    <form action="{{ route('distribution-events.store') }}" method="POST" data-submit-spinner>
+    <form action="{{ route('distribution-events.store') }}"
+          method="POST"
+          data-submit-spinner
+          data-confirm-title="Confirm Event Creation"
+          data-confirm-message="Create this scheduled distribution event?">
         @csrf
 
         <div class="card border-0 shadow-sm mb-4">

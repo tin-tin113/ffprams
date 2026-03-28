@@ -351,7 +351,9 @@
                                     @if(!$allocation->distributed_at && $event->status !== 'Pending')
                                         <form method="POST"
                                               action="{{ route('allocations.markDistributed', $allocation) }}"
-                                              class="d-inline">
+                                              class="d-inline"
+                                              data-confirm-title="Confirm Distribution"
+                                              data-confirm-message="Mark this allocation as {{ $event->isFinancial() ? 'claimed' : 'distributed' }}? This will timestamp the transaction.">
                                             @csrf
                                             <button type="submit" class="btn btn-sm btn-outline-success me-1">
                                                 <i class="bi bi-check2"></i> {{ $event->isFinancial() ? 'Mark as Claimed' : 'Distribute' }}
@@ -417,6 +419,7 @@
         <div class="modal-content">
             <form method="POST" action="{{ route('allocations.store') }}">
                 @csrf
+                <input type="hidden" name="release_method" value="event">
                 <input type="hidden" name="distribution_event_id" value="{{ $event->id }}">
                 <div class="modal-header">
                     <h5 class="modal-title" id="addBeneficiaryModalLabel">Add Beneficiary</h5>
@@ -482,8 +485,13 @@
 <div class="modal fade" id="addAllModal" tabindex="-1" aria-labelledby="addAllModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form method="POST" action="{{ route('allocations.storeBulk') }}" id="bulkForm">
+            <form method="POST"
+                action="{{ route('allocations.storeBulk') }}"
+                id="bulkForm"
+                data-confirm-title="Confirm Bulk Allocation"
+                data-confirm-message="Add allocations for all selected beneficiaries in this barangay? This is a bulk transaction.">
                 @csrf
+                <input type="hidden" name="release_method" value="event">
                 <input type="hidden" name="distribution_event_id" value="{{ $event->id }}">
                 <div class="modal-header">
                     <h5 class="modal-title" id="addAllModalLabel">Add All Barangay Beneficiaries</h5>

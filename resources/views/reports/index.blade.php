@@ -102,11 +102,11 @@
     </div>
 
     {{-- ============================================================ --}}
-    {{-- REPORT 2 — Resource Distribution Summary --}}
+    {{-- REPORT 2 — Resource Distribution Summary (Event vs Direct) --}}
     {{-- ============================================================ --}}
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <span class="fw-semibold"><i class="bi bi-box-seam me-1"></i> Report 2: Resource Distribution Summary (Completed Events)</span>
+            <span class="fw-semibold"><i class="bi bi-box-seam me-1"></i> Report 2: Resource Distribution Summary (Event vs Direct)</span>
             <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> Print
             </button>
@@ -120,9 +120,13 @@
                             <th>Resource Type</th>
                             <th>Unit</th>
                             <th>Source Agency</th>
-                            <th class="text-center">Total Qty Distributed</th>
-                            <th class="text-center">Beneficiaries Reached</th>
-                            <th class="text-center">Events</th>
+                            <th class="text-center">Event Qty</th>
+                            <th class="text-center">Direct Qty</th>
+                            <th class="text-center">Total Qty</th>
+                            <th class="text-center">Event Beneficiaries</th>
+                            <th class="text-center">Direct Beneficiaries</th>
+                            <th class="text-center">Total Beneficiaries</th>
+                            <th class="text-center">Completed Events</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -144,13 +148,17 @@
                                     @endphp
                                     <span class="badge {{ $agencyBadge }}">{{ $agencyName }}</span>
                                 </td>
-                                <td class="text-center">{{ number_format($row->total_quantity_distributed, 2) }}</td>
-                                <td class="text-center">{{ number_format($row->total_beneficiaries_reached) }}</td>
+                                <td class="text-center">{{ number_format($row->event_quantity_distributed, 2) }}</td>
+                                <td class="text-center">{{ number_format($row->direct_quantity_distributed, 2) }}</td>
+                                <td class="text-center fw-bold">{{ number_format($row->total_quantity_distributed, 2) }}</td>
+                                <td class="text-center">{{ number_format($row->event_beneficiaries_reached) }}</td>
+                                <td class="text-center">{{ number_format($row->direct_beneficiaries_reached) }}</td>
+                                <td class="text-center fw-bold">{{ number_format($row->total_beneficiaries_reached) }}</td>
                                 <td class="text-center">{{ number_format($row->total_events) }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted py-4">
+                                <td colspan="11" class="text-center text-muted py-4">
                                     <i class="bi bi-inbox fs-3 d-block mb-2"></i>
                                     No distribution data available.
                                 </td>
@@ -163,11 +171,11 @@
     </div>
 
     {{-- ============================================================ --}}
-    {{-- REPORT 3 — Distribution Status per Barangay --}}
+    {{-- REPORT 3 — Distribution Status + Direct Releases per Barangay --}}
     {{-- ============================================================ --}}
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <span class="fw-semibold"><i class="bi bi-bar-chart me-1"></i> Report 3: Distribution Status per Barangay</span>
+            <span class="fw-semibold"><i class="bi bi-bar-chart me-1"></i> Report 3: Distribution Status + Direct Releases per Barangay</span>
             <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> Print
             </button>
@@ -182,6 +190,8 @@
                             <th class="text-center">Pending</th>
                             <th class="text-center">Ongoing</th>
                             <th class="text-center">Completed</th>
+                            <th class="text-center">Direct Releases</th>
+                            <th class="text-center">Direct Beneficiaries</th>
                             <th class="text-center">Total Events</th>
                         </tr>
                     </thead>
@@ -193,11 +203,13 @@
                                 <td class="text-center"><span class="badge bg-info">{{ $row->pending_events }}</span></td>
                                 <td class="text-center"><span class="badge bg-warning text-dark">{{ $row->ongoing_events }}</span></td>
                                 <td class="text-center"><span class="badge bg-success">{{ $row->completed_events }}</span></td>
+                                <td class="text-center">{{ number_format($row->direct_released_allocations) }}</td>
+                                <td class="text-center">{{ number_format($row->direct_beneficiaries_reached) }}</td>
                                 <td class="text-center fw-bold">{{ number_format($row->total_events) }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center text-muted py-4">
+                                <td colspan="8" class="text-center text-muted py-4">
                                     <i class="bi bi-inbox fs-3 d-block mb-2"></i>
                                     No distribution events found.
                                 </td>
@@ -211,6 +223,8 @@
                                 <td class="text-center">{{ $statusPerBarangay->sum('pending_events') }}</td>
                                 <td class="text-center">{{ $statusPerBarangay->sum('ongoing_events') }}</td>
                                 <td class="text-center">{{ $statusPerBarangay->sum('completed_events') }}</td>
+                                <td class="text-center">{{ $statusPerBarangay->sum('direct_released_allocations') }}</td>
+                                <td class="text-center">{{ $statusPerBarangay->sum('direct_beneficiaries_reached') }}</td>
                                 <td class="text-center">{{ $statusPerBarangay->sum('total_events') }}</td>
                             </tr>
                         </tfoot>
@@ -281,11 +295,11 @@
     </div>
 
     {{-- ============================================================ --}}
-    {{-- REPORT 5 — Monthly Distribution Summary --}}
+    {{-- REPORT 5 — Monthly Summary (Event vs Direct) --}}
     {{-- ============================================================ --}}
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <span class="fw-semibold"><i class="bi bi-calendar3 me-1"></i> Report 5: Monthly Distribution Summary ({{ $currentYear }})</span>
+            <span class="fw-semibold"><i class="bi bi-calendar3 me-1"></i> Report 5: Monthly Summary (Event vs Direct, {{ $currentYear }})</span>
             <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> Print
             </button>
@@ -296,8 +310,12 @@
                     <thead class="table-light">
                         <tr>
                             <th>Month</th>
-                            <th class="text-center">Total Events</th>
-                            <th class="text-center">Beneficiaries Served</th>
+                            <th class="text-center">Events</th>
+                            <th class="text-center">Event Beneficiaries</th>
+                            <th class="text-center">Direct Beneficiaries</th>
+                            <th class="text-center">Total Beneficiaries</th>
+                            <th class="text-center">Event Quantity</th>
+                            <th class="text-center">Direct Quantity</th>
                             <th class="text-center">Total Quantity</th>
                         </tr>
                     </thead>
@@ -314,12 +332,16 @@
                             <tr>
                                 <td>{{ $monthNames[$row->month_number] ?? 'Unknown' }}</td>
                                 <td class="text-center">{{ number_format($row->total_events) }}</td>
+                                <td class="text-center">{{ number_format($row->event_beneficiaries) }}</td>
+                                <td class="text-center">{{ number_format($row->direct_beneficiaries) }}</td>
                                 <td class="text-center">{{ number_format($row->total_beneficiaries) }}</td>
-                                <td class="text-center">{{ number_format($row->total_quantity, 2) }}</td>
+                                <td class="text-center">{{ number_format($row->event_quantity, 2) }}</td>
+                                <td class="text-center">{{ number_format($row->direct_quantity, 2) }}</td>
+                                <td class="text-center fw-bold">{{ number_format($row->total_quantity, 2) }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="text-center text-muted py-4">
+                                <td colspan="8" class="text-center text-muted py-4">
                                     <i class="bi bi-inbox fs-3 d-block mb-2"></i>
                                     No distribution data for {{ $currentYear }}.
                                 </td>
@@ -331,7 +353,11 @@
                             <tr class="fw-bold">
                                 <td>Total</td>
                                 <td class="text-center">{{ number_format($monthlyDistribution->sum('total_events')) }}</td>
+                                <td class="text-center">{{ number_format($monthlyDistribution->sum('event_beneficiaries')) }}</td>
+                                <td class="text-center">{{ number_format($monthlyDistribution->sum('direct_beneficiaries')) }}</td>
                                 <td class="text-center">{{ number_format($monthlyDistribution->sum('total_beneficiaries')) }}</td>
+                                <td class="text-center">{{ number_format($monthlyDistribution->sum('event_quantity'), 2) }}</td>
+                                <td class="text-center">{{ number_format($monthlyDistribution->sum('direct_quantity'), 2) }}</td>
                                 <td class="text-center">{{ number_format($monthlyDistribution->sum('total_quantity'), 2) }}</td>
                             </tr>
                         </tfoot>
@@ -349,11 +375,11 @@
     </div>
 
     {{-- ============================================================ --}}
-    {{-- REPORT 6 — Financial Assistance Summary --}}
+    {{-- REPORT 6 — Financial Assistance Summary (Event vs Direct) --}}
     {{-- ============================================================ --}}
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <span class="fw-semibold"><i class="bi bi-cash-stack me-1"></i> Report 6: Financial Assistance Summary (Completed Events)</span>
+            <span class="fw-semibold"><i class="bi bi-cash-stack me-1"></i> Report 6: Financial Assistance Summary (Event vs Direct)</span>
             <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> Print
             </button>
@@ -366,9 +392,13 @@
                             <th>#</th>
                             <th>Assistance Type</th>
                             <th>Source Agency</th>
-                            <th class="text-center">Total Events</th>
-                            <th class="text-center">Beneficiaries Reached</th>
-                            <th class="text-end">Total Amount Disbursed (PHP)</th>
+                            <th class="text-center">Completed Events</th>
+                            <th class="text-center">Event Beneficiaries</th>
+                            <th class="text-center">Direct Beneficiaries</th>
+                            <th class="text-center">Total Beneficiaries</th>
+                            <th class="text-end">Event Amount (PHP)</th>
+                            <th class="text-end">Direct Amount (PHP)</th>
+                            <th class="text-end">Total Amount (PHP)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -390,14 +420,18 @@
                                     <span class="badge {{ $agencyBadge }}">{{ $agencyName }}</span>
                                 </td>
                                 <td class="text-center">{{ number_format($row->total_events) }}</td>
-                                <td class="text-center">{{ number_format($row->total_beneficiaries_reached) }}</td>
-                                <td class="text-end">&#8369;{{ number_format($row->total_amount_disbursed, 2) }}</td>
+                                <td class="text-center">{{ number_format($row->event_beneficiaries_reached) }}</td>
+                                <td class="text-center">{{ number_format($row->direct_beneficiaries_reached) }}</td>
+                                <td class="text-center fw-bold">{{ number_format($row->total_beneficiaries_reached) }}</td>
+                                <td class="text-end">&#8369;{{ number_format($row->event_amount_disbursed, 2) }}</td>
+                                <td class="text-end">&#8369;{{ number_format($row->direct_amount_disbursed, 2) }}</td>
+                                <td class="text-end fw-bold">&#8369;{{ number_format($row->total_amount_disbursed, 2) }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center text-muted py-4">
+                                <td colspan="10" class="text-center text-muted py-4">
                                     <i class="bi bi-inbox fs-3 d-block mb-2"></i>
-                                    No completed financial assistance events yet.
+                                    No financial assistance distribution data yet.
                                 </td>
                             </tr>
                         @endforelse
@@ -407,7 +441,11 @@
                             <tr class="fw-bold">
                                 <td colspan="3">Grand Total</td>
                                 <td class="text-center">{{ number_format($financialSummary->sum('total_events')) }}</td>
+                                <td class="text-center">{{ number_format($financialSummary->sum('event_beneficiaries_reached')) }}</td>
+                                <td class="text-center">{{ number_format($financialSummary->sum('direct_beneficiaries_reached')) }}</td>
                                 <td class="text-center">{{ number_format($financialSummary->sum('total_beneficiaries_reached')) }}</td>
+                                <td class="text-end">&#8369;{{ number_format($financialSummary->sum('event_amount_disbursed'), 2) }}</td>
+                                <td class="text-end">&#8369;{{ number_format($financialSummary->sum('direct_amount_disbursed'), 2) }}</td>
                                 <td class="text-end">&#8369;{{ number_format($financialSummary->sum('total_amount_disbursed'), 2) }}</td>
                             </tr>
                         </tfoot>
@@ -418,11 +456,11 @@
     </div>
 
     {{-- ============================================================ --}}
-    {{-- REPORT 7 — Financial Assistance per Barangay --}}
+    {{-- REPORT 7 — Financial Assistance per Barangay (Event vs Direct) --}}
     {{-- ============================================================ --}}
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <span class="fw-semibold"><i class="bi bi-geo-alt me-1"></i> Report 7: Financial Assistance per Barangay (Completed Events)</span>
+            <span class="fw-semibold"><i class="bi bi-geo-alt me-1"></i> Report 7: Financial Assistance per Barangay (Event vs Direct)</span>
             <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> Print
             </button>
@@ -434,8 +472,12 @@
                         <tr>
                             <th>#</th>
                             <th>Barangay</th>
-                            <th class="text-center">Total Financial Events</th>
+                            <th class="text-center">Completed Events</th>
+                            <th class="text-center">Event Beneficiaries</th>
+                            <th class="text-center">Direct Beneficiaries</th>
                             <th class="text-center">Total Beneficiaries</th>
+                            <th class="text-end">Event Amount (PHP)</th>
+                            <th class="text-end">Direct Amount (PHP)</th>
                             <th class="text-end">Total Amount (PHP)</th>
                         </tr>
                     </thead>
@@ -445,14 +487,18 @@
                                 <td class="text-muted">{{ $loop->iteration }}</td>
                                 <td>{{ $row->name }}</td>
                                 <td class="text-center">{{ number_format($row->total_financial_events) }}</td>
-                                <td class="text-center">{{ number_format($row->total_beneficiaries) }}</td>
-                                <td class="text-end">&#8369;{{ number_format($row->total_amount, 2) }}</td>
+                                <td class="text-center">{{ number_format($row->event_beneficiaries) }}</td>
+                                <td class="text-center">{{ number_format($row->direct_beneficiaries) }}</td>
+                                <td class="text-center fw-bold">{{ number_format($row->total_beneficiaries) }}</td>
+                                <td class="text-end">&#8369;{{ number_format($row->event_amount, 2) }}</td>
+                                <td class="text-end">&#8369;{{ number_format($row->direct_amount, 2) }}</td>
+                                <td class="text-end fw-bold">&#8369;{{ number_format($row->total_amount, 2) }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-muted py-4">
+                                <td colspan="9" class="text-center text-muted py-4">
                                     <i class="bi bi-inbox fs-3 d-block mb-2"></i>
-                                    No completed financial assistance events yet.
+                                    No financial assistance distribution data yet.
                                 </td>
                             </tr>
                         @endforelse
@@ -462,7 +508,11 @@
                             <tr class="fw-bold">
                                 <td colspan="2">Grand Total</td>
                                 <td class="text-center">{{ number_format($financialPerBarangay->sum('total_financial_events')) }}</td>
+                                <td class="text-center">{{ number_format($financialPerBarangay->sum('event_beneficiaries')) }}</td>
+                                <td class="text-center">{{ number_format($financialPerBarangay->sum('direct_beneficiaries')) }}</td>
                                 <td class="text-center">{{ number_format($financialPerBarangay->sum('total_beneficiaries')) }}</td>
+                                <td class="text-end">&#8369;{{ number_format($financialPerBarangay->sum('event_amount'), 2) }}</td>
+                                <td class="text-end">&#8369;{{ number_format($financialPerBarangay->sum('direct_amount'), 2) }}</td>
                                 <td class="text-end">&#8369;{{ number_format($financialPerBarangay->sum('total_amount'), 2) }}</td>
                             </tr>
                         </tfoot>
@@ -473,11 +523,11 @@
     </div>
 
     {{-- ============================================================ --}}
-    {{-- REPORT 8 — Financial Assistance Distribution by Purpose --}}
+    {{-- REPORT 8 — Financial Assistance Distribution by Purpose (Event vs Direct) --}}
     {{-- ============================================================ --}}
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <span class="fw-semibold"><i class="bi bi-cash-coin me-1"></i> Report 8: Financial Assistance Distribution by Purpose</span>
+            <span class="fw-semibold"><i class="bi bi-cash-coin me-1"></i> Report 8: Financial Assistance Distribution by Purpose (Event vs Direct)</span>
             <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> Print
             </button>
@@ -490,7 +540,11 @@
                             <th>#</th>
                             <th>Purpose</th>
                             <th>Category</th>
-                            <th class="text-center">Beneficiaries</th>
+                            <th class="text-center">Event Beneficiaries</th>
+                            <th class="text-center">Direct Beneficiaries</th>
+                            <th class="text-center">Total Beneficiaries</th>
+                            <th class="text-end">Event Amount (PHP)</th>
+                            <th class="text-end">Direct Amount (PHP)</th>
                             <th class="text-end">Total Amount (PHP)</th>
                         </tr>
                     </thead>
@@ -512,12 +566,16 @@
                                     @endphp
                                     <span class="badge {{ $catBadge }}">{{ ucfirst($row->category) }}</span>
                                 </td>
-                                <td class="text-center">{{ number_format($row->total_beneficiaries) }}</td>
-                                <td class="text-end">&#8369;{{ number_format($row->total_amount, 2) }}</td>
+                                <td class="text-center">{{ number_format($row->event_beneficiaries) }}</td>
+                                <td class="text-center">{{ number_format($row->direct_beneficiaries) }}</td>
+                                <td class="text-center fw-bold">{{ number_format($row->total_beneficiaries) }}</td>
+                                <td class="text-end">&#8369;{{ number_format($row->event_amount, 2) }}</td>
+                                <td class="text-end">&#8369;{{ number_format($row->direct_amount, 2) }}</td>
+                                <td class="text-end fw-bold">&#8369;{{ number_format($row->total_amount, 2) }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-muted py-4">
+                                <td colspan="9" class="text-center text-muted py-4">
                                     <i class="bi bi-inbox fs-3 d-block mb-2"></i>
                                     No distributed assistance data available.
                                 </td>
@@ -528,7 +586,11 @@
                         <tfoot class="table-light">
                             <tr class="fw-bold">
                                 <td colspan="3">Grand Total</td>
+                                <td class="text-center">{{ number_format($assistanceByPurpose->sum('event_beneficiaries')) }}</td>
+                                <td class="text-center">{{ number_format($assistanceByPurpose->sum('direct_beneficiaries')) }}</td>
                                 <td class="text-center">{{ number_format($assistanceByPurpose->sum('total_beneficiaries')) }}</td>
+                                <td class="text-end">&#8369;{{ number_format($assistanceByPurpose->sum('event_amount'), 2) }}</td>
+                                <td class="text-end">&#8369;{{ number_format($assistanceByPurpose->sum('direct_amount'), 2) }}</td>
                                 <td class="text-end">&#8369;{{ number_format($assistanceByPurpose->sum('total_amount'), 2) }}</td>
                             </tr>
                         </tfoot>
@@ -550,8 +612,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const data = @json($monthlyDistribution);
 
     const labels = data.map(row => monthNames[row.month_number - 1]);
-    const beneficiaries = data.map(row => row.total_beneficiaries);
+    const eventBeneficiaries = data.map(row => row.event_beneficiaries);
+    const directBeneficiaries = data.map(row => row.direct_beneficiaries);
     const events = data.map(row => row.total_events);
+    const directReleases = data.map(row => row.direct_releases);
 
     new Chart(document.getElementById('monthlyChart'), {
         type: 'bar',
@@ -559,10 +623,17 @@ document.addEventListener('DOMContentLoaded', function () {
             labels: labels,
             datasets: [
                 {
-                    label: 'Beneficiaries Served',
-                    data: beneficiaries,
+                    label: 'Event Beneficiaries',
+                    data: eventBeneficiaries,
                     backgroundColor: 'rgba(46, 125, 50, 0.7)',
                     borderColor: 'rgba(46, 125, 50, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Direct Beneficiaries',
+                    data: directBeneficiaries,
+                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
                     borderWidth: 1
                 },
                 {
@@ -570,6 +641,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     data: events,
                     backgroundColor: 'rgba(21, 101, 192, 0.7)',
                     borderColor: 'rgba(21, 101, 192, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Direct Releases',
+                    data: directReleases,
+                    backgroundColor: 'rgba(255, 193, 7, 0.7)',
+                    borderColor: 'rgba(255, 193, 7, 1)',
                     borderWidth: 1
                 }
             ]

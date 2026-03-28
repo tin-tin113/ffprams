@@ -265,14 +265,14 @@ if ($usersIndex) {
     check('5.6', 'admin.users.index has role:admin', str_contains($usersMw, 'role:admin'), $usersMw);
 }
 
-// Verify geo-map routes have admin,staff,viewer
+// Verify geo-map routes are admin+staff
 $geoIndex = $routeCollection->getByName('geo-map.index');
 $geoData = $routeCollection->getByName('geo-map.data');
 check('5.7', 'geo-map.index route exists', $geoIndex !== null);
 check('5.8', 'geo-map.data route exists', $geoData !== null);
 if ($geoIndex) {
     $geoMw = implode(',', $geoIndex->middleware());
-    check('5.9', 'geo-map.index has role:admin,staff,viewer', str_contains($geoMw, 'role:admin,staff,viewer'), $geoMw);
+    check('5.9', 'geo-map.index has role:admin,staff', str_contains($geoMw, 'role:admin,staff'), $geoMw);
 }
 
 // Verify shared routes all have auth
