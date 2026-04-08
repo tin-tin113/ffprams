@@ -320,6 +320,14 @@
                             'arb_classification' => 'ARB Classification',
                             'ownership_scheme'   => 'Ownership Scheme',
                         ];
+
+                        foreach ($formFields->keys() as $groupKey) {
+                            if (!isset($fieldLabels[$groupKey])) {
+                                $fieldLabels[$groupKey] = (string) \Illuminate\Support\Str::of($groupKey)
+                                    ->replace('_', ' ')
+                                    ->title();
+                            }
+                        }
                     @endphp
                     <div class="accordion" id="formFieldsAccordion">
                         @foreach($fieldLabels as $fieldKey => $fieldLabel)
@@ -589,8 +597,14 @@
                             <option value="fisherfolk_type">Fisherfolk Type</option>
                             <option value="arb_classification">ARB Classification</option>
                             <option value="ownership_scheme">Ownership Scheme</option>
+                            <option value="__custom__">Custom field or section...</option>
                         </select>
                         <div class="invalid-feedback" id="ffFieldNameError"></div>
+                    </div>
+                    <div class="mb-3" id="ffCustomFieldNameWrap" style="display: none;">
+                        <label for="ffCustomFieldName" class="form-label">New Field Key <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="ffCustomFieldName" maxlength="100" placeholder="e.g. livelihood_support_type">
+                        <small class="text-muted">Use letters, numbers, and underscore only. This creates a new section.</small>
                     </div>
                     <div class="mb-3">
                         <label for="ffLabel" class="form-label">Label <span class="text-danger">*</span></label>
@@ -1198,18 +1212,105 @@ function deleteProgramName(id, name) {
 // FORM FIELDS — Render & CRUD
 // ══════════════════════════════════════════════
 
-var ffFieldLabels = {
-    'civil_status':     'Civil Status',
-    'highest_education':'Highest Education',
-    'id_type':          'Government ID Type',
-    'farm_type':        'Farm Type',
-    'farm_ownership':   'Farm Ownership',
-    'fisherfolk_type':  'Fisherfolk Type',
-    'arb_classification': 'ARB Classification',
-    'ownership_scheme': 'Ownership Scheme'
-};
+var ffFieldLabels = @json($fieldLabels);
 
 var ffOptionsCache = {};
+
+function fieldDomId(fieldName) {
+    return String(fieldName || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, '-')
+        .replace(/-+/g, '-');
+}
+
+function toLabelFromFieldKey(fieldKey) {
+    return String(fieldKey || '')
+        .replace(/[_-]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+}
+
+function normalizeFieldKey(raw) {
+    return String(raw || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[\s-]+/g, '_')
+        .replace(/[^a-z0-9_]/g, '')
+        .replace(/_+/g, '_')
+        .replace(/^_+|_+$/g, '');
+}
+
+function rebuildFormFieldSelect(selectedValue) {
+    var select = document.getElementById('ffFieldName');
+    if (!select) return;
+
+    var selected = selectedValue || '';
+    var entries = Object.keys(ffFieldLabels).map(function (key) {
+        return { key: key, label: ffFieldLabels[key] || toLabelFromFieldKey(key) };
+    });
+
+    entries.sort(function (a, b) {
+        return a.label.localeCompare(b.label);
+    });
+
+    var html = '<option value="" disabled>Select field...</option>';
+    entries.forEach(function (entry) {
+        html += '<option value="' + esc(entry.key) + '">' + esc(entry.label) + '</option>';
+    });
+    html += '<option value="__custom__">Custom field or section...</option>';
+
+    select.innerHTML = html;
+    if (selected) {
+        select.value = selected;
+    } else {
+        select.value = '';
+    }
+}
+
+function toggleCustomFieldInput() {
+    var select = document.getElementById('ffFieldName');
+    var wrap = document.getElementById('ffCustomFieldNameWrap');
+    var input = document.getElementById('ffCustomFieldName');
+    if (!select || !wrap || !input) return;
+
+    var isCustom = select.value === '__custom__';
+    wrap.style.display = isCustom ? '' : 'none';
+    if (!isCustom) {
+        input.value = '';
+        input.classList.remove('is-invalid');
+    }
+}
+
+function ensureFormFieldSection(fieldName) {
+    var accordion = document.getElementById('formFieldsAccordion');
+    if (!accordion) return;
+
+    var fieldId = fieldDomId(fieldName);
+    if (document.getElementById('ff-tbody-' + fieldId)) return;
+
+    var fieldLabel = ffFieldLabels[fieldName] || toLabelFromFieldKey(fieldName);
+    ffFieldLabels[fieldName] = fieldLabel;
+
+    var html = ''
+        + '<div class="accordion-item">'
+        + '<h2 class="accordion-header" id="heading-' + fieldId + '">'
+        + '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-' + fieldId + '">'
+        + esc(fieldLabel)
+        + '<span class="badge bg-secondary ms-2" id="count-' + fieldId + '">0</span>'
+        + '</button></h2>'
+        + '<div id="collapse-' + fieldId + '" class="accordion-collapse collapse" data-bs-parent="#formFieldsAccordion">'
+        + '<div class="accordion-body p-0"><div class="table-responsive">'
+        + '<table class="table table-hover align-middle mb-0">'
+        + '<thead class="table-light"><tr>'
+        + '<th style="width: 40px;"><i class="bi bi-grip-vertical text-muted"></i></th>'
+        + '<th>Label</th><th>Value</th><th>Order</th><th>Status</th><th class="text-end">Actions</th>'
+        + '</tr></thead>'
+        + '<tbody id="ff-tbody-' + fieldId + '" data-field="' + esc(fieldName) + '"></tbody>'
+        + '</table></div></div></div></div>';
+
+    accordion.insertAdjacentHTML('beforeend', html);
+}
 
 function refreshFormFields() {
     fetch(baseUrl + '/form-fields/list', { headers: { 'Accept': 'application/json' } })
@@ -1225,16 +1326,20 @@ function renderFormFieldsTables(options) {
     Object.keys(ffFieldLabels).forEach(function (k) { grouped[k] = []; });
     options.forEach(function (opt) {
         if (!grouped[opt.field_group]) grouped[opt.field_group] = [];
+        if (!ffFieldLabels[opt.field_group]) ffFieldLabels[opt.field_group] = toLabelFromFieldKey(opt.field_group);
         grouped[opt.field_group].push(opt);
     });
 
     Object.keys(grouped).forEach(function (fieldName) {
-        var tbody = document.getElementById('ff-tbody-' + fieldName);
+        ensureFormFieldSection(fieldName);
+
+        var fieldId = fieldDomId(fieldName);
+        var tbody = document.getElementById('ff-tbody-' + fieldId);
         if (!tbody) return;
         var items = grouped[fieldName];
 
         // Update count badge
-        var badge = document.getElementById('count-' + fieldName);
+        var badge = document.getElementById('count-' + fieldId);
         if (badge) badge.textContent = items.length;
 
         if (!items.length) {
@@ -1266,6 +1371,8 @@ function renderFormFieldsTables(options) {
         // Re-init drag-and-drop for this tbody
         initSortable(tbody);
     });
+
+    rebuildFormFieldSelect(document.getElementById('ffFieldName').value);
 }
 
 function openFormFieldModal(id, data) {
@@ -1275,12 +1382,19 @@ function openFormFieldModal(id, data) {
 
     document.getElementById('ffModalTitle').textContent = id ? 'Edit Option' : 'Add Option';
     document.getElementById('ffId').value = id || '';
-    document.getElementById('ffFieldName').value = data ? data.field_group : '';
+    if (data && data.field_group && !ffFieldLabels[data.field_group]) {
+        ffFieldLabels[data.field_group] = toLabelFromFieldKey(data.field_group);
+    }
+
+    rebuildFormFieldSelect(data ? data.field_group : '');
     document.getElementById('ffFieldName').disabled = !!id; // Lock field on edit
     document.getElementById('ffLabel').value = data ? data.label : '';
     document.getElementById('ffValue').value = data ? data.value : '';
     document.getElementById('ffSortOrder').value = data ? data.sort_order : '';
     document.getElementById('ffIsActive').checked = data ? data.is_active : true;
+    document.getElementById('ffCustomFieldName').value = '';
+    document.getElementById('ffCustomFieldName').classList.remove('is-invalid');
+    toggleCustomFieldInput();
     clearValidation('ff', ['FieldName', 'Label', 'Value']);
     new bootstrap.Modal(document.getElementById('formFieldModal')).show();
 }
@@ -1303,7 +1417,26 @@ function saveFormField() {
     if (sortVal !== '') payload.sort_order = parseInt(sortVal);
 
     if (!id) {
-        payload.field_group = document.getElementById('ffFieldName').value;
+        var selectedGroup = document.getElementById('ffFieldName').value;
+
+        if (selectedGroup === '__custom__') {
+            var customFieldInput = document.getElementById('ffCustomFieldName');
+            var normalized = normalizeFieldKey(customFieldInput.value);
+            if (!normalized) {
+                setButtonLoading(btn, false);
+                customFieldInput.classList.add('is-invalid');
+                showToast('Please enter a valid custom field key.', 'danger');
+                return;
+            }
+            customFieldInput.value = normalized;
+            customFieldInput.classList.remove('is-invalid');
+            payload.field_group = normalized;
+            if (!ffFieldLabels[normalized]) {
+                ffFieldLabels[normalized] = toLabelFromFieldKey(normalized);
+            }
+        } else {
+            payload.field_group = selectedGroup;
+        }
     }
 
     ajaxFetch(url, {
@@ -1379,10 +1512,18 @@ function initSortable(tbody) {
 
 // Init sortable on all form field tbodies
 document.addEventListener('DOMContentLoaded', function () {
-    Object.keys(ffFieldLabels).forEach(function (fieldName) {
-        var tbody = document.getElementById('ff-tbody-' + fieldName);
+    rebuildFormFieldSelect('');
+
+    var fieldSelect = document.getElementById('ffFieldName');
+    if (fieldSelect) {
+        fieldSelect.addEventListener('change', toggleCustomFieldInput);
+    }
+
+    document.querySelectorAll('tbody[id^="ff-tbody-"]').forEach(function (tbody) {
         if (tbody) initSortable(tbody);
     });
+
+    refreshFormFields();
 });
 </script>
 @endpush

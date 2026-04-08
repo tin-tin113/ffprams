@@ -94,8 +94,19 @@ Why this step exists:
    - Distribution Date
    - Type (Physical or Financial)
    - Total Fund Amount (required for Financial)
-4. Save. Event starts as Pending.
-5. Move status forward as work progresses:
+4. For Financial events, encode legal/compliance metadata before start:
+   - Legal basis type, reference number, and date
+   - Fund source and trust account details (if applicable)
+   - Liquidation status and due date
+   - FARMC endorsement requirement and reference (for applicable fishery cases)
+   - Conditional rules enforced by system:
+     - If Legal Basis Type = Other, remarks are required.
+     - If Fund Source = LGU Trust Fund, trust account code is required.
+     - If Liquidation Status = Pending/Submitted/Verified, liquidation due date is required.
+     - If Liquidation Status = Submitted/Verified, submitted date/time and liquidation reference no. are required.
+     - If FARMC endorsement is required, FARMC reference no. is required.
+5. Save. Event starts as Pending.
+6. Move status forward as work progresses:
    - Pending -> Ongoing -> Completed
 
 Outputs prepared during event operations:
@@ -110,6 +121,10 @@ Rules:
 - Only Pending events can be edited/deleted.
 - Only Admin can set event to Completed.
 - Event cannot start (Pending -> Ongoing) until beneficiary list approval is completed by Admin.
+- Financial events cannot start without legal basis and fund source details.
+- Financial events use strict conditional validation for legal/fund/liquidation/FARMC fields while in Pending.
+- Financial events cannot be completed until liquidation is verified.
+- If FARMC endorsement is required, event start is blocked until endorsement is encoded.
 
 ## F) Allocation Process (Event-Based)
 
@@ -219,6 +234,7 @@ Rules:
 3. Use reports for planning, validation, and compliance reporting.
 4. After event closure, generate and review the distribution summary report for agency/LGU submission.
 5. Event Details page shows a post-completion prompt that links directly to Reports.
+6. Compliance snapshot in Reports highlights missing legal basis, pending/overdue liquidation, and FARMC-pending events.
 
 ## K) Geo-Map Monitoring Process
 
@@ -262,9 +278,10 @@ Rules:
 7. Print and use the distribution list with acknowledgement signatures during release.
 8. Record release outcomes per beneficiary (Received or Not Received).
 9. Admin marks event Completed.
-10. Generate and review distribution summary report for agency submission.
-11. Send targeted SMS reminders/announcements as needed.
-12. Review reports and geo-map for coverage and gaps.
+10. For financial events, ensure liquidation status reaches Verified before completion.
+11. Generate and review distribution summary report for agency submission.
+12. Send targeted SMS reminders/announcements as needed.
+13. Review reports and geo-map for coverage and gaps.
 
 ## O) Scope and Evidence Notes
 

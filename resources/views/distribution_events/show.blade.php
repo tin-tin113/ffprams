@@ -28,6 +28,19 @@
             'Completed' => 'bg-success',
             default     => 'bg-secondary',
         };
+        $legalBasisLabels = [
+            'resolution' => 'Resolution',
+            'ordinance' => 'Ordinance',
+            'memo' => 'Memo',
+            'special_order' => 'Special Order',
+            'other' => 'Other',
+        ];
+        $fundSourceLabels = [
+            'lgu_trust_fund' => 'LGU Trust Fund',
+            'nga_transfer' => 'NGA Transfer',
+            'local_program' => 'Local Program',
+            'other' => 'Other',
+        ];
         $agencyName = $event->resourceType->agency->name ?? 'N/A';
         $agencyBadge = match($agencyName) {
             'DA'   => 'bg-success',
@@ -198,6 +211,140 @@
             </div>
         </div>
     </div>
+
+    @if($event->isFinancial())
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white fw-semibold">
+                <i class="bi bi-shield-check me-1"></i> Legal and Compliance
+            </div>
+            <div class="card-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <div class="text-muted small">Legal Basis</div>
+                        <div class="fw-semibold">{{ $legalBasisLabels[$event->legal_basis_type] ?? 'Not set' }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">Reference No.</div>
+                        <div class="fw-semibold">{{ $event->legal_basis_reference_no ?: 'Not set' }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">Fund Source</div>
+                        <div class="fw-semibold">{{ $fundSourceLabels[$event->fund_source] ?? 'Not set' }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">Liquidation Status</div>
+                        <div class="fw-semibold">{{ ucfirst(str_replace('_', ' ', $event->liquidation_status ?? 'not_required')) }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">Liquidation Due Date</div>
+                        <div class="fw-semibold">{{ $event->liquidation_due_date?->format('M d, Y') ?? 'Not set' }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">FARMC Endorsement</div>
+                        <div class="fw-semibold">
+                            @if($event->requires_farmc_endorsement)
+                                {{ $event->farmc_endorsed_at ? 'Endorsed' : 'Required (Pending)' }}
+                            @else
+                                Not Required
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                @if($event->status !== 'Completed')
+                    <form method="POST"
+                          action="{{ route('distribution-events.updateCompliance', $event) }}"
+                          data-confirm-title="Update Compliance Details"
+                          data-confirm-message="Save legal/compliance updates for this event?">
+                        @csrf
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="legal_basis_type" class="form-label">Legal Basis Type</label>
+                                <select class="form-select @error('legal_basis_type') is-invalid @enderror" id="legal_basis_type" name="legal_basis_type">
+                                    <option value="">Select legal basis type</option>
+                                    <option value="resolution" {{ old('legal_basis_type', $event->legal_basis_type) === 'resolution' ? 'selected' : '' }}>Resolution</option>
+                                    <option value="ordinance" {{ old('legal_basis_type', $event->legal_basis_type) === 'ordinance' ? 'selected' : '' }}>Ordinance</option>
+                                    <option value="memo" {{ old('legal_basis_type', $event->legal_basis_type) === 'memo' ? 'selected' : '' }}>Memo</option>
+                                    <option value="special_order" {{ old('legal_basis_type', $event->legal_basis_type) === 'special_order' ? 'selected' : '' }}>Special Order</option>
+                                    <option value="other" {{ old('legal_basis_type', $event->legal_basis_type) === 'other' ? 'selected' : '' }}>Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="legal_basis_reference_no" class="form-label">Legal Basis Reference No.</label>
+                                <input type="text" class="form-control @error('legal_basis_reference_no') is-invalid @enderror" maxlength="150" id="legal_basis_reference_no" name="legal_basis_reference_no" value="{{ old('legal_basis_reference_no', $event->legal_basis_reference_no) }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="legal_basis_date" class="form-label">Legal Basis Date</label>
+                                <input type="date" class="form-control @error('legal_basis_date') is-invalid @enderror" id="legal_basis_date" name="legal_basis_date" value="{{ old('legal_basis_date', $event->legal_basis_date?->format('Y-m-d')) }}">
+                            </div>
+                            <div class="col-md-6" id="showTrustAccountGroup">
+                                <label for="fund_source" class="form-label">Fund Source</label>
+                                <select class="form-select @error('fund_source') is-invalid @enderror" id="fund_source" name="fund_source">
+                                    <option value="">Select fund source</option>
+                                    <option value="lgu_trust_fund" {{ old('fund_source', $event->fund_source) === 'lgu_trust_fund' ? 'selected' : '' }}>LGU Trust Fund</option>
+                                    <option value="nga_transfer" {{ old('fund_source', $event->fund_source) === 'nga_transfer' ? 'selected' : '' }}>NGA Transfer</option>
+                                    <option value="local_program" {{ old('fund_source', $event->fund_source) === 'local_program' ? 'selected' : '' }}>Local Program</option>
+                                    <option value="other" {{ old('fund_source', $event->fund_source) === 'other' ? 'selected' : '' }}>Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6" id="showTrustAccountInputGroup">
+                                <label for="trust_account_code" class="form-label">Trust Account Code</label>
+                                <input type="text" class="form-control @error('trust_account_code') is-invalid @enderror" maxlength="100" id="trust_account_code" name="trust_account_code" value="{{ old('trust_account_code', $event->trust_account_code) }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="fund_release_reference" class="form-label">Fund Release Reference</label>
+                                <input type="text" class="form-control @error('fund_release_reference') is-invalid @enderror" maxlength="150" id="fund_release_reference" name="fund_release_reference" value="{{ old('fund_release_reference', $event->fund_release_reference) }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="liquidation_status" class="form-label">Liquidation Status</label>
+                                <select class="form-select @error('liquidation_status') is-invalid @enderror" id="liquidation_status" name="liquidation_status">
+                                    <option value="not_required" {{ old('liquidation_status', $event->liquidation_status ?? 'not_required') === 'not_required' ? 'selected' : '' }}>Not Required</option>
+                                    <option value="pending" {{ old('liquidation_status', $event->liquidation_status) === 'pending' ? 'selected' : '' }}>Pending</option>
+                                    <option value="submitted" {{ old('liquidation_status', $event->liquidation_status) === 'submitted' ? 'selected' : '' }}>Submitted</option>
+                                    <option value="verified" {{ old('liquidation_status', $event->liquidation_status) === 'verified' ? 'selected' : '' }}>Verified</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4" id="showLiqDueGroup">
+                                <label for="liquidation_due_date" class="form-label">Liquidation Due Date</label>
+                                <input type="date" class="form-control @error('liquidation_due_date') is-invalid @enderror" id="liquidation_due_date" name="liquidation_due_date" value="{{ old('liquidation_due_date', $event->liquidation_due_date?->format('Y-m-d')) }}">
+                            </div>
+                            <div class="col-md-4" id="showLiqSubmittedGroup">
+                                <label for="liquidation_submitted_at" class="form-label">Liquidation Submitted At</label>
+                                <input type="datetime-local" class="form-control @error('liquidation_submitted_at') is-invalid @enderror" id="liquidation_submitted_at" name="liquidation_submitted_at" value="{{ old('liquidation_submitted_at', $event->liquidation_submitted_at?->format('Y-m-d\\TH:i')) }}">
+                            </div>
+                            <div class="col-md-4" id="showLiqReferenceGroup">
+                                <label for="liquidation_reference_no" class="form-label">Liquidation Reference No.</label>
+                                <input type="text" class="form-control @error('liquidation_reference_no') is-invalid @enderror" maxlength="150" id="liquidation_reference_no" name="liquidation_reference_no" value="{{ old('liquidation_reference_no', $event->liquidation_reference_no) }}">
+                            </div>
+                            <div class="col-md-4" id="showFarmcReferenceGroup">
+                                <label for="farmc_reference_no" class="form-label">FARMC Reference No.</label>
+                                <input type="text" class="form-control @error('farmc_reference_no') is-invalid @enderror" maxlength="150" id="farmc_reference_no" name="farmc_reference_no" value="{{ old('farmc_reference_no', $event->farmc_reference_no) }}">
+                            </div>
+                            <div class="col-md-4" id="showFarmcEndorsedGroup">
+                                <label for="farmc_endorsed_at" class="form-label">FARMC Endorsed At</label>
+                                <input type="datetime-local" class="form-control @error('farmc_endorsed_at') is-invalid @enderror" id="farmc_endorsed_at" name="farmc_endorsed_at" value="{{ old('farmc_endorsed_at', $event->farmc_endorsed_at?->format('Y-m-d\\TH:i')) }}">
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="1" id="requires_farmc_endorsement" name="requires_farmc_endorsement" {{ old('requires_farmc_endorsement', $event->requires_farmc_endorsement) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="requires_farmc_endorsement">Requires FARMC endorsement</label>
+                                </div>
+                            </div>
+                            <div class="col-md-12" id="showLegalRemarksGroup">
+                                <label for="legal_basis_remarks" class="form-label">Legal/Compliance Remarks</label>
+                                <textarea class="form-control @error('legal_basis_remarks') is-invalid @enderror" id="legal_basis_remarks" name="legal_basis_remarks" rows="2" maxlength="1000">{{ old('legal_basis_remarks', $event->legal_basis_remarks) }}</textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="bi bi-save me-1"></i> Save Compliance Details
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                @endif
+            </div>
+        </div>
+    @endif
 
     {{-- ============================================================ --}}
     {{-- 2. ALLOCATION SUMMARY CARDS                                  --}}
@@ -689,6 +836,60 @@ document.addEventListener('DOMContentLoaded', function () {
     @if($errors->any() && old('_token') && !old('_method'))
         new bootstrap.Modal(document.getElementById('addBeneficiaryModal')).show();
     @endif
+
+    // Compliance form dependencies (financial events)
+    const showLegalBasisType = document.getElementById('legal_basis_type');
+    const showLegalRemarksGroup = document.getElementById('showLegalRemarksGroup');
+    const showLegalRemarks = document.getElementById('legal_basis_remarks');
+    const showFundSource = document.getElementById('fund_source');
+    const showTrustAccountInputGroup = document.getElementById('showTrustAccountInputGroup');
+    const showTrustAccount = document.getElementById('trust_account_code');
+    const showLiquidationStatus = document.getElementById('liquidation_status');
+    const showLiqDueGroup = document.getElementById('showLiqDueGroup');
+    const showLiqDue = document.getElementById('liquidation_due_date');
+    const showLiqSubmittedGroup = document.getElementById('showLiqSubmittedGroup');
+    const showLiqSubmitted = document.getElementById('liquidation_submitted_at');
+    const showLiqReferenceGroup = document.getElementById('showLiqReferenceGroup');
+    const showLiqReference = document.getElementById('liquidation_reference_no');
+    const showRequiresFarmc = document.getElementById('requires_farmc_endorsement');
+    const showFarmcReferenceGroup = document.getElementById('showFarmcReferenceGroup');
+    const showFarmcReference = document.getElementById('farmc_reference_no');
+    const showFarmcEndorsedGroup = document.getElementById('showFarmcEndorsedGroup');
+    const showFarmcEndorsed = document.getElementById('farmc_endorsed_at');
+
+    function setShowGroupState(groupEl, inputEl, show, required = false) {
+        if (!groupEl || !inputEl) return;
+        groupEl.classList.toggle('d-none', !show);
+        inputEl.disabled = !show;
+        inputEl.required = show && required;
+    }
+
+    function updateShowComplianceDependencies() {
+        if (!showLegalBasisType) return;
+
+        const legalType = showLegalBasisType.value;
+        setShowGroupState(showLegalRemarksGroup, showLegalRemarks, true, legalType === 'other');
+
+        const source = showFundSource?.value ?? '';
+        setShowGroupState(showTrustAccountInputGroup, showTrustAccount, source === 'lgu_trust_fund', source === 'lgu_trust_fund');
+
+        const liq = showLiquidationStatus?.value ?? 'not_required';
+        const dueRequired = ['pending', 'submitted', 'verified'].includes(liq);
+        const submittedRequired = ['submitted', 'verified'].includes(liq);
+        setShowGroupState(showLiqDueGroup, showLiqDue, dueRequired, dueRequired);
+        setShowGroupState(showLiqSubmittedGroup, showLiqSubmitted, submittedRequired, submittedRequired);
+        setShowGroupState(showLiqReferenceGroup, showLiqReference, submittedRequired, submittedRequired);
+
+        const farmcRequired = !!showRequiresFarmc?.checked;
+        setShowGroupState(showFarmcReferenceGroup, showFarmcReference, farmcRequired, farmcRequired);
+        setShowGroupState(showFarmcEndorsedGroup, showFarmcEndorsed, farmcRequired, false);
+    }
+
+    showLegalBasisType?.addEventListener('change', updateShowComplianceDependencies);
+    showFundSource?.addEventListener('change', updateShowComplianceDependencies);
+    showLiquidationStatus?.addEventListener('change', updateShowComplianceDependencies);
+    showRequiresFarmc?.addEventListener('change', updateShowComplianceDependencies);
+    updateShowComplianceDependencies();
 });
 </script>
 @endpush

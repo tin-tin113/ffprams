@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Agency;
+use App\Services\AuditLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -10,11 +11,17 @@ use Illuminate\View\View;
 
 class GeoMapController extends Controller
 {
+    public function __construct(
+        private AuditLogService $audit,
+    ) {}
+
     /**
      * Display the geo-map Blade view.
      */
     public function index(): View
     {
+        $this->audit->log(auth()->id(), 'viewed', 'geo_map', null);
+
         $agencies = Agency::core()->active()->orderBy('name')->get();
 
         return view('geo-map.index', compact('agencies'));
@@ -25,6 +32,8 @@ class GeoMapController extends Controller
      */
     public function mapData(Request $request): JsonResponse
     {
+        $this->audit->log(auth()->id(), 'viewed_map_data', 'geo_map', null, ['agency_id' => $request->input('agency_id')]);
+
         $lineAgencyFilter = $request->input('agency_id');
 
         $barangays = DB::table('barangays')

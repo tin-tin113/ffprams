@@ -136,4 +136,24 @@ class SmsController extends Controller
 
         return $query->orderBy('full_name')->get();
     }
+
+    /**
+     * Handle SMS delivery callback from E5 SMS Gateway.
+     * This is a webhook endpoint that receives delivery status updates.
+     * Should be protected by API key or signature verification in production.
+     */
+    public function handleDeliveryCallback(Request $request): JsonResponse
+    {
+        // In production, verify the request signature/API key from gateway
+        // For now, we accept the callback payload directly
+
+        $payload = $request->all();
+
+        $success = $this->sms->handleDeliveryCallback($payload);
+
+        return response()->json([
+            'success' => $success,
+            'message' => $success ? 'Delivery status updated' : 'Failed to process callback',
+        ]);
+    }
 }

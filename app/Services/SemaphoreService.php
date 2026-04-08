@@ -68,7 +68,7 @@ class SemaphoreService
         }
     }
 
-    private function logSms(?int $beneficiaryId, string $message, string $status, ?string $response): void
+    private function logSms(?int $beneficiaryId, string $message, string $status, ?string $response, ?string $gatewayMessageId = null): void
     {
         if (! $beneficiaryId) {
             return;
@@ -76,16 +76,71 @@ class SemaphoreService
 
         try {
             DB::table('sms_logs')->insert([
-                'beneficiary_id' => $beneficiaryId,
-                'message'        => $message,
-                'status'         => $status,
-                'response'       => $response,
-                'sent_at'        => now(),
-                'created_at'     => now(),
-                'updated_at'     => now(),
+                'beneficiary_id'   => $beneficiaryId,
+                'message'          => $message,
+                'status'           => $status,
+                'delivery_status'  => $status === 'sent' ? 'pending' : 'failed',
+                'response'         => $response,
+                'gateway_message_id' => $gatewayMessageId,
+                'sent_at'          => now(),
+                'created_at'       => now(),
+                'updated_at'       => now(),
             ]);
         } catch (\Throwable $e) {
             Log::error('SemaphoreService: Failed to log SMS', ['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Handle delivery callback from SMS gateway (E5).
+     * Updates delivery status in D10 SMS LOGS.
+     *
+     * @param array $payload Callback payload from SMS gateway
+     * @return bool Success status
+     */
+    public function handleDeliveryCallback(array $payload): bool
+    {
+        try {
+            $gatewayMessageId = $payload['message_id'] ?? $payload['messageId'] ?? null;
+            $deliveryStatus = $payload['status'] ?? $payload['delivery_status'] ?? null;
+
+            if (!$gatewayMessageId || !$deliveryStatus) {
+                Log::warning('SemaphoreService: Invalid callback payload', ['payload' => $payload]);
+                return false;
+            }
+
+            // Map gateway status to our status enum
+            $mappedStatus = match (strtolower((string) $deliveryStatus)) {
+                'delivered', 'success', '1' => 'delivered',
+                'failed', 'error', '0' => 'failed',
+                'undeliverable'=> 'undeliverable',
+                default => 'pending',
+            };
+
+            // Update SMS log with delivery status
+            $updated = DB::table('sms_logs')
+                ->where('gateway_message_id', $gatewayMessageId)
+                ->update([
+                    'delivery_status'       => $mappedStatus,
+                    'callback_received_at'  => now(),
+                    'response'              => json_encode($payload),
+                    'updated_at'            => now(),
+                ]);
+
+            if ($updated) {
+                Log::info('SemaphoreService: Delivery callback processed', [
+                    'gateway_message_id' => $gatewayMessageId,
+                    'delivery_status'    => $mappedStatus,
+                ]);
+            }
+
+            return (bool) $updated;
+        } catch (\Throwable $e) {
+            Log::error('SemaphoreService: Failed to handle delivery callback', [
+                'error'   => $e->getMessage(),
+                'payload' => $payload ?? [],
+            ]);
+            return false;
         }
     }
 }

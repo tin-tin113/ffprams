@@ -219,7 +219,7 @@
     {{-- Distribution History --}}
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white fw-semibold">
-            <i class="bi bi-box-seam me-1"></i> Distribution History
+            <i class="bi bi-box-seam me-1"></i> Distribution History (Event-Based & Direct Assistance)
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -269,18 +269,63 @@
                                 <td class="text-muted small">{{ $allocation->distributed_at?->format('M d, Y h:i A') ?? '—' }}</td>
                                 <td>{{ $allocation->remarks ?? '—' }}</td>
                             </tr>
+                        @endforelse
+
+                        {{-- Direct Assistance Records --}}
+                        @forelse($beneficiary->directAssistance as $assistance)
+                            <tr>
+                                <td>
+                                    <span class="badge bg-warning text-dark">Direct Assistance</span>
+                                </td>
+                                <td class="fw-semibold">{{ $assistance->programName->name ?? '—' }}</td>
+                                <td>{{ $assistance->resourceType->name ?? '—' }}</td>
+                                <td>{{ $assistance->programName->agency->name ?? '—' }}</td>
+                                <td>{{ $assistance->getDisplayValue() }}</td>
+                                <td class="text-muted small">{{ $assistance->created_at?->format('M d, Y') ?? '—' }}</td>
+                                <td>
+                                    @switch($assistance->status)
+                                        @case('recorded')
+                                            <span class="badge bg-warning text-dark">Recorded</span>
+                                            @break
+                                        @case('distributed')
+                                            <span class="badge bg-success">Distributed</span>
+                                            @break
+                                        @case('completed')
+                                            <span class="badge bg-info">Completed</span>
+                                            @break
+                                    @endswitch
+                                </td>
+                                <td class="text-muted small">{{ $assistance->distributed_at?->format('M d, Y h:i A') ?? '—' }}</td>
+                                <td>
+                                    {{ $assistance->remarks ?? '—' }}
+                                    @if($assistance->distributionEvent)
+                                        <br><small class="text-muted">Linked to event</small>
+                                    @endif
+                                </td>
+                            </tr>
                         @empty
+                        @endforelse
+
+                        {{-- Empty State --}}
+                        @if($beneficiary->allocations->isEmpty() && $beneficiary->directAssistance->isEmpty())
                             <tr>
                                 <td colspan="9" class="text-center text-muted py-4">
                                     <i class="bi bi-inbox fs-3 d-block mb-2"></i>
                                     No distributions recorded yet.
                                 </td>
                             </tr>
-                        @endforelse
+                        @endif
                     </tbody>
                 </table>
             </div>
         </div>
+        @if($beneficiary->directAssistance->isNotEmpty())
+            <div class="card-footer bg-white">
+                <a href="{{ route('direct-assistance.index', ['beneficiary_search' => $beneficiary->full_name]) }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-arrow-right me-1"></i> View All Direct Assistance
+                </a>
+            </div>
+        @endif
     </div>
 
     {{-- Send SMS --}}

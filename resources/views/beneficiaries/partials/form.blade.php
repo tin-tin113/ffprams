@@ -47,6 +47,39 @@
         'Others',
     ]);
     $ownershipSchemeOptions = $normalizeFieldOptions($fo['ownership_scheme'] ?? [], ['Individual', 'Collective', 'Cooperative']);
+
+    $firstNameValue = old('first_name', $beneficiary->first_name ?? '');
+    $middleNameValue = old('middle_name', $beneficiary->middle_name ?? '');
+    $lastNameValue = old('last_name', $beneficiary->last_name ?? '');
+    $nameSuffixValue = old('name_suffix', $beneficiary->name_suffix ?? '');
+
+    if ($editing && (blank($firstNameValue) || blank($lastNameValue)) && ! blank($beneficiary->full_name ?? null)) {
+        $nameParts = preg_split('/\s+/', trim((string) $beneficiary->full_name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        if (count($nameParts) > 1) {
+            $lastToken = end($nameParts);
+            $normalizedSuffix = strtolower(str_replace('.', '', (string) $lastToken));
+            $suffixMap = [
+                'jr' => 'Jr.',
+                'sr' => 'Sr.',
+                'ii' => 'II',
+                'iii' => 'III',
+                'iv' => 'IV',
+                'v' => 'V',
+            ];
+
+            if (array_key_exists($normalizedSuffix, $suffixMap)) {
+                array_pop($nameParts);
+                $nameSuffixValue = $nameSuffixValue ?: $suffixMap[$normalizedSuffix];
+            }
+        }
+
+        if (count($nameParts) > 0) {
+            $firstNameValue = $firstNameValue ?: array_shift($nameParts);
+            $lastNameValue = $lastNameValue ?: (count($nameParts) ? array_pop($nameParts) : '');
+            $middleNameValue = $middleNameValue ?: implode(' ', $nameParts);
+        }
+    }
 @endphp
 
 {{-- SECTION 1 — Agency & Personal Information --}}
@@ -105,13 +138,37 @@
                 @enderror
             </div>
 
-            {{-- Full Name --}}
-            <div class="col-md-6">
-                <label for="full_name" class="form-label">Full Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control @error('full_name') is-invalid @enderror"
-                       id="full_name" name="full_name"
-                       value="{{ old('full_name', $beneficiary->full_name ?? '') }}" required>
-                @error('full_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            {{-- Name Fields --}}
+            <div class="col-md-3">
+                <label for="first_name" class="form-label">First Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control @error('first_name') is-invalid @enderror"
+                       id="first_name" name="first_name"
+                       value="{{ $firstNameValue }}" required>
+                @error('first_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+
+            <div class="col-md-3">
+                <label for="middle_name" class="form-label">Middle Name</label>
+                <input type="text" class="form-control @error('middle_name') is-invalid @enderror"
+                       id="middle_name" name="middle_name"
+                       value="{{ $middleNameValue }}">
+                @error('middle_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+
+            <div class="col-md-3">
+                <label for="last_name" class="form-label">Last Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control @error('last_name') is-invalid @enderror"
+                       id="last_name" name="last_name"
+                       value="{{ $lastNameValue }}" required>
+                @error('last_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+
+            <div class="col-md-3">
+                <label for="name_suffix" class="form-label">Name Extension</label>
+                <input type="text" class="form-control @error('name_suffix') is-invalid @enderror"
+                       id="name_suffix" name="name_suffix"
+                       value="{{ $nameSuffixValue }}" placeholder="Jr., Sr., III">
+                @error('name_suffix')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
 
             {{-- Sex --}}

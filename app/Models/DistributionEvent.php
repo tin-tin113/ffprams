@@ -22,6 +22,20 @@ class DistributionEvent extends Model
         'created_by',
         'type',
         'total_fund_amount',
+        'legal_basis_type',
+        'legal_basis_reference_no',
+        'legal_basis_date',
+        'legal_basis_remarks',
+        'fund_source',
+        'trust_account_code',
+        'fund_release_reference',
+        'liquidation_status',
+        'liquidation_due_date',
+        'liquidation_submitted_at',
+        'liquidation_reference_no',
+        'requires_farmc_endorsement',
+        'farmc_endorsed_at',
+        'farmc_reference_no',
     ];
 
     protected function casts(): array
@@ -30,6 +44,11 @@ class DistributionEvent extends Model
             'distribution_date'  => 'date',
             'total_fund_amount'  => 'decimal:2',
             'beneficiary_list_approved_at' => 'datetime',
+            'legal_basis_date' => 'date',
+            'liquidation_due_date' => 'date',
+            'liquidation_submitted_at' => 'datetime',
+            'requires_farmc_endorsement' => 'boolean',
+            'farmc_endorsed_at' => 'datetime',
         ];
     }
 
@@ -41,6 +60,28 @@ class DistributionEvent extends Model
     public function isFinancial(): bool
     {
         return $this->type === 'financial';
+    }
+
+    public function hasLegalBasis(): bool
+    {
+        return filled($this->legal_basis_type)
+            && filled($this->legal_basis_reference_no)
+            && $this->legal_basis_date !== null;
+    }
+
+    public function hasFundSource(): bool
+    {
+        return filled($this->fund_source);
+    }
+
+    public function isLiquidationVerified(): bool
+    {
+        return $this->liquidation_status === 'verified';
+    }
+
+    public function isFarmcCompliant(): bool
+    {
+        return ! $this->requires_farmc_endorsement || $this->farmc_endorsed_at !== null;
     }
 
     public function isPhysical(): bool

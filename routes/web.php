@@ -2,12 +2,14 @@
 
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\SystemSettingsController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\BeneficiaryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ResourceTypeController;
 use App\Http\Controllers\DistributionEventController;
 use App\Http\Controllers\AllocationController;
+use App\Http\Controllers\DirectAssistanceController;
 use App\Http\Controllers\GeoMapController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\SmsController;
@@ -25,11 +27,20 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+/*
+|--------------------------------------------------------------------------
+| SMS Gateway Webhook Routes (Public - E5 SMS Gateway)
+|--------------------------------------------------------------------------
+*/
+Route::post('/api/webhooks/sms/delivery-callback', [SmsController::class, 'handleDeliveryCallback'])
+    ->name('sms.delivery-callback')
+    ->withoutMiddleware('csrf'); // Webhook from external service
 
 /*
 |--------------------------------------------------------------------------
@@ -53,6 +64,8 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
         ->name('distribution-events.updateStatus');
     Route::post('distribution-events/{event}/approve-beneficiary-list', [DistributionEventController::class, 'approveBeneficiaryList'])
         ->name('distribution-events.approveBeneficiaryList');
+    Route::post('distribution-events/{event}/compliance', [DistributionEventController::class, 'updateCompliance'])
+        ->name('distribution-events.updateCompliance');
 
     // Allocations
     Route::post('allocations', [AllocationController::class, 'store'])
@@ -65,6 +78,19 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
         ->name('allocations.markDistributed');
     Route::post('allocations/{allocation}/not-received', [AllocationController::class, 'markNotReceived'])
         ->name('allocations.markNotReceived');
+
+    // Direct Assistance
+    Route::resource('direct-assistance', DirectAssistanceController::class);
+    Route::post('direct-assistance/{direct_assistance}/mark-distributed', [DirectAssistanceController::class, 'markDistributed'])
+        ->name('direct-assistance.mark-distributed');
+    Route::post('direct-assistance/{direct_assistance}/mark-not-received', [DirectAssistanceController::class, 'markNotReceived'])
+        ->name('direct-assistance.mark-not-received');
+    Route::get('direct-assistance-barangay-analytics', [DirectAssistanceController::class, 'barangayAnalytics'])
+        ->name('direct-assistance.barangay-analytics');
+
+    // API endpoint for eligible programs
+    Route::get('api/eligible-programs/{beneficiary}', [DirectAssistanceController::class, 'getEligiblePrograms'])
+        ->name('api.eligible-programs');
 
     // SMS Broadcast
     Route::get('sms', [SmsController::class, 'index'])->name('sms.index');
@@ -88,6 +114,18 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
 
 /*
 |--------------------------------------------------------------------------
+| Partner Agency Routes (E4 - Read-Only Access)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'verified', 'role:partner'])->group(function () {
+    // Read-only reports for national partner agencies
+    Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
+    Route::get('geo-map', [GeoMapController::class, 'index'])->name('geo-map.index');
+    Route::get('geo-map/data', [GeoMapController::class, 'mapData'])->name('geo-map.data');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Admin-Only Routes
 |--------------------------------------------------------------------------
 */
@@ -103,6 +141,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     // User Management
     Route::resource('users', UserController::class)->except(['show']);
+
+    // Audit Logs
+    Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
 
     // System Settings
     Route::get('settings', [SystemSettingsController::class, 'index'])->name('settings.index');

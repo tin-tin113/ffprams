@@ -43,6 +43,42 @@
         </div>
     </div>
 
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Financial Events</div>
+                    <div class="fs-4 fw-bold">{{ number_format($complianceOverview->financial_events_total) }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Missing Legal Basis</div>
+                    <div class="fs-4 fw-bold text-danger">{{ number_format($complianceOverview->missing_legal_basis) }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Pending Liquidation</div>
+                    <div class="fs-4 fw-bold text-warning">{{ number_format($complianceOverview->liquidation_pending) }}</div>
+                    <div class="small text-muted">Overdue: {{ number_format($complianceOverview->liquidation_overdue) }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">FARMC Pending</div>
+                    <div class="fs-4 fw-bold text-primary">{{ number_format($complianceOverview->farmc_required_pending) }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- ============================================================ --}}
     {{-- REPORT 1 — Beneficiaries per Barangay --}}
     {{-- ============================================================ --}}

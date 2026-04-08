@@ -16,6 +16,35 @@ class ReportsController extends Controller
 {
     public function index(): View
     {
+        // COMPLIANCE SNAPSHOT — Legal basis, liquidation, and FARMC checks
+        $financialEvents = DistributionEvent::query()
+            ->where('type', 'financial')
+            ->whereNull('deleted_at');
+
+        $complianceOverview = (object) [
+            'financial_events_total' => (clone $financialEvents)->count(),
+            'missing_legal_basis' => (clone $financialEvents)
+                ->where(function ($q) {
+                    $q->whereNull('legal_basis_type')
+                        ->orWhereNull('legal_basis_reference_no')
+                        ->orWhereNull('legal_basis_date')
+                        ->orWhere('legal_basis_reference_no', '');
+                })
+                ->count(),
+            'liquidation_pending' => (clone $financialEvents)
+                ->whereIn('liquidation_status', ['pending', 'submitted'])
+                ->count(),
+            'liquidation_overdue' => (clone $financialEvents)
+                ->whereIn('liquidation_status', ['pending', 'submitted'])
+                ->whereNotNull('liquidation_due_date')
+                ->whereDate('liquidation_due_date', '<', now()->toDateString())
+                ->count(),
+            'farmc_required_pending' => (clone $financialEvents)
+                ->where('requires_farmc_endorsement', true)
+                ->whereNull('farmc_endorsed_at')
+                ->count(),
+        ];
+
         // REPORT 1 — Beneficiaries per Barangay
         $beneficiariesPerBarangay = Beneficiary::select('barangay_id')
             ->selectRaw("SUM(CASE WHEN classification = 'Farmer' THEN 1 ELSE 0 END) as total_farmers")
@@ -420,6 +449,7 @@ class ReportsController extends Controller
             ->get();
 
         return view('reports.index', compact(
+            'complianceOverview',
             'beneficiariesPerBarangay',
             'resourceDistribution',
             'statusPerBarangay',

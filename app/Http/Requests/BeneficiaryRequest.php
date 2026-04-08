@@ -9,6 +9,24 @@ use Illuminate\Validation\Rule;
 
 class BeneficiaryRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $first = trim((string) $this->input('first_name', ''));
+        $middle = trim((string) $this->input('middle_name', ''));
+        $last = trim((string) $this->input('last_name', ''));
+        $suffix = trim((string) $this->input('name_suffix', ''));
+
+        $fullName = trim(implode(' ', array_filter([$first, $middle, $last, $suffix])));
+
+        $this->merge([
+            'first_name' => $first,
+            'middle_name' => $middle,
+            'last_name' => $last,
+            'name_suffix' => $suffix,
+            'full_name' => $fullName,
+        ]);
+    }
+
     public function authorize(): bool
     {
         return true;
@@ -59,6 +77,10 @@ class BeneficiaryRequest extends FormRequest
             'agency_id'        => ['required', 'exists:agencies,id'],
 
             // Common fields per reference document
+            'first_name'       => ['required', 'string', 'max:100'],
+            'middle_name'      => ['nullable', 'string', 'max:100'],
+            'last_name'        => ['required', 'string', 'max:100'],
+            'name_suffix'      => ['nullable', 'string', 'max:20'],
             'full_name'        => ['required', 'string', 'max:255'],
             'sex'              => ['required', Rule::in(['Male', 'Female'])],
             'date_of_birth'    => ['required', 'date', 'before:today'],
@@ -146,6 +168,8 @@ class BeneficiaryRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'first_name.required'              => 'First name is required.',
+            'last_name.required'               => 'Last name is required.',
             'contact_number.regex'              => 'Contact number must be in 09XXXXXXXXX format.',
             'registered_at.before_or_equal'     => 'Registration date cannot be a future date.',
             'date_of_birth.before'              => 'Date of birth must be a past date.',

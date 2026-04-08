@@ -50,4 +50,10 @@ class Agency extends Model
     {
         return $query->where('is_active', true);
     }
+
+    public function scopeCore(Builder $query): Builder
+    {
+        // Core FFPRAMS partner agencies used in geo-map filters.
+        return $query->whereIn('name', ['DA', 'BFAR', 'DAR']);
+    }
 }

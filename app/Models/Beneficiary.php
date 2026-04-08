@@ -11,8 +11,23 @@ class Beneficiary extends Model
 {
     use SoftDeletes;
 
+    protected static function booted(): void
+    {
+        static::saving(function (self $beneficiary): void {
+            $computedFullName = $beneficiary->buildFullName();
+
+            if ($computedFullName !== '') {
+                $beneficiary->full_name = $computedFullName;
+            }
+        });
+    }
+
     protected $fillable = [
         'agency_id',
+        'first_name',
+        'middle_name',
+        'last_name',
+        'name_suffix',
         'full_name',
         'sex',
         'date_of_birth',
@@ -86,6 +101,11 @@ class Beneficiary extends Model
         return $this->hasMany(Allocation::class);
     }
 
+    public function directAssistance(): HasMany
+    {
+        return $this->hasMany(DirectAssistance::class);
+    }
+
     public function smsLogs(): HasMany
     {
         return $this->hasMany(SmsLog::class);
@@ -116,5 +136,29 @@ class Beneficiary extends Model
     public function isBfar(): bool
     {
         return $this->agency && strtoupper($this->agency->name) === 'BFAR';
+    }
+
+    public function getFullNameAttribute(?string $value): string
+    {
+        if (! empty($value)) {
+            return $value;
+        }
+
+        return $this->buildFullName();
+    }
+
+    public function getNameAttribute(): string
+    {
+        return $this->full_name;
+    }
+
+    public function buildFullName(): string
+    {
+        return trim(implode(' ', array_filter([
+            $this->first_name,
+            $this->middle_name,
+            $this->last_name,
+            $this->name_suffix,
+        ])));
     }
 }

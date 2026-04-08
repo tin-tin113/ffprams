@@ -227,6 +227,30 @@ class DistributionEventController extends Controller
                 ->with('error', 'Approve the beneficiary list before starting this event.');
         }
 
+        // Financial events require legal basis and fund source before start.
+        if ($newStatus === 'Ongoing' && $event->isFinancial()) {
+            if (! $event->hasLegalBasis()) {
+                return redirect()->back()
+                    ->with('error', 'Financial events require legal basis type, reference number, and date before starting.');
+            }
+
+            if (! $event->hasFundSource()) {
+                return redirect()->back()
+                    ->with('error', 'Financial events require a fund source before starting.');
+            }
+
+            if (! $event->isFarmcCompliant()) {
+                return redirect()->back()
+                    ->with('error', 'FARMC endorsement is required before starting this event.');
+            }
+        }
+
+        // Financial events must be fully liquidated before completion.
+        if ($newStatus === 'Completed' && $event->isFinancial() && ! $event->isLiquidationVerified()) {
+            return redirect()->back()
+                ->with('error', 'Financial events can only be completed after liquidation status is set to Verified.');
+        }
+
         DB::transaction(function () use ($event, $newStatus) {
             $oldValues = $event->toArray();
 
@@ -244,6 +268,73 @@ class DistributionEventController extends Controller
 
         return redirect()->back()
             ->with('success', "Distribution event status updated to {$newStatus}.");
+    }
+
+    public function updateCompliance(Request $request, DistributionEvent $event): RedirectResponse
+    {
+        if ($event->status === 'Completed') {
+            return redirect()->back()
+                ->with('error', 'Compliance details cannot be updated after event completion.');
+        }
+
+        $request->merge([
+            'requires_farmc_endorsement' => $request->boolean('requires_farmc_endorsement'),
+        ]);
+
+        $validated = $request->validate(
+            $event->isFinancial()
+                ? [
+                    'legal_basis_type' => ['required', 'in:resolution,ordinance,memo,special_order,other'],
+                    'legal_basis_reference_no' => ['required', 'string', 'max:150'],
+                    'legal_basis_date' => ['required', 'date', 'before_or_equal:today'],
+                    'legal_basis_remarks' => ['required_if:legal_basis_type,other', 'nullable', 'string', 'max:1000'],
+                    'fund_source' => ['required', 'in:lgu_trust_fund,nga_transfer,local_program,other'],
+                    'trust_account_code' => ['required_if:fund_source,lgu_trust_fund', 'nullable', 'string', 'max:100'],
+                    'fund_release_reference' => ['nullable', 'string', 'max:150'],
+                    'liquidation_status' => ['required', 'in:not_required,pending,submitted,verified'],
+                    'liquidation_due_date' => ['required_if:liquidation_status,pending,submitted,verified', 'nullable', 'date'],
+                    'liquidation_submitted_at' => ['required_if:liquidation_status,submitted,verified', 'nullable', 'date', 'before_or_equal:today'],
+                    'liquidation_reference_no' => ['required_if:liquidation_status,submitted,verified', 'nullable', 'string', 'max:150'],
+                    'requires_farmc_endorsement' => ['nullable', 'boolean'],
+                    'farmc_endorsed_at' => ['nullable', 'date'],
+                    'farmc_reference_no' => ['required_if:requires_farmc_endorsement,1', 'nullable', 'string', 'max:150'],
+                ]
+                : [
+                    'legal_basis_type' => ['nullable'],
+                    'legal_basis_reference_no' => ['nullable'],
+                    'legal_basis_date' => ['nullable'],
+                    'legal_basis_remarks' => ['nullable'],
+                    'fund_source' => ['nullable'],
+                    'trust_account_code' => ['nullable'],
+                    'fund_release_reference' => ['nullable'],
+                    'liquidation_status' => ['nullable'],
+                    'liquidation_due_date' => ['nullable'],
+                    'liquidation_submitted_at' => ['nullable'],
+                    'liquidation_reference_no' => ['nullable'],
+                    'requires_farmc_endorsement' => ['nullable', 'boolean'],
+                    'farmc_endorsed_at' => ['nullable'],
+                    'farmc_reference_no' => ['nullable'],
+                ]
+        );
+
+        $validated['requires_farmc_endorsement'] = $request->boolean('requires_farmc_endorsement');
+
+        DB::transaction(function () use ($event, $validated) {
+            $oldValues = $event->toArray();
+
+            $event->update($validated);
+
+            $this->audit->log(
+                auth()->id(),
+                'updated',
+                'distribution_events',
+                $event->id,
+                $oldValues,
+                $event->fresh()->toArray(),
+            );
+        });
+
+        return redirect()->back()->with('success', 'Compliance details updated successfully.');
     }
 
     public function approveBeneficiaryList(DistributionEvent $event): RedirectResponse

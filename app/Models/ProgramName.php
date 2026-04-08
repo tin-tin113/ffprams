@@ -13,12 +13,14 @@ class ProgramName extends Model
         'agency_id',
         'name',
         'is_active',
+        'classification',
     ];
 
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
+            'classification' => 'string',
         ];
     }
 
@@ -44,5 +46,16 @@ class ProgramName extends Model
     public function scopeForAgency(Builder $query, int $agencyId): Builder
     {
         return $query->where('agency_id', $agencyId);
+    }
+
+    public function scopeForClassification(Builder $query, string $classification): Builder
+    {
+        return $query->whereIn('classification', [$classification, 'Both']);
+    }
+
+    public function scopeForBeneficiary(Builder $query, $beneficiary): Builder
+    {
+        return $query->where('agency_id', $beneficiary->agency_id)
+            ->whereIn('classification', [$beneficiary->classification, 'Both']);
     }
 }

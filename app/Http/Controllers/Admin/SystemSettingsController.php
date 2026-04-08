@@ -12,6 +12,7 @@ use App\Services\AuditLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -25,6 +26,8 @@ class SystemSettingsController extends Controller
 
     public function index(): View
     {
+        $this->validateFormFieldOptions();
+
         $agencies   = Agency::orderBy('name')->get();
         $purposes   = AssistancePurpose::orderBy('category')->orderBy('name')->get()->groupBy('category');
         $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
@@ -513,5 +516,32 @@ class SystemSettingsController extends Controller
         });
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Validate that all required FormFieldOption groups exist.
+     * Logs warnings for missing groups.
+     */
+    private function validateFormFieldOptions(): void
+    {
+        $requiredFieldGroups = [
+            'civil_status',
+            'highest_education',
+            'id_type',
+            'farm_ownership',
+            'farm_type',
+            'fisherfolk_type',
+            'arb_classification',
+            'ownership_scheme',
+        ];
+
+        foreach ($requiredFieldGroups as $group) {
+            if (!FormFieldOption::forGroup($group)->exists()) {
+                Log::warning("FormFieldOption group is empty: {$group}. System will use hardcoded defaults.", [
+                    'field_group' => $group,
+                    'timestamp' => now(),
+                ]);
+            }
+        }
     }
 }

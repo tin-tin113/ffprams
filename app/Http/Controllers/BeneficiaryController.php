@@ -130,6 +130,12 @@ class BeneficiaryController extends Controller
             'allocations.programName.agency',
             'allocations.resourceType.agency',
             'allocations.assistancePurpose',
+            'directAssistance.programName.agency',
+            'directAssistance.resourceType.agency',
+            'directAssistance.assistancePurpose',
+            'directAssistance.distributionEvent.barangay',
+            'directAssistance.createdBy',
+            'directAssistance.distributedBy',
             'smsLogs' => fn ($q) => $q->latest('sent_at')->limit(5),
         ]);
 
@@ -225,6 +231,10 @@ class BeneficiaryController extends Controller
 
         return response()->json([
             'id'                        => $beneficiary->id,
+            'first_name'                => $beneficiary->first_name,
+            'middle_name'               => $beneficiary->middle_name,
+            'last_name'                 => $beneficiary->last_name,
+            'name_suffix'               => $beneficiary->name_suffix,
             'full_name'                 => $beneficiary->full_name,
             'barangay_name'             => $beneficiary->barangay->name ?? null,
             'classification'            => $beneficiary->classification,
