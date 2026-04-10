@@ -10,57 +10,179 @@
 
 @push('styles')
 <style>
-    .distribution-sheet .doc-title {
-        letter-spacing: 0.04em;
+    .distribution-sheet {
+        max-width: 1320px;
+        margin: 0 auto;
     }
 
-    .distribution-sheet .meta-label {
-        color: #64748b;
-        font-size: 0.75rem;
+    .print-sheet {
+        background: #fff;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        padding: 18px;
+    }
+
+    .title-wrap {
+        text-align: center;
+        margin-bottom: 10px;
+    }
+
+    .title-wrap .municipality {
+        font-size: 10px;
         text-transform: uppercase;
+        color: #4b5563;
+        letter-spacing: 0.06em;
+    }
+
+    .title-wrap h2 {
+        margin: 4px 0 0;
+        font-size: 16px;
         letter-spacing: 0.04em;
     }
 
-    .distribution-sheet .meta-value {
+    table.meta {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 10px;
+    }
+
+    table.meta td {
+        width: 25%;
+        padding: 4px 6px;
+        border: 1px solid #d1d5db;
+        vertical-align: top;
+    }
+
+    table.meta .label {
+        display: block;
+        font-size: 9px;
+        color: #6b7280;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+        letter-spacing: 0.04em;
+    }
+
+    table.meta .value {
         font-weight: 600;
-        color: #0f172a;
+        color: #111827;
     }
 
-    .distribution-table thead th {
-        white-space: nowrap;
+    table.list {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    table.list th,
+    table.list td {
+        border: 1px solid #cbd5e1;
+        padding: 5px 6px;
         vertical-align: middle;
-        font-size: 0.75rem;
+    }
+
+    table.list th {
+        background: #f1f5f9;
         text-transform: uppercase;
-        letter-spacing: 0.03em;
+        font-size: 9px;
+        letter-spacing: 0.04em;
+        text-align: center;
+        white-space: normal;
+        line-height: 1.2;
     }
 
-    .distribution-table td {
-        vertical-align: middle;
+    table.list td {
+        font-size: 11px;
     }
 
-    .signature-cell {
-        min-width: 150px;
-        height: 34px;
+    .col-num {
+        width: 30px;
+        text-align: center;
+    }
+
+    .col-class {
+        width: 90px;
+        text-align: center;
+    }
+
+    .col-contact {
+        width: 125px;
+        text-align: center;
+        white-space: nowrap !important;
+    }
+
+    .col-barangay {
+        width: 130px;
+    }
+
+    .col-amount {
+        width: 130px;
+        text-align: center;
+        white-space: nowrap !important;
+        font-weight: 600;
+    }
+
+    .col-signature {
+        width: 120px;
+    }
+
+    .col-remarks {
+        width: 270px;
+    }
+
+    .signature {
+        min-height: 22px;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    .footer {
+        margin-top: 10px;
+        font-size: 10px;
+    }
+
+    .footer .line {
+        margin-top: 14px;
+        display: inline-block;
+        min-width: 220px;
+        border-top: 1px solid #6b7280;
+        padding-top: 2px;
+        text-align: center;
+        color: #374151;
+    }
+
+    .footer .line + .line {
+        margin-left: 20px;
     }
 
     @media print {
         @page {
-            size: A4 landscape;
+            size: A4 landscape !important;
             margin: 10mm;
         }
 
         .top-navbar,
         .sidebar,
         .no-print,
-        .btn,
         .alert,
         .header-right,
         .header-left {
             display: none !important;
         }
 
+        html,
+        body {
+            width: 297mm;
+        }
+
         body {
             background: #fff !important;
+            font-size: 11px;
+            margin: 0 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
 
         .main-content {
@@ -68,31 +190,36 @@
             padding-top: 0 !important;
         }
 
-        .card {
-            border: 1px solid #dee2e6 !important;
+        .container-fluid.distribution-sheet {
+            width: 100% !important;
+            max-width: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .print-sheet {
+            border: none !important;
             box-shadow: none !important;
+            border-radius: 0 !important;
+            padding: 0 !important;
         }
 
-        .distribution-table {
-            font-size: 11px;
+        table.list {
+            width: 100% !important;
+            table-layout: fixed;
         }
 
-        .distribution-table thead {
+        table.list thead {
             display: table-header-group;
         }
 
-        .distribution-table tr {
+        table.list tr {
             page-break-inside: avoid;
         }
 
-        .distribution-table th,
-        .distribution-table td {
-            padding: 0.35rem 0.4rem !important;
-        }
-
-        .signature-cell {
-            min-width: 120px;
-            height: 28px;
+        table.list th,
+        table.list td {
+            padding: 5px 6px !important;
         }
     }
 </style>
@@ -109,15 +236,15 @@
     <div class="d-flex justify-content-between align-items-center mb-3 no-print">
         <div>
             <h1 class="h4 mb-1">Printable Distribution List</h1>
-            <p class="text-muted mb-0">Formatted release sheet with signatures and release outcome tracking.</p>
+            <p class="text-muted mb-0">Formatted release sheet with signatures and remarks tracking.</p>
         </div>
         <div class="d-flex gap-2 flex-wrap justify-content-end">
             <a href="{{ route('distribution-events.show', $event) }}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left me-1"></i> Back
             </a>
-            <button class="btn btn-outline-primary" onclick="window.print()">
+            <a href="{{ route('distribution-events.distributionListPdf', ['event' => $event, 'inline' => 1]) }}" class="btn btn-outline-primary" target="_blank" rel="noopener">
                 <i class="bi bi-printer me-1"></i> Print
-            </button>
+            </a>
             <a href="{{ route('distribution-events.distributionListPdf', $event) }}" class="btn btn-outline-danger">
                 <i class="bi bi-file-earmark-pdf me-1"></i> Download PDF
             </a>
@@ -127,112 +254,93 @@
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm mb-3">
-        <div class="card-body">
-            <div class="text-center mb-3">
-                <div class="small text-uppercase text-muted">Municipality of Enrique B. Magalona</div>
-                <h2 class="h5 mb-0 doc-title">Distribution List</h2>
-            </div>
-
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <div class="meta-label">Agency</div>
-                    <div class="meta-value">{{ $event->resourceType->agency->name ?? 'N/A' }}</div>
-                </div>
-                <div class="col-md-3">
-                    <div class="meta-label">Program</div>
-                    <div class="meta-value">{{ $event->programName->name ?? 'N/A' }}</div>
-                </div>
-                <div class="col-md-3">
-                    <div class="meta-label">Barangay</div>
-                    <div class="meta-value">{{ $event->barangay->name }}</div>
-                </div>
-                <div class="col-md-3">
-                    <div class="meta-label">Distribution Date</div>
-                    <div class="meta-value">{{ $event->distribution_date->format('M d, Y') }}</div>
-                </div>
-                <div class="col-md-3">
-                    <div class="meta-label">Resource</div>
-                    <div class="meta-value">{{ $event->resourceType->name }}</div>
-                </div>
-                <div class="col-md-3">
-                    <div class="meta-label">Distribution Type</div>
-                    <div class="meta-value">{{ $event->isFinancial() ? 'Financial Assistance' : 'Physical Resource' }}</div>
-                </div>
-                <div class="col-md-2">
-                    <div class="meta-label">Total Rows</div>
-                    <div class="meta-value">{{ number_format($totalAllocations) }}</div>
-                </div>
-                <div class="col-md-2">
-                    <div class="meta-label">Received</div>
-                    <div class="meta-value">{{ number_format($totalReceived) }}</div>
-                </div>
-                <div class="col-md-2">
-                    <div class="meta-label">Not Received</div>
-                    <div class="meta-value">{{ number_format($totalNotReceived) }}</div>
-                </div>
-            </div>
+    <div class="print-sheet">
+        <div class="title-wrap">
+            <div class="municipality">Municipality of Enrique B. Magalona</div>
+            <h2>Distribution List</h2>
         </div>
-    </div>
 
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white fw-semibold">Beneficiary Distribution Table</div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-bordered table-sm align-middle mb-0 distribution-table">
-                    <thead class="table-light text-center">
-                        <tr>
-                            <th style="width: 42px;">#</th>
-                            <th>Beneficiary Name</th>
-                            <th style="width: 100px;">Class</th>
-                            <th style="width: 130px;">Contact No.</th>
-                            <th style="width: 150px;">Barangay</th>
-                            <th style="width: 130px;">{{ $event->isFinancial() ? 'Amount (PHP)' : 'Quantity' }}</th>
-                            <th style="width: 150px;">Signature</th>
-                            <th style="width: 110px;">Outcome</th>
-                            <th style="width: 220px;">Remarks</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($event->allocations as $allocation)
-                            <tr>
-                                <td class="text-center">{{ $loop->iteration }}</td>
-                                <td>{{ $allocation->beneficiary->full_name }}</td>
-                                <td class="text-center">{{ $allocation->beneficiary->classification }}</td>
-                                <td class="text-center">{{ $allocation->beneficiary->contact_number ?? '—' }}</td>
-                                <td>{{ $event->barangay->name }}</td>
-                                <td class="text-center fw-semibold">
-                                    @if($event->isFinancial())
-                                        {{ number_format((float) $allocation->amount, 2) }}
-                                    @else
-                                        {{ number_format((float) $allocation->quantity, 2) }} {{ $event->resourceType->unit }}
-                                    @endif
-                                </td>
-                                <td class="signature-cell"></td>
-                                <td class="text-center">
-                                    @if($allocation->release_outcome === 'not_received')
-                                        Not Received
-                                    @elseif($allocation->distributed_at)
-                                        Received
-                                    @else
-                                        Pending
-                                    @endif
-                                </td>
-                                <td>{{ $allocation->remarks ?? '' }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="9" class="text-center text-muted py-4">No allocations recorded yet.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="card-footer bg-white small text-muted d-flex justify-content-between flex-wrap gap-2">
-            <span>Prepared by: ______________________</span>
-            <span>Verified by: ______________________</span>
-            <span>Date Printed: {{ now()->format('M d, Y h:i A') }}</span>
+        <table class="meta">
+            <tr>
+                <td>
+                    <span class="label">Agency</span>
+                    <span class="value">{{ $event->resourceType->agency->name ?? 'N/A' }}</span>
+                </td>
+                <td>
+                    <span class="label">Program</span>
+                    <span class="value">{{ $event->programName->name ?? 'N/A' }}</span>
+                </td>
+                <td>
+                    <span class="label">Barangay</span>
+                    <span class="value">{{ $event->barangay->name }}</span>
+                </td>
+                <td>
+                    <span class="label">Distribution Date</span>
+                    <span class="value">{{ $event->distribution_date->format('M d, Y') }}</span>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span class="label">Resource</span>
+                    <span class="value">{{ $event->resourceType->name }}</span>
+                </td>
+                <td>
+                    <span class="label">Type</span>
+                    <span class="value">{{ $event->isFinancial() ? 'Financial Assistance' : 'Physical Resource' }}</span>
+                </td>
+                <td>
+                    <span class="label">Total Rows</span>
+                    <span class="value">{{ number_format($totalAllocations) }}</span>
+                </td>
+                <td>
+                    <span class="label">Received / Not Received</span>
+                    <span class="value">{{ number_format($totalReceived) }} / {{ number_format($totalNotReceived) }}</span>
+                </td>
+            </tr>
+        </table>
+
+        <table class="list">
+            <thead>
+                <tr>
+                    <th class="col-num">#</th>
+                    <th>Beneficiary Name</th>
+                    <th class="col-class">Class</th>
+                    <th class="col-contact">Contact</th>
+                    <th class="col-barangay">Barangay</th>
+                    <th class="col-amount">{{ $event->isFinancial() ? 'Amount (PHP)' : 'Quantity' }}</th>
+                    <th class="col-signature">Signature</th>
+                    <th class="col-remarks">Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($event->allocations as $allocation)
+                    <tr>
+                        <td class="col-num">{{ $loop->iteration }}</td>
+                        <td>{{ $allocation->beneficiary->full_name }}</td>
+                        <td class="col-class">{{ $allocation->beneficiary->classification }}</td>
+                        <td class="col-contact">{{ $allocation->beneficiary->contact_number ?? '—' }}</td>
+                        <td>{{ $event->barangay->name }}</td>
+                        <td class="col-amount">
+                            @if($event->isFinancial())
+                                {{ number_format((float) $allocation->amount, 2) }}
+                            @else
+                                {{ number_format((float) $allocation->quantity, 2) }} {{ $event->resourceType->unit }}
+                            @endif
+                        </td>
+                        <td class="col-signature"><div class="signature"></div></td>
+                        <td>{{ $allocation->remarks ?? '' }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="8" class="text-center">No allocations recorded yet.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <span class="line">Prepared by</span>
+            <span class="line">Verified by</span>
         </div>
     </div>
 </div>

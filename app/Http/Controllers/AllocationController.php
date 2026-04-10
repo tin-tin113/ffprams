@@ -10,6 +10,7 @@ use App\Models\DistributionEvent;
 use App\Models\ProgramName;
 use App\Models\ResourceType;
 use App\Services\AuditLogService;
+use App\Services\ReleaseOutcomeService;
 use App\Services\SemaphoreService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -21,6 +22,7 @@ class AllocationController extends Controller
 {
     public function __construct(
         private AuditLogService $audit,
+        private ReleaseOutcomeService $releaseOutcome,
         private SemaphoreService $sms,
     ) {}
 
@@ -431,23 +433,16 @@ class AllocationController extends Controller
             ->with('error', 'This allocation already has a final release outcome.');
         }
 
-        DB::transaction(function () use ($allocation) {
-            $oldValues = $allocation->toArray();
-
-            $allocation->update([
+        $this->releaseOutcome->apply(
+            $allocation,
+            [
                 'distributed_at' => Carbon::now(),
                 'release_outcome' => 'received',
-            ]);
-
-            $this->audit->log(
-                auth()->id(),
-                'updated',
-                'allocations',
-                $allocation->id,
-                $oldValues,
-                $allocation->fresh()->toArray(),
-            );
-        });
+            ],
+            $this->audit,
+            'updated',
+            'allocations',
+        );
 
         return redirect()->back()
             ->with('success', 'Allocation marked as distributed.');
@@ -467,23 +462,16 @@ class AllocationController extends Controller
                 ->with('error', 'This allocation already has a final release outcome.');
         }
 
-        DB::transaction(function () use ($allocation) {
-            $oldValues = $allocation->toArray();
-
-            $allocation->update([
+        $this->releaseOutcome->apply(
+            $allocation,
+            [
                 'distributed_at' => null,
                 'release_outcome' => 'not_received',
-            ]);
-
-            $this->audit->log(
-                auth()->id(),
-                'updated',
-                'allocations',
-                $allocation->id,
-                $oldValues,
-                $allocation->fresh()->toArray(),
-            );
-        });
+            ],
+            $this->audit,
+            'updated',
+            'allocations',
+        );
 
         return redirect()->back()
             ->with('success', 'Allocation marked as not received.');

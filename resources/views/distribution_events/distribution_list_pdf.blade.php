@@ -165,8 +165,7 @@
                 <th style="width: 130px;">Barangay</th>
                 <th style="width: 120px;">{{ $event->isFinancial() ? 'Amount (PHP)' : 'Quantity' }}</th>
                 <th style="width: 120px;">Signature</th>
-                <th style="width: 90px;">Outcome</th>
-                <th style="width: 180px;">Remarks</th>
+                <th style="width: 270px;">Remarks</th>
             </tr>
         </thead>
         <tbody>
@@ -185,20 +184,11 @@
                         @endif
                     </td>
                     <td class="signature"></td>
-                    <td class="text-center">
-                        @if($allocation->release_outcome === 'not_received')
-                            Not Received
-                        @elseif($allocation->distributed_at)
-                            Received
-                        @else
-                            Pending
-                        @endif
-                    </td>
                     <td>{{ $allocation->remarks ?? '' }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="9" class="text-center">No allocations recorded yet.</td>
+                    <td colspan="8" class="text-center">No allocations recorded yet.</td>
                 </tr>
             @endforelse
         </tbody>

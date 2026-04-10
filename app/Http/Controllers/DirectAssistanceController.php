@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\DirectAssistanceStoreRequest;
+use App\Http\Requests\DirectAssistanceUpdateRequest;
 use App\Models\DirectAssistance;
 use App\Models\Beneficiary;
 use App\Models\ProgramName;
-use App\Models\ResourceType;
 use App\Models\AssistancePurpose;
 use App\Models\DistributionEvent;
 use App\Models\Barangay;
 use App\Services\AuditLogService;
+use App\Services\ReleaseOutcomeService;
 use App\Services\SemaphoreService;
 use App\Services\ProgramEligibilityService;
-use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,7 @@ class DirectAssistanceController extends Controller
 {
     public function __construct(
         private AuditLogService $audit,
+        private ReleaseOutcomeService $releaseOutcome,
         private SemaphoreService $sms,
     ) {}
 
@@ -111,45 +113,18 @@ class DirectAssistanceController extends Controller
         ));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(DirectAssistanceStoreRequest $request): RedirectResponse
     {
-        $rules = [
-            'beneficiary_id' => ['required', 'exists:beneficiaries,id'],
-            'program_name_id' => ['required', 'exists:program_names,id'],
-            'resource_type_id' => ['required', 'exists:resource_types,id'],
-            'assistance_purpose_id' => ['nullable', 'exists:assistance_purposes,id'],
-            'quantity' => ['nullable', 'numeric', 'min:0.01', 'max:9999.99'],
-            'amount' => ['nullable', 'numeric', 'min:1', 'max:9999999999.99'],
-            'remarks' => ['nullable', 'string', 'max:500'],
-            'distribution_event_id' => ['nullable', 'exists:distribution_events,id'],
-        ];
-
-        $validated = $request->validate($rules);
+        $validated = $request->normalizedPayload();
 
         $beneficiary = Beneficiary::findOrFail($request->beneficiary_id);
         $program = ProgramName::findOrFail($request->program_name_id);
-        $resourceType = ResourceType::findOrFail($request->resource_type_id);
 
         // Verify eligibility
         if (!ProgramEligibilityService::isEligible($beneficiary, $program)) {
             return redirect()->back()
                 ->with('error', 'Beneficiary is not eligible for this program. ' .
                     ProgramEligibilityService::getIneligibilityReason($beneficiary, $program));
-        }
-
-        // Validate amount/quantity based on resource type
-        if ($resourceType->unit === 'PHP') {
-            if (!$request->filled('amount')) {
-                return redirect()->back()
-                    ->with('error', 'Amount is required for financial assistance.');
-            }
-            $validated['quantity'] = null;
-        } else {
-            if (!$request->filled('quantity')) {
-                return redirect()->back()
-                    ->with('error', 'Quantity is required for non-financial resources.');
-            }
-            $validated['amount'] = null;
         }
 
         $directAssistance = DB::transaction(function () use ($validated, $beneficiary) {
@@ -232,36 +207,9 @@ class DirectAssistanceController extends Controller
         ));
     }
 
-    public function update(Request $request, DirectAssistance $directAssistance): RedirectResponse
+    public function update(DirectAssistanceUpdateRequest $request, DirectAssistance $directAssistance): RedirectResponse
     {
-        $rules = [
-            'program_name_id' => ['required', 'exists:program_names,id'],
-            'resource_type_id' => ['required', 'exists:resource_types,id'],
-            'assistance_purpose_id' => ['nullable', 'exists:assistance_purposes,id'],
-            'quantity' => ['nullable', 'numeric', 'min:0.01', 'max:9999.99'],
-            'amount' => ['nullable', 'numeric', 'min:1', 'max:9999999999.99'],
-            'remarks' => ['nullable', 'string', 'max:500'],
-            'distribution_event_id' => ['nullable', 'exists:distribution_events,id'],
-        ];
-
-        $validated = $request->validate($rules);
-
-        $resourceType = ResourceType::findOrFail($request->resource_type_id);
-
-        // Validate amount/quantity based on resource type
-        if ($resourceType->unit === 'PHP') {
-            if (!$request->filled('amount')) {
-                return redirect()->back()
-                    ->with('error', 'Amount is required for financial assistance.');
-            }
-            $validated['quantity'] = null;
-        } else {
-            if (!$request->filled('quantity')) {
-                return redirect()->back()
-                    ->with('error', 'Quantity is required for non-financial resources.');
-            }
-            $validated['amount'] = null;
-        }
+        $validated = $request->normalizedPayload();
 
         DB::transaction(function () use ($directAssistance, $validated) {
             $oldValues = $directAssistance->toArray();
@@ -309,24 +257,17 @@ class DirectAssistanceController extends Controller
                 ->with('warning', 'This record is already marked as distributed.');
         }
 
-        DB::transaction(function () use ($directAssistance) {
-            $oldValues = $directAssistance->toArray();
-
-            $directAssistance->update([
-                'distributed_at' => Carbon::now(),
+        $this->releaseOutcome->apply(
+            $directAssistance,
+            [
+                'distributed_at' => now(),
                 'distributed_by' => auth()->id(),
                 'status' => 'distributed',
-            ]);
-
-            $this->audit->log(
-                auth()->id(),
-                'marked_distributed',
-                'direct_assistance',
-                $directAssistance->id,
-                $oldValues,
-                $directAssistance->fresh()->toArray(),
-            );
-        });
+            ],
+            $this->audit,
+            'marked_distributed',
+            'direct_assistance',
+        );
 
         // SMS notification with outcome
         $beneficiary = $directAssistance->beneficiary;
@@ -345,25 +286,18 @@ class DirectAssistanceController extends Controller
 
     public function markNotReceived(DirectAssistance $directAssistance): RedirectResponse
     {
-        DB::transaction(function () use ($directAssistance) {
-            $oldValues = $directAssistance->toArray();
-
-            $directAssistance->update([
+        $this->releaseOutcome->apply(
+            $directAssistance,
+            [
                 'release_outcome' => 'not_received',
                 'distributed_at' => null,
                 'distributed_by' => null,
                 'status' => 'recorded',
-            ]);
-
-            $this->audit->log(
-                auth()->id(),
-                'marked_not_received',
-                'direct_assistance',
-                $directAssistance->id,
-                $oldValues,
-                $directAssistance->fresh()->toArray(),
-            );
-        });
+            ],
+            $this->audit,
+            'marked_not_received',
+            'direct_assistance',
+        );
 
         return redirect()->back()
             ->with('success', 'Direct assistance marked as not received.');

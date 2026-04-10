@@ -119,12 +119,6 @@
             <a href="{{ route('distribution-events.distributionList', $event) }}" class="btn btn-outline-dark">
                 <i class="bi bi-printer me-1"></i> Print Distribution List
             </a>
-            <a href="{{ route('distribution-events.distributionListPdf', $event) }}" class="btn btn-outline-danger">
-                <i class="bi bi-file-earmark-pdf me-1"></i> Download PDF
-            </a>
-            <a href="{{ route('distribution-events.distributionListCsv', $event) }}" class="btn btn-outline-success">
-                <i class="bi bi-file-earmark-spreadsheet me-1"></i> Download CSV
-            </a>
         </div>
     </div>
 

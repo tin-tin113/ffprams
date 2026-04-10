@@ -148,6 +148,10 @@ class DistributionEventController extends Controller
         $pdf = Pdf::loadView('distribution_events.distribution_list_pdf', compact('event'))
             ->setPaper('a4', 'landscape');
 
+        if (request()->boolean('inline')) {
+            return $pdf->stream($filename);
+        }
+
         return $pdf->download($filename);
     }
 
@@ -169,17 +173,10 @@ class DistributionEventController extends Controller
                 'Contact Number',
                 'Barangay',
                 $event->isFinancial() ? 'Amount (PHP)' : 'Quantity',
-                'Release Outcome',
                 'Remarks',
             ]);
 
             foreach ($event->allocations as $index => $allocation) {
-                $releaseOutcome = match (true) {
-                    (bool) $allocation->distributed_at => 'Received',
-                    $allocation->release_outcome === 'not_received' => 'Not Received',
-                    default => 'Pending',
-                };
-
                 $allocationValue = $event->isFinancial()
                     ? number_format((float) $allocation->amount, 2, '.', '')
                     : number_format((float) $allocation->quantity, 2, '.', '') . ' ' . $event->resourceType->unit;
@@ -191,7 +188,6 @@ class DistributionEventController extends Controller
                     $allocation->beneficiary->contact_number ?? '',
                     $event->barangay->name,
                     $allocationValue,
-                    $releaseOutcome,
                     $allocation->remarks ?? '',
                 ]);
             }
