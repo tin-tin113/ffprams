@@ -456,7 +456,7 @@
                         </div>
                         <div class="col-6">
                             <div class="panel-stat-card">
-                                <div class="panel-stat-value" style="color: #6f42c1;" id="modal-household">0</div>
+                                <div class="panel-stat-value" style="color: var(--color-purple);" id="modal-household">0</div>
                                 <div class="panel-stat-label">Household Members</div>
                             </div>
                         </div>
@@ -467,7 +467,7 @@
                     </div>
                     <div class="panel-info-row">
                         <span class="label"><i class="bi bi-water me-1"></i>Fisherfolk</span>
-                        <span class="value" style="color: #0dcaf0;" id="modal-fisherfolk">0</span>
+                        <span class="value" style="color: var(--color-cyan);" id="modal-fisherfolk">0</span>
                     </div>
                     <div class="panel-info-row">
                         <span class="label"><i class="bi bi-intersect me-1"></i>Both (Farmer & Fisherfolk)</span>

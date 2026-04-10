@@ -565,7 +565,7 @@
                                         };
                                     @endphp
                                     @if($allocation->beneficiary->classification === 'Both')
-                                        <span class="badge" style="background-color: #6f42c1;">Both</span>
+                                        <span class="badge" style="background-color: var(--color-purple);">Both</span>
                                     @else
                                         <span class="badge {{ $classificationBadge }}">{{ $allocation->beneficiary->classification }}</span>
                                     @endif

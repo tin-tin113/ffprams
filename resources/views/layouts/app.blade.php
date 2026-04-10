@@ -30,6 +30,23 @@
             --accent-coral: #f87171;
             --accent-blue: #3b82f6;
             --body-bg: #f1f5f9;
+
+            /* Semantic Status Colors */
+            --color-status-recorded: #f59e0b;   /* Amber - pending */
+            --color-status-distributed: #3b82f6; /* Blue - in progress */
+            --color-status-completed: #22c55e;  /* Green - done */
+            --color-status-cancelled: #ef4444;  /* Red - cancelled */
+
+            /* Bootstrap Standard Colors (for geo-map & other specific uses) */
+            --bs-green: #28a745;
+            --bs-amber: #ffc107;
+            --bs-blue: #0d6efd;
+            --bs-red: #dc3545;
+
+            /* Additional Accent Colors */
+            --color-purple: #6f42c1;
+            --color-cyan: #0dcaf0;
+            --color-dark-navy: #1b2a4a;
         }
 
         * {

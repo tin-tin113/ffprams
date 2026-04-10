@@ -164,8 +164,7 @@
             </div>
 
             {{-- Send Button --}}
-            <button type="button" class="btn btn-primary w-100" id="sendBtn" disabled
-                    style="background-color:#1b2a4a;border-color:#1b2a4a;">
+            <button type="button" class="btn btn-primary w-100" id="sendBtn" disabled>
                 <i class="bi bi-send-fill me-1"></i> Send Message
             </button>
         </div>
@@ -185,8 +184,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="confirmSendBtn"
-                            style="background-color:#1b2a4a;border-color:#1b2a4a;">
+                    <button type="button" class="btn btn-primary" id="confirmSendBtn">
                         <i class="bi bi-send-fill me-1"></i> Confirm Send
                     </button>
                 </div>

@@ -72,7 +72,7 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-3 bg-purple bg-opacity-10 p-3 me-3" style="background-color: rgba(111, 66, 193, 0.1) !important;">
-                        <i class="bi bi-intersect fs-4" style="color: #6f42c1;"></i>
+                        <i class="bi bi-intersect fs-4" style="color: var(--color-purple);"></i>
                     </div>
                     <div>
                         <div class="text-muted small">Total Both</div>

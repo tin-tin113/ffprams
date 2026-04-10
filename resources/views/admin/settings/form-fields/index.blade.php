@@ -57,7 +57,7 @@
                 <div class="card-body p-3">
                     <div class="d-flex flex-column flex-md-row align-items-md-end justify-content-between gap-2">
                         <div>
-                            <label for="statusFilter" class="form-label fw-600 mb-1">Status</label>
+                            <label for="statusFilter" class="form-label fw-semibold mb-1">Status</label>
                             <select id="statusFilter" class="form-select form-select-sm">
                                 <option value="">All Status</option>
                                 <option value="active">Active Only</option>

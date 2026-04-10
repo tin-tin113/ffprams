@@ -60,7 +60,7 @@
                 <div class="card-body p-3">
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <label class="form-label fw-600">Category</label>
+                            <label class="form-label fw-semibold">Category</label>
                             <select id="categoryFilter" class="form-select form-select-sm">
                                 <option value="">All Categories</option>
                                 <option value="production">Production</option>
@@ -69,7 +69,7 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-600">Status</label>
+                            <label class="form-label fw-semibold">Status</label>
                             <select id="statusFilter" class="form-select form-select-sm">
                                 <option value="">All Status</option>
                                 <option value="active">Active Only</option>
@@ -77,7 +77,7 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-600">Search</label>
+                            <label class="form-label fw-semibold">Search</label>
                             <input type="text" id="purposeSearch" class="form-control form-control-sm"
                                    placeholder="Search by name...">
                         </div>
