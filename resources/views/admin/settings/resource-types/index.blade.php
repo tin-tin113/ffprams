@@ -59,7 +59,7 @@
             <div class="card shadow-sm border-0">
                 <div class="card-body p-3">
                     <div class="row g-3">
-                        <div class="col-md-4">
+                        <div class="col-12 col-md-4">
                             <label class="form-label fw-semibold">Status</label>
                             <select id="statusFilter" class="form-select form-select-sm">
                                 <option value="">All Status</option>
@@ -67,7 +67,7 @@
                                 <option value="inactive">Inactive Only</option>
                             </select>
                         </div>
-                        <div class="col-md-8">
+                        <div class="col-12 col-md-8">
                             <label class="form-label fw-semibold">Search</label>
                             <input type="text" id="rtSearch" class="form-control form-control-sm"
                                    placeholder="Search by name or description...">
@@ -83,7 +83,7 @@
         <div class="col-12">
             <div class="card shadow-sm border-0">
                 <div class="table-responsive">
-                    <table class="table table-hover table-sm mb-0">
+                    <table class="table table-hover table-sm mb-0 table-responsive-cards">
                         <thead class="table-light">
                             <tr>
                                 <th style="width: 20%;">Name</th>
@@ -96,19 +96,19 @@
                         <tbody id="rtTableBody">
                             @forelse($resourceTypes as $resourceType)
                             <tr data-rt-id="{{ $resourceType->id }}">
-                                <td><strong>{{ $resourceType->name }}</strong></td>
-                                <td>
+                                <td data-label="Name"><strong>{{ $resourceType->name }}</strong></td>
+                                <td data-label="Agency">
                                     <span class="badge bg-secondary">{{ $resourceType->agency->name ?? 'N/A' }}</span>
                                 </td>
-                                <td>
+                                <td data-label="Description">
                                     <small class="text-muted">{{ Str::limit($resourceType->description, 50) }}</small>
                                 </td>
-                                <td>
+                                <td data-label="Status">
                                     <span class="badge {{ $resourceType->is_active ? 'bg-success' : 'bg-secondary' }}">
                                         {{ $resourceType->is_active ? 'Active' : 'Inactive' }}
                                     </span>
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center" data-label="Actions">
                                     <button class="btn btn-sm btn-outline-primary edit-rt"
                                             data-id="{{ $resourceType->id }}"
                                             data-name="{{ $resourceType->name }}"

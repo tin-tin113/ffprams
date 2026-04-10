@@ -154,7 +154,7 @@
     <div class="card-body">
         <div class="row g-3">
             {{-- Agency Selection --}}
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="agency_id" class="form-label">Source Agency <span class="text-danger">*</span></label>
                 <select class="form-select @error('agency_id') is-invalid @enderror"
                         id="agency_id" name="agency_id" required>
@@ -174,7 +174,7 @@
             </div>
 
             {{-- Classification --}}
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="classification" class="form-label">Classification <span class="text-danger">*</span></label>
                 <select class="form-select @error('classification') is-invalid @enderror"
                         id="classification" name="classification" required>
@@ -189,7 +189,7 @@
             </div>
 
             {{-- Status --}}
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
                 <select class="form-select @error('status') is-invalid @enderror"
                         id="status" name="status" required>
@@ -203,7 +203,7 @@
             </div>
 
             {{-- Name Fields --}}
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <label for="first_name" class="form-label">First Name <span class="text-danger">*</span></label>
                 <input type="text" class="form-control @error('first_name') is-invalid @enderror"
                        id="first_name" name="first_name"
@@ -211,7 +211,7 @@
                 @error('first_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
 
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <label for="middle_name" class="form-label">Middle Name</label>
                 <input type="text" class="form-control @error('middle_name') is-invalid @enderror"
                        id="middle_name" name="middle_name"
@@ -219,7 +219,7 @@
                 @error('middle_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
 
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <label for="last_name" class="form-label">Last Name <span class="text-danger">*</span></label>
                 <input type="text" class="form-control @error('last_name') is-invalid @enderror"
                        id="last_name" name="last_name"
@@ -227,7 +227,7 @@
                 @error('last_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
 
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <label for="name_suffix" class="form-label">Name Extension</label>
                 <input type="text" class="form-control @error('name_suffix') is-invalid @enderror"
                        id="name_suffix" name="name_suffix"
@@ -236,7 +236,7 @@
             </div>
 
             {{-- Sex --}}
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <label for="sex" class="form-label">Sex <span class="text-danger">*</span></label>
                 <select class="form-select @error('sex') is-invalid @enderror" id="sex" name="sex" required>
                     <option value="" disabled {{ old('sex', $beneficiary->sex ?? '') === '' ? 'selected' : '' }}>Select...</option>
@@ -248,7 +248,7 @@
             </div>
 
             {{-- Date of Birth --}}
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <label for="date_of_birth" class="form-label">Date of Birth <span class="text-danger">*</span></label>
                 <input type="date" class="form-control @error('date_of_birth') is-invalid @enderror"
                        id="date_of_birth" name="date_of_birth"
@@ -257,7 +257,7 @@
             </div>
 
             {{-- Civil Status --}}
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <label for="civil_status" class="form-label">Civil Status {!! $civilStatusRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('civil_status') is-invalid @enderror" id="civil_status" name="civil_status" {{ $civilStatusRequired ? 'required' : '' }}>
                     <option value="" disabled {{ old('civil_status', $beneficiary->civil_status ?? '') === '' ? 'selected' : '' }}>Select...</option>
@@ -269,7 +269,7 @@
             </div>
 
             {{-- Highest Education --}}
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <label for="highest_education" class="form-label">Highest Education {!! $highestEducationRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('highest_education') is-invalid @enderror" id="highest_education" name="highest_education" {{ $highestEducationRequired ? 'required' : '' }}>
                     <option value="" {{ old('highest_education', $beneficiary->highest_education ?? '') === '' ? 'selected' : '' }}>Select...</option>
@@ -281,7 +281,7 @@
             </div>
 
             {{-- Government ID Type --}}
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <label for="id_type" class="form-label">Government ID Type {!! $idTypeRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('id_type') is-invalid @enderror" id="id_type" name="id_type" {{ $idTypeRequired ? 'required' : '' }}>
                     <option value="" {{ old('id_type', $beneficiary->id_type ?? '') === '' ? 'selected' : '' }}>Select...</option>
@@ -293,7 +293,7 @@
             </div>
 
             {{-- Contact Number --}}
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <label for="contact_number" class="form-label">Contact Number <span class="text-danger">*</span></label>
                 <input type="text" class="form-control @error('contact_number') is-invalid @enderror"
                        id="contact_number" name="contact_number" placeholder="09XXXXXXXXX"
@@ -302,7 +302,7 @@
             </div>
 
             {{-- Registration Date --}}
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <label for="registered_at" class="form-label">Registration Date <span class="text-danger">*</span></label>
                 <input type="date" class="form-control @error('registered_at') is-invalid @enderror"
                        id="registered_at" name="registered_at"
@@ -316,7 +316,7 @@
                     $customFieldName = 'custom_fields.' . $customGroup;
                     $customFieldValue = old($customFieldName, $beneficiaryCustomFields[$customGroup] ?? '');
                 @endphp
-                <div class="col-md-3">
+                <div class="col-12 col-md-3">
                     <label for="custom_{{ $customGroup }}" class="form-label">
                         {{ $customField['label'] }}
                         @if($customField['is_required'])
@@ -348,14 +348,14 @@
     <div class="card-header bg-white fw-semibold"><i class="bi bi-geo-alt me-1"></i> Address Information</div>
     <div class="card-body">
         <div class="row g-3">
-            <div class="col-md-8">
+            <div class="col-12 col-md-8">
                 <label for="home_address" class="form-label">Home Address <span class="text-danger">*</span></label>
                 <input type="text" class="form-control @error('home_address') is-invalid @enderror"
                        id="home_address" name="home_address" placeholder="House No., Street, Purok/Sitio"
                        value="{{ old('home_address', $beneficiary->home_address ?? '') }}" required>
                 @error('home_address')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="barangay_id" class="form-label">Barangay <span class="text-danger">*</span></label>
                 <select class="form-select @error('barangay_id') is-invalid @enderror" id="barangay_id" name="barangay_id" required>
                     <option value="" disabled {{ old('barangay_id', $beneficiary->barangay_id ?? '') === '' ? 'selected' : '' }}>Select barangay...</option>
@@ -374,14 +374,14 @@
     <div class="card-header bg-white fw-semibold"><i class="bi bi-tree me-1"></i> DA/RSBSA Information (Farmer)</div>
     <div class="card-body">
         <div class="row g-3">
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="rsbsa_number" class="form-label">RSBSA Number</label>
                 <input type="text" class="form-control @error('rsbsa_number') is-invalid @enderror"
                        id="rsbsa_number" name="rsbsa_number" value="{{ old('rsbsa_number', $beneficiary->rsbsa_number ?? '') }}">
                 @error('rsbsa_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 <small class="text-muted">Can be added after registration</small>
             </div>
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="farm_ownership" class="form-label">Land Ownership / Tenure {!! $farmOwnershipRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('farm_ownership') is-invalid @enderror" id="farm_ownership" name="farm_ownership">
                     <option value="" disabled {{ old('farm_ownership', $beneficiary->farm_ownership ?? '') === '' ? 'selected' : '' }}>Select...</option>
@@ -391,21 +391,21 @@
                 </select>
                 @error('farm_ownership')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="farm_size_hectares" class="form-label">Farm Area (Hectares) <span class="text-danger">*</span></label>
                 <input type="number" class="form-control @error('farm_size_hectares') is-invalid @enderror"
                        id="farm_size_hectares" name="farm_size_hectares"
                        value="{{ old('farm_size_hectares', $beneficiary->farm_size_hectares ?? '') }}" step="0.01" min="0.01">
                 @error('farm_size_hectares')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="col-md-6">
+            <div class="col-12 col-md-6">
                 <label for="primary_commodity" class="form-label">Crop Type / Commodity <span class="text-danger">*</span></label>
                 <input type="text" class="form-control @error('primary_commodity') is-invalid @enderror"
                        id="primary_commodity" name="primary_commodity" placeholder="e.g. Rice, Corn, Vegetables"
                        value="{{ old('primary_commodity', $beneficiary->primary_commodity ?? '') }}">
                 @error('primary_commodity')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="col-md-6">
+            <div class="col-12 col-md-6">
                 <label for="farm_type" class="form-label">Farm Type / Irrigation {!! $farmTypeRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('farm_type') is-invalid @enderror" id="farm_type" name="farm_type">
                     <option value="" disabled {{ old('farm_type', $beneficiary->farm_type ?? '') === '' ? 'selected' : '' }}>Select...</option>
@@ -415,7 +415,7 @@
                 </select>
                 @error('farm_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="col-md-6">
+            <div class="col-12 col-md-6">
                 <label for="organization_membership" class="form-label">Organization / Cooperative Membership</label>
                 <input type="text" class="form-control @error('organization_membership') is-invalid @enderror"
                        id="organization_membership" name="organization_membership"
@@ -429,7 +429,7 @@
                     $customFieldName = 'custom_fields.' . $customGroup;
                     $customFieldValue = old($customFieldName, $beneficiaryCustomFields[$customGroup] ?? '');
                 @endphp
-                <div class="col-md-6">
+                <div class="col-12 col-md-6">
                     <label for="custom_{{ $customGroup }}" class="form-label">
                         {{ $customField['label'] }}
                         @if($customField['is_required'])
@@ -458,14 +458,14 @@
     <div class="card-header bg-white fw-semibold"><i class="bi bi-water me-1"></i> BFAR/FishR Information (Fisherfolk)</div>
     <div class="card-body">
         <div class="row g-3">
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="fishr_number" class="form-label">FishR Number</label>
                 <input type="text" class="form-control @error('fishr_number') is-invalid @enderror"
                        id="fishr_number" name="fishr_number" value="{{ old('fishr_number', $beneficiary->fishr_number ?? '') }}">
                 @error('fishr_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 <small class="text-muted">Can be added after registration</small>
             </div>
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="fisherfolk_type" class="form-label">Type of Fishing Activity {!! $fisherfolkTypeRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('fisherfolk_type') is-invalid @enderror" id="fisherfolk_type" name="fisherfolk_type">
                     <option value="" disabled {{ old('fisherfolk_type', $beneficiary->fisherfolk_type ?? '') === '' ? 'selected' : '' }}>Select...</option>
@@ -475,7 +475,7 @@
                 </select>
                 @error('fisherfolk_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="length_of_residency_months" class="form-label">Residency (Months) <span class="text-danger">*</span></label>
                 <input type="number" class="form-control @error('length_of_residency_months') is-invalid @enderror"
                        id="length_of_residency_months" name="length_of_residency_months"
@@ -483,13 +483,13 @@
                 @error('length_of_residency_months')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 <small class="text-muted">Min 6 months per RA 8550</small>
             </div>
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="main_fishing_gear" class="form-label">Fishing Gear Type</label>
                 <input type="text" class="form-control @error('main_fishing_gear') is-invalid @enderror"
                        id="main_fishing_gear" name="main_fishing_gear" value="{{ old('main_fishing_gear', $beneficiary->main_fishing_gear ?? '') }}">
                 @error('main_fishing_gear')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="col-md-2">
+            <div class="col-12 col-md-2">
                 <div class="form-check mt-4">
                     <input type="hidden" name="has_fishing_vessel" value="0">
                     <input type="checkbox" class="form-check-input" id="has_fishing_vessel" name="has_fishing_vessel" value="1"
@@ -497,12 +497,12 @@
                     <label class="form-check-label" for="has_fishing_vessel">Has Vessel</label>
                 </div>
             </div>
-            <div class="col-md-3" id="vessel-type-wrapper" style="display: none;">
+            <div class="col-12 col-md-3" id="vessel-type-wrapper" style="display: none;">
                 <label for="fishing_vessel_type" class="form-label">Vessel Type</label>
                 <input type="text" class="form-control" id="fishing_vessel_type" name="fishing_vessel_type"
                        value="{{ old('fishing_vessel_type', $beneficiary->fishing_vessel_type ?? '') }}">
             </div>
-            <div class="col-md-3" id="vessel-tonnage-wrapper" style="display: none;">
+            <div class="col-12 col-md-3" id="vessel-tonnage-wrapper" style="display: none;">
                 <label for="fishing_vessel_tonnage" class="form-label">Gross Tonnage</label>
                 <input type="number" class="form-control" id="fishing_vessel_tonnage" name="fishing_vessel_tonnage"
                        value="{{ old('fishing_vessel_tonnage', $beneficiary->fishing_vessel_tonnage ?? '') }}" step="0.01" min="0">
@@ -514,7 +514,7 @@
                     $customFieldName = 'custom_fields.' . $customGroup;
                     $customFieldValue = old($customFieldName, $beneficiaryCustomFields[$customGroup] ?? '');
                 @endphp
-                <div class="col-md-4">
+                <div class="col-12 col-md-4">
                     <label for="custom_{{ $customGroup }}" class="form-label">
                         {{ $customField['label'] }}
                         @if($customField['is_required'])
@@ -550,13 +550,13 @@
             <strong>Note:</strong> CLOA or EP number is REQUIRED for DAR beneficiaries as it is the legal proof of land award issued by the MARO/PARO.
         </div>
         <div class="row g-3">
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="cloa_ep_number" class="form-label">CLOA / EP Number <span class="text-danger">*</span></label>
                 <input type="text" class="form-control @error('cloa_ep_number') is-invalid @enderror"
                        id="cloa_ep_number" name="cloa_ep_number" value="{{ old('cloa_ep_number', $beneficiary->cloa_ep_number ?? '') }}">
                 @error('cloa_ep_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="arb_classification" class="form-label">ARB Classification {!! $arbClassificationRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('arb_classification') is-invalid @enderror" id="arb_classification" name="arb_classification">
                     <option value="" disabled {{ old('arb_classification', $beneficiary->arb_classification ?? '') === '' ? 'selected' : '' }}>Select...</option>
@@ -566,7 +566,7 @@
                 </select>
                 @error('arb_classification')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="ownership_scheme" class="form-label">Ownership Scheme {!! $ownershipSchemeRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('ownership_scheme') is-invalid @enderror" id="ownership_scheme" name="ownership_scheme">
                     <option value="" disabled {{ old('ownership_scheme', $beneficiary->ownership_scheme ?? '') === '' ? 'selected' : '' }}>Select...</option>
@@ -576,20 +576,20 @@
                 </select>
                 @error('ownership_scheme')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="col-md-8">
+            <div class="col-12 col-md-8">
                 <label for="landholding_description" class="form-label">Landholding Description <span class="text-danger">*</span></label>
                 <textarea class="form-control @error('landholding_description') is-invalid @enderror"
                           id="landholding_description" name="landholding_description" rows="2">{{ old('landholding_description', $beneficiary->landholding_description ?? '') }}</textarea>
                 @error('landholding_description')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="land_area_awarded_hectares" class="form-label">Land Area Awarded (Ha) <span class="text-danger">*</span></label>
                 <input type="number" class="form-control @error('land_area_awarded_hectares') is-invalid @enderror"
                        id="land_area_awarded_hectares" name="land_area_awarded_hectares"
                        value="{{ old('land_area_awarded_hectares', $beneficiary->land_area_awarded_hectares ?? '') }}" step="0.01" min="0.01">
                 @error('land_area_awarded_hectares')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="col-md-6">
+            <div class="col-12 col-md-6">
                 <label for="barc_membership_status" class="form-label">BARC Membership Status</label>
                 <input type="text" class="form-control @error('barc_membership_status') is-invalid @enderror"
                        id="barc_membership_status" name="barc_membership_status"
@@ -603,7 +603,7 @@
                     $customFieldName = 'custom_fields.' . $customGroup;
                     $customFieldValue = old($customFieldName, $beneficiaryCustomFields[$customGroup] ?? '');
                 @endphp
-                <div class="col-md-6">
+                <div class="col-12 col-md-6">
                     <label for="custom_{{ $customGroup }}" class="form-label">
                         {{ $customField['label'] }}
                         @if($customField['is_required'])
@@ -632,7 +632,7 @@
     <div class="card-header bg-white fw-semibold"><i class="bi bi-people me-1"></i> Association Membership</div>
     <div class="card-body">
         <div class="row g-3">
-            <div class="col-md-6">
+            <div class="col-12 col-md-6">
                 <div class="form-check form-switch mt-2">
                     <input type="hidden" name="association_member" value="0">
                     <input type="checkbox" class="form-check-input" id="association_member" name="association_member" value="1"
@@ -640,7 +640,7 @@
                     <label class="form-check-label" for="association_member">Member of Farmers/Fisherfolk Association</label>
                 </div>
             </div>
-            <div class="col-md-6" id="association-name-wrapper" style="display: none;">
+            <div class="col-12 col-md-6" id="association-name-wrapper" style="display: none;">
                 <label for="association_name" class="form-label">Association Name <span class="text-danger">*</span></label>
                 <input type="text" class="form-control @error('association_name') is-invalid @enderror"
                        id="association_name" name="association_name" value="{{ old('association_name', $beneficiary->association_name ?? '') }}">

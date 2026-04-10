@@ -59,7 +59,7 @@
             <div class="card shadow-sm border-0">
                 <div class="card-body p-3">
                     <div class="row g-3">
-                        <div class="col-md-4">
+                        <div class="col-12 col-md-4">
                             <label class="form-label fw-semibold">Category</label>
                             <select id="categoryFilter" class="form-select form-select-sm">
                                 <option value="">All Categories</option>
@@ -68,7 +68,7 @@
                                 <option value="emergency">Emergency</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-12 col-md-4">
                             <label class="form-label fw-semibold">Status</label>
                             <select id="statusFilter" class="form-select form-select-sm">
                                 <option value="">All Status</option>
@@ -76,7 +76,7 @@
                                 <option value="inactive">Inactive Only</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-12 col-md-4">
                             <label class="form-label fw-semibold">Search</label>
                             <input type="text" id="purposeSearch" class="form-control form-control-sm"
                                    placeholder="Search by name...">
@@ -92,7 +92,7 @@
         <div class="col-12">
             <div class="card shadow-sm border-0">
                 <div class="table-responsive">
-                    <table class="table table-hover table-sm mb-0">
+                    <table class="table table-hover table-sm mb-0 table-responsive-cards">
                         <thead class="table-light">
                             <tr>
                                 <th style="width: 15%;">Category</th>
@@ -105,19 +105,19 @@
                         <tbody id="purposesTableBody">
                             @forelse($purposes as $purpose)
                             <tr data-purpose-id="{{ $purpose->id }}">
-                                <td>
+                                <td data-label="Category">
                                     <span class="badge bg-info">{{ $purpose->category }}</span>
                                 </td>
-                                <td><strong>{{ $purpose->name }}</strong></td>
-                                <td>
+                                <td data-label="Name"><strong>{{ $purpose->name }}</strong></td>
+                                <td data-label="Description">
                                     <small class="text-muted">{{ Str::limit($purpose->description, 50) }}</small>
                                 </td>
-                                <td>
+                                <td data-label="Status">
                                     <span class="badge {{ $purpose->is_active ? 'bg-success' : 'bg-secondary' }}">
                                         {{ $purpose->is_active ? 'Active' : 'Inactive' }}
                                     </span>
                                 </td>
-                                <td class="text-center text-nowrap">
+                                <td class="text-center text-nowrap" data-label="Actions">
                                     <div class="purpose-actions">
                                         <button class="btn btn-sm btn-outline-primary edit-purpose"
                                                 data-id="{{ $purpose->id }}"

@@ -142,7 +142,7 @@
                         <div class="accordion-body p-0">
                             {{-- Field Options Table --}}
                             <div class="table-responsive">
-                                <table class="table table-hover table-sm mb-0">
+                                <table class="table table-hover table-sm mb-0 table-responsive-cards">
                                     <thead class="table-light">
                                         <tr>
                                             <th style="width: 30%;">Label</th>
@@ -155,17 +155,17 @@
                                     <tbody class="ff-tbody" data-field="{{ $fieldGroup }}">
                                         @forelse($options as $option)
                                         <tr data-ff-id="{{ $option->id }}">
-                                            <td><strong>{{ $option->label }}</strong></td>
-                                            <td><code>{{ $option->value }}</code></td>
-                                            <td>
+                                            <td data-label="Label"><strong>{{ $option->label }}</strong></td>
+                                            <td data-label="Value"><code>{{ $option->value }}</code></td>
+                                            <td data-label="Order">
                                                 <small class="text-muted">{{ $option->sort_order }}</small>
                                             </td>
-                                            <td>
+                                            <td data-label="Status">
                                                 <span class="badge {{ $option->is_active ? 'bg-success' : 'bg-secondary' }}">
                                                     {{ $option->is_active ? 'Active' : 'Inactive' }}
                                                 </span>
                                             </td>
-                                            <td class="text-center">
+                                            <td class="text-center" data-label="Actions">
                                                 <button class="btn btn-sm btn-outline-primary edit-ff"
                                                         data-id="{{ $option->id }}"
                                                         data-label="{{ $option->label }}"

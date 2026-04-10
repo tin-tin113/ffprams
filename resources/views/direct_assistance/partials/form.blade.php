@@ -59,7 +59,7 @@
                 <div class="card-body row g-3">
 
                     <!-- Program Selection -->
-                    <div class="col-md-6">
+                    <div class="col-12 col-md-6">
                         <label for="programSelect" class="form-label">Program <span class="text-danger">*</span></label>
                         <select class="form-select @error('program_name_id') is-invalid @enderror"
                                 name="program_name_id"
@@ -83,7 +83,7 @@
                     </div>
 
                     <!-- Resource Type Selection -->
-                    <div class="col-md-6">
+                    <div class="col-12 col-md-6">
                         <label for="resourceTypeSelect" class="form-label">Resource Type <span class="text-danger">*</span></label>
                         <select class="form-select @error('resource_type_id') is-invalid @enderror"
                                 name="resource_type_id"
@@ -102,7 +102,7 @@
                     </div>
 
                     <!-- Quantity Field -->
-                    <div class="col-md-4" id="quantityGroup" style="display: none;">
+                    <div class="col-12 col-md-4" id="quantityGroup" style="display: none;">
                         <label class="form-label">Quantity <span class="text-danger">*</span></label>
                         <input type="number"
                                step="0.01"
@@ -116,7 +116,7 @@
                     </div>
 
                     <!-- Amount Field -->
-                    <div class="col-md-4" id="amountGroup" style="display: none;">
+                    <div class="col-12 col-md-4" id="amountGroup" style="display: none;">
                         <label class="form-label">Amount (PHP) <span class="text-danger">*</span></label>
                         <input type="number"
                                step="0.01"
@@ -130,7 +130,7 @@
                     </div>
 
                     <!-- Assistance Purpose -->
-                    <div class="col-md-4">
+                    <div class="col-12 col-md-4">
                         <label class="form-label">Purpose (Optional)</label>
                         <select class="form-select @error('assistance_purpose_id') is-invalid @enderror"
                                 name="assistance_purpose_id">

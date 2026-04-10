@@ -59,7 +59,7 @@
             <div class="card shadow-sm border-0">
                 <div class="card-body p-3">
                     <div class="row g-3">
-                        <div class="col-md-4">
+                        <div class="col-12 col-md-4">
                             <label class="form-label fw-semibold">Agency</label>
                             <select id="agencyFilter" class="form-select form-select-sm">
                                 <option value="">All Agencies</option>
@@ -68,7 +68,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-12 col-md-4">
                             <label class="form-label fw-semibold">Status</label>
                             <select id="statusFilter" class="form-select form-select-sm">
                                 <option value="">All Status</option>
@@ -76,7 +76,7 @@
                                 <option value="inactive">Inactive Only</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-12 col-md-4">
                             <label class="form-label fw-semibold">Search</label>
                             <input type="text" id="pnSearch" class="form-control form-control-sm"
                                    placeholder="Search by name...">
@@ -92,7 +92,7 @@
         <div class="col-12">
             <div class="card shadow-sm border-0">
                 <div class="table-responsive">
-                    <table class="table table-hover table-sm mb-0">
+                    <table class="table table-hover table-sm mb-0 table-responsive-cards">
                         <thead class="table-light">
                             <tr>
                                 <th style="width: 20%;">Name</th>
@@ -106,22 +106,22 @@
                         <tbody id="pnTableBody">
                             @forelse($programNames as $program)
                             <tr data-pn-id="{{ $program->id }}" data-agency-id="{{ $program->agency_id }}">
-                                <td><strong>{{ $program->name }}</strong></td>
-                                <td>
+                                <td data-label="Name"><strong>{{ $program->name }}</strong></td>
+                                <td data-label="Agency">
                                     <span class="badge bg-secondary">{{ $program->agency->name ?? 'N/A' }}</span>
                                 </td>
-                                <td>
+                                <td data-label="Description">
                                     <small class="text-muted">{{ Str::limit($program->description, 40) }}</small>
                                 </td>
-                                <td>
+                                <td data-label="Classification">
                                     <small>{{ $program->classification ?? '-' }}</small>
                                 </td>
-                                <td>
+                                <td data-label="Status">
                                     <span class="badge {{ $program->is_active ? 'bg-success' : 'bg-secondary' }}">
                                         {{ $program->is_active ? 'Active' : 'Inactive' }}
                                     </span>
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center" data-label="Actions">
                                     <button class="btn btn-sm btn-outline-primary edit-pn"
                                             data-id="{{ $program->id }}"
                                             data-name="{{ $program->name }}"

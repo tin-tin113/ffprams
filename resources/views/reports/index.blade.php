@@ -44,7 +44,7 @@
     </div>
 
     <div class="row g-3 mb-4">
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="text-muted small">Financial Events</div>
@@ -52,7 +52,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="text-muted small">Missing Legal Basis</div>
@@ -60,7 +60,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="text-muted small">Pending Liquidation</div>
@@ -69,7 +69,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="text-muted small">FARMC Pending</div>
