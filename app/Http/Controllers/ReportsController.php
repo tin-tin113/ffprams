@@ -8,7 +8,6 @@ use App\Models\Barangay;
 use App\Models\Beneficiary;
 use App\Models\DistributionEvent;
 use App\Models\ResourceType;
-use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -430,9 +429,9 @@ class ReportsController extends Controller
 
         // REPORT 8 — Assistance by Purpose (Event vs Direct)
         $assistanceByPurpose = AssistancePurpose::select(
-                'assistance_purposes.name',
-                'assistance_purposes.category',
-            )
+            'assistance_purposes.name',
+            'assistance_purposes.category',
+        )
             ->selectRaw("COUNT(DISTINCT CASE WHEN allocations.release_method = 'event' THEN allocations.beneficiary_id END) as event_beneficiaries")
             ->selectRaw("COALESCE(SUM(CASE WHEN allocations.release_method = 'event' THEN allocations.amount ELSE 0 END), 0) as event_amount")
             ->selectRaw("COUNT(DISTINCT CASE WHEN allocations.release_method = 'direct' THEN allocations.beneficiary_id END) as direct_beneficiaries")

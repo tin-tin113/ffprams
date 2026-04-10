@@ -6,6 +6,47 @@
     <li class="breadcrumb-item active">SMS Broadcast</li>
 @endsection
 
+@push('styles')
+<style>
+    .sms-beneficiary-list {
+        max-height: min(44vh, 320px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .sms-preview-scroll {
+        max-height: min(40vh, 240px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .sms-response-pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: min(34vh, 220px);
+        overflow-y: auto;
+    }
+
+    .sms-detail-label-col {
+        width: 140px;
+    }
+
+    @media (max-width: 575.98px) {
+        .sms-detail-label-col {
+            width: 100px;
+        }
+
+        .sms-beneficiary-list {
+            max-height: min(40vh, 280px);
+        }
+
+        .sms-preview-scroll {
+            max-height: min(34vh, 200px);
+        }
+    }
+</style>
+@endpush
+
 @section('content')
     {{-- Page Header --}}
     <div class="mb-4">
@@ -117,15 +158,15 @@
 
             {{-- Specific Beneficiary Selector (hidden) --}}
             <div id="specificSelector" class="mb-3" style="display:none;">
-                <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-2">
                     <label class="form-label mb-0">Select Beneficiaries</label>
-                    <div>
+                    <div class="d-flex flex-wrap gap-1">
                         <button type="button" class="btn btn-sm btn-outline-primary me-1" id="selectAllVisible">Select All Visible</button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="clearAllSelected">Clear All</button>
                     </div>
                 </div>
                 <input type="text" class="form-control mb-2" id="beneficiarySearch" placeholder="Search by name...">
-                <div class="border rounded" style="max-height:300px;overflow-y:auto;" id="beneficiaryList">
+                <div class="border rounded sms-beneficiary-list" id="beneficiaryList">
                     <div class="text-center text-muted py-4">
                         <span class="spinner-border spinner-border-sm me-1"></span> Loading beneficiaries...
                     </div>
@@ -234,7 +275,7 @@
 
             {{-- SMS Log Table --}}
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 table-responsive-cards">
                     <thead class="table-light">
                         <tr>
                             <th>#</th>
@@ -258,23 +299,23 @@
                                 data-status="{{ $log->status }}"
                                 data-sent="{{ $log->sent_at?->format('M d, Y h:i A') }}"
                                 data-response="{{ $log->response }}">
-                                <td class="text-muted">{{ $smsLogs->firstItem() + $loop->index }}</td>
-                                <td class="fw-semibold">{{ $log->beneficiary->full_name ?? 'N/A' }}</td>
-                                <td>{{ $log->beneficiary->barangay->name ?? '—' }}</td>
-                                <td>{{ $log->beneficiary->contact_number ?? '—' }}</td>
-                                <td>
+                                <td class="text-muted" data-label="#">{{ $smsLogs->firstItem() + $loop->index }}</td>
+                                <td class="fw-semibold" data-label="Beneficiary Name">{{ $log->beneficiary->full_name ?? 'N/A' }}</td>
+                                <td data-label="Barangay">{{ $log->beneficiary->barangay->name ?? '—' }}</td>
+                                <td data-label="Contact Number">{{ $log->beneficiary->contact_number ?? '—' }}</td>
+                                <td data-label="Message">
                                     <span data-bs-toggle="tooltip" data-bs-placement="top"
                                           title="{{ $log->message }}">
                                         {{ \Illuminate\Support\Str::limit($log->message, 60) }}
                                     </span>
                                 </td>
-                                <td>
+                                <td data-label="Status">
                                     <span class="badge {{ $log->status === 'sent' ? 'bg-success' : 'bg-danger' }}">
                                         {{ ucfirst($log->status) }}
                                     </span>
                                 </td>
-                                <td class="text-nowrap">{{ $log->sent_at?->format('M d, Y h:i A') }}</td>
-                                <td>
+                                <td class="text-nowrap" data-label="Sent At">{{ $log->sent_at?->format('M d, Y h:i A') }}</td>
+                                <td data-label="Response">
                                     @if($log->status === 'failed' && $log->response)
                                         <small class="text-muted">{{ \Illuminate\Support\Str::limit($log->response, 40) }}</small>
                                     @else
@@ -305,7 +346,7 @@
 
     {{-- SMS Detail Modal --}}
     <div class="modal fade" id="smsDetailModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title"><i class="bi bi-envelope-open me-1"></i> SMS Details</h5>
@@ -314,7 +355,7 @@
                 <div class="modal-body">
                     <table class="table table-borderless table-sm mb-0">
                         <tr>
-                            <th class="text-muted" style="width:140px;">Beneficiary</th>
+                            <th class="text-muted sms-detail-label-col">Beneficiary</th>
                             <td id="detailName"></td>
                         </tr>
                         <tr>
@@ -339,7 +380,7 @@
                         </tr>
                         <tr>
                             <th class="text-muted">Response</th>
-                            <td><pre class="mb-0 small bg-light p-2 rounded" style="white-space:pre-wrap;word-break:break-word;max-height:200px;overflow-y:auto;" id="detailResponse"></pre></td>
+                            <td><pre class="mb-0 small bg-light p-2 rounded sms-response-pre" id="detailResponse"></pre></td>
                         </tr>
                     </table>
                 </div>
@@ -460,7 +501,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         var html = '<div class="fw-semibold small mb-2"><i class="bi bi-people me-1"></i> ' + previewData.count + ' beneficiar' + (previewData.count === 1 ? 'y' : 'ies') + ' will receive this message</div>';
-        html += '<div style="max-height:200px;overflow-y:auto;">';
+        html += '<div class="sms-preview-scroll">';
         html += '<table class="table table-sm table-borderless mb-0 small">';
         previewData.recipients.forEach(function (r) {
             html += '<tr><td class="fw-semibold">' + esc(r.full_name) + '</td><td>' + esc(r.barangay || '—') + '</td><td>' + esc(r.contact_number || '—') + '</td></tr>';

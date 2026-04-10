@@ -51,14 +51,14 @@
         };
     @endphp
 
-    <div class="d-flex justify-content-between align-items-start mb-4">
-        <div class="d-flex align-items-center">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
+        <div class="d-flex align-items-center flex-wrap gap-2 gap-sm-0">
             <a href="{{ route('distribution-events.index') }}" class="btn btn-outline-secondary btn-sm me-3">
                 <i class="bi bi-arrow-left"></i>
             </a>
             <div>
                 <h1 class="h3 mb-1">{{ $event->barangay->name }}</h1>
-                <div class="d-flex gap-2 align-items-center">
+                <div class="d-flex gap-2 align-items-center flex-wrap">
                     <span class="badge {{ $statusBadge }}">{{ $event->status }}</span>
                     <span class="badge {{ $agencyBadge }}">{{ $agencyName }}</span>
                     @if($event->isFinancial())
@@ -123,7 +123,7 @@
     </div>
 
     @if($event->status === 'Completed')
-        <div class="alert alert-info d-flex justify-content-between align-items-center mb-4" role="alert">
+        <div class="alert alert-info d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4" role="alert">
             <div>
                 <strong>Next Step:</strong> Generate and review the distribution summary report for agency submission.
             </div>
@@ -361,7 +361,7 @@
             $remainingBudget = $event->total_fund_amount - $totalAmountAllocated;
         @endphp
         <div class="row g-3 mb-4">
-            <div class="col-sm-6 col-xl-3">
+            <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
                 <div class="card border-0 shadow-sm">
                     <div class="card-body d-flex align-items-center">
                         <div class="rounded-3 bg-primary bg-opacity-10 p-3 me-3">
@@ -374,7 +374,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-sm-6 col-xl-3">
+            <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
                 <div class="card border-0 shadow-sm">
                     <div class="card-body d-flex align-items-center">
                         <div class="rounded-3 bg-info bg-opacity-10 p-3 me-3">
@@ -387,7 +387,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-sm-6 col-xl-3">
+            <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
                 <div class="card border-0 shadow-sm">
                     <div class="card-body d-flex align-items-center">
                         <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3">
@@ -400,7 +400,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-sm-6 col-xl-3">
+            <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
                 <div class="card border-0 shadow-sm">
                     <div class="card-body d-flex align-items-center">
                         <div class="rounded-3 bg-warning bg-opacity-10 p-3 me-3">
@@ -419,7 +419,7 @@
             $totalQuantity = $event->allocations->sum('quantity');
         @endphp
         <div class="row g-3 mb-4">
-            <div class="col-sm-6 col-xl-4">
+            <div class="col-12 col-sm-6 col-lg-4 col-xl-4">
                 <div class="card border-0 shadow-sm">
                     <div class="card-body d-flex align-items-center">
                         <div class="rounded-3 bg-primary bg-opacity-10 p-3 me-3">
@@ -432,7 +432,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-sm-6 col-xl-4">
+            <div class="col-12 col-sm-6 col-lg-4 col-xl-4">
                 <div class="card border-0 shadow-sm">
                     <div class="card-body d-flex align-items-center">
                         <div class="rounded-3 bg-info bg-opacity-10 p-3 me-3">
@@ -445,7 +445,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-sm-6 col-xl-4">
+            <div class="col-12 col-sm-6 col-lg-4 col-xl-4">
                 <div class="card border-0 shadow-sm">
                     <div class="card-body d-flex align-items-center">
                         <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3">
@@ -518,11 +518,11 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 table-responsive-cards">
                     <thead class="table-light">
                         <tr>
                             @if($event->status !== 'Pending' && $bulkEligibleCount > 0)
-                                <th class="text-center" style="width: 36px;">
+                                <th class="text-center">
                                     <input type="checkbox" class="form-check-input" id="bulkSelectAll" aria-label="Select all eligible allocations">
                                 </th>
                             @endif
@@ -544,7 +544,7 @@
                         @forelse($event->allocations as $allocation)
                             <tr class="{{ $allocation->distributed_at ? 'table-success' : '' }}">
                                 @if($event->status !== 'Pending' && $bulkEligibleCount > 0)
-                                    <td class="text-center">
+                                    <td class="text-center" data-label="Select">
                                         @if(!$allocation->distributed_at && $allocation->release_outcome !== 'not_received')
                                             <input type="checkbox"
                                                    class="form-check-input bulk-allocation-checkbox"
@@ -553,9 +553,9 @@
                                         @endif
                                     </td>
                                 @endif
-                                <td class="text-muted">{{ $loop->iteration }}</td>
-                                <td>{{ $allocation->beneficiary->full_name }}</td>
-                                <td>
+                                <td class="text-muted" data-label="#">{{ $loop->iteration }}</td>
+                                <td data-label="Beneficiary Name">{{ $allocation->beneficiary->full_name }}</td>
+                                <td data-label="Classification">
                                     @php
                                         $classificationBadge = match($allocation->beneficiary->classification) {
                                             'Farmer'     => 'bg-primary',
@@ -570,13 +570,13 @@
                                         <span class="badge {{ $classificationBadge }}">{{ $allocation->beneficiary->classification }}</span>
                                     @endif
                                 </td>
-                                <td>{{ $allocation->beneficiary->contact_number ?? '—' }}</td>
+                                <td data-label="Contact Number">{{ $allocation->beneficiary->contact_number ?? '—' }}</td>
                                 @if($event->isFinancial())
-                                    <td>&#8369;{{ number_format($allocation->amount, 2) }}</td>
+                                    <td data-label="Amount (PHP)">&#8369;{{ number_format($allocation->amount, 2) }}</td>
                                 @else
-                                    <td>{{ number_format($allocation->quantity, 2) }} {{ $event->resourceType->unit }}</td>
+                                    <td data-label="Quantity">{{ number_format($allocation->quantity, 2) }} {{ $event->resourceType->unit }}</td>
                                 @endif
-                                <td>
+                                <td data-label="Distributed At">
                                     @if($allocation->distributed_at)
                                         <span class="text-success">
                                             <i class="bi bi-check-circle-fill me-1"></i>
@@ -591,8 +591,8 @@
                                         <span class="text-muted">Not yet {{ $event->isFinancial() ? 'claimed' : 'distributed' }}</span>
                                     @endif
                                 </td>
-                                <td>{{ $allocation->remarks ?? '—' }}</td>
-                                <td class="text-end text-nowrap">
+                                <td data-label="Remarks">{{ $allocation->remarks ?? '—' }}</td>
+                                <td class="text-end text-nowrap" data-label="Actions">
                                     @if($event->status !== 'Completed' && in_array(Auth::user()->role, ['admin', 'staff'], true))
                                         <button type="button"
                                                 class="btn btn-sm btn-outline-primary me-1"
@@ -760,7 +760,7 @@
 
 {{-- Add All Barangay Beneficiaries Modal --}}
 <div class="modal fade" id="addAllModal" tabindex="-1" aria-labelledby="addAllModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <form method="POST"
                 action="{{ route('allocations.storeBulk') }}"
@@ -776,17 +776,17 @@
                 </div>
                 <div class="modal-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
+                        <table class="table table-hover align-middle mb-0 table-responsive-cards">
                             <thead class="table-light">
                                 <tr>
                                     <th>Beneficiary Name</th>
                                     <th>Classification</th>
                                     @if($event->isFinancial())
-                                        <th style="width: 150px;">Amount (PHP) <span class="text-danger">*</span></th>
+                                        <th>Amount (PHP) <span class="text-danger">*</span></th>
                                     @else
-                                        <th style="width: 150px;">Quantity ({{ $event->resourceType->unit }}) <span class="text-danger">*</span></th>
+                                        <th>Quantity ({{ $event->resourceType->unit }}) <span class="text-danger">*</span></th>
                                     @endif
-                                    <th style="width: 200px;">Remarks</th>
+                                    <th>Remarks</th>
                                 </tr>
                             </thead>
                             <tbody id="bulkTableBody">
@@ -938,6 +938,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 'Fisherfolk': 'bg-info text-dark',
                 'Both': '',
             }[b.classification] || 'bg-secondary';
+            const valueLabel = isFinancial ? 'Amount (PHP)' : 'Quantity';
 
             const badgeHtml = b.classification === 'Both'
                 ? `<span class="badge" style="background-color: #6f42c1;">Both</span>`
@@ -953,13 +954,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>
+                <td data-label="Beneficiary Name">
                     ${b.full_name}
                     <input type="hidden" name="allocations[${i}][beneficiary_id]" value="${b.id}">
                 </td>
-                <td>${badgeHtml}</td>
-                <td>${valueInput}</td>
-                <td>
+                <td data-label="Classification">${badgeHtml}</td>
+                <td data-label="${valueLabel}">${valueInput}</td>
+                <td data-label="Remarks">
                     <input type="text" class="form-control form-control-sm"
                            name="allocations[${i}][remarks]" maxlength="500">
                 </td>

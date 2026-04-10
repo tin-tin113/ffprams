@@ -102,22 +102,22 @@ class DashboardController extends Controller
             ->sum('amount');
 
         return view('dashboard', [
-            'totalBeneficiaries'         => $totalBeneficiaries,
-            'totalFarmers'               => $totalFarmers,
-            'totalFisherfolk'            => $totalFisherfolk,
-            'totalBoth'                  => $totalBoth,
-            'totalDistributionEvents'    => $totalDistributionEvents,
-            'completedEvents'            => $completedEvents,
-            'ongoingEvents'              => $ongoingEvents,
-            'pendingEvents'              => $pendingEvents,
-            'totalEventAllocations'      => $totalEventAllocations,
-            'totalDirectAllocations'     => $totalDirectAllocations,
-            'eventDistributed'           => $eventDistributed,
-            'directReleased'             => $directReleased,
+            'totalBeneficiaries' => $totalBeneficiaries,
+            'totalFarmers' => $totalFarmers,
+            'totalFisherfolk' => $totalFisherfolk,
+            'totalBoth' => $totalBoth,
+            'totalDistributionEvents' => $totalDistributionEvents,
+            'completedEvents' => $completedEvents,
+            'ongoingEvents' => $ongoingEvents,
+            'pendingEvents' => $pendingEvents,
+            'totalEventAllocations' => $totalEventAllocations,
+            'totalDirectAllocations' => $totalDirectAllocations,
+            'eventDistributed' => $eventDistributed,
+            'directReleased' => $directReleased,
             'beneficiariesNotYetReached' => $beneficiariesNotYetReached,
-            'totalFinancialDisbursed'    => $totalFinancialDisbursed,
-            'eventFinancialDisbursed'    => $eventFinancialDisbursed,
-            'directFinancialDisbursed'   => $directFinancialDisbursed,
+            'totalFinancialDisbursed' => $totalFinancialDisbursed,
+            'eventFinancialDisbursed' => $eventFinancialDisbursed,
+            'directFinancialDisbursed' => $directFinancialDisbursed,
         ]);
     }
 }

@@ -9,7 +9,7 @@
 
 @section('content')
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
         <div>
             <h1 class="h3 mb-0">Create Direct Assistance</h1>
             <p class="text-muted mb-0">Record new direct assistance for a beneficiary</p>

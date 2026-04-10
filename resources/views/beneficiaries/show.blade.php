@@ -9,14 +9,14 @@
 
 @section('content')
     {{-- Page Header --}}
-    <div class="d-flex justify-content-between align-items-start mb-4">
-        <div class="d-flex align-items-center">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
+        <div class="d-flex align-items-center flex-wrap gap-2 gap-sm-0">
             <a href="{{ route('beneficiaries.index') }}" class="btn btn-outline-secondary btn-sm me-3">
                 <i class="bi bi-arrow-left"></i>
             </a>
             <div>
                 <h1 class="h3 mb-1">{{ $beneficiary->full_name }}</h1>
-                <div class="d-flex gap-2">
+                <div class="d-flex flex-wrap gap-2">
                     @php
                         $classBadge = match($beneficiary->classification) {
                             'Farmer'     => 'bg-primary',
@@ -36,7 +36,7 @@
                 </div>
             </div>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
             <a href="{{ route('beneficiaries.edit', $beneficiary) }}" class="btn btn-outline-primary">
                 <i class="bi bi-pencil-square me-1"></i> Edit
             </a>
@@ -243,7 +243,7 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 table-responsive-cards">
                     <thead class="table-light">
                         <tr>
                             <th>Method</th>
@@ -260,19 +260,19 @@
                     <tbody>
                         @foreach($beneficiary->allocations as $allocation)
                             <tr>
-                                <td>
+                                <td data-label="Method">
                                     @if($allocation->isDirect())
                                         <span class="badge bg-info text-dark">Direct</span>
                                     @else
                                         <span class="badge bg-secondary">Event</span>
                                     @endif
                                 </td>
-                                <td class="fw-semibold">{{ $allocation->programName->name ?? $allocation->distributionEvent->programName->name ?? '—' }}</td>
-                                <td>{{ $allocation->resourceType->name ?? $allocation->distributionEvent->resourceType->name ?? '—' }}</td>
-                                <td>{{ $allocation->resourceType->agency->name ?? $allocation->distributionEvent->resourceType->agency->name ?? '—' }}</td>
-                                <td>{{ $allocation->getDisplayValue() }}</td>
-                                <td class="text-muted small">{{ $allocation->distributionEvent?->distribution_date?->format('M d, Y') ?? $allocation->created_at?->format('M d, Y') ?? '—' }}</td>
-                                <td>
+                                <td class="fw-semibold" data-label="Program">{{ $allocation->programName->name ?? $allocation->distributionEvent->programName->name ?? '—' }}</td>
+                                <td data-label="Resource Type">{{ $allocation->resourceType->name ?? $allocation->distributionEvent->resourceType->name ?? '—' }}</td>
+                                <td data-label="Source Agency">{{ $allocation->resourceType->agency->name ?? $allocation->distributionEvent->resourceType->agency->name ?? '—' }}</td>
+                                <td data-label="Value">{{ $allocation->getDisplayValue() }}</td>
+                                <td class="text-muted small" data-label="Distribution Date">{{ $allocation->distributionEvent?->distribution_date?->format('M d, Y') ?? $allocation->created_at?->format('M d, Y') ?? '—' }}</td>
+                                <td data-label="Event Status">
                                     @php
                                         $eventStatus = $allocation->distributionEvent?->status ?? ($allocation->distributed_at ? 'Released' : 'Planned');
                                         $statusBadge = match($eventStatus) {
@@ -286,23 +286,23 @@
                                     @endphp
                                     <span class="badge {{ $statusBadge }}">{{ $eventStatus ?: '—' }}</span>
                                 </td>
-                                <td class="text-muted small">{{ $allocation->distributed_at?->format('M d, Y h:i A') ?? '—' }}</td>
-                                <td>{{ $allocation->remarks ?? '—' }}</td>
+                                <td class="text-muted small" data-label="Distributed At">{{ $allocation->distributed_at?->format('M d, Y h:i A') ?? '—' }}</td>
+                                <td data-label="Remarks">{{ $allocation->remarks ?? '—' }}</td>
                             </tr>
                         @endforeach
 
                         {{-- Direct Assistance Records --}}
                         @forelse($beneficiary->directAssistance as $assistance)
                             <tr>
-                                <td>
+                                <td data-label="Method">
                                     <span class="badge bg-warning text-dark">Direct Assistance</span>
                                 </td>
-                                <td class="fw-semibold">{{ $assistance->programName->name ?? '—' }}</td>
-                                <td>{{ $assistance->resourceType->name ?? '—' }}</td>
-                                <td>{{ $assistance->programName->agency->name ?? '—' }}</td>
-                                <td>{{ $assistance->getDisplayValue() }}</td>
-                                <td class="text-muted small">{{ $assistance->created_at?->format('M d, Y') ?? '—' }}</td>
-                                <td>
+                                <td class="fw-semibold" data-label="Program">{{ $assistance->programName->name ?? '—' }}</td>
+                                <td data-label="Resource Type">{{ $assistance->resourceType->name ?? '—' }}</td>
+                                <td data-label="Source Agency">{{ $assistance->programName->agency->name ?? '—' }}</td>
+                                <td data-label="Value">{{ $assistance->getDisplayValue() }}</td>
+                                <td class="text-muted small" data-label="Distribution Date">{{ $assistance->created_at?->format('M d, Y') ?? '—' }}</td>
+                                <td data-label="Event Status">
                                     @switch($assistance->status)
                                         @case('recorded')
                                             <span class="badge bg-warning text-dark">Recorded</span>
@@ -315,8 +315,8 @@
                                             @break
                                     @endswitch
                                 </td>
-                                <td class="text-muted small">{{ $assistance->distributed_at?->format('M d, Y h:i A') ?? '—' }}</td>
-                                <td>
+                                <td class="text-muted small" data-label="Distributed At">{{ $assistance->distributed_at?->format('M d, Y h:i A') ?? '—' }}</td>
+                                <td data-label="Remarks">
                                     {{ $assistance->remarks ?? '—' }}
                                     @if($assistance->distributionEvent)
                                         <br><small class="text-muted">Linked to event</small>
@@ -386,7 +386,7 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 table-responsive-cards">
                     <thead class="table-light">
                         <tr>
                             <th>Message</th>
@@ -397,13 +397,13 @@
                     <tbody>
                         @forelse($beneficiary->smsLogs as $sms)
                             <tr>
-                                <td class="small" style="max-width: 500px;">{{ $sms->message }}</td>
-                                <td>
+                                <td class="small text-break" data-label="Message">{{ $sms->message }}</td>
+                                <td data-label="Status">
                                     <span class="badge {{ $sms->status === 'sent' ? 'bg-success' : 'bg-danger' }}">
                                         {{ ucfirst($sms->status) }}
                                     </span>
                                 </td>
-                                <td class="text-muted small">{{ $sms->sent_at->format('M d, Y h:i A') }}</td>
+                                <td class="text-muted small" data-label="Sent At">{{ $sms->sent_at->format('M d, Y h:i A') }}</td>
                             </tr>
                         @empty
                             <tr>

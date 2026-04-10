@@ -8,6 +8,26 @@
 
 @push('styles')
 <style>
+    .report-chart-wrap {
+        position: relative;
+        height: clamp(220px, 42vw, 360px);
+    }
+
+    .report-chart-wrap canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .report-data-table {
+        min-width: 860px;
+    }
+
+    @media (max-width: 575.98px) {
+        .report-data-table {
+            min-width: 760px;
+        }
+    }
+
     @media print {
         .top-navbar,
         .sidebar,
@@ -36,7 +56,7 @@
 <div class="container-fluid">
 
     {{-- Page Header --}}
-    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4 no-print">
         <div>
             <h1 class="h3 mb-0">Reports</h1>
             <p class="text-muted mb-0">Summary reports and analytics for resource distribution</p>
@@ -44,7 +64,7 @@
     </div>
 
     <div class="row g-3 mb-4">
-        <div class="col-12 col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="text-muted small">Financial Events</div>
@@ -52,7 +72,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-12 col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="text-muted small">Missing Legal Basis</div>
@@ -60,7 +80,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-12 col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="text-muted small">Pending Liquidation</div>
@@ -69,7 +89,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-12 col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="text-muted small">FARMC Pending</div>
@@ -83,7 +103,7 @@
     {{-- REPORT 1 — Beneficiaries per Barangay --}}
     {{-- ============================================================ --}}
     <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div class="card-header bg-white d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
             <span class="fw-semibold"><i class="bi bi-people me-1"></i> Report 1: Beneficiaries per Barangay</span>
             <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> Print
@@ -91,7 +111,7 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 report-data-table">
                     <thead class="table-light">
                         <tr>
                             <th>#</th>
@@ -141,7 +161,7 @@
     {{-- REPORT 2 — Resource Distribution Summary (Event vs Direct) --}}
     {{-- ============================================================ --}}
     <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div class="card-header bg-white d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
             <span class="fw-semibold"><i class="bi bi-box-seam me-1"></i> Report 2: Resource Distribution Summary (Event vs Direct)</span>
             <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> Print
@@ -149,7 +169,7 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 report-data-table">
                     <thead class="table-light">
                         <tr>
                             <th>#</th>
@@ -210,7 +230,7 @@
     {{-- REPORT 3 — Distribution Status + Direct Releases per Barangay --}}
     {{-- ============================================================ --}}
     <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div class="card-header bg-white d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
             <span class="fw-semibold"><i class="bi bi-bar-chart me-1"></i> Report 3: Distribution Status + Direct Releases per Barangay</span>
             <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> Print
@@ -218,7 +238,7 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 report-data-table">
                     <thead class="table-light">
                         <tr>
                             <th>#</th>
@@ -274,7 +294,7 @@
     {{-- REPORT 4 — Beneficiaries Not Yet Reached --}}
     {{-- ============================================================ --}}
     <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div class="card-header bg-white d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
             <span class="fw-semibold"><i class="bi bi-person-x me-1"></i> Report 4: Beneficiaries Not Yet Reached</span>
             <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> Print
@@ -282,7 +302,7 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 report-data-table">
                     <thead class="table-light">
                         <tr>
                             <th>#</th>
@@ -334,7 +354,7 @@
     {{-- REPORT 5 — Monthly Summary (Event vs Direct) --}}
     {{-- ============================================================ --}}
     <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div class="card-header bg-white d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
             <span class="fw-semibold"><i class="bi bi-calendar3 me-1"></i> Report 5: Monthly Summary (Event vs Direct, {{ $currentYear }})</span>
             <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> Print
@@ -342,7 +362,7 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 report-data-table">
                     <thead class="table-light">
                         <tr>
                             <th>Month</th>
@@ -405,7 +425,9 @@
         {{-- Bar Chart --}}
         @if($monthlyDistribution->count())
             <div class="card-body border-top">
-                <canvas id="monthlyChart" height="100"></canvas>
+                <div class="report-chart-wrap">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
             </div>
         @endif
     </div>
@@ -414,7 +436,7 @@
     {{-- REPORT 6 — Financial Assistance Summary (Event vs Direct) --}}
     {{-- ============================================================ --}}
     <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div class="card-header bg-white d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
             <span class="fw-semibold"><i class="bi bi-cash-stack me-1"></i> Report 6: Financial Assistance Summary (Event vs Direct)</span>
             <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> Print
@@ -422,7 +444,7 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 report-data-table">
                     <thead class="table-light">
                         <tr>
                             <th>#</th>
@@ -495,7 +517,7 @@
     {{-- REPORT 7 — Financial Assistance per Barangay (Event vs Direct) --}}
     {{-- ============================================================ --}}
     <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div class="card-header bg-white d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
             <span class="fw-semibold"><i class="bi bi-geo-alt me-1"></i> Report 7: Financial Assistance per Barangay (Event vs Direct)</span>
             <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> Print
@@ -503,7 +525,7 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 report-data-table">
                     <thead class="table-light">
                         <tr>
                             <th>#</th>
@@ -562,7 +584,7 @@
     {{-- REPORT 8 — Financial Assistance Distribution by Purpose (Event vs Direct) --}}
     {{-- ============================================================ --}}
     <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div class="card-header bg-white d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
             <span class="fw-semibold"><i class="bi bi-cash-coin me-1"></i> Report 8: Financial Assistance Distribution by Purpose (Event vs Direct)</span>
             <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> Print
@@ -570,7 +592,7 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 report-data-table">
                     <thead class="table-light">
                         <tr>
                             <th>#</th>
@@ -652,6 +674,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const directBeneficiaries = data.map(row => row.direct_beneficiaries);
     const events = data.map(row => row.total_events);
     const directReleases = data.map(row => row.direct_releases);
+    const compactViewport = window.matchMedia('(max-width: 575.98px)').matches;
 
     new Chart(document.getElementById('monthlyChart'), {
         type: 'bar',
@@ -690,8 +713,9 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
-                legend: { position: 'top' }
+                legend: { position: compactViewport ? 'bottom' : 'top' }
             },
             scales: {
                 y: {

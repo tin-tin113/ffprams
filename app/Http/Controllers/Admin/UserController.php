@@ -42,10 +42,10 @@ class UserController extends Controller
         $user = User::create($data);
 
         $this->audit->log(
-            userId:    $request->user()->id,
-            action:    'created',
+            userId: $request->user()->id,
+            action: 'created',
             tableName: 'users',
-            recordId:  $user->id,
+            recordId: $user->id,
             newValues: ['name' => $user->name, 'email' => $user->email, 'role' => $user->role, 'agency_id' => $user->agency_id],
         );
 
@@ -77,10 +77,10 @@ class UserController extends Controller
         $user->update($data);
 
         $this->audit->log(
-            userId:    $request->user()->id,
-            action:    'updated',
+            userId: $request->user()->id,
+            action: 'updated',
             tableName: 'users',
-            recordId:  $user->id,
+            recordId: $user->id,
             oldValues: $oldValues,
             newValues: $user->only(['name', 'email', 'role', 'agency_id']),
         );
@@ -101,10 +101,10 @@ class UserController extends Controller
         $userName = $user->name;
 
         $this->audit->log(
-            userId:    Auth::id(),
-            action:    'deleted',
+            userId: Auth::id(),
+            action: 'deleted',
             tableName: 'users',
-            recordId:  $user->id,
+            recordId: $user->id,
             oldValues: $user->only(['name', 'email', 'role', 'agency_id']),
         );
 

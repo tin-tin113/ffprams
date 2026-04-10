@@ -7,7 +7,7 @@
 @endsection
 
 @section('content')
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
         <h1 class="h3 mb-0">Dashboard</h1>
         <span class="text-muted small">{{ now()->format('F d, Y') }}</span>
     </div>
@@ -18,7 +18,7 @@
     </h6>
     <div class="row g-3 mb-4">
         <!-- Total Beneficiaries -->
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
@@ -33,7 +33,7 @@
         </div>
 
         <!-- Total Farmers -->
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
@@ -48,7 +48,7 @@
         </div>
 
         <!-- Total Fisherfolk -->
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-circle p-3 me-3" style="background-color: rgba(13, 202, 240, 0.1);">
@@ -63,7 +63,7 @@
         </div>
 
         <!-- Total Both -->
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-circle p-3 me-3" style="background-color: rgba(111, 66, 193, 0.1);">
@@ -84,7 +84,7 @@
     </h6>
     <div class="row g-3">
         <!-- Total Distribution Events -->
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-circle bg-secondary bg-opacity-10 p-3 me-3">
@@ -99,7 +99,7 @@
         </div>
 
         <!-- Completed Distribution Events -->
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
@@ -114,7 +114,7 @@
         </div>
 
         <!-- Event-based Allocations -->
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
@@ -129,7 +129,7 @@
         </div>
 
         <!-- Direct Allocations -->
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-circle bg-info bg-opacity-10 p-3 me-3">
@@ -144,7 +144,7 @@
         </div>
 
         <!-- Event Distributed/Claimed -->
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
@@ -159,7 +159,7 @@
         </div>
 
         <!-- Direct Released -->
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-circle bg-warning bg-opacity-10 p-3 me-3">
@@ -174,7 +174,7 @@
         </div>
 
         <!-- Beneficiaries Not Yet Reached -->
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-circle bg-danger bg-opacity-10 p-3 me-3">
@@ -195,7 +195,7 @@
     </h6>
     <div class="row g-3">
         <!-- Event Cash Disbursed -->
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-circle p-3 me-3" style="background-color: rgba(27, 42, 74, 0.1);">
@@ -210,7 +210,7 @@
         </div>
 
         <!-- Direct Cash Disbursed -->
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-circle bg-info bg-opacity-10 p-3 me-3">
@@ -225,7 +225,7 @@
         </div>
 
         <!-- Total Cash Disbursed -->
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">

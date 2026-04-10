@@ -110,15 +110,15 @@ class AllocationController extends Controller
                     }
 
                     $allocation = Allocation::create([
-                        'release_method'        => 'event',
+                        'release_method' => 'event',
                         'distribution_event_id' => $event->id,
-                        'beneficiary_id'        => $beneficiary->id,
-                        'program_name_id'       => $event->program_name_id,
-                        'resource_type_id'      => $event->resource_type_id,
-                        'quantity'              => $event->isFinancial() ? null : $request->quantity,
-                        'amount'                => $event->isFinancial() ? $request->amount : null,
+                        'beneficiary_id' => $beneficiary->id,
+                        'program_name_id' => $event->program_name_id,
+                        'resource_type_id' => $event->resource_type_id,
+                        'quantity' => $event->isFinancial() ? null : $request->quantity,
+                        'amount' => $event->isFinancial() ? $request->amount : null,
                         'assistance_purpose_id' => $request->assistance_purpose_id,
-                        'remarks'               => $request->remarks,
+                        'remarks' => $request->remarks,
                     ]);
 
                     $this->audit->log(
@@ -161,15 +161,15 @@ class AllocationController extends Controller
             $isFinancial = $resourceType->unit === 'PHP';
 
             $allocation = Allocation::create([
-                'release_method'        => 'direct',
+                'release_method' => 'direct',
                 'distribution_event_id' => null,
-                'beneficiary_id'        => $beneficiary->id,
-                'program_name_id'       => $request->program_name_id,
-                'resource_type_id'      => $resourceType->id,
-                'quantity'              => $isFinancial ? null : $request->quantity,
-                'amount'                => $isFinancial ? $request->amount : null,
+                'beneficiary_id' => $beneficiary->id,
+                'program_name_id' => $request->program_name_id,
+                'resource_type_id' => $resourceType->id,
+                'quantity' => $isFinancial ? null : $request->quantity,
+                'amount' => $isFinancial ? $request->amount : null,
                 'assistance_purpose_id' => $request->assistance_purpose_id,
-                'remarks'               => $request->remarks,
+                'remarks' => $request->remarks,
             ]);
 
             $this->audit->log(
@@ -186,8 +186,8 @@ class AllocationController extends Controller
 
         if ($beneficiary->contact_number) {
             $value = $resourceType->unit === 'PHP'
-                ? ('PHP ' . number_format((float) $allocation->amount, 2))
-                : (number_format((float) $allocation->quantity, 2) . ' ' . $resourceType->unit);
+                ? ('PHP '.number_format((float) $allocation->amount, 2))
+                : (number_format((float) $allocation->quantity, 2).' '.$resourceType->unit);
 
             $message = "Hello {$beneficiary->full_name}, you have been allocated {$value} of {$resourceType->name} as direct assistance. Please coordinate with the office for release details.";
 
@@ -212,11 +212,11 @@ class AllocationController extends Controller
         }
 
         $bulkRules = [
-            'distribution_event_id'        => ['required', 'exists:distribution_events,id'],
-            'allocations'                  => ['required', 'array', 'min:1'],
+            'distribution_event_id' => ['required', 'exists:distribution_events,id'],
+            'allocations' => ['required', 'array', 'min:1'],
             'allocations.*.beneficiary_id' => ['required', 'distinct', 'exists:beneficiaries,id'],
             'allocations.*.assistance_purpose_id' => ['nullable', 'exists:assistance_purposes,id'],
-            'allocations.*.remarks'        => ['nullable', 'string', 'max:500'],
+            'allocations.*.remarks' => ['nullable', 'string', 'max:500'],
         ];
 
         if ($event->isFinancial()) {
@@ -239,8 +239,8 @@ class AllocationController extends Controller
             ->forceDelete();
 
         $allocated = 0;
-        $skipped   = 0;
-        $smsQueue  = [];
+        $skipped = 0;
+        $smsQueue = [];
 
         try {
             DB::transaction(function () use ($request, $event, $existingIds, &$allocated, &$skipped, &$smsQueue) {
@@ -251,16 +251,19 @@ class AllocationController extends Controller
 
                     if (! $beneficiary || $beneficiary->barangay_id !== $event->barangay_id) {
                         $skipped++;
+
                         continue;
                     }
 
                     if (in_array($beneficiary->id, $existingIds)) {
                         $skipped++;
+
                         continue;
                     }
 
                     if (in_array($beneficiary->id, $seenInRequest, true)) {
                         $skipped++;
+
                         continue;
                     }
 
@@ -269,15 +272,15 @@ class AllocationController extends Controller
                     }
 
                     $allocation = Allocation::create([
-                        'release_method'        => 'event',
+                        'release_method' => 'event',
                         'distribution_event_id' => $event->id,
-                        'beneficiary_id'        => $beneficiary->id,
-                        'program_name_id'       => $event->program_name_id,
-                        'resource_type_id'      => $event->resource_type_id,
-                        'quantity'              => $event->isFinancial() ? null : $row['quantity'],
-                        'amount'                => $event->isFinancial() ? $row['amount'] : null,
+                        'beneficiary_id' => $beneficiary->id,
+                        'program_name_id' => $event->program_name_id,
+                        'resource_type_id' => $event->resource_type_id,
+                        'quantity' => $event->isFinancial() ? null : $row['quantity'],
+                        'amount' => $event->isFinancial() ? $row['amount'] : null,
                         'assistance_purpose_id' => $row['assistance_purpose_id'] ?? null,
-                        'remarks'               => $row['remarks'] ?? null,
+                        'remarks' => $row['remarks'] ?? null,
                     ]);
 
                     $seenInRequest[] = $beneficiary->id;
@@ -292,10 +295,10 @@ class AllocationController extends Controller
                     );
 
                     $smsQueue[] = [
-                        'number'         => $beneficiary->contact_number,
-                        'full_name'      => $beneficiary->full_name,
-                        'quantity'       => $allocation->quantity,
-                        'amount'         => $allocation->amount,
+                        'number' => $beneficiary->contact_number,
+                        'full_name' => $beneficiary->full_name,
+                        'quantity' => $allocation->quantity,
+                        'amount' => $allocation->amount,
                         'beneficiary_id' => $beneficiary->id,
                     ];
 
@@ -347,11 +350,11 @@ class AllocationController extends Controller
         $rules['assistance_purpose_id'] = ['nullable', 'exists:assistance_purposes,id'];
 
         if ($event->isFinancial()) {
-            $rules['amount']   = ['required', 'numeric', 'min:1', 'max:9999999999.99'];
+            $rules['amount'] = ['required', 'numeric', 'min:1', 'max:9999999999.99'];
             $rules['quantity'] = ['nullable'];
         } else {
             $rules['quantity'] = ['required', 'numeric', 'min:0.01', 'max:9999.99'];
-            $rules['amount']   = ['nullable'];
+            $rules['amount'] = ['nullable'];
         }
 
         $request->validate($rules);
@@ -367,9 +370,9 @@ class AllocationController extends Controller
 
                 $allocation->update([
                     'quantity' => $event->isFinancial() ? null : $request->quantity,
-                    'amount'   => $event->isFinancial() ? $request->amount : null,
+                    'amount' => $event->isFinancial() ? $request->amount : null,
                     'assistance_purpose_id' => $request->assistance_purpose_id,
-                    'remarks'  => $request->remarks,
+                    'remarks' => $request->remarks,
                 ]);
 
                 $this->audit->log(
@@ -430,7 +433,7 @@ class AllocationController extends Controller
 
         if ($allocation->distributed_at || $allocation->release_outcome === 'not_received') {
             return redirect()->back()
-            ->with('error', 'This allocation already has a final release outcome.');
+                ->with('error', 'This allocation already has a final release outcome.');
         }
 
         $this->releaseOutcome->apply(
@@ -515,6 +518,7 @@ class AllocationController extends Controller
             foreach ($allocations as $allocation) {
                 if ($allocation->distributed_at || $allocation->release_outcome === 'not_received') {
                     $skipped++;
+
                     continue;
                 }
 
@@ -578,7 +582,7 @@ class AllocationController extends Controller
         $remaining = $budget - (float) $currentAllocated;
 
         if ($additionalAmount - $remaining > 0.00001) {
-            throw new \RuntimeException('Allocation exceeds remaining event budget. Remaining budget: PHP ' . number_format(max($remaining, 0), 2) . '.');
+            throw new \RuntimeException('Allocation exceeds remaining event budget. Remaining budget: PHP '.number_format(max($remaining, 0), 2).'.');
         }
     }
 
@@ -601,7 +605,7 @@ class AllocationController extends Controller
 
         if (($otherAllocated + $proposedAmount) - $budget > 0.00001) {
             $remaining = max($budget - (float) $otherAllocated, 0);
-            throw new \RuntimeException('Allocation exceeds remaining event budget. Remaining budget: PHP ' . number_format($remaining, 2) . '.');
+            throw new \RuntimeException('Allocation exceeds remaining event budget. Remaining budget: PHP '.number_format($remaining, 2).'.');
         }
     }
 }

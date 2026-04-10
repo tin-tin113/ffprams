@@ -9,7 +9,7 @@
 
 @section('content')
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
         <div>
             <h1 class="h3 mb-0">Barangay Direct Assistance Analytics</h1>
             <p class="text-muted mb-0">Summary of direct assistance by barangay</p>
@@ -26,7 +26,7 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 table-responsive-cards">
                     <thead class="table-light">
                         <tr>
                             <th>Barangay</th>
@@ -47,41 +47,41 @@
                                     : 0;
                             @endphp
                             <tr>
-                                <td>
+                                <td data-label="Barangay">
                                     <strong>{{ $barangayAnalytic['barangay']->name }}</strong>
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center" data-label="Total Records">
                                     <span class="badge bg-light text-dark">{{ $barangayAnalytic['total'] }}</span>
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center" data-label="Pending">
                                     @if($barangayAnalytic['pending'] > 0)
                                         <span class="badge bg-warning text-dark">{{ $barangayAnalytic['pending'] }}</span>
                                     @else
                                         <span class="badge bg-light text-muted">0</span>
                                     @endif
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center" data-label="Distributed">
                                     @if($barangayAnalytic['distributed'] > 0)
                                         <span class="badge bg-success">{{ $barangayAnalytic['distributed'] }}</span>
                                     @else
                                         <span class="badge bg-light text-muted">0</span>
                                     @endif
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center" data-label="Completed">
                                     @if($barangayAnalytic['completed'] > 0)
                                         <span class="badge bg-info">{{ $barangayAnalytic['completed'] }}</span>
                                     @else
                                         <span class="badge bg-light text-muted">0</span>
                                     @endif
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center" data-label="Distributed Today">
                                     @if($barangayAnalytic['distributed_today'] > 0)
                                         <span class="badge bg-primary">{{ $barangayAnalytic['distributed_today'] }}</span>
                                     @else
                                         <span class="text-muted">—</span>
                                     @endif
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center" data-label="Distribution Rate">
                                     <div class="progress" style="height: 20px;">
                                         <div class="progress-bar bg-success" role="progressbar"
                                              style="width: {{ $distributionRate }}%;"
@@ -92,7 +92,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="text-end">
+                                <td class="text-end" data-label="Actions">
                                     <a href="{{ route('direct-assistance.index', ['barangay_id' => $barangayAnalytic['barangay']->id]) }}"
                                        class="btn btn-sm btn-outline-info">
                                         <i class="bi bi-eye me-1"></i> View Records
@@ -114,8 +114,8 @@
     </div>
 
     <!-- Statistics Cards -->
-    <div class="row mt-4">
-        <div class="col-md-3">
+    <div class="row g-3 mt-4">
+        <div class="col-12 col-sm-6 col-lg-3">
             <div class="card border-0 shadow-sm bg-light">
                 <div class="card-body text-center">
                     <h5 class="card-title text-muted">Total Barangays</h5>
@@ -123,7 +123,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-lg-3">
             <div class="card border-0 shadow-sm bg-light">
                 <div class="card-body text-center">
                     <h5 class="card-title text-muted">Total Records</h5>
@@ -131,7 +131,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-lg-3">
             <div class="card border-0 shadow-sm bg-light">
                 <div class="card-body text-center">
                     <h5 class="card-title text-muted">Total Distributed</h5>
@@ -139,7 +139,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-lg-3">
             <div class="card border-0 shadow-sm bg-light">
                 <div class="card-body text-center">
                     <h5 class="card-title text-muted">Overall Rate</h5>

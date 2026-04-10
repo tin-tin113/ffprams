@@ -11,8 +11,8 @@ class DuplicateDetectionService
     /**
      * Find potential duplicates for the given beneficiary data.
      *
-     * @param array $data Validated beneficiary form data
-     * @param int|null $excludeId ID to exclude (for updates)
+     * @param  array  $data  Validated beneficiary form data
+     * @param  int|null  $excludeId  ID to exclude (for updates)
      * @return Collection Collection of matches: ['beneficiary' => Beneficiary, 'match_type' => string, 'score' => int]
      */
     public function findPotentialDuplicates(array $data, ?int $excludeId = null): Collection
@@ -46,8 +46,8 @@ class DuplicateDetectionService
         $matches = collect();
 
         $registrationFields = [
-            'rsbsa_number'   => 'registration_number',
-            'fishr_number'   => 'registration_number',
+            'rsbsa_number' => 'registration_number',
+            'fishr_number' => 'registration_number',
             'cloa_ep_number' => 'registration_number',
         ];
 
@@ -61,8 +61,8 @@ class DuplicateDetectionService
                 if ($existing) {
                     $matches->push([
                         'beneficiary' => $existing,
-                        'match_type'  => $matchType,
-                        'score'       => 100,
+                        'match_type' => $matchType,
+                        'score' => 100,
                     ]);
                 }
             }
@@ -96,8 +96,8 @@ class DuplicateDetectionService
             if ($normalizedName === $existingNormalizedName) {
                 $matches->push([
                     'beneficiary' => $beneficiary,
-                    'match_type'  => 'name_dob_barangay',
-                    'score'       => 90,
+                    'match_type' => 'name_dob_barangay',
+                    'score' => 90,
                 ]);
             }
         }
@@ -134,8 +134,8 @@ class DuplicateDetectionService
             if ($normalizedContact === $existingNormalized) {
                 $matches->push([
                     'beneficiary' => $beneficiary,
-                    'match_type'  => 'contact',
-                    'score'       => 80,
+                    'match_type' => 'contact',
+                    'score' => 80,
                 ]);
             }
         }
@@ -175,8 +175,8 @@ class DuplicateDetectionService
             if ($similarity >= 70) {
                 $matches->push([
                     'beneficiary' => $beneficiary,
-                    'match_type'  => 'fuzzy_name',
-                    'score'       => $similarity,
+                    'match_type' => 'fuzzy_name',
+                    'score' => $similarity,
                 ]);
             }
         }
@@ -193,7 +193,7 @@ class DuplicateDetectionService
 
         // Convert 09XX to 639XX format for consistency
         if (strlen($digits) === 11 && str_starts_with($digits, '0')) {
-            $digits = '63' . substr($digits, 1);
+            $digits = '63'.substr($digits, 1);
         }
 
         // Remove country code prefix for comparison
@@ -215,7 +215,7 @@ class DuplicateDetectionService
         // Remove common suffixes
         $suffixes = ['jr', 'jr.', 'sr', 'sr.', 'ii', 'iii', 'iv'];
         foreach ($suffixes as $suffix) {
-            $normalized = preg_replace('/\b' . preg_quote($suffix, '/') . '\b/i', '', $normalized);
+            $normalized = preg_replace('/\b'.preg_quote($suffix, '/').'\b/i', '', $normalized);
         }
 
         // Remove extra whitespace and trim

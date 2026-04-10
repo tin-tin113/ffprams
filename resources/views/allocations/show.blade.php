@@ -27,7 +27,7 @@
         };
     @endphp
 
-    <div class="d-flex justify-content-between align-items-start mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
         <div>
             <h1 class="h3 mb-1">Allocation Details</h1>
             <p class="text-muted mb-0">Review allocation record and release outcome.</p>
@@ -45,7 +45,7 @@
     </div>
 
     <div class="row g-3 mb-4">
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="text-muted small">Status</div>
@@ -55,7 +55,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="text-muted small">Type</div>
@@ -63,7 +63,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="text-muted small">Created At</div>
@@ -71,7 +71,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="text-muted small">Released At</div>

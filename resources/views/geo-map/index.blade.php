@@ -11,8 +11,8 @@
 <style>
     /* ---- Map ---- */
     #map {
-        height: 70vh;
-        min-height: 500px;
+        height: clamp(340px, 68vh, 760px);
+        min-height: 340px;
         width: 100%;
         border-radius: 0.5rem;
         z-index: 1;
@@ -122,10 +122,10 @@
 
     /* ---- Modal styling ---- */
     .barangay-modal .modal-dialog {
-        max-width: 600px;
+        max-width: min(95vw, 640px);
     }
     .barangay-modal .modal-body {
-        max-height: 70vh;
+        max-height: calc(100dvh - 170px);
         overflow-y: auto;
     }
     .panel-section {
@@ -232,8 +232,8 @@
     /* ---- Mobile map ergonomics ---- */
     @media (max-width: 991.98px) {
         #map {
-            height: 62vh;
-            min-height: 380px;
+            height: clamp(300px, 62vh, 620px);
+            min-height: 300px;
         }
 
         .map-search {
@@ -280,6 +280,20 @@
     }
 
     @media (max-width: 575.98px) {
+        #map {
+            height: clamp(260px, 56vh, 480px);
+            min-height: 260px;
+        }
+
+        .barangay-modal .modal-dialog {
+            max-width: calc(100vw - 1rem);
+            margin: 0.5rem auto;
+        }
+
+        .barangay-modal .modal-body {
+            max-height: calc(100dvh - 150px);
+        }
+
         .map-search input {
             width: 125px;
         }
@@ -295,12 +309,12 @@
 <div class="container-fluid">
 
     {{-- Page Header --}}
-    <div class="d-flex justify-content-between align-items-start mb-3">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-3">
         <div>
             <h1 class="h3 mb-1"><i class="bi bi-geo-alt me-1"></i> Farmer-Fisherfolk Precision Resource Allocation Management System</h1>
             <p class="text-muted mb-0">Geo-Map Resource Targeting</p>
         </div>
-        <button class="btn btn-sm btn-outline-secondary" onclick="resetMapView()" title="Reset view">
+        <button class="btn btn-sm btn-outline-secondary align-self-start" onclick="resetMapView()" title="Reset view">
             <i class="bi bi-arrow-counterclockwise me-1"></i> Reset View
         </button>
     </div>
@@ -760,6 +774,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var barangayModal = new bootstrap.Modal(barangayModalEl, { keyboard: false });
 
+    function refreshMapSize() {
+        window.requestAnimationFrame(function () {
+            map.invalidateSize();
+        });
+    }
+
     // If mobile sidebar overlay is still open, ensure it never blocks modal interaction.
     barangayModalEl.addEventListener('show.bs.modal', function () {
         var sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -767,6 +787,18 @@ document.addEventListener('DOMContentLoaded', function () {
             sidebarOverlay.classList.remove('show');
         }
     });
+
+    barangayModalEl.addEventListener('shown.bs.modal', refreshMapSize);
+    barangayModalEl.addEventListener('hidden.bs.modal', refreshMapSize);
+
+    window.addEventListener('resize', refreshMapSize);
+
+    var sidebarToggleBtn = document.getElementById('sidebarToggle');
+    if (sidebarToggleBtn) {
+        sidebarToggleBtn.addEventListener('click', function () {
+            window.setTimeout(refreshMapSize, 320);
+        });
+    }
 
     function openBarangayModal(b) {
         // Header
@@ -1163,6 +1195,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     populateProgramFilter();
     loadGeoMapData();
+    refreshMapSize();
 });
 </script>
 @endpush

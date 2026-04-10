@@ -8,7 +8,7 @@
 
 @section('content')
     {{-- Page Header --}}
-    <div class="d-flex justify-content-between align-items-center mb-1">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-1">
         <div>
             <h1 class="h3 mb-0">Beneficiary Management</h1>
             <p class="text-muted mb-0">Enrique B. Magalona &mdash; RSBSA &amp; FishR Registry</p>
@@ -29,7 +29,7 @@
     @endphp
 
     <div class="row g-3 mb-4 mt-2">
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3">
@@ -42,7 +42,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-3 bg-primary bg-opacity-10 p-3 me-3">
@@ -55,7 +55,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-3 bg-info bg-opacity-10 p-3 me-3">
@@ -68,7 +68,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-3 bg-purple bg-opacity-10 p-3 me-3" style="background-color: rgba(111, 66, 193, 0.1) !important;">
@@ -141,7 +141,7 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 table-responsive-cards">
                     <thead class="table-light">
                         <tr>
                             <th>#</th>
@@ -157,10 +157,10 @@
                     <tbody>
                         @forelse($beneficiaries as $beneficiary)
                             <tr>
-                                <td class="text-muted">{{ $beneficiaries->firstItem() + $loop->index }}</td>
-                                <td class="fw-semibold">{{ $beneficiary->full_name }}</td>
-                                <td>{{ $beneficiary->barangay->name ?? '—' }}</td>
-                                <td>
+                                <td class="text-muted" data-label="#">{{ $beneficiaries->firstItem() + $loop->index }}</td>
+                                <td class="fw-semibold" data-label="Full Name">{{ $beneficiary->full_name }}</td>
+                                <td data-label="Barangay">{{ $beneficiary->barangay->name ?? '—' }}</td>
+                                <td data-label="Classification">
                                     @php
                                         $classificationBadge = match($beneficiary->classification) {
                                             'Farmer'     => 'bg-primary',
@@ -175,14 +175,14 @@
                                         <span class="badge {{ $classificationBadge }}">{{ $beneficiary->classification }}</span>
                                     @endif
                                 </td>
-                                <td>{{ $beneficiary->contact_number }}</td>
-                                <td>
+                                <td data-label="Contact Number">{{ $beneficiary->contact_number }}</td>
+                                <td data-label="Status">
                                     <span class="badge {{ $beneficiary->status === 'Active' ? 'bg-success' : 'bg-danger' }}">
                                         {{ $beneficiary->status }}
                                     </span>
                                 </td>
-                                <td class="text-muted small">{{ $beneficiary->registered_at->format('M d, Y') }}</td>
-                                <td class="text-end text-nowrap">
+                                <td class="text-muted small" data-label="Registered Date">{{ $beneficiary->registered_at->format('M d, Y') }}</td>
+                                <td class="text-end text-nowrap" data-label="Actions">
                                     <a href="{{ route('beneficiaries.show', $beneficiary) }}"
                                        class="btn btn-sm btn-outline-info me-1" title="View">
                                         <i class="bi bi-eye"></i> <span class="btn-action-label">View</span>

@@ -105,7 +105,7 @@
         };
     @endphp
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
         <div>
             <h1 class="h3 mb-0">Audit Log</h1>
             <p class="text-muted mb-0">See who did what, when it happened, and what changed.</p>
@@ -185,7 +185,7 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 table-responsive-cards">
                     <thead class="table-light">
                         <tr>
                             <th>Date and Time</th>
@@ -199,15 +199,15 @@
                     <tbody>
                         @forelse($logs as $log)
                             <tr>
-                                <td class="text-muted small">{{ $log->created_at->format('M d, Y h:i:s A') }}</td>
-                                <td>
+                                <td class="text-muted small" data-label="Date and Time">{{ $log->created_at->format('M d, Y h:i:s A') }}</td>
+                                <td data-label="Person">
                                     <div class="fw-semibold">{{ $log->user->name ?? 'Unknown User' }}</div>
                                     <div class="small text-muted">{{ $log->user->email ?? 'N/A' }}</div>
                                 </td>
-                                <td><span class="badge bg-secondary">{{ $actionLabelMap[$log->action] ?? ucwords(str_replace('_', ' ', $log->action)) }}</span></td>
-                                <td>{{ $tableLabelMap[$log->table_name] ?? ucwords(str_replace('_', ' ', $log->table_name)) }}</td>
-                                <td>{{ $log->record_id }}</td>
-                                <td>
+                                <td data-label="Activity"><span class="badge bg-secondary">{{ $actionLabelMap[$log->action] ?? ucwords(str_replace('_', ' ', $log->action)) }}</span></td>
+                                <td data-label="Section">{{ $tableLabelMap[$log->table_name] ?? ucwords(str_replace('_', ' ', $log->table_name)) }}</td>
+                                <td data-label="Reference ID">{{ $log->record_id }}</td>
+                                <td data-label="Details">
                                     @php
                                         $oldValues = is_array($log->old_values) ? $log->old_values : [];
                                         $newValues = is_array($log->new_values) ? $log->new_values : [];

@@ -34,22 +34,24 @@ class SystemSettingsController extends Controller
     public function index(): View
     {
         $agencies = Agency::orderBy('name')->get();
+
         return view('admin.settings.agencies.index', compact('agencies'));
     }
 
     /**
      * Separate Page Views for Multi-Page Interface
      */
-
     public function indexAgencies(): View
     {
         $agencies = Agency::orderBy('name')->get();
+
         return view('admin.settings.agencies.index', compact('agencies'));
     }
 
     public function indexPurposes(): View
     {
         $purposes = AssistancePurpose::orderBy('category')->orderBy('name')->get();
+
         return view('admin.settings.purposes.index', compact('purposes'));
     }
 
@@ -57,6 +59,7 @@ class SystemSettingsController extends Controller
     {
         $agencies = Agency::where('is_active', true)->orderBy('name')->get();
         $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
+
         return view('admin.settings.resource-types.index', compact('agencies', 'resourceTypes'));
     }
 
@@ -64,6 +67,7 @@ class SystemSettingsController extends Controller
     {
         $agencies = Agency::where('is_active', true)->orderBy('name')->get();
         $programNames = ProgramName::with('agency')->orderBy('name')->get();
+
         return view('admin.settings.program-names.index', compact('agencies', 'programNames'));
     }
 
@@ -126,18 +130,18 @@ class SystemSettingsController extends Controller
     public function storeAgency(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name'        => ['required', 'string', 'max:100', 'unique:agencies,name'],
-            'full_name'   => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:100', 'unique:agencies,name'],
+            'full_name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:500'],
-            'is_active'   => ['boolean'],
+            'is_active' => ['boolean'],
         ]);
 
         $agency = DB::transaction(function () use ($validated) {
             $agency = Agency::create([
-                'name'        => $validated['name'],
-                'full_name'   => $validated['full_name'],
+                'name' => $validated['name'],
+                'full_name' => $validated['full_name'],
                 'description' => $validated['description'] ?? null,
-                'is_active'   => $validated['is_active'] ?? true,
+                'is_active' => $validated['is_active'] ?? true,
             ]);
 
             $this->audit->log(
@@ -154,20 +158,20 @@ class SystemSettingsController extends Controller
     public function updateAgency(Request $request, Agency $agency): JsonResponse
     {
         $validated = $request->validate([
-            'name'        => ['required', 'string', 'max:100', Rule::unique('agencies', 'name')->ignore($agency->id)],
-            'full_name'   => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:100', Rule::unique('agencies', 'name')->ignore($agency->id)],
+            'full_name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:500'],
-            'is_active'   => ['boolean'],
+            'is_active' => ['boolean'],
         ]);
 
         DB::transaction(function () use ($validated, $agency) {
             $oldValues = $agency->toArray();
 
             $agency->update([
-                'name'        => $validated['name'],
-                'full_name'   => $validated['full_name'],
+                'name' => $validated['name'],
+                'full_name' => $validated['full_name'],
                 'description' => $validated['description'] ?? null,
-                'is_active'   => $validated['is_active'] ?? true,
+                'is_active' => $validated['is_active'] ?? true,
             ]);
 
             $this->audit->log(
@@ -206,15 +210,15 @@ class SystemSettingsController extends Controller
     public function storePurpose(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name'      => ['required', 'string', 'max:255', 'unique:assistance_purposes,name'],
-            'category'  => ['required', Rule::in(['agricultural', 'fishery', 'livelihood', 'medical', 'emergency', 'other'])],
+            'name' => ['required', 'string', 'max:255', 'unique:assistance_purposes,name'],
+            'category' => ['required', Rule::in(['agricultural', 'fishery', 'livelihood', 'medical', 'emergency', 'other'])],
             'is_active' => ['boolean'],
         ]);
 
         $purpose = DB::transaction(function () use ($validated) {
             $purpose = AssistancePurpose::create([
-                'name'      => $validated['name'],
-                'category'  => $validated['category'],
+                'name' => $validated['name'],
+                'category' => $validated['category'],
                 'is_active' => $validated['is_active'] ?? true,
             ]);
 
@@ -232,8 +236,8 @@ class SystemSettingsController extends Controller
     public function updatePurpose(Request $request, AssistancePurpose $purpose): JsonResponse
     {
         $validated = $request->validate([
-            'name'      => ['required', 'string', 'max:255', Rule::unique('assistance_purposes', 'name')->ignore($purpose->id)],
-            'category'  => ['required', Rule::in(['agricultural', 'fishery', 'livelihood', 'medical', 'emergency', 'other'])],
+            'name' => ['required', 'string', 'max:255', Rule::unique('assistance_purposes', 'name')->ignore($purpose->id)],
+            'category' => ['required', Rule::in(['agricultural', 'fishery', 'livelihood', 'medical', 'emergency', 'other'])],
             'is_active' => ['boolean'],
         ]);
 
@@ -241,8 +245,8 @@ class SystemSettingsController extends Controller
             $oldValues = $purpose->toArray();
 
             $purpose->update([
-                'name'      => $validated['name'],
-                'category'  => $validated['category'],
+                'name' => $validated['name'],
+                'category' => $validated['category'],
                 'is_active' => $validated['is_active'] ?? true,
             ]);
 
@@ -282,10 +286,10 @@ class SystemSettingsController extends Controller
     public function storeResourceType(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name'         => ['required', 'string', 'max:255', 'unique:resource_types,name'],
-            'unit'         => ['required', 'string', 'max:50'],
-            'agency_id'    => ['required', 'exists:agencies,id'],
-            'description'  => ['nullable', 'string', 'max:500'],
+            'name' => ['required', 'string', 'max:255', 'unique:resource_types,name'],
+            'unit' => ['required', 'string', 'max:50'],
+            'agency_id' => ['required', 'exists:agencies,id'],
+            'description' => ['nullable', 'string', 'max:500'],
         ]);
 
         $resourceType = DB::transaction(function () use ($validated) {
@@ -305,10 +309,10 @@ class SystemSettingsController extends Controller
     public function updateResourceType(Request $request, ResourceType $resourceType): JsonResponse
     {
         $validated = $request->validate([
-            'name'         => ['required', 'string', 'max:255', Rule::unique('resource_types', 'name')->ignore($resourceType->id)],
-            'unit'         => ['required', 'string', 'max:50'],
-            'agency_id'    => ['required', 'exists:agencies,id'],
-            'description'  => ['nullable', 'string', 'max:500'],
+            'name' => ['required', 'string', 'max:255', Rule::unique('resource_types', 'name')->ignore($resourceType->id)],
+            'unit' => ['required', 'string', 'max:50'],
+            'agency_id' => ['required', 'exists:agencies,id'],
+            'description' => ['nullable', 'string', 'max:500'],
         ]);
 
         DB::transaction(function () use ($validated, $resourceType) {
@@ -351,10 +355,10 @@ class SystemSettingsController extends Controller
     public function storeProgramName(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name'        => ['required', 'string', 'max:255'],
-            'agency_id'   => ['required', 'exists:agencies,id'],
+            'name' => ['required', 'string', 'max:255'],
+            'agency_id' => ['required', 'exists:agencies,id'],
             'description' => ['nullable', 'string', 'max:500'],
-            'is_active'   => ['boolean'],
+            'is_active' => ['boolean'],
         ]);
 
         // Ensure unique name per agency
@@ -365,16 +369,16 @@ class SystemSettingsController extends Controller
         if ($exists) {
             return response()->json([
                 'success' => false,
-                'errors'  => ['name' => ['This program name already exists for this agency.']],
+                'errors' => ['name' => ['This program name already exists for this agency.']],
             ], 422);
         }
 
         $programName = DB::transaction(function () use ($validated) {
             $programName = ProgramName::create([
-                'name'        => $validated['name'],
-                'agency_id'   => $validated['agency_id'],
+                'name' => $validated['name'],
+                'agency_id' => $validated['agency_id'],
                 'description' => $validated['description'] ?? null,
-                'is_active'   => $validated['is_active'] ?? true,
+                'is_active' => $validated['is_active'] ?? true,
             ]);
 
             $this->audit->log(
@@ -391,10 +395,10 @@ class SystemSettingsController extends Controller
     public function updateProgramName(Request $request, ProgramName $programName): JsonResponse
     {
         $validated = $request->validate([
-            'name'        => ['required', 'string', 'max:255'],
-            'agency_id'   => ['required', 'exists:agencies,id'],
+            'name' => ['required', 'string', 'max:255'],
+            'agency_id' => ['required', 'exists:agencies,id'],
             'description' => ['nullable', 'string', 'max:500'],
-            'is_active'   => ['boolean'],
+            'is_active' => ['boolean'],
         ]);
 
         // Ensure unique name per agency (exclude self)
@@ -406,7 +410,7 @@ class SystemSettingsController extends Controller
         if ($exists) {
             return response()->json([
                 'success' => false,
-                'errors'  => ['name' => ['This program name already exists for this agency.']],
+                'errors' => ['name' => ['This program name already exists for this agency.']],
             ], 422);
         }
 
@@ -414,10 +418,10 @@ class SystemSettingsController extends Controller
             $oldValues = $programName->toArray();
 
             $programName->update([
-                'name'        => $validated['name'],
-                'agency_id'   => $validated['agency_id'],
+                'name' => $validated['name'],
+                'agency_id' => $validated['agency_id'],
                 'description' => $validated['description'] ?? null,
-                'is_active'   => $validated['is_active'] ?? true,
+                'is_active' => $validated['is_active'] ?? true,
             ]);
 
             $this->audit->log(
@@ -467,13 +471,13 @@ class SystemSettingsController extends Controller
         $validated = $request->validate([
             'field_group' => ['required', 'string', 'max:100'],
             'placement_section' => ['required', Rule::in(FormFieldOption::allowedPlacements())],
-            'label'      => ['required', 'string', 'max:255'],
-            'value'      => ['required', 'string', 'max:255'],
+            'label' => ['required', 'string', 'max:255'],
+            'value' => ['required', 'string', 'max:255'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'order_mode' => ['nullable', Rule::in(self::ORDER_MODES)],
             'position_target_id' => ['nullable', 'integer', 'exists:form_field_options,id'],
             'is_required' => ['boolean'],
-            'is_active'  => ['boolean'],
+            'is_active' => ['boolean'],
         ]);
 
         $validated['field_group'] = $this->normalizeKey($validated['field_group']);
@@ -502,7 +506,7 @@ class SystemSettingsController extends Controller
         if ($exists) {
             return response()->json([
                 'success' => false,
-                'errors'  => ['value' => ['This value already exists for this field.']],
+                'errors' => ['value' => ['This value already exists for this field.']],
             ], 422);
         }
 
@@ -524,11 +528,11 @@ class SystemSettingsController extends Controller
             $option = FormFieldOption::create([
                 'field_group' => $validated['field_group'],
                 'placement_section' => $validated['placement_section'],
-                'label'      => $validated['label'],
-                'value'      => $validated['value'],
+                'label' => $validated['label'],
+                'value' => $validated['value'],
                 'sort_order' => $resolvedSortOrder,
                 'is_required' => $validated['is_required'] ?? false,
-                'is_active'  => $validated['is_active'] ?? true,
+                'is_active' => $validated['is_active'] ?? true,
             ]);
 
             $this->normalizeGroupSortOrder($validated['field_group']);
@@ -549,13 +553,13 @@ class SystemSettingsController extends Controller
     {
         $validated = $request->validate([
             'placement_section' => ['required', Rule::in(FormFieldOption::allowedPlacements())],
-            'label'      => ['required', 'string', 'max:255'],
-            'value'      => ['required', 'string', 'max:255'],
+            'label' => ['required', 'string', 'max:255'],
+            'value' => ['required', 'string', 'max:255'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'order_mode' => ['nullable', Rule::in(self::ORDER_MODES)],
             'position_target_id' => ['nullable', 'integer', 'exists:form_field_options,id'],
             'is_required' => ['boolean'],
-            'is_active'  => ['boolean'],
+            'is_active' => ['boolean'],
         ]);
 
         $validated['value'] = $this->normalizeKey($validated['value']);
@@ -584,7 +588,7 @@ class SystemSettingsController extends Controller
         if ($exists) {
             return response()->json([
                 'success' => false,
-                'errors'  => ['value' => ['This value already exists for this field.']],
+                'errors' => ['value' => ['This value already exists for this field.']],
             ], 422);
         }
 
@@ -611,11 +615,11 @@ class SystemSettingsController extends Controller
 
             $formFieldOption->update([
                 'placement_section' => $validated['placement_section'],
-                'label'      => $validated['label'],
-                'value'      => $validated['value'],
+                'label' => $validated['label'],
+                'value' => $validated['value'],
                 'sort_order' => $resolvedSortOrder,
                 'is_required' => $validated['is_required'] ?? false,
-                'is_active'  => $validated['is_active'] ?? true,
+                'is_active' => $validated['is_active'] ?? true,
             ]);
 
             $this->normalizeGroupSortOrder($formFieldOption->field_group);
@@ -733,8 +737,8 @@ class SystemSettingsController extends Controller
     public function reorderFormFields(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'items'         => ['required', 'array'],
-            'items.*.id'    => ['required', 'integer', 'exists:form_field_options,id'],
+            'items' => ['required', 'array'],
+            'items.*.id' => ['required', 'integer', 'exists:form_field_options,id'],
             'items.*.order' => ['required', 'integer', 'min:0'],
         ]);
 
@@ -765,7 +769,7 @@ class SystemSettingsController extends Controller
         ];
 
         foreach ($requiredFieldGroups as $group) {
-            if (!FormFieldOption::forGroup($group)->exists()) {
+            if (! FormFieldOption::forGroup($group)->exists()) {
                 Log::warning("FormFieldOption group is empty: {$group}. System will use hardcoded defaults.", [
                     'field_group' => $group,
                     'timestamp' => now(),

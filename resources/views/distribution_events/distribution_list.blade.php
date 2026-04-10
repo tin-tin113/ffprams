@@ -15,6 +15,12 @@
         margin: 0 auto;
     }
 
+    .list-wrap {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
     .print-sheet {
         background: #fff;
         border: 1px solid #d1d5db;
@@ -71,7 +77,8 @@
     table.list {
         width: 100%;
         border-collapse: collapse;
-        table-layout: fixed;
+        table-layout: auto;
+        min-width: 900px;
     }
 
     table.list th,
@@ -206,7 +213,12 @@
 
         table.list {
             width: 100% !important;
+            min-width: 0 !important;
             table-layout: fixed;
+        }
+
+        .list-wrap {
+            overflow: visible !important;
         }
 
         table.list thead {
@@ -222,6 +234,43 @@
             padding: 5px 6px !important;
         }
     }
+
+    @media (max-width: 991.98px) {
+        .distribution-sheet {
+            max-width: 100%;
+        }
+
+        .print-sheet {
+            padding: 12px;
+        }
+
+        table.meta td {
+            width: 50%;
+        }
+
+        table.list {
+            min-width: 860px;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .print-sheet {
+            padding: 10px;
+        }
+
+        .title-wrap h2 {
+            font-size: 14px;
+        }
+
+        table.meta td {
+            width: 100%;
+            display: block;
+        }
+
+        table.list {
+            min-width: 820px;
+        }
+    }
 </style>
 @endpush
 
@@ -233,7 +282,7 @@
         $totalNotReceived = $event->allocations->where('release_outcome', 'not_received')->count();
     @endphp
 
-    <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-3 no-print">
         <div>
             <h1 class="h4 mb-1">Printable Distribution List</h1>
             <p class="text-muted mb-0">Formatted release sheet with signatures and remarks tracking.</p>
@@ -299,44 +348,46 @@
             </tr>
         </table>
 
-        <table class="list">
-            <thead>
-                <tr>
-                    <th class="col-num">#</th>
-                    <th>Beneficiary Name</th>
-                    <th class="col-class">Class</th>
-                    <th class="col-contact">Contact</th>
-                    <th class="col-barangay">Barangay</th>
-                    <th class="col-amount">{{ $event->isFinancial() ? 'Amount (PHP)' : 'Quantity' }}</th>
-                    <th class="col-signature">Signature</th>
-                    <th class="col-remarks">Remarks</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($event->allocations as $allocation)
+        <div class="list-wrap">
+            <table class="list">
+                <thead>
                     <tr>
-                        <td class="col-num">{{ $loop->iteration }}</td>
-                        <td>{{ $allocation->beneficiary->full_name }}</td>
-                        <td class="col-class">{{ $allocation->beneficiary->classification }}</td>
-                        <td class="col-contact">{{ $allocation->beneficiary->contact_number ?? '—' }}</td>
-                        <td>{{ $event->barangay->name }}</td>
-                        <td class="col-amount">
-                            @if($event->isFinancial())
-                                {{ number_format((float) $allocation->amount, 2) }}
-                            @else
-                                {{ number_format((float) $allocation->quantity, 2) }} {{ $event->resourceType->unit }}
-                            @endif
-                        </td>
-                        <td class="col-signature"><div class="signature"></div></td>
-                        <td>{{ $allocation->remarks ?? '' }}</td>
+                        <th class="col-num">#</th>
+                        <th>Beneficiary Name</th>
+                        <th class="col-class">Class</th>
+                        <th class="col-contact">Contact</th>
+                        <th class="col-barangay">Barangay</th>
+                        <th class="col-amount">{{ $event->isFinancial() ? 'Amount (PHP)' : 'Quantity' }}</th>
+                        <th class="col-signature">Signature</th>
+                        <th class="col-remarks">Remarks</th>
                     </tr>
-                @empty
-                    <tr>
-                        <td colspan="8" class="text-center">No allocations recorded yet.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @forelse($event->allocations as $allocation)
+                        <tr>
+                            <td class="col-num">{{ $loop->iteration }}</td>
+                            <td>{{ $allocation->beneficiary->full_name }}</td>
+                            <td class="col-class">{{ $allocation->beneficiary->classification }}</td>
+                            <td class="col-contact">{{ $allocation->beneficiary->contact_number ?? '—' }}</td>
+                            <td>{{ $event->barangay->name }}</td>
+                            <td class="col-amount">
+                                @if($event->isFinancial())
+                                    {{ number_format((float) $allocation->amount, 2) }}
+                                @else
+                                    {{ number_format((float) $allocation->quantity, 2) }} {{ $event->resourceType->unit }}
+                                @endif
+                            </td>
+                            <td class="col-signature"><div class="signature"></div></td>
+                            <td>{{ $allocation->remarks ?? '' }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="text-center">No allocations recorded yet.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
 
         <div class="footer">
             <span class="line">Prepared by</span>

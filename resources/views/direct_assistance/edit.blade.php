@@ -10,22 +10,22 @@
 
 @section('content')
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
         <div>
             <h1 class="h3 mb-0">Edit Direct Assistance</h1>
             <p class="text-muted mb-0">Update direct assistance record for {{ $directAssistance->beneficiary->full_name }}</p>
         </div>
     </div>
 
-    <div class="row mb-4">
-        <div class="col-md-8">
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-lg-8">
             <div class="card border-0 shadow-sm">
                 <div class="card-body p-4">
                     @include('direct_assistance.partials.form')
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-12 col-lg-4">
             <div class="card border-0 shadow-sm bg-light">
                 <div class="card-header bg-white fw-semibold">
                     Record Details

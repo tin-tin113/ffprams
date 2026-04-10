@@ -10,7 +10,7 @@
 <div class="container-fluid">
 
     {{-- Page Header --}}
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
         <h1 class="h3 mb-0">Resource Types</h1>
     </div>
 
@@ -27,7 +27,7 @@
     @endif
 
     {{-- Agency Tabs --}}
-    <ul class="nav nav-tabs mb-3" id="agencyTabs" role="tablist">
+    <ul class="nav nav-tabs mb-3 flex-nowrap overflow-auto" id="agencyTabs" role="tablist">
         @foreach($agencies as $agency)
             <li class="nav-item" role="presentation">
                 <button class="nav-link {{ $loop->first ? 'active' : '' }}"
@@ -55,22 +55,22 @@
                         <h5 class="mb-0">{{ $agency->full_name }} ({{ $agency->name }})</h5>
                     </div>
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
+                        <table class="table table-hover align-middle mb-0 table-responsive-cards">
                             <thead class="table-light">
                                 <tr>
-                                    <th style="width: 5%">#</th>
-                                    <th style="width: 25%">Name</th>
-                                    <th style="width: 15%">Unit</th>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Unit</th>
                                     <th>Description</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($resourceTypes[$agency->name] ?? [] as $type)
                                     <tr>
-                                        <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $type->name }}</td>
-                                        <td>{{ $type->unit }}</td>
-                                        <td>{{ $type->description ?? '—' }}</td>
+                                        <td data-label="#">{{ $loop->iteration }}</td>
+                                        <td data-label="Name">{{ $type->name }}</td>
+                                        <td data-label="Unit">{{ $type->unit }}</td>
+                                        <td data-label="Description">{{ $type->description ?? '—' }}</td>
                                     </tr>
                                 @empty
                                     <tr>

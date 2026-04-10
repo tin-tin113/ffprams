@@ -31,7 +31,7 @@ class SmsController extends Controller
             })
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->when($request->filled('date_from'), fn ($q) => $q->where('sent_at', '>=', $request->date_from))
-            ->when($request->filled('date_to'), fn ($q) => $q->where('sent_at', '<=', $request->date_to . ' 23:59:59'))
+            ->when($request->filled('date_to'), fn ($q) => $q->where('sent_at', '<=', $request->date_to.' 23:59:59'))
             ->orderByDesc('sent_at')
             ->paginate(15)
             ->withQueryString();
@@ -69,21 +69,21 @@ class SmsController extends Controller
     public function preview(Request $request): JsonResponse
     {
         $request->validate([
-            'recipient_type'    => ['required', Rule::in(['all', 'by_barangay', 'by_classification', 'selected'])],
-            'barangay_id'       => ['required_if:recipient_type,by_barangay', 'nullable', 'exists:barangays,id'],
-            'classification'    => ['required_if:recipient_type,by_classification', 'nullable', Rule::in(['Farmer', 'Fisherfolk', 'Both'])],
-            'beneficiary_ids'   => ['required_if:recipient_type,selected', 'nullable', 'array', 'min:1'],
+            'recipient_type' => ['required', Rule::in(['all', 'by_barangay', 'by_classification', 'selected'])],
+            'barangay_id' => ['required_if:recipient_type,by_barangay', 'nullable', 'exists:barangays,id'],
+            'classification' => ['required_if:recipient_type,by_classification', 'nullable', Rule::in(['Farmer', 'Fisherfolk', 'Both'])],
+            'beneficiary_ids' => ['required_if:recipient_type,selected', 'nullable', 'array', 'min:1'],
             'beneficiary_ids.*' => ['integer', 'exists:beneficiaries,id'],
         ]);
 
         $recipients = $this->resolveRecipients($request);
 
         return response()->json([
-            'count'      => $recipients->count(),
+            'count' => $recipients->count(),
             'recipients' => $recipients->map(fn ($b) => [
-                'id'             => $b->id,
-                'full_name'      => $b->full_name,
-                'barangay'       => $b->barangay->name ?? null,
+                'id' => $b->id,
+                'full_name' => $b->full_name,
+                'barangay' => $b->barangay->name ?? null,
                 'contact_number' => $b->contact_number,
                 'classification' => $b->classification,
             ])->values(),
@@ -93,22 +93,23 @@ class SmsController extends Controller
     public function send(Request $request): JsonResponse
     {
         $request->validate([
-            'message'         => ['required', 'string', 'min:5', 'max:160'],
-            'recipient_type'  => ['required', Rule::in(['all', 'by_barangay', 'by_classification', 'selected'])],
-            'barangay_id'     => ['required_if:recipient_type,by_barangay', 'nullable', 'exists:barangays,id'],
-            'classification'  => ['required_if:recipient_type,by_classification', 'nullable', Rule::in(['Farmer', 'Fisherfolk', 'Both'])],
+            'message' => ['required', 'string', 'min:5', 'max:160'],
+            'recipient_type' => ['required', Rule::in(['all', 'by_barangay', 'by_classification', 'selected'])],
+            'barangay_id' => ['required_if:recipient_type,by_barangay', 'nullable', 'exists:barangays,id'],
+            'classification' => ['required_if:recipient_type,by_classification', 'nullable', Rule::in(['Farmer', 'Fisherfolk', 'Both'])],
             'beneficiary_ids' => ['required_if:recipient_type,selected', 'nullable', 'array', 'min:1'],
             'beneficiary_ids.*' => ['integer', 'exists:beneficiaries,id'],
         ]);
 
         $recipients = $this->resolveRecipients($request);
 
-        $sent   = 0;
+        $sent = 0;
         $failed = 0;
 
         foreach ($recipients as $beneficiary) {
             if (empty($beneficiary->contact_number)) {
                 $failed++;
+
                 continue;
             }
 
@@ -128,16 +129,16 @@ class SmsController extends Controller
             0,
             [],
             [
-                'message'         => $request->message,
+                'message' => $request->message,
                 'recipient_count' => $recipients->count(),
-                'recipient_type'  => $request->recipient_type,
+                'recipient_type' => $request->recipient_type,
             ],
         );
 
         return response()->json([
-            'sent'   => $sent,
+            'sent' => $sent,
             'failed' => $failed,
-            'total'  => $recipients->count(),
+            'total' => $recipients->count(),
         ]);
     }
 

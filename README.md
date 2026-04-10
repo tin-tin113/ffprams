@@ -137,9 +137,6 @@ composer dev
 
 ```bash
 composer test
-
-# Custom system checklist
-php test_system.php
 ```
 
 ## Project Structure

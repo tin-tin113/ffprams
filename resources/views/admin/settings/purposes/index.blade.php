@@ -5,7 +5,7 @@
     {{-- Navigation Tabs --}}
     <div class="row mb-4">
         <div class="col-12">
-            <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom settings-tabs-nav">
                 <div class="container-fluid px-0">
                     <ul class="navbar-nav w-100">
                         <li class="nav-item">
@@ -41,7 +41,7 @@
 
     <div class="row mb-4">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-3">
                 <h3 class="mb-0">
                     <i class="bi bi-tasks"></i> Assistance Purposes
                 </h3>
@@ -95,11 +95,11 @@
                     <table class="table table-hover table-sm mb-0 table-responsive-cards">
                         <thead class="table-light">
                             <tr>
-                                <th style="width: 15%;">Category</th>
-                                <th style="width: 30%;">Name</th>
-                                <th style="width: 35%;">Description</th>
-                                <th style="width: 10%;">Status</th>
-                                <th style="width: 16%;" class="text-center">Actions</th>
+                                <th>Category</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th class="text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="purposesTableBody">
@@ -245,16 +245,24 @@
         flex-direction: column;
         gap: 0.35rem;
         align-items: stretch;
+        width: 100%;
     }
 
     .purpose-actions .btn {
-        min-width: 108px;
+        min-width: 0;
+        width: 100%;
     }
 
-    @media (min-width: 1400px) {
+    @media (min-width: 1200px) {
         .purpose-actions {
             flex-direction: row;
             align-items: center;
+            width: auto;
+        }
+
+        .purpose-actions .btn {
+            width: auto;
+            min-width: 108px;
         }
     }
 </style>

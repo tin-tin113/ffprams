@@ -29,10 +29,10 @@ class AuditLogService
                 : array_merge($newValues, $context);
 
             DB::table('audit_logs')->insert([
-                'user_id'    => $userId,
-                'action'     => $action,
+                'user_id' => $userId,
+                'action' => $action,
                 'table_name' => $tableName,
-                'record_id'  => $recordId,
+                'record_id' => $recordId,
                 'old_values' => empty($oldValues) ? null : json_encode($oldValues),
                 'new_values' => json_encode($payloadNewValues),
                 'created_at' => now(),
@@ -40,10 +40,10 @@ class AuditLogService
             ]);
         } catch (\Throwable $e) {
             Log::error('AuditLogService: Failed to write audit log', [
-                'action'     => $action,
+                'action' => $action,
                 'table_name' => $tableName,
-                'record_id'  => $recordId,
-                'error'      => $e->getMessage(),
+                'record_id' => $recordId,
+                'error' => $e->getMessage(),
             ]);
         }
     }

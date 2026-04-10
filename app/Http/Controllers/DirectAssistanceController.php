@@ -4,16 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\DirectAssistanceStoreRequest;
 use App\Http\Requests\DirectAssistanceUpdateRequest;
-use App\Models\DirectAssistance;
-use App\Models\Beneficiary;
-use App\Models\ProgramName;
+use App\Models\Agency;
 use App\Models\AssistancePurpose;
-use App\Models\DistributionEvent;
 use App\Models\Barangay;
+use App\Models\Beneficiary;
+use App\Models\DirectAssistance;
+use App\Models\DistributionEvent;
+use App\Models\ProgramName;
 use App\Services\AuditLogService;
+use App\Services\ProgramEligibilityService;
 use App\Services\ReleaseOutcomeService;
 use App\Services\SemaphoreService;
-use App\Services\ProgramEligibilityService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -42,11 +43,11 @@ class DirectAssistanceController extends Controller
 
         // Filters
         if ($request->filled('barangay_id')) {
-            $query->whereHas('beneficiary', fn($q) => $q->where('barangay_id', $request->barangay_id));
+            $query->whereHas('beneficiary', fn ($q) => $q->where('barangay_id', $request->barangay_id));
         }
 
         if ($request->filled('agency_id')) {
-            $query->whereHas('beneficiary', fn($q) => $q->where('agency_id', $request->agency_id));
+            $query->whereHas('beneficiary', fn ($q) => $q->where('agency_id', $request->agency_id));
         }
 
         if ($request->filled('program_id')) {
@@ -59,9 +60,8 @@ class DirectAssistanceController extends Controller
 
         if ($request->filled('beneficiary_search')) {
             $search = $request->beneficiary_search;
-            $query->whereHas('beneficiary', fn($q) =>
-                $q->where('full_name', 'like', "%{$search}%")
-                    ->orWhere('contact_number', 'like', "%{$search}%")
+            $query->whereHas('beneficiary', fn ($q) => $q->where('full_name', 'like', "%{$search}%")
+                ->orWhere('contact_number', 'like', "%{$search}%")
             );
         }
 
@@ -69,7 +69,7 @@ class DirectAssistanceController extends Controller
 
         // Load filter options
         $barangays = Barangay::orderBy('name')->get();
-        $agencies = \App\Models\Agency::orderBy('name')->get();
+        $agencies = Agency::orderBy('name')->get();
         $programs = ProgramName::with('agency')->active()->orderBy('name')->get();
 
         // Summary stats
@@ -121,13 +121,13 @@ class DirectAssistanceController extends Controller
         $program = ProgramName::findOrFail($request->program_name_id);
 
         // Verify eligibility
-        if (!ProgramEligibilityService::isEligible($beneficiary, $program)) {
+        if (! ProgramEligibilityService::isEligible($beneficiary, $program)) {
             return redirect()->back()
-                ->with('error', 'Beneficiary is not eligible for this program. ' .
+                ->with('error', 'Beneficiary is not eligible for this program. '.
                     ProgramEligibilityService::getIneligibilityReason($beneficiary, $program));
         }
 
-        $directAssistance = DB::transaction(function () use ($validated, $beneficiary) {
+        $directAssistance = DB::transaction(function () use ($validated) {
             $directAssistance = DirectAssistance::create([
                 ...$validated,
                 'created_by' => auth()->id(),
@@ -309,6 +309,7 @@ class DirectAssistanceController extends Controller
     public function getEligiblePrograms(Beneficiary $beneficiary)
     {
         $programs = ProgramEligibilityService::getEligiblePrograms($beneficiary);
+
         return response()->json($programs->toArray());
     }
 
@@ -321,7 +322,7 @@ class DirectAssistanceController extends Controller
 
         $analytics = [];
         foreach ($barangays as $barangay) {
-            $barangayRecords = DirectAssistance::whereHas('beneficiary', fn($q) => $q->where('barangay_id', $barangay->id));
+            $barangayRecords = DirectAssistance::whereHas('beneficiary', fn ($q) => $q->where('barangay_id', $barangay->id));
 
             $analytics[] = [
                 'barangay' => $barangay,

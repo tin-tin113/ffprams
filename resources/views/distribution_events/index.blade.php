@@ -10,7 +10,7 @@
 <div class="container-fluid">
 
     {{-- Page Header --}}
-    <div class="d-flex justify-content-between align-items-center mb-1">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-1">
         <div>
             <h1 class="h3 mb-0">Distribution Events</h1>
             <p class="text-muted mb-0">Manage resource distribution events across barangays</p>
@@ -24,7 +24,7 @@
 
     {{-- Summary Cards --}}
     <div class="row g-3 mb-4 mt-2">
-        <div class="col-sm-6 col-xl-2">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
             <div class="card border-0 shadow-sm">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-3 bg-primary bg-opacity-10 p-3 me-3">
@@ -37,7 +37,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-2">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
             <div class="card border-0 shadow-sm">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-3 bg-info bg-opacity-10 p-3 me-3">
@@ -50,7 +50,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-2">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
             <div class="card border-0 shadow-sm">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-3 bg-warning bg-opacity-10 p-3 me-3">
@@ -63,7 +63,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-2">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
             <div class="card border-0 shadow-sm">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3">
@@ -76,7 +76,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-2">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
             <div class="card border-0 shadow-sm">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3">
@@ -89,7 +89,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-2">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
             <div class="card border-0 shadow-sm">
                 <div class="card-body d-flex align-items-center">
                     <div class="rounded-3 p-3 me-3" style="background-color: rgba(25, 135, 84, 0.1);">
@@ -176,7 +176,7 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 table-responsive-cards">
                     <thead class="table-light">
                         <tr>
                             <th>#</th>
@@ -194,10 +194,10 @@
                     <tbody>
                         @forelse($events as $event)
                             <tr>
-                                <td class="text-muted">{{ $events->firstItem() + $loop->index }}</td>
-                                <td>{{ $event->barangay->name }}</td>
-                                <td>{{ $event->resourceType->name }}</td>
-                                <td>
+                                <td class="text-muted" data-label="#">{{ $events->firstItem() + $loop->index }}</td>
+                                <td data-label="Barangay">{{ $event->barangay->name }}</td>
+                                <td data-label="Resource Type">{{ $event->resourceType->name }}</td>
+                                <td data-label="Source Agency">
                                     @php
                                         $agencyName = $event->resourceType->agency->name ?? 'N/A';
                                         $agencyBadge = match($agencyName) {
@@ -210,15 +210,15 @@
                                     @endphp
                                     <span class="badge {{ $agencyBadge }}">{{ $agencyName }}</span>
                                 </td>
-                                <td>
+                                <td data-label="Type">
                                     @if($event->type === 'financial')
                                         <span class="badge bg-success">Financial</span>
                                     @else
                                         <span class="badge bg-secondary">Physical</span>
                                     @endif
                                 </td>
-                                <td>{{ $event->distribution_date->format('M d, Y') }}</td>
-                                <td>
+                                <td data-label="Distribution Date">{{ $event->distribution_date->format('M d, Y') }}</td>
+                                <td data-label="Status">
                                     @php
                                         $statusBadge = match($event->status) {
                                             'Pending'   => 'bg-info',
@@ -229,9 +229,9 @@
                                     @endphp
                                     <span class="badge {{ $statusBadge }}">{{ $event->status }}</span>
                                 </td>
-                                <td class="text-center">{{ $event->allocations_count }}</td>
-                                <td>{{ $event->createdBy->name }}</td>
-                                <td class="text-end text-nowrap">
+                                <td class="text-center" data-label="Beneficiaries">{{ $event->allocations_count }}</td>
+                                <td data-label="Created By">{{ $event->createdBy->name }}</td>
+                                <td class="text-end text-nowrap" data-label="Actions">
                                     <a href="{{ route('distribution-events.show', $event) }}" class="btn btn-sm btn-outline-info me-1" title="View">
                                         <i class="bi bi-eye"></i> <span class="btn-action-label">View</span>
                                     </a>

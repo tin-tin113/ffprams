@@ -10,9 +10,6 @@ class ProgramEligibilityService
 {
     /**
      * Get programs eligible for a beneficiary based on agency and classification.
-     *
-     * @param Beneficiary $beneficiary
-     * @return Collection
      */
     public static function getEligiblePrograms(Beneficiary $beneficiary): Collection
     {
@@ -26,10 +23,6 @@ class ProgramEligibilityService
 
     /**
      * Check if a program is eligible for a beneficiary.
-     *
-     * @param Beneficiary $beneficiary
-     * @param ProgramName $program
-     * @return bool
      */
     public static function isEligible(Beneficiary $beneficiary, ProgramName $program): bool
     {
@@ -37,7 +30,7 @@ class ProgramEligibilityService
             return false;
         }
 
-        if (!$program->is_active) {
+        if (! $program->is_active) {
             return false;
         }
 
@@ -46,10 +39,6 @@ class ProgramEligibilityService
 
     /**
      * Get eligibility reason message.
-     *
-     * @param Beneficiary $beneficiary
-     * @param ProgramName $program
-     * @return string
      */
     public static function getIneligibilityReason(Beneficiary $beneficiary, ProgramName $program): string
     {
@@ -57,8 +46,8 @@ class ProgramEligibilityService
             return "Program is for {$program->agency->name} agency only. Beneficiary is registered with {$beneficiary->agency->name}.";
         }
 
-        if (!$program->is_active) {
-            return "This program is currently inactive.";
+        if (! $program->is_active) {
+            return 'This program is currently inactive.';
         }
 
         return "Beneficiary classification '{$beneficiary->classification}' does not match program requirement '{$program->classification}'.";

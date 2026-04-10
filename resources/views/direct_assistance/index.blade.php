@@ -8,7 +8,7 @@
 
 @section('content')
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
         <div>
             <h1 class="h3 mb-0">Direct Assistance Management</h1>
             <p class="text-muted mb-0">Manage direct assistance records to beneficiaries</p>
@@ -19,8 +19,8 @@
     </div>
 
     <!-- Summary Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3">
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-6 col-lg-6 col-xl-3">
             <div class="card border-0 shadow-sm bg-light">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
@@ -33,7 +33,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-lg-6 col-xl-3">
             <div class="card border-0 shadow-sm bg-light">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
@@ -46,7 +46,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-lg-6 col-xl-3">
             <div class="card border-0 shadow-sm bg-light">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
@@ -59,7 +59,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-lg-6 col-xl-3">
             <div class="card border-0 shadow-sm bg-light">
                 <div class="card-body">
                     <a href="{{ route('direct-assistance.barangay-analytics') }}" class="text-decoration-none">
@@ -150,7 +150,7 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 table-responsive-cards">
                     <thead class="table-light">
                         <tr>
                             <th>Date</th>
@@ -167,17 +167,17 @@
                     <tbody>
                         @forelse($directAssistance as $assistance)
                             <tr>
-                                <td class="text-muted small">{{ $assistance->created_at->format('M d, Y') }}</td>
-                                <td>
+                                <td class="text-muted small" data-label="Date">{{ $assistance->created_at->format('M d, Y') }}</td>
+                                <td data-label="Beneficiary">
                                     <a href="{{ route('beneficiaries.show', $assistance->beneficiary) }}" class="text-decoration-none">
                                         {{ $assistance->beneficiary->full_name ?? 'N/A' }}
                                     </a>
                                 </td>
-                                <td>{{ $assistance->beneficiary->barangay->name ?? 'N/A' }}</td>
-                                <td>{{ $assistance->programName->name ?? 'N/A' }}</td>
-                                <td>{{ $assistance->resourceType->name ?? 'N/A' }}</td>
-                                <td>{{ $assistance->getDisplayValue() }}</td>
-                                <td>
+                                <td data-label="Barangay">{{ $assistance->beneficiary->barangay->name ?? 'N/A' }}</td>
+                                <td data-label="Program">{{ $assistance->programName->name ?? 'N/A' }}</td>
+                                <td data-label="Resource">{{ $assistance->resourceType->name ?? 'N/A' }}</td>
+                                <td data-label="Value">{{ $assistance->getDisplayValue() }}</td>
+                                <td data-label="Status">
                                     @switch($assistance->status)
                                         @case('recorded')
                                             <span class="badge bg-warning text-dark">Recorded</span>
@@ -190,14 +190,14 @@
                                             @break
                                     @endswitch
                                 </td>
-                                <td>
+                                <td data-label="Distributed">
                                     @if($assistance->distributed_at)
                                         <small class="text-muted">{{ $assistance->distributed_at->format('M d, Y') }}</small>
                                     @else
                                         <span class="text-muted small">—</span>
                                     @endif
                                 </td>
-                                <td class="text-end">
+                                <td class="text-end" data-label="Actions">
                                     <a href="{{ route('direct-assistance.show', $assistance) }}" class="btn btn-sm btn-outline-info">
                                         <i class="bi bi-eye"></i> View
                                     </a>
@@ -207,7 +207,7 @@
                                         </a>
                                         <form method="POST"
                                               action="{{ route('direct-assistance.mark-distributed', $assistance) }}"
-                                              class="d-inline"
+                                                class="direct-assistance-action-form"
                                               data-confirm-title="Mark as Distributed"
                                               data-confirm-message="Mark this assistance as distributed?">
                                             @csrf

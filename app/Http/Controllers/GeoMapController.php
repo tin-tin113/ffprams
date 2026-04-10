@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Agency;
 use App\Models\ProgramName;
-use App\Support\GeoMapCache;
 use App\Services\AuditLogService;
+use App\Support\GeoMapCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -130,8 +130,8 @@ class GeoMapController extends Controller
                     })
                     ->selectRaw('beneficiaries.barangay_id as barangay_id')
                     ->selectRaw('COUNT(*) as total_allocations')
-                    ->selectRaw("SUM(CASE WHEN allocations.distributed_at IS NOT NULL THEN 1 ELSE 0 END) as total_distributed")
-                    ->selectRaw("SUM(CASE WHEN allocations.distributed_at IS NULL THEN 1 ELSE 0 END) as total_pending_allocations")
+                    ->selectRaw('SUM(CASE WHEN allocations.distributed_at IS NOT NULL THEN 1 ELSE 0 END) as total_distributed')
+                    ->selectRaw('SUM(CASE WHEN allocations.distributed_at IS NULL THEN 1 ELSE 0 END) as total_pending_allocations')
                     ->selectRaw('COUNT(DISTINCT CASE WHEN allocations.distributed_at IS NOT NULL THEN allocations.beneficiary_id END) as beneficiaries_reached')
                     ->groupBy('beneficiaries.barangay_id')
                     ->get()
@@ -245,33 +245,33 @@ class GeoMapController extends Controller
                         : 0;
 
                     return [
-                        'id'                     => $barangay->id,
-                        'name'                   => $barangay->name,
-                        'latitude'               => $barangay->latitude,
-                        'longitude'              => $barangay->longitude,
+                        'id' => $barangay->id,
+                        'name' => $barangay->name,
+                        'latitude' => $barangay->latitude,
+                        'longitude' => $barangay->longitude,
                         // Household metrics
                         'total_household_members' => (int) $barangay->total_household_members,
-                        'avg_household_size'     => null,
+                        'avg_household_size' => null,
                         // Beneficiary breakdown by classification
-                        'total_beneficiaries'    => $totalBeneficiaries,
-                        'total_farmers'          => (int) $barangay->total_farmers,
-                        'total_fisherfolk'       => (int) $barangay->total_fisherfolk,
-                        'total_farmers_only'     => (int) $barangay->total_farmers_only,
-                        'total_fisherfolk_only'  => (int) $barangay->total_fisherfolk_only,
-                        'total_both'             => (int) $barangay->total_both,
+                        'total_beneficiaries' => $totalBeneficiaries,
+                        'total_farmers' => (int) $barangay->total_farmers,
+                        'total_fisherfolk' => (int) $barangay->total_fisherfolk,
+                        'total_farmers_only' => (int) $barangay->total_farmers_only,
+                        'total_fisherfolk_only' => (int) $barangay->total_fisherfolk_only,
+                        'total_both' => (int) $barangay->total_both,
                         // Distribution events breakdown
-                        'total_events'           => (int) $barangay->total_events,
-                        'events_completed'       => (int) $barangay->events_completed,
-                        'events_ongoing'         => (int) $barangay->events_ongoing,
-                        'events_pending'         => (int) $barangay->events_pending,
-                        'total_physical_events'  => (int) $barangay->total_physical_events,
+                        'total_events' => (int) $barangay->total_events,
+                        'events_completed' => (int) $barangay->events_completed,
+                        'events_ongoing' => (int) $barangay->events_ongoing,
+                        'events_pending' => (int) $barangay->events_pending,
+                        'total_physical_events' => (int) $barangay->total_physical_events,
                         'total_financial_events' => (int) $barangay->total_financial_events,
                         // Allocations
-                        'total_allocations'      => $totalAllocations,
-                        'total_distributed'      => $totalDistributed,
-                        'beneficiaries_reached'  => $beneficiariesReached,
+                        'total_allocations' => $totalAllocations,
+                        'total_distributed' => $totalDistributed,
+                        'beneficiaries_reached' => $beneficiariesReached,
                         'total_pending_allocations' => $totalPendingAllocations,
-                        'coverage_rate'          => $coverageRate,
+                        'coverage_rate' => $coverageRate,
                         // Direct Assistance (D9)
                         'total_direct_assistance' => (int) ($directAssistance->total_direct_assistance ?? 0),
                         'direct_assistance_recorded' => (int) ($directAssistance->direct_assistance_recorded ?? 0),
@@ -281,13 +281,13 @@ class GeoMapController extends Controller
                         'first_distribution_date' => $barangay->first_distribution_date,
                         'last_distribution_date' => $barangay->last_distribution_date,
                         // Status
-                        'distribution_status'    => $status,
-                        'pin_color'              => $pinColor,
+                        'distribution_status' => $status,
+                        'pin_color' => $pinColor,
                         // Financial
-                        'total_fund_allocated'   => (float) ($fundAllocatedByBarangay[$barangay->id] ?? 0),
-                        'total_cash_disbursed'   => (float) ($cashDisbursedByBarangay[$barangay->id] ?? 0),
+                        'total_fund_allocated' => (float) ($fundAllocatedByBarangay[$barangay->id] ?? 0),
+                        'total_cash_disbursed' => (float) ($cashDisbursedByBarangay[$barangay->id] ?? 0),
                         // Resources
-                        'resources_distributed'  => $resourcesByBarangay[$barangay->id] ?? 'None',
+                        'resources_distributed' => $resourcesByBarangay[$barangay->id] ?? 'None',
                     ];
                 })->values()->all();
 
@@ -304,8 +304,9 @@ class GeoMapController extends Controller
         } catch (\Throwable $e) {
             Log::error('GeoMapController::mapData error', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
+
             return response()->json(['error' => 'Failed to load geo-map data.'], 500);
         }
     }

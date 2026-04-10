@@ -9,8 +9,8 @@
 
 @section('content')
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
+        <div class="d-flex flex-wrap gap-2 justify-content-md-end">
             <h1 class="h3 mb-0">{{ $directAssistance->beneficiary->full_name }}</h1>
             <p class="text-muted mb-0">Direct Assistance Record</p>
         </div>
@@ -36,7 +36,7 @@
         </div>
     </div>
 
-    <div class="row mb-4">
+    <div class="row g-3 mb-4">
         <!-- Main Details -->
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm mb-3">

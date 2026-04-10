@@ -290,4 +290,4 @@ Rules:
 3. Event-based distribution is the primary flow; direct assistance is a documented exception flow.
 4. Source transparency:
    - Core agency practice alignment is based on official DA/BFAR/DAR public process descriptions and your project Chapter 1 factual-basis references.
-   - If strict external citation is required for evaluation, use `docs/PROCESS_REFERENCES.md` and keep attached copies of circulars/memoranda used by your institution.
+   - Keep attached copies of circulars/memoranda used by your institution for panel or compliance review.

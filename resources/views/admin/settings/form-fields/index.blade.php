@@ -5,7 +5,7 @@
     {{-- Navigation Tabs --}}
     <div class="row mb-4">
         <div class="col-12">
-            <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom settings-tabs-nav">
                 <div class="container-fluid px-0">
                     <ul class="navbar-nav w-100">
                         <li class="nav-item">
@@ -145,11 +145,11 @@
                                 <table class="table table-hover table-sm mb-0 table-responsive-cards">
                                     <thead class="table-light">
                                         <tr>
-                                            <th style="width: 30%;">Label</th>
-                                            <th style="width: 30%;">Value</th>
-                                            <th style="width: 20%;">Order</th>
-                                            <th style="width: 10%;">Status</th>
-                                            <th style="width: 10%;" class="text-center">Actions</th>
+                                            <th>Label</th>
+                                            <th>Value</th>
+                                            <th>Order</th>
+                                            <th>Status</th>
+                                            <th class="text-center">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody class="ff-tbody" data-field="{{ $fieldGroup }}">

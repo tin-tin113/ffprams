@@ -38,9 +38,9 @@ class BeneficiaryController extends Controller
             ->when($request->filled('search'), function ($q) use ($request) {
                 $q->where(function ($q) use ($request) {
                     $q->where('full_name', 'like', "%{$request->search}%")
-                      ->orWhere('rsbsa_number', 'like', "%{$request->search}%")
-                      ->orWhere('fishr_number', 'like', "%{$request->search}%")
-                      ->orWhere('cloa_ep_number', 'like', "%{$request->search}%");
+                        ->orWhere('rsbsa_number', 'like', "%{$request->search}%")
+                        ->orWhere('fishr_number', 'like', "%{$request->search}%")
+                        ->orWhere('cloa_ep_number', 'like', "%{$request->search}%");
                 });
             })
             ->orderByDesc('created_at')
@@ -81,7 +81,7 @@ class BeneficiaryController extends Controller
             $bestMatch = $duplicates->sortByDesc('score')->first();
             $existing = $bestMatch['beneficiary'];
 
-            $message = "Registration blocked: A potential duplicate record already exists. ";
+            $message = 'Registration blocked: A potential duplicate record already exists. ';
             $message .= "Existing beneficiary: {$existing->full_name}";
             if ($existing->barangay) {
                 $message .= " (Barangay {$existing->barangay->name})";
@@ -92,14 +92,14 @@ class BeneficiaryController extends Controller
                 return response()->json([
                     'success' => false,
                     'duplicate' => true,
-                    'message' => $message . ' Please verify and update this existing record if needed.',
+                    'message' => $message.' Please verify and update this existing record if needed.',
                     'existing_beneficiary_id' => $existing->id,
                     'redirect_url' => route('beneficiaries.show', $existing),
                 ], 409);
             }
 
             return redirect()->route('beneficiaries.show', $existing)
-                ->with('warning', $message . ' Please verify and update this existing record if needed.');
+                ->with('warning', $message.' Please verify and update this existing record if needed.');
         }
 
         // No duplicates - proceed with registration
@@ -196,7 +196,7 @@ class BeneficiaryController extends Controller
             $bestMatch = $duplicates->sortByDesc('score')->first();
             $existing = $bestMatch['beneficiary'];
 
-            $message = "Update blocked: This change would match an existing beneficiary record. ";
+            $message = 'Update blocked: This change would match an existing beneficiary record. ';
             $message .= "Existing beneficiary: {$existing->full_name}";
             if ($existing->barangay) {
                 $message .= " (Barangay {$existing->barangay->name})";
@@ -207,14 +207,14 @@ class BeneficiaryController extends Controller
                 return response()->json([
                     'success' => false,
                     'duplicate' => true,
-                    'message' => $message . ' Please review the existing record before updating.',
+                    'message' => $message.' Please review the existing record before updating.',
                     'existing_beneficiary_id' => $existing->id,
                     'redirect_url' => route('beneficiaries.show', $existing),
                 ], 409);
             }
 
             return redirect()->route('beneficiaries.show', $existing)
-                ->with('warning', $message . ' Please review the existing record before updating.');
+                ->with('warning', $message.' Please review the existing record before updating.');
         }
 
         DB::transaction(function () use ($beneficiary, $validated) {
@@ -297,17 +297,17 @@ class BeneficiaryController extends Controller
         $beneficiary->load('barangay');
 
         return response()->json([
-            'id'                        => $beneficiary->id,
-            'first_name'                => $beneficiary->first_name,
-            'middle_name'               => $beneficiary->middle_name,
-            'last_name'                 => $beneficiary->last_name,
-            'name_suffix'               => $beneficiary->name_suffix,
-            'full_name'                 => $beneficiary->full_name,
-            'barangay_name'             => $beneficiary->barangay->name ?? null,
-            'classification'            => $beneficiary->classification,
-            'contact_number'            => $beneficiary->contact_number,
-            'rsbsa_number'              => $beneficiary->isFarmer() ? $beneficiary->rsbsa_number : null,
-            'fishr_number'              => $beneficiary->isFisherfolk() ? $beneficiary->fishr_number : null,
+            'id' => $beneficiary->id,
+            'first_name' => $beneficiary->first_name,
+            'middle_name' => $beneficiary->middle_name,
+            'last_name' => $beneficiary->last_name,
+            'name_suffix' => $beneficiary->name_suffix,
+            'full_name' => $beneficiary->full_name,
+            'barangay_name' => $beneficiary->barangay->name ?? null,
+            'classification' => $beneficiary->classification,
+            'contact_number' => $beneficiary->contact_number,
+            'rsbsa_number' => $beneficiary->isFarmer() ? $beneficiary->rsbsa_number : null,
+            'fishr_number' => $beneficiary->isFisherfolk() ? $beneficiary->fishr_number : null,
         ]);
     }
 

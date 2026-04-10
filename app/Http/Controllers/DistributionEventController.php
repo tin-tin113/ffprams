@@ -38,9 +38,9 @@ class DistributionEventController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $total     = DistributionEvent::count();
-        $pending   = DistributionEvent::where('status', 'Pending')->count();
-        $ongoing   = DistributionEvent::where('status', 'Ongoing')->count();
+        $total = DistributionEvent::count();
+        $pending = DistributionEvent::where('status', 'Pending')->count();
+        $ongoing = DistributionEvent::where('status', 'Ongoing')->count();
         $completed = DistributionEvent::where('status', 'Completed')->count();
 
         $totalFinancialEvents = DistributionEvent::where('type', 'financial')->count();
@@ -53,9 +53,9 @@ class DistributionEventController extends Controller
             ->whereNull('allocations.deleted_at')
             ->sum('allocations.amount');
 
-        $barangays     = Barangay::orderBy('name')->get();
+        $barangays = Barangay::orderBy('name')->get();
         $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
-        $programNames  = ProgramName::with('agency')->active()->orderBy('name')->get();
+        $programNames = ProgramName::with('agency')->active()->orderBy('name')->get();
 
         return view('distribution_events.index', compact(
             'events',
@@ -73,9 +73,9 @@ class DistributionEventController extends Controller
 
     public function create(): View
     {
-        $barangays     = Barangay::orderBy('name')->get();
+        $barangays = Barangay::orderBy('name')->get();
         $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
-        $programNames  = ProgramName::with('agency')->active()->orderBy('name')->get();
+        $programNames = ProgramName::with('agency')->active()->orderBy('name')->get();
 
         return view('distribution_events.create', compact('barangays', 'resourceTypes', 'programNames'));
     }
@@ -143,7 +143,7 @@ class DistributionEventController extends Controller
     {
         $this->loadDistributionListRelations($event);
 
-        $filename = 'distribution-list-event-' . $event->id . '-' . now()->format('Ymd-His') . '.pdf';
+        $filename = 'distribution-list-event-'.$event->id.'-'.now()->format('Ymd-His').'.pdf';
 
         $pdf = Pdf::loadView('distribution_events.distribution_list_pdf', compact('event'))
             ->setPaper('a4', 'landscape');
@@ -159,7 +159,7 @@ class DistributionEventController extends Controller
     {
         $this->loadDistributionListRelations($event);
 
-        $filename = 'distribution-list-event-' . $event->id . '-' . now()->format('Ymd-His') . '.csv';
+        $filename = 'distribution-list-event-'.$event->id.'-'.now()->format('Ymd-His').'.csv';
 
         return response()->streamDownload(function () use ($event) {
             $output = fopen('php://output', 'w');
@@ -179,7 +179,7 @@ class DistributionEventController extends Controller
             foreach ($event->allocations as $index => $allocation) {
                 $allocationValue = $event->isFinancial()
                     ? number_format((float) $allocation->amount, 2, '.', '')
-                    : number_format((float) $allocation->quantity, 2, '.', '') . ' ' . $event->resourceType->unit;
+                    : number_format((float) $allocation->quantity, 2, '.', '').' '.$event->resourceType->unit;
 
                 fputcsv($output, [
                     $index + 1,
@@ -223,9 +223,9 @@ class DistributionEventController extends Controller
                 ->with('error', 'Only Pending events can be edited.');
         }
 
-        $barangays     = Barangay::orderBy('name')->get();
+        $barangays = Barangay::orderBy('name')->get();
         $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
-        $programNames  = ProgramName::with('agency')->active()->orderBy('name')->get();
+        $programNames = ProgramName::with('agency')->active()->orderBy('name')->get();
 
         return view('distribution_events.edit', compact('event', 'barangays', 'resourceTypes', 'programNames'));
     }

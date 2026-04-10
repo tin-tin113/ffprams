@@ -8,7 +8,7 @@
 
 @section('content')
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
         <div>
             <h1 class="h3 mb-0">Assistance Allocations</h1>
             <p class="text-muted mb-0">Record direct/personal assistance without creating an event</p>
@@ -126,7 +126,7 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 table-responsive-cards">
                     <thead class="table-light">
                         <tr>
                             <th>Date</th>
@@ -142,13 +142,13 @@
                     <tbody>
                         @forelse($directAllocations as $allocation)
                             <tr>
-                                <td class="text-muted small">{{ $allocation->created_at->format('M d, Y') }}</td>
-                                <td>{{ $allocation->beneficiary->full_name ?? 'N/A' }}</td>
-                                <td>{{ $allocation->programName->name ?? 'N/A' }}</td>
-                                <td>{{ $allocation->resourceType->name ?? 'N/A' }}</td>
-                                <td>{{ $allocation->getDisplayValue() }}</td>
-                                <td>{{ $allocation->assistancePurpose->name ?? 'N/A' }}</td>
-                                <td>
+                                <td class="text-muted small" data-label="Date">{{ $allocation->created_at->format('M d, Y') }}</td>
+                                <td data-label="Beneficiary">{{ $allocation->beneficiary->full_name ?? 'N/A' }}</td>
+                                <td data-label="Program">{{ $allocation->programName->name ?? 'N/A' }}</td>
+                                <td data-label="Resource">{{ $allocation->resourceType->name ?? 'N/A' }}</td>
+                                <td data-label="Value">{{ $allocation->getDisplayValue() }}</td>
+                                <td data-label="Purpose">{{ $allocation->assistancePurpose->name ?? 'N/A' }}</td>
+                                <td data-label="Status">
                                     @if($allocation->distributed_at)
                                         <span class="badge bg-success">Released</span>
                                     @elseif($allocation->release_outcome === 'not_received')
@@ -157,8 +157,8 @@
                                         <span class="badge bg-warning text-dark">Planned</span>
                                     @endif
                                 </td>
-                                <td class="text-end">
-                                    <div class="d-inline-flex align-items-center gap-1 flex-nowrap">
+                                <td class="text-end" data-label="Actions">
+                                    <div class="d-inline-flex align-items-center gap-1 flex-wrap justify-content-end">
                                         <a href="{{ route('allocations.show', $allocation) }}" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-eye me-1"></i> View
                                         </a>
@@ -166,7 +166,7 @@
                                         @if(!$allocation->distributed_at && $allocation->release_outcome !== 'not_received')
                                             <form method="POST"
                                                   action="{{ route('allocations.markDistributed', $allocation) }}"
-                                                  class="d-inline"
+                                                  class="allocation-action-form"
                                                   data-confirm-title="Confirm Release"
                                                   data-confirm-message="Mark this direct allocation as released? This will timestamp the release transaction.">
                                                 @csrf
@@ -177,7 +177,7 @@
 
                                             <form method="POST"
                                                   action="{{ route('allocations.markNotReceived', $allocation) }}"
-                                                  class="d-inline"
+                                                  class="allocation-action-form"
                                                   data-confirm-title="Confirm Not Received"
                                                   data-confirm-message="Mark this direct allocation as Not Received?">
                                                 @csrf

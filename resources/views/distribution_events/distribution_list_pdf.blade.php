@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Distribution List - Event #{{ $event->id }}</title>
     <style>
         @page {
@@ -65,6 +66,10 @@
             border-collapse: collapse;
         }
 
+        .table-wrap {
+            width: 100%;
+        }
+
         table.list th,
         table.list td {
             border: 1px solid #cbd5e1;
@@ -101,6 +106,17 @@
             padding-top: 2px;
             text-align: center;
             color: #374151;
+        }
+
+        @media screen and (max-width: 991.98px) {
+            .table-wrap {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            table.list {
+                min-width: 860px;
+            }
         }
     </style>
 </head>
@@ -155,44 +171,46 @@
         </tr>
     </table>
 
-    <table class="list">
-        <thead>
-            <tr>
-                <th style="width: 30px;">#</th>
-                <th>Beneficiary Name</th>
-                <th style="width: 85px;">Class</th>
-                <th style="width: 120px;">Contact</th>
-                <th style="width: 130px;">Barangay</th>
-                <th style="width: 120px;">{{ $event->isFinancial() ? 'Amount (PHP)' : 'Quantity' }}</th>
-                <th style="width: 120px;">Signature</th>
-                <th style="width: 270px;">Remarks</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($event->allocations as $allocation)
+    <div class="table-wrap">
+        <table class="list">
+            <thead>
                 <tr>
-                    <td class="text-center">{{ $loop->iteration }}</td>
-                    <td>{{ $allocation->beneficiary->full_name }}</td>
-                    <td class="text-center">{{ $allocation->beneficiary->classification }}</td>
-                    <td class="text-center">{{ $allocation->beneficiary->contact_number ?? '—' }}</td>
-                    <td>{{ $event->barangay->name }}</td>
-                    <td class="text-center">
-                        @if($event->isFinancial())
-                            {{ number_format((float) $allocation->amount, 2) }}
-                        @else
-                            {{ number_format((float) $allocation->quantity, 2) }} {{ $event->resourceType->unit }}
-                        @endif
-                    </td>
-                    <td class="signature"></td>
-                    <td>{{ $allocation->remarks ?? '' }}</td>
+                    <th style="width: 30px;">#</th>
+                    <th>Beneficiary Name</th>
+                    <th style="width: 85px;">Class</th>
+                    <th style="width: 120px;">Contact</th>
+                    <th style="width: 130px;">Barangay</th>
+                    <th style="width: 120px;">{{ $event->isFinancial() ? 'Amount (PHP)' : 'Quantity' }}</th>
+                    <th style="width: 120px;">Signature</th>
+                    <th style="width: 270px;">Remarks</th>
                 </tr>
-            @empty
-                <tr>
-                    <td colspan="8" class="text-center">No allocations recorded yet.</td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @forelse($event->allocations as $allocation)
+                    <tr>
+                        <td class="text-center">{{ $loop->iteration }}</td>
+                        <td>{{ $allocation->beneficiary->full_name }}</td>
+                        <td class="text-center">{{ $allocation->beneficiary->classification }}</td>
+                        <td class="text-center">{{ $allocation->beneficiary->contact_number ?? '—' }}</td>
+                        <td>{{ $event->barangay->name }}</td>
+                        <td class="text-center">
+                            @if($event->isFinancial())
+                                {{ number_format((float) $allocation->amount, 2) }}
+                            @else
+                                {{ number_format((float) $allocation->quantity, 2) }} {{ $event->resourceType->unit }}
+                            @endif
+                        </td>
+                        <td class="signature"></td>
+                        <td>{{ $allocation->remarks ?? '' }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="8" class="text-center">No allocations recorded yet.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 
     <div class="footer">
         <span class="line">Prepared by</span>
