@@ -18,7 +18,7 @@
 
     <!-- Beneficiary Selection (Always Visible) -->
     <div class="col-12">
-        <label class="form-label fw-semibold">Beneficiary <span class="text-danger">*</span></label>
+        <label for="beneficiarySelect" class="form-label fw-semibold">Beneficiary <span class="text-danger">*</span></label>
         <select class="form-select @error('beneficiary_id') is-invalid @enderror"
                 name="beneficiary_id"
                 id="beneficiarySelect"
@@ -60,7 +60,7 @@
 
                     <!-- Program Selection -->
                     <div class="col-md-6">
-                        <label class="form-label">Program <span class="text-danger">*</span></label>
+                        <label for="programSelect" class="form-label">Program <span class="text-danger">*</span></label>
                         <select class="form-select @error('program_name_id') is-invalid @enderror"
                                 name="program_name_id"
                                 id="programSelect"
@@ -84,7 +84,7 @@
 
                     <!-- Resource Type Selection -->
                     <div class="col-md-6">
-                        <label class="form-label">Resource Type <span class="text-danger">*</span></label>
+                        <label for="resourceTypeSelect" class="form-label">Resource Type <span class="text-danger">*</span></label>
                         <select class="form-select @error('resource_type_id') is-invalid @enderror"
                                 name="resource_type_id"
                                 id="resourceTypeSelect"

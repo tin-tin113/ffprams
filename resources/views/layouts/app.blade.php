@@ -130,11 +130,12 @@
             display: flex;
             align-items: center;
             color: rgba(255,255,255,0.7);
-            padding: 0.4rem 1rem;
+            padding: 0.625rem 1rem;
             font-size: 0.8rem;
             font-weight: 500;
             transition: all 0.2s;
             border-left: 3px solid transparent;
+            min-height: 48px;
         }
 
         .sidebar .nav-link:hover {
@@ -477,6 +478,10 @@
             padding: 1rem 1.25rem;
         }
 
+        .card-body {
+            padding: 1.25rem;
+        }
+
         /* --- Table Polish --- */
         .table {
             margin-bottom: 0;
@@ -540,6 +545,20 @@
         .form-control:focus, .form-select:focus {
             border-color: var(--accent-green);
             box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+        }
+
+        .btn-primary:focus,
+        .btn-primary.focus {
+            background-color: var(--sidebar-hover);
+            border-color: var(--sidebar-hover);
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
+            outline: 2px solid var(--accent-green);
+            outline-offset: 2px;
+        }
+
+        .btn:focus-visible {
+            outline: 2px solid var(--accent-green);
+            outline-offset: 2px;
         }
 
         .btn-primary {

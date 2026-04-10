@@ -10,27 +10,27 @@
                     <ul class="navbar-nav w-100">
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('admin.settings.index') }}">
-                                <i class="fas fa-building"></i> Agencies
+                                <i class="bi bi-building"></i> Agencies
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('admin.settings.purposes.index') }}">
-                                <i class="fas fa-tasks"></i> Assistance Purposes
+                                <i class="bi bi-tasks"></i> Assistance Purposes
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('admin.settings.resource-types.index') }}">
-                                <i class="fas fa-boxes"></i> Resource Types
+                                <i class="bi bi-box"></i> Resource Types
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('admin.settings.program-names.index') }}">
-                                <i class="fas fa-list"></i> Program Names
+                                <i class="bi bi-list"></i> Program Names
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link active" href="{{ route('admin.settings.form-fields.index') }}">
-                                <i class="fas fa-wpforms"></i> Form Fields
+                                <i class="bi bi-file-form"></i> Form Fields
                             </a>
                         </li>
                     </ul>
@@ -43,7 +43,7 @@
         <div class="col-12">
             <div class="mb-3">
                 <h3 class="mb-0">
-                    <i class="fas fa-wpforms"></i> Form Fields
+                    <i class="bi bi-file-form"></i> Form Fields
                 </h3>
             </div>
             <p class="text-muted small">Manage form field groups and options</p>
@@ -54,7 +54,7 @@
     <div class="row mb-3">
         <div class="col-12">
             <div class="card shadow-sm border-0 ff-toolbar">
-                <div class="card-body py-2 px-3">
+                <div class="card-body p-3">
                     <div class="d-flex flex-column flex-md-row align-items-md-end justify-content-between gap-2">
                         <div>
                             <label for="statusFilter" class="form-label fw-600 mb-1">Status</label>
@@ -178,13 +178,13 @@
                                                         data-bs-toggle="modal"
                                                         data-bs-target="#ffModal"
                                                         title="Edit this field">
-                                                    <i class="fas fa-edit"></i> Edit
+                                                    <i class="bi bi-pencil"></i> Edit
                                                 </button>
                                                 <button class="btn btn-sm btn-outline-danger delete-ff"
                                                         data-id="{{ $option->id }}"
                                                         data-label="{{ $option->label }}"
                                                         title="Delete this field">
-                                                    <i class="fas fa-trash"></i> Delete
+                                                    <i class="bi bi-trash"></i> Delete
                                                 </button>
                                             </td>
                                         </tr>

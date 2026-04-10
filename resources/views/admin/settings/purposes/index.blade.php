@@ -10,27 +10,27 @@
                     <ul class="navbar-nav w-100">
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('admin.settings.index') }}">
-                                <i class="fas fa-building"></i> Agencies
+                                <i class="bi bi-building"></i> Agencies
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link active" href="{{ route('admin.settings.purposes.index') }}">
-                                <i class="fas fa-tasks"></i> Assistance Purposes
+                                <i class="bi bi-tasks"></i> Assistance Purposes
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('admin.settings.resource-types.index') }}">
-                                <i class="fas fa-boxes"></i> Resource Types
+                                <i class="bi bi-box"></i> Resource Types
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('admin.settings.program-names.index') }}">
-                                <i class="fas fa-list"></i> Program Names
+                                <i class="bi bi-list"></i> Program Names
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('admin.settings.form-fields.index') }}">
-                                <i class="fas fa-wpforms"></i> Form Fields
+                                <i class="bi bi-file-form"></i> Form Fields
                             </a>
                         </li>
                     </ul>
@@ -43,10 +43,10 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3 class="mb-0">
-                    <i class="fas fa-tasks"></i> Assistance Purposes
+                    <i class="bi bi-tasks"></i> Assistance Purposes
                 </h3>
                 <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#purposeModal">
-                    <i class="fas fa-plus"></i> Add Purpose
+                    <i class="bi bi-plus"></i> Add Purpose
                 </button>
             </div>
             <p class="text-muted small">Manage assistance funding purposes and categories</p>
@@ -128,7 +128,7 @@
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#purposeModal"
                                                 title="Edit this purpose">
-                                            <i class="fas fa-edit"></i> Edit
+                                            <i class="bi bi-pencil"></i> Edit
                                         </button>
 
                                         @if($purpose->is_active)
@@ -136,7 +136,7 @@
                                                     data-id="{{ $purpose->id }}"
                                                     data-name="{{ $purpose->name }}"
                                                     title="Deactivate this purpose">
-                                                <i class="fas fa-ban"></i> Deactivate
+                                                <i class="bi bi-prohibition"></i> Deactivate
                                             </button>
                                         @else
                                             <button class="btn btn-sm btn-outline-success activate-purpose"
@@ -144,7 +144,7 @@
                                                     data-name="{{ $purpose->name }}"
                                                     data-category="{{ $purpose->category }}"
                                                     title="Activate this purpose">
-                                                <i class="fas fa-check-circle"></i> Activate
+                                                <i class="bi bi-check-circle"></i> Activate
                                             </button>
                                         @endif
                                     </div>

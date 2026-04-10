@@ -10,27 +10,27 @@
                     <ul class="navbar-nav w-100">
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('admin.settings.index') }}">
-                                <i class="fas fa-building"></i> Agencies
+                                <i class="bi bi-building"></i> Agencies
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('admin.settings.purposes.index') }}">
-                                <i class="fas fa-tasks"></i> Assistance Purposes
+                                <i class="bi bi-tasks"></i> Assistance Purposes
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link active" href="{{ route('admin.settings.resource-types.index') }}">
-                                <i class="fas fa-boxes"></i> Resource Types
+                                <i class="bi bi-box"></i> Resource Types
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('admin.settings.program-names.index') }}">
-                                <i class="fas fa-list"></i> Program Names
+                                <i class="bi bi-list"></i> Program Names
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('admin.settings.form-fields.index') }}">
-                                <i class="fas fa-wpforms"></i> Form Fields
+                                <i class="bi bi-file-form"></i> Form Fields
                             </a>
                         </li>
                     </ul>
@@ -43,10 +43,10 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3 class="mb-0">
-                    <i class="fas fa-boxes"></i> Resource Types
+                    <i class="bi bi-box"></i> Resource Types
                 </h3>
                 <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#rtModal">
-                    <i class="fas fa-plus"></i> Add Resource Type
+                    <i class="bi bi-plus"></i> Add Resource Type
                 </button>
             </div>
             <p class="text-muted small">Manage different types of resources that can be distributed</p>
@@ -118,13 +118,13 @@
                                             data-bs-toggle="modal"
                                             data-bs-target="#rtModal"
                                             title="Edit this resource type">
-                                        <i class="fas fa-edit"></i> Edit
+                                        <i class="bi bi-pencil"></i> Edit
                                     </button>
                                     <button class="btn btn-sm btn-outline-danger delete-rt"
                                             data-id="{{ $resourceType->id }}"
                                             data-name="{{ $resourceType->name }}"
                                             title="Delete this resource type">
-                                        <i class="fas fa-trash"></i> Delete
+                                        <i class="bi bi-trash"></i> Delete
                                     </button>
                                 </td>
                             </tr>

@@ -10,7 +10,7 @@
                     <ul class="navbar-nav w-100">
                         <li class="nav-item">
                             <a class="nav-link active" href="{{ route('admin.settings.index') }}">
-                                <i class="fas fa-building"></i> Agencies
+                                <i class="bi bi-building"></i> Agencies
                             </a>
                         </li>
                         <li class="nav-item">
@@ -43,10 +43,10 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3 class="mb-0">
-                    <i class="fas fa-building"></i> Agencies
+                    <i class="bi bi-building"></i> Agencies
                 </h3>
                 <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#agencyModal">
-                    <i class="fas fa-plus"></i> Add Agency
+                    <i class="bi bi-plus"></i> Add Agency
                 </button>
             </div>
             <p class="text-muted mt-1">Manage government agencies and partner organizations</p>
@@ -117,7 +117,7 @@
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#agencyModal"
                                                 title="Edit this agency">
-                                            <i class="fas fa-edit"></i> Edit
+                                            <i class="bi bi-pencil"></i> Edit
                                         </button>
 
                                         @if($agency->is_active)
@@ -125,7 +125,7 @@
                                                     data-id="{{ $agency->id }}"
                                                     data-name="{{ $agency->name }}"
                                                     title="Deactivate this agency">
-                                                <i class="fas fa-ban"></i> Deactivate
+                                                <i class="bi bi-prohibition"></i> Deactivate
                                             </button>
                                         @else
                                             <button class="btn btn-sm btn-outline-success activate-agency"
@@ -134,7 +134,7 @@
                                                     data-full-name="{{ $agency->full_name }}"
                                                     data-description="{{ $agency->description }}"
                                                     title="Activate this agency">
-                                                <i class="fas fa-check-circle"></i> Activate
+                                                <i class="bi bi-check-circle"></i> Activate
                                             </button>
                                         @endif
                                     </div>
