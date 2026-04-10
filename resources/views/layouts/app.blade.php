@@ -656,6 +656,32 @@
             }
         }
 
+        /* Tablet-specific adjustments (768px - 991px) */
+        @media (max-width: 767.98px) {
+            .container-fluid {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+
+            .form-control, .form-select {
+                font-size: 1rem; /* Prevent mobile zoom on iOS */
+            }
+
+            .btn {
+                min-height: 44px; /* WCAG touch target minimum */
+            }
+
+            /* Reduce padding on cards for better mobile view */
+            .card-body {
+                padding: 1rem;
+            }
+
+            /* Improve form field spacing on tablets */
+            .mb-3 {
+                margin-bottom: 0.75rem !important;
+            }
+        }
+
         @media (max-width: 575.98px) {
             .header-user-info {
                 display: none;
