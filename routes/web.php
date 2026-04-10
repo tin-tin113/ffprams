@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\SystemSettingsController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\BeneficiaryAttachmentController;
 use App\Http\Controllers\BeneficiaryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
@@ -52,6 +53,14 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
     Route::resource('beneficiaries', BeneficiaryController::class)->except(['index', 'show']);
     Route::post('beneficiaries/{beneficiary}/send-sms', [BeneficiaryController::class, 'sendSms'])
         ->name('beneficiaries.sendSms');
+    Route::get('beneficiaries/{beneficiary}/attachments/upload', [BeneficiaryAttachmentController::class, 'create'])
+        ->name('beneficiaries.attachments.create');
+    Route::post('beneficiaries/{beneficiary}/attachments', [BeneficiaryAttachmentController::class, 'store'])
+        ->name('beneficiaries.attachments.store');
+    Route::get('beneficiaries/{beneficiary}/attachments/{attachment}', [BeneficiaryAttachmentController::class, 'download'])
+        ->name('beneficiaries.attachments.download');
+    Route::delete('beneficiaries/{beneficiary}/attachments/{attachment}', [BeneficiaryAttachmentController::class, 'destroy'])
+        ->name('beneficiaries.attachments.destroy');
 
     // Resource Types (read-only for Admin & Staff)
     Route::resource('resource-types', ResourceTypeController::class)->only(['index']);
@@ -72,6 +81,13 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
         ->name('allocations.store');
     Route::post('allocations/bulk', [AllocationController::class, 'storeBulk'])
         ->name('allocations.storeBulk');
+    Route::post('allocations/import-csv', [AllocationController::class, 'importCsv'])
+        ->name('allocations.importCsv');
+    Route::get('allocations/import-csv-template', [AllocationController::class, 'downloadImportCsvTemplate'])
+        ->name('allocations.importCsvTemplate');
+    Route::get('allocations/import-csv-errors/{report}', [AllocationController::class, 'downloadImportCsvErrorsReport'])
+        ->where('report', '[^/]+')
+        ->name('allocations.importCsvErrorsReport');
     Route::put('allocations/{allocation}', [AllocationController::class, 'update'])
         ->name('allocations.update');
     Route::post('allocations/{allocation}/distribute', [AllocationController::class, 'markDistributed'])

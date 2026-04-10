@@ -113,6 +113,11 @@ class Beneficiary extends Model
         return $this->hasMany(SmsLog::class);
     }
 
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(BeneficiaryAttachment::class);
+    }
+
     // ── Helpers ───────────────────────────────────
 
     public function isFarmer(): bool

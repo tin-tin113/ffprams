@@ -153,6 +153,7 @@ class BeneficiaryController extends Controller
         $beneficiary->load([
             'barangay',
             'agency',
+            'attachments' => fn ($q) => $q->latest('id')->with('uploader:id,name'),
             'allocations.distributionEvent.resourceType.agency',
             'allocations.programName.agency',
             'allocations.resourceType.agency',

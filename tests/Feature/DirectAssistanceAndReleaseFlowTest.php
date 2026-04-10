@@ -12,6 +12,8 @@ use App\Models\ProgramName;
 use App\Models\ResourceType;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class DirectAssistanceAndReleaseFlowTest extends TestCase
@@ -195,6 +197,168 @@ class DirectAssistanceAndReleaseFlowTest extends TestCase
         $this->assertNull($record->distributed_by);
     }
 
+    public function test_allocation_csv_import_creates_allocations_for_valid_rows(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        [$event, $beneficiaryOne, $beneficiaryTwo] = $this->makeCsvImportFixtures($admin, 'kg');
+
+        $csvContent = implode("\n", [
+            'beneficiary_id,quantity,remarks',
+            $beneficiaryOne->id.',10.50,First row',
+            $beneficiaryTwo->id.',4.25,Second row',
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('allocations.importCsv'), [
+            'distribution_event_id' => $event->id,
+            'form_context' => 'import_csv',
+            'csv_file' => UploadedFile::fake()->createWithContent('allocations.csv', $csvContent),
+        ]);
+
+        $response->assertRedirect(route('distribution-events.show', $event));
+
+        $this->assertSame(
+            2,
+            Allocation::where('distribution_event_id', $event->id)->count()
+        );
+    }
+
+    public function test_allocation_csv_import_skips_invalid_rows_and_keeps_valid_rows(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        [$event, $beneficiaryOne, $beneficiaryTwo, $beneficiaryOtherBarangay] = $this->makeCsvImportFixtures($admin, 'kg');
+
+        $csvContent = implode("\n", [
+            'beneficiary_id,quantity,remarks',
+            $beneficiaryOne->id.',8.00,Valid row',
+            $beneficiaryOne->id.',2.00,Duplicate in same file',
+            $beneficiaryOtherBarangay->id.',3.50,Mismatched barangay',
+            $beneficiaryTwo->id.',0,Invalid quantity',
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('allocations.importCsv'), [
+            'distribution_event_id' => $event->id,
+            'form_context' => 'import_csv',
+            'csv_file' => UploadedFile::fake()->createWithContent('allocations.csv', $csvContent),
+        ]);
+
+        $response->assertRedirect(route('distribution-events.show', $event));
+
+        $eventAllocations = Allocation::where('distribution_event_id', $event->id)->get();
+
+        $this->assertCount(1, $eventAllocations);
+        $this->assertSame($beneficiaryOne->id, $eventAllocations->first()->beneficiary_id);
+    }
+
+    public function test_allocation_csv_import_rejects_missing_required_header(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        [$event, $beneficiaryOne] = $this->makeCsvImportFixtures($admin, 'kg');
+
+        $csvContent = implode("\n", [
+            'beneficiary_id,remarks',
+            $beneficiaryOne->id.',Missing quantity header',
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('allocations.importCsv'), [
+            'distribution_event_id' => $event->id,
+            'form_context' => 'import_csv',
+            'csv_file' => UploadedFile::fake()->createWithContent('allocations.csv', $csvContent),
+        ]);
+
+        $response
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertSame(0, Allocation::where('distribution_event_id', $event->id)->count());
+    }
+
+    public function test_allocation_csv_import_financial_respects_budget_limit(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        [$event, $beneficiaryOne, $beneficiaryTwo] = $this->makeCsvImportFixtures($admin, 'PHP');
+
+        $csvContent = implode("\n", [
+            'beneficiary_id,amount,remarks',
+            $beneficiaryOne->id.',1500.00,First valid row',
+            $beneficiaryTwo->id.',1000.00,Should exceed remaining budget',
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('allocations.importCsv'), [
+            'distribution_event_id' => $event->id,
+            'form_context' => 'import_csv',
+            'csv_file' => UploadedFile::fake()->createWithContent('allocations.csv', $csvContent),
+        ]);
+
+        $response->assertRedirect(route('distribution-events.show', $event));
+
+        $allocations = Allocation::where('distribution_event_id', $event->id)->get();
+        $this->assertCount(1, $allocations);
+        $this->assertSame($beneficiaryOne->id, $allocations->first()->beneficiary_id);
+        $this->assertSame('1500.00', (string) $allocations->first()->amount);
+    }
+
+    public function test_allocation_csv_template_download_returns_csv_header_for_event_type(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        [$event] = $this->makeCsvImportFixtures($admin, 'kg');
+
+        $response = $this->actingAs($admin)->get(route('allocations.importCsvTemplate', [
+            'distribution_event_id' => $event->id,
+        ]));
+
+        $response
+            ->assertOk()
+            ->assertHeader('content-disposition');
+
+        $content = $response->streamedContent();
+
+        $this->assertStringContainsString('beneficiary_id,quantity,assistance_purpose_id,remarks', $content);
+    }
+
+    public function test_allocation_csv_import_generates_downloadable_error_report_for_skipped_rows(): void
+    {
+        Storage::fake('allocation_import_reports');
+
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        [$event, $beneficiaryOne, $beneficiaryTwo] = $this->makeCsvImportFixtures($admin, 'kg');
+
+        $csvContent = implode("\n", [
+            'beneficiary_id,quantity,remarks',
+            $beneficiaryOne->id.',6.00,Valid row',
+            $beneficiaryTwo->id.',0,Invalid quantity for report',
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('allocations.importCsv'), [
+            'distribution_event_id' => $event->id,
+            'form_context' => 'import_csv',
+            'csv_file' => UploadedFile::fake()->createWithContent('allocations.csv', $csvContent),
+        ]);
+
+        $response->assertRedirect(route('distribution-events.show', $event));
+        $response->assertSessionHas('import_error_report_file');
+
+        $reportFile = $response->getSession()->get('import_error_report_file');
+
+        $this->assertIsString($reportFile);
+        $this->assertNotSame('', $reportFile);
+
+        $this->assertTrue(Storage::disk('allocation_import_reports')->exists($reportFile));
+
+        $downloadResponse = $this->actingAs($admin)->get(route('allocations.importCsvErrorsReport', [
+            'report' => $reportFile,
+        ]));
+
+        $downloadResponse
+            ->assertOk()
+            ->assertHeader('content-disposition');
+    }
+
     /**
      * @return array{Beneficiary, ProgramName, ResourceType}
      */
@@ -271,5 +435,90 @@ class DirectAssistanceAndReleaseFlowTest extends TestCase
         ]);
 
         return [$event, $allocation];
+    }
+
+    /**
+     * @return array{DistributionEvent, Beneficiary, Beneficiary, Beneficiary}
+     */
+    private function makeCsvImportFixtures(User $admin, string $unit): array
+    {
+        $agency = Agency::create([
+            'name' => 'DA',
+            'full_name' => 'Department of Agriculture',
+            'is_active' => true,
+        ]);
+
+        $eventBarangay = Barangay::create([
+            'name' => 'CSV Event Barangay '.uniqid(),
+            'latitude' => 10.30000000,
+            'longitude' => 123.30000000,
+        ]);
+
+        $otherBarangay = Barangay::create([
+            'name' => 'CSV Other Barangay '.uniqid(),
+            'latitude' => 10.31000000,
+            'longitude' => 123.31000000,
+        ]);
+
+        $program = ProgramName::create([
+            'agency_id' => $agency->id,
+            'name' => 'CSV Program '.uniqid(),
+            'description' => 'CSV import program',
+            'is_active' => true,
+            'classification' => 'Farmer',
+        ]);
+
+        $resourceType = ResourceType::create([
+            'name' => 'CSV Resource '.uniqid(),
+            'unit' => $unit,
+            'source_agency' => $agency->name,
+            'agency_id' => $agency->id,
+        ]);
+
+        $beneficiaryOne = Beneficiary::create([
+            'agency_id' => $agency->id,
+            'first_name' => 'CSV',
+            'last_name' => 'Beneficiary One',
+            'barangay_id' => $eventBarangay->id,
+            'classification' => 'Farmer',
+            'contact_number' => '',
+            'status' => 'Active',
+            'registered_at' => now()->toDateString(),
+        ]);
+
+        $beneficiaryTwo = Beneficiary::create([
+            'agency_id' => $agency->id,
+            'first_name' => 'CSV',
+            'last_name' => 'Beneficiary Two',
+            'barangay_id' => $eventBarangay->id,
+            'classification' => 'Farmer',
+            'contact_number' => '',
+            'status' => 'Active',
+            'registered_at' => now()->toDateString(),
+        ]);
+
+        $beneficiaryOtherBarangay = Beneficiary::create([
+            'agency_id' => $agency->id,
+            'first_name' => 'CSV',
+            'last_name' => 'Other Barangay',
+            'barangay_id' => $otherBarangay->id,
+            'classification' => 'Farmer',
+            'contact_number' => '',
+            'status' => 'Active',
+            'registered_at' => now()->toDateString(),
+        ]);
+
+        $event = DistributionEvent::create([
+            'barangay_id' => $eventBarangay->id,
+            'resource_type_id' => $resourceType->id,
+            'program_name_id' => $program->id,
+            'distribution_date' => now()->toDateString(),
+            'status' => 'Pending',
+            'created_by' => $admin->id,
+            'type' => $unit === 'PHP' ? 'financial' : 'physical',
+            'total_fund_amount' => $unit === 'PHP' ? 2000 : null,
+        ]);
+
+        return [$event, $beneficiaryOne, $beneficiaryTwo, $beneficiaryOtherBarangay];
     }
 }

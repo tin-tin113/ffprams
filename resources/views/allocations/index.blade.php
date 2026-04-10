@@ -136,7 +136,7 @@
                             <th>Value</th>
                             <th>Purpose</th>
                             <th>Status</th>
-                            <th class="text-end">Actions</th>
+                            <th class="text-end text-nowrap" style="min-width: 340px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -157,8 +157,8 @@
                                         <span class="badge bg-warning text-dark">Planned</span>
                                     @endif
                                 </td>
-                                <td class="text-end" data-label="Actions">
-                                    <div class="d-inline-flex align-items-center gap-1 flex-wrap justify-content-end">
+                                <td class="text-end text-nowrap" data-label="Actions">
+                                    <div class="d-inline-flex align-items-center gap-1 flex-nowrap justify-content-end">
                                         <a href="{{ route('allocations.show', $allocation) }}" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-eye me-1"></i> View
                                         </a>
@@ -166,7 +166,7 @@
                                         @if(!$allocation->distributed_at && $allocation->release_outcome !== 'not_received')
                                             <form method="POST"
                                                   action="{{ route('allocations.markDistributed', $allocation) }}"
-                                                  class="allocation-action-form"
+                                                  class="allocation-action-form d-inline"
                                                   data-confirm-title="Confirm Release"
                                                   data-confirm-message="Mark this direct allocation as released? This will timestamp the release transaction.">
                                                 @csrf
@@ -177,7 +177,7 @@
 
                                             <form method="POST"
                                                   action="{{ route('allocations.markNotReceived', $allocation) }}"
-                                                  class="allocation-action-form"
+                                                  class="allocation-action-form d-inline"
                                                   data-confirm-title="Confirm Not Received"
                                                   data-confirm-message="Mark this direct allocation as Not Received?">
                                                 @csrf

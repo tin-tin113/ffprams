@@ -47,6 +47,20 @@ return [
             'report' => false,
         ],
 
+        'beneficiary_documents' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/beneficiary-documents'),
+            'throw' => false,
+            'report' => false,
+        ],
+
+        'allocation_import_reports' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/allocation-import-reports'),
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
@@ -61,6 +75,8 @@ return [
         ],
 
     ],
+
+    'allocation_import_reports_retention_days' => env('ALLOCATION_IMPORT_REPORT_RETENTION_DAYS', 14),
 
     /*
     |--------------------------------------------------------------------------

@@ -10,6 +10,20 @@
 @section('content')
 <div class="container-fluid">
 
+    @if(session('import_error_report_file'))
+        <div class="alert alert-warning d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2" role="alert">
+            <div>
+                <strong>CSV Import Notice:</strong>
+                {{ session('import_error_report_count', 0) }} row(s) were skipped during import.
+                Download the detailed error report for row-level issues.
+            </div>
+            <a href="{{ route('allocations.importCsvErrorsReport', ['report' => session('import_error_report_file')]) }}"
+               class="btn btn-sm btn-outline-dark">
+                <i class="bi bi-file-earmark-arrow-down me-1"></i> Download Error Report
+            </a>
+        </div>
+    @endif
+
     @php
         $availableBeneficiaries = \App\Models\Beneficiary::where('barangay_id', $event->barangay_id)
             ->where('status', 'Active')
@@ -478,6 +492,9 @@
             <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#addAllModal">
                 <i class="bi bi-people me-1"></i> Add All Barangay Beneficiaries
             </button>
+            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importCsvModal">
+                <i class="bi bi-file-earmark-arrow-up me-1"></i> Import CSV
+            </button>
         </div>
     @endif
 
@@ -696,6 +713,7 @@
         <div class="modal-content">
             <form method="POST" action="{{ route('allocations.store') }}">
                 @csrf
+                <input type="hidden" name="form_context" value="add_single">
                 <input type="hidden" name="release_method" value="event">
                 <input type="hidden" name="distribution_event_id" value="{{ $event->id }}">
                 <div class="modal-header">
@@ -803,6 +821,59 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-success" id="bulkSubmitBtn">
                         <i class="bi bi-plus-lg me-1"></i> Add All
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Import Allocation CSV Modal --}}
+<div class="modal fade" id="importCsvModal" tabindex="-1" aria-labelledby="importCsvModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ route('allocations.importCsv') }}" enctype="multipart/form-data">
+                @csrf
+                <input type="hidden" name="form_context" value="import_csv">
+                <input type="hidden" name="distribution_event_id" value="{{ $event->id }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importCsvModalLabel">Import Beneficiary Allocations (CSV)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="csv_file" class="form-label">CSV File <span class="text-danger">*</span></label>
+                        <input type="file"
+                               class="form-control @error('csv_file') is-invalid @enderror"
+                               id="csv_file"
+                               name="csv_file"
+                               accept=".csv,text/csv"
+                               required>
+                        @error('csv_file')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="small text-muted">
+                        Required CSV header:
+                        <code>beneficiary_id</code>,
+                        <code>{{ $event->isFinancial() ? 'amount' : 'quantity' }}</code>.
+                        Optional headers:
+                        <code>assistance_purpose_id</code>, <code>remarks</code>.
+                    </div>
+                    <div class="small text-muted mt-2">
+                        Rules: only active beneficiaries from {{ $event->barangay->name }}, no duplicate allocations, and financial rows must fit remaining budget.
+                    </div>
+                    <div class="mt-3">
+                        <a href="{{ route('allocations.importCsvTemplate', ['distribution_event_id' => $event->id]) }}"
+                           class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-download me-1"></i> Download CSV Template
+                        </a>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-upload me-1"></i> Import CSV
                     </button>
                 </div>
             </form>
@@ -970,8 +1041,12 @@ document.addEventListener('DOMContentLoaded', function () {
     })();
 
     // Re-open add modal on validation errors
-    @if($errors->any() && old('_token') && !old('_method'))
+    @if($errors->any() && old('form_context') === 'add_single')
         new bootstrap.Modal(document.getElementById('addBeneficiaryModal')).show();
+    @endif
+
+    @if($errors->any() && old('form_context') === 'import_csv')
+        new bootstrap.Modal(document.getElementById('importCsvModal')).show();
     @endif
 
     // Compliance form dependencies (financial events)

@@ -15,8 +15,14 @@ use App\Services\SemaphoreService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AllocationController extends Controller
 {
@@ -122,7 +128,7 @@ class AllocationController extends Controller
                     ]);
 
                     $this->audit->log(
-                        auth()->id(),
+                        (int) Auth::id(),
                         'created',
                         'allocations',
                         $allocation->id,
@@ -173,7 +179,7 @@ class AllocationController extends Controller
             ]);
 
             $this->audit->log(
-                auth()->id(),
+                (int) Auth::id(),
                 'created',
                 'allocations',
                 $allocation->id,
@@ -286,7 +292,7 @@ class AllocationController extends Controller
                     $seenInRequest[] = $beneficiary->id;
 
                     $this->audit->log(
-                        auth()->id(),
+                        (int) Auth::id(),
                         'created',
                         'allocations',
                         $allocation->id,
@@ -330,6 +336,297 @@ class AllocationController extends Controller
 
         return redirect()->route('distribution-events.show', $event)
             ->with('success', "{$allocated} allocated, {$skipped} skipped.");
+    }
+
+    public function downloadImportCsvTemplate(Request $request): StreamedResponse
+    {
+        $request->validate([
+            'distribution_event_id' => ['required', 'exists:distribution_events,id'],
+        ]);
+
+        $event = DistributionEvent::findOrFail($request->distribution_event_id);
+        $isFinancial = $event->isFinancial();
+
+        $filename = 'allocation-import-template-event-'.$event->id.'.csv';
+        $headers = ['beneficiary_id', $isFinancial ? 'amount' : 'quantity', 'assistance_purpose_id', 'remarks'];
+
+        return response()->streamDownload(function () use ($headers, $isFinancial): void {
+            $output = fopen('php://output', 'w');
+
+            if ($output === false) {
+                return;
+            }
+
+            fwrite($output, "\xEF\xBB\xBF");
+            fputcsv($output, $headers);
+
+            $sample = [
+                1001,
+                $isFinancial ? '1500.00' : '10.00',
+                '',
+                'Sample remarks',
+            ];
+
+            fputcsv($output, $sample);
+            fclose($output);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    public function downloadImportCsvErrorsReport(string $report): BinaryFileResponse
+    {
+        if (! preg_match('/^allocation-import-errors-event-\d+-\d{8}-\d{6}-[a-f0-9-]+\.csv$/i', $report)) {
+            abort(404);
+        }
+
+        $disk = Storage::disk('allocation_import_reports');
+
+        if (! $disk->exists($report)) {
+            abort(404, 'Import error report file not found.');
+        }
+
+        return response()->download(
+            $disk->path($report),
+            $report,
+            [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'X-Content-Type-Options' => 'nosniff',
+            ],
+        );
+    }
+
+    public function importCsv(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'distribution_event_id' => ['required', 'exists:distribution_events,id'],
+            'csv_file' => ['required', 'file', 'mimes:csv,txt', 'max:2048'],
+        ]);
+
+        $event = DistributionEvent::with(['barangay', 'resourceType'])->findOrFail($request->distribution_event_id);
+
+        if ($event->status === 'Completed') {
+            return redirect()->back()
+                ->with('error', 'Allocations cannot be imported for a completed event.');
+        }
+
+        try {
+            $rows = $this->parseBulkAllocationCsv($request->file('csv_file'), $event->isFinancial());
+        } catch (\RuntimeException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+
+        if (empty($rows)) {
+            return redirect()->back()->with('error', 'CSV file has no data rows to import.');
+        }
+
+        $incomingIds = collect($rows)
+            ->pluck('beneficiary_id')
+            ->filter(fn ($id) => (int) $id > 0)
+            ->unique()
+            ->values();
+
+        if ($incomingIds->isNotEmpty()) {
+            Allocation::onlyTrashed()
+                ->where('distribution_event_id', $event->id)
+                ->whereIn('beneficiary_id', $incomingIds)
+                ->forceDelete();
+        }
+
+        $existingIds = Allocation::where('distribution_event_id', $event->id)
+            ->pluck('beneficiary_id')
+            ->toArray();
+
+        $purposeIds = collect($rows)
+            ->pluck('assistance_purpose_id')
+            ->filter(fn ($id) => ! is_null($id))
+            ->unique()
+            ->values();
+
+        $validPurposeIds = $purposeIds->isEmpty()
+            ? []
+            : AssistancePurpose::whereIn('id', $purposeIds)->pluck('id')->toArray();
+
+        $allocated = 0;
+        $skipped = 0;
+        $rowErrors = [];
+        $smsQueue = [];
+
+        DB::transaction(function () use ($rows, $event, $existingIds, $validPurposeIds, &$allocated, &$skipped, &$rowErrors, &$smsQueue): void {
+            $seenInFile = [];
+
+            foreach ($rows as $row) {
+                $line = (int) $row['_line'];
+                $beneficiaryId = (int) $row['beneficiary_id'];
+
+                if ($beneficiaryId <= 0) {
+                    $skipped++;
+                    $rowErrors[] = $this->buildCsvImportErrorRow($row, 'beneficiary_id is invalid.');
+
+                    continue;
+                }
+
+                if (in_array($beneficiaryId, $seenInFile, true)) {
+                    $skipped++;
+                    $rowErrors[] = $this->buildCsvImportErrorRow($row, 'duplicate beneficiary_id in the same CSV.');
+
+                    continue;
+                }
+
+                if (in_array($beneficiaryId, $existingIds, true)) {
+                    $skipped++;
+                    $rowErrors[] = $this->buildCsvImportErrorRow($row, 'beneficiary is already allocated in this event.');
+
+                    continue;
+                }
+
+                $beneficiary = Beneficiary::find($beneficiaryId);
+
+                if (! $beneficiary) {
+                    $skipped++;
+                    $rowErrors[] = $this->buildCsvImportErrorRow($row, "beneficiary_id {$beneficiaryId} does not exist.");
+
+                    continue;
+                }
+
+                if ($beneficiary->barangay_id !== $event->barangay_id) {
+                    $skipped++;
+                    $rowErrors[] = $this->buildCsvImportErrorRow($row, 'beneficiary barangay does not match event barangay.');
+
+                    continue;
+                }
+
+                $assistancePurposeId = $row['assistance_purpose_id'];
+                if (! is_null($assistancePurposeId) && ! in_array((int) $assistancePurposeId, $validPurposeIds, true)) {
+                    $skipped++;
+                    $rowErrors[] = $this->buildCsvImportErrorRow($row, 'assistance_purpose_id is invalid.');
+
+                    continue;
+                }
+
+                if ($event->isFinancial()) {
+                    $amount = $row['amount'];
+
+                    if (! is_numeric($amount) || (float) $amount <= 0) {
+                        $skipped++;
+                        $rowErrors[] = $this->buildCsvImportErrorRow($row, 'amount must be a positive number.');
+
+                        continue;
+                    }
+
+                    try {
+                        $this->assertFinancialBudgetAvailable($event, (float) $amount);
+                    } catch (\RuntimeException $e) {
+                        $skipped++;
+                        $rowErrors[] = $this->buildCsvImportErrorRow($row, $e->getMessage());
+
+                        continue;
+                    }
+                } else {
+                    $quantity = $row['quantity'];
+
+                    if (! is_numeric($quantity) || (float) $quantity <= 0) {
+                        $skipped++;
+                        $rowErrors[] = $this->buildCsvImportErrorRow($row, 'quantity must be a positive number.');
+
+                        continue;
+                    }
+                }
+
+                $allocation = Allocation::create([
+                    'release_method' => 'event',
+                    'distribution_event_id' => $event->id,
+                    'beneficiary_id' => $beneficiary->id,
+                    'program_name_id' => $event->program_name_id,
+                    'resource_type_id' => $event->resource_type_id,
+                    'quantity' => $event->isFinancial() ? null : $row['quantity'],
+                    'amount' => $event->isFinancial() ? $row['amount'] : null,
+                    'assistance_purpose_id' => $assistancePurposeId,
+                    'remarks' => $row['remarks'],
+                ]);
+
+                $this->audit->log(
+                    (int) Auth::id(),
+                    'created',
+                    'allocations',
+                    $allocation->id,
+                    [],
+                    $allocation->toArray(),
+                );
+
+                $smsQueue[] = [
+                    'number' => $beneficiary->contact_number,
+                    'full_name' => $beneficiary->full_name,
+                    'quantity' => $allocation->quantity,
+                    'amount' => $allocation->amount,
+                    'beneficiary_id' => $beneficiary->id,
+                ];
+
+                $seenInFile[] = $beneficiaryId;
+                $allocated++;
+            }
+        });
+
+        foreach ($smsQueue as $sms) {
+            if (! $sms['number']) {
+                continue;
+            }
+
+            if ($event->isFinancial()) {
+                $message = "Hello {$sms['full_name']}, you have been allocated PHP {$sms['amount']} for {$event->resourceType->name} scheduled on {$event->distribution_date->format('M d, Y')} at Barangay {$event->barangay->name}. Please coordinate with your barangay official for claiming details.";
+            } else {
+                $message = "Hello {$sms['full_name']}, you have been allocated {$sms['quantity']} {$event->resourceType->unit} of {$event->resourceType->name} scheduled on {$event->distribution_date->format('M d, Y')} at Barangay {$event->barangay->name}. Please coordinate with your barangay official for details.";
+            }
+
+            $this->sms->sendSms(
+                $sms['number'],
+                $message,
+                $sms['beneficiary_id'],
+            );
+        }
+
+        $errorReportFile = ! empty($rowErrors)
+            ? $this->storeCsvImportErrorReport($event->id, $rowErrors)
+            : null;
+
+        $sampleIssues = collect($rowErrors)
+            ->pluck('error')
+            ->take(3)
+            ->implode(' | ');
+
+        if ($allocated === 0) {
+            $warning = "No allocations imported. {$skipped} row(s) skipped.";
+            if ($sampleIssues !== '') {
+                $warning .= " Sample issues: {$sampleIssues}";
+            }
+
+            $response = redirect()->route('distribution-events.show', $event)
+                ->with('warning', $warning);
+
+            if ($errorReportFile !== null) {
+                $response
+                    ->with('import_error_report_file', $errorReportFile)
+                    ->with('import_error_report_count', count($rowErrors));
+            }
+
+            return $response;
+        }
+
+        $message = "{$allocated} allocated, {$skipped} skipped via CSV import.";
+        if ($sampleIssues !== '') {
+            $message .= " Sample issues: {$sampleIssues}";
+        }
+
+        $response = redirect()->route('distribution-events.show', $event)
+            ->with('success', $message);
+
+        if ($errorReportFile !== null) {
+            $response
+                ->with('import_error_report_file', $errorReportFile)
+                ->with('import_error_report_count', count($rowErrors));
+        }
+
+        return $response;
     }
 
     public function update(Request $request, Allocation $allocation): RedirectResponse
@@ -376,7 +673,7 @@ class AllocationController extends Controller
                 ]);
 
                 $this->audit->log(
-                    auth()->id(),
+                    (int) Auth::id(),
                     'updated',
                     'allocations',
                     $allocation->id,
@@ -405,7 +702,7 @@ class AllocationController extends Controller
             $allocation->delete();
 
             $this->audit->log(
-                auth()->id(),
+                (int) Auth::id(),
                 'deleted',
                 'allocations',
                 $allocation->id,
@@ -537,7 +834,7 @@ class AllocationController extends Controller
                 }
 
                 $this->audit->log(
-                    auth()->id(),
+                    (int) Auth::id(),
                     'updated',
                     'allocations',
                     $allocation->id,
@@ -607,5 +904,156 @@ class AllocationController extends Controller
             $remaining = max($budget - (float) $otherAllocated, 0);
             throw new \RuntimeException('Allocation exceeds remaining event budget. Remaining budget: PHP '.number_format($remaining, 2).'.');
         }
+    }
+
+    private function parseBulkAllocationCsv(UploadedFile $csvFile, bool $isFinancial): array
+    {
+        $handle = fopen($csvFile->getRealPath(), 'rb');
+
+        if ($handle === false) {
+            throw new \RuntimeException('Unable to read the uploaded CSV file.');
+        }
+
+        try {
+            $header = fgetcsv($handle);
+
+            if ($header === false || count($header) === 0) {
+                throw new \RuntimeException('CSV file is empty.');
+            }
+
+            $header[0] = preg_replace('/^\xEF\xBB\xBF/', '', (string) $header[0]);
+            $normalizedHeaders = array_map(fn ($cell) => $this->normalizeCsvHeader((string) $cell), $header);
+
+            $requiredColumns = ['beneficiary_id', $isFinancial ? 'amount' : 'quantity'];
+            foreach ($requiredColumns as $requiredColumn) {
+                if (! in_array($requiredColumn, $normalizedHeaders, true)) {
+                    throw new \RuntimeException("CSV is missing required column: {$requiredColumn}.");
+                }
+            }
+
+            $rows = [];
+            $line = 1;
+
+            while (($data = fgetcsv($handle)) !== false) {
+                $line++;
+
+                if ($this->isCsvRowEmpty($data)) {
+                    continue;
+                }
+
+                $rowData = array_pad($data, count($normalizedHeaders), null);
+                $mapped = [];
+
+                foreach ($normalizedHeaders as $index => $column) {
+                    if ($column === '') {
+                        continue;
+                    }
+
+                    $mapped[$column] = isset($rowData[$index]) ? trim((string) $rowData[$index]) : null;
+                }
+
+                $rows[] = [
+                    '_line' => $line,
+                    'beneficiary_id' => isset($mapped['beneficiary_id']) ? (int) $mapped['beneficiary_id'] : 0,
+                    'amount' => isset($mapped['amount']) && $mapped['amount'] !== '' ? (float) $mapped['amount'] : null,
+                    'quantity' => isset($mapped['quantity']) && $mapped['quantity'] !== '' ? (float) $mapped['quantity'] : null,
+                    'assistance_purpose_id' => isset($mapped['assistance_purpose_id']) && $mapped['assistance_purpose_id'] !== ''
+                        ? (int) $mapped['assistance_purpose_id']
+                        : null,
+                    'remarks' => isset($mapped['remarks']) && $mapped['remarks'] !== ''
+                        ? mb_substr((string) $mapped['remarks'], 0, 500)
+                        : null,
+                ];
+            }
+
+            return $rows;
+        } finally {
+            fclose($handle);
+        }
+    }
+
+    private function normalizeCsvHeader(string $header): string
+    {
+        $normalized = strtolower(trim($header));
+        $normalized = str_replace([' ', '-'], '_', $normalized);
+
+        return preg_replace('/[^a-z0-9_]/', '', $normalized) ?? '';
+    }
+
+    private function isCsvRowEmpty(array $row): bool
+    {
+        foreach ($row as $cell) {
+            if (trim((string) $cell) !== '') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function buildCsvImportErrorRow(array $row, string $error): array
+    {
+        return [
+            'line' => (int) ($row['_line'] ?? 0),
+            'beneficiary_id' => $row['beneficiary_id'] ?? null,
+            'amount' => $row['amount'] ?? null,
+            'quantity' => $row['quantity'] ?? null,
+            'assistance_purpose_id' => $row['assistance_purpose_id'] ?? null,
+            'remarks' => $row['remarks'] ?? null,
+            'error' => $error,
+        ];
+    }
+
+    private function storeCsvImportErrorReport(int $eventId, array $rowErrors): ?string
+    {
+        $filename = sprintf(
+            'allocation-import-errors-event-%d-%s-%s.csv',
+            $eventId,
+            now()->format('Ymd-His'),
+            (string) Str::uuid(),
+        );
+
+        $stream = fopen('php://temp', 'w+');
+
+        if ($stream === false) {
+            return null;
+        }
+
+        fwrite($stream, "\xEF\xBB\xBF");
+        fputcsv($stream, [
+            'line',
+            'beneficiary_id',
+            'amount',
+            'quantity',
+            'assistance_purpose_id',
+            'remarks',
+            'error',
+        ]);
+
+        foreach ($rowErrors as $rowError) {
+            fputcsv($stream, [
+                $rowError['line'] ?? '',
+                $rowError['beneficiary_id'] ?? '',
+                $rowError['amount'] ?? '',
+                $rowError['quantity'] ?? '',
+                $rowError['assistance_purpose_id'] ?? '',
+                $rowError['remarks'] ?? '',
+                $rowError['error'] ?? '',
+            ]);
+        }
+
+        rewind($stream);
+        $contents = stream_get_contents($stream);
+        fclose($stream);
+
+        if (! is_string($contents) || $contents === '') {
+            return null;
+        }
+
+        if (! Storage::disk('allocation_import_reports')->put($filename, $contents)) {
+            return null;
+        }
+
+        return $filename;
     }
 }
