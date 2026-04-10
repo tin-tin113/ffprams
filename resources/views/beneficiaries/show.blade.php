@@ -214,6 +214,26 @@
                 </div>
             </div>
         </div>
+
+        @php
+            $customFieldValues = collect((array) ($beneficiary->custom_fields ?? []))
+                ->filter(fn ($value) => filled($value));
+        @endphp
+        @if($customFieldValues->isNotEmpty())
+            <div class="card-header bg-white fw-semibold border-top">
+                <i class="bi bi-sliders me-1"></i> Additional Configured Fields
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    @foreach($customFieldValues as $fieldGroup => $fieldValue)
+                        <div class="col-md-4">
+                            <div class="text-muted small">{{ Str::title(str_replace('_', ' ', $fieldGroup)) }}</div>
+                            <div class="fw-semibold">{{ $fieldValue }}</div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
     </div>
 
     {{-- Distribution History --}}

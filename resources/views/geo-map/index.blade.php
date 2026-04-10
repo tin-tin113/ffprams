@@ -309,7 +309,7 @@
     <div class="card border-0 shadow-sm mb-3">
         <div class="card-body py-2">
             <div class="row g-2 align-items-end">
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-3">
                     <label for="agencyFilter" class="form-label small fw-semibold mb-1">Agency</label>
                     <select id="agencyFilter" class="form-select form-select-sm">
                         <option value="">All Agencies</option>
@@ -318,7 +318,7 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-12 col-md-5">
+                <div class="col-12 col-md-3">
                     <label for="programFilter" class="form-label small fw-semibold mb-1">Program</label>
                     <select id="programFilter" class="form-select form-select-sm">
                         <option value="">All Programs</option>
@@ -327,13 +327,36 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-12 col-md-3">
+                <div class="col-12 col-md-2">
+                    <label for="statusFilter" class="form-label small fw-semibold mb-1">Status</label>
+                    <select id="statusFilter" class="form-select form-select-sm">
+                        <option value="">All Statuses</option>
+                        <option value="completed">Completed</option>
+                        <option value="ongoing">Ongoing</option>
+                        <option value="pending">Pending</option>
+                        <option value="none">No Distribution</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-2">
+                    <label for="sectorFilter" class="form-label small fw-semibold mb-1">Beneficiary Type</label>
+                    <select id="sectorFilter" class="form-select form-select-sm">
+                        <option value="">All Types</option>
+                        <option value="farmer">Farmer-related</option>
+                        <option value="fisherfolk">Fisherfolk-related</option>
+                        <option value="both_classified">Both-classified</option>
+                        <option value="with_direct">With Direct Assistance</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-2">
                     <button type="button" class="btn btn-sm btn-outline-secondary w-100" id="clearMapFilters">
                         <i class="bi bi-x-circle me-1"></i> Clear Filters
                     </button>
                 </div>
             </div>
-            <div class="small text-muted mt-2" id="mapLastUpdated">Last updated: --</div>
+            <div class="d-flex flex-column flex-md-row justify-content-between gap-1 mt-2">
+                <div class="small text-muted" id="mapFilterSummary">Showing: --</div>
+                <div class="small text-muted" id="mapLastUpdated">Last updated: --</div>
+            </div>
         </div>
     </div>
 
@@ -821,10 +844,13 @@ document.addEventListener('DOMContentLoaded', function () {
     var overlayItems = [];
     var agencyFilterEl = document.getElementById('agencyFilter');
     var programFilterEl = document.getElementById('programFilter');
+    var statusFilterEl = document.getElementById('statusFilter');
+    var sectorFilterEl = document.getElementById('sectorFilter');
     var clearMapFiltersBtn = document.getElementById('clearMapFilters');
     var mapSearchEl = document.getElementById('mapSearch');
     var mapErrorBanner = document.getElementById('mapErrorBanner');
     var mapLastUpdatedEl = document.getElementById('mapLastUpdated');
+    var mapFilterSummaryEl = document.getElementById('mapFilterSummary');
     var programOptions = Array.prototype.slice.call(programFilterEl.querySelectorAll('option'))
         .filter(function (option) {
             return option.value !== '';
@@ -894,6 +920,43 @@ document.addEventListener('DOMContentLoaded', function () {
         mapLastUpdatedEl.textContent = 'Last updated: ' + generatedAt.toLocaleString();
     }
 
+    function updateFilterSummary(visibleCount, totalCount) {
+        if (!mapFilterSummaryEl) return;
+
+        mapFilterSummaryEl.textContent = 'Showing: ' + visibleCount + ' of ' + totalCount + ' barangays';
+    }
+
+    function passesClientFilters(barangay) {
+        var statusFilter = statusFilterEl.value;
+        var sectorFilter = sectorFilterEl.value;
+
+        if (statusFilter && barangay.distribution_status !== statusFilter) {
+            return false;
+        }
+
+        if (!sectorFilter) {
+            return true;
+        }
+
+        if (sectorFilter === 'farmer') {
+            return Number(barangay.total_farmers || 0) > 0;
+        }
+
+        if (sectorFilter === 'fisherfolk') {
+            return Number(barangay.total_fisherfolk || 0) > 0;
+        }
+
+        if (sectorFilter === 'both_classified') {
+            return Number(barangay.total_both || 0) > 0;
+        }
+
+        if (sectorFilter === 'with_direct') {
+            return Number(barangay.total_direct_assistance || 0) > 0;
+        }
+
+        return true;
+    }
+
     function applySearchToMarkers() {
         var query = mapSearchEl.value.toLowerCase().trim();
 
@@ -960,25 +1023,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 var data = Array.isArray(payload) ? payload : (payload.data || []);
                 var meta = Array.isArray(payload) ? null : (payload.meta || null);
+                var filteredData = data.filter(passesClientFilters);
                 updateLastUpdated(meta);
+                updateFilterSummary(filteredData.length, data.length);
 
                 // Stats
-                document.getElementById('stat-total-barangays').textContent = data.length;
+                document.getElementById('stat-total-barangays').textContent = filteredData.length;
                 document.getElementById('stat-beneficiaries').textContent =
-                    data.reduce(function (sum, b) { return sum + b.total_beneficiaries; }, 0).toLocaleString();
+                    filteredData.reduce(function (sum, b) { return sum + b.total_beneficiaries; }, 0).toLocaleString();
                 document.getElementById('stat-completed').textContent =
-                    data.filter(function (b) { return b.distribution_status === 'completed'; }).length;
+                    filteredData.filter(function (b) { return b.distribution_status === 'completed'; }).length;
                 document.getElementById('stat-ongoing').textContent =
-                    data.filter(function (b) { return b.distribution_status === 'ongoing'; }).length;
+                    filteredData.filter(function (b) { return b.distribution_status === 'ongoing'; }).length;
                 document.getElementById('stat-pending').textContent =
-                    data.filter(function (b) { return b.distribution_status === 'pending'; }).length;
+                    filteredData.filter(function (b) { return b.distribution_status === 'pending'; }).length;
                 document.getElementById('stat-none').textContent =
-                    data.filter(function (b) { return b.distribution_status === 'none'; }).length;
+                    filteredData.filter(function (b) { return b.distribution_status === 'none'; }).length;
 
-                var totalCash = data.reduce(function (sum, b) { return sum + b.total_cash_disbursed; }, 0);
+                var totalCash = filteredData.reduce(function (sum, b) { return sum + b.total_cash_disbursed; }, 0);
                 document.getElementById('stat-cash-disbursed').textContent = formatPeso(totalCash);
 
-                var totalDirectAssistance = data.reduce(function (sum, b) {
+                var totalDirectAssistance = filteredData.reduce(function (sum, b) {
                     return sum + (b.total_direct_assistance || 0);
                 }, 0);
                 document.getElementById('stat-direct-assistance').textContent = totalDirectAssistance.toLocaleString();
@@ -986,7 +1051,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Markers
                 var markerBounds = [];
 
-                data.forEach(function (b) {
+                filteredData.forEach(function (b) {
                     if (!b.latitude || !b.longitude) return;
 
                     var latlng = [parseFloat(b.latitude), parseFloat(b.longitude)];
@@ -1078,10 +1143,20 @@ document.addEventListener('DOMContentLoaded', function () {
         loadGeoMapData();
     });
 
+    statusFilterEl.addEventListener('change', function () {
+        loadGeoMapData();
+    });
+
+    sectorFilterEl.addEventListener('change', function () {
+        loadGeoMapData();
+    });
+
     clearMapFiltersBtn.addEventListener('click', function () {
         agencyFilterEl.value = '';
         populateProgramFilter();
         programFilterEl.value = '';
+        statusFilterEl.value = '';
+        sectorFilterEl.value = '';
         mapSearchEl.value = '';
         loadGeoMapData();
     });

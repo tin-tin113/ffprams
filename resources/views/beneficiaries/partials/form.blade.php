@@ -2,6 +2,38 @@
 @php
     $editing = isset($beneficiary);
     $fo = $fieldOptions ?? [];
+    $fieldGroupSettings = $fieldGroupSettings ?? [];
+    $beneficiaryCustomFields = (array) (($beneficiary->custom_fields ?? []) ?: []);
+
+    $placementLabels = [
+        'personal_information' => 'Agency & Personal Information',
+        'farmer_information' => 'DA/RSBSA Information (Farmer)',
+        'fisherfolk_information' => 'BFAR/FishR Information (Fisherfolk)',
+        'dar_information' => 'DAR/ARB Information',
+    ];
+
+    $nativeFieldGroups = [
+        'civil_status',
+        'highest_education',
+        'id_type',
+        'farm_ownership',
+        'farm_type',
+        'fisherfolk_type',
+        'arb_classification',
+        'ownership_scheme',
+    ];
+
+    $getGroupSetting = function (string $fieldGroup, string $setting, $fallback = null) use ($fieldGroupSettings) {
+        if (! array_key_exists($fieldGroup, $fieldGroupSettings)) {
+            return $fallback;
+        }
+
+        return $fieldGroupSettings[$fieldGroup][$setting] ?? $fallback;
+    };
+
+    $isGroupRequired = function (string $fieldGroup, bool $fallback = false) use ($getGroupSetting) {
+        return (bool) $getGroupSetting($fieldGroup, 'is_required', $fallback);
+    };
 
     $normalizeFieldOptions = function ($items, array $fallback) {
         if (empty($items) || (is_countable($items) && count($items) === 0)) {
@@ -14,6 +46,38 @@
             return (object) ['value' => $value, 'label' => $label];
         });
     };
+
+    $customFieldGroups = collect($fo)
+        ->filter(fn ($items, $group) => ! in_array($group, $nativeFieldGroups, true))
+        ->map(function ($items, $group) use ($normalizeFieldOptions, $getGroupSetting) {
+            $placement = $getGroupSetting($group, 'placement_section', 'personal_information');
+
+            return [
+                'field_group' => $group,
+                'label' => Str::title(str_replace('_', ' ', $group)),
+                'placement_section' => $placement,
+                'placement_label' => [
+                    'personal_information' => 'Agency & Personal Information',
+                    'farmer_information' => 'DA/RSBSA Information (Farmer)',
+                    'fisherfolk_information' => 'BFAR/FishR Information (Fisherfolk)',
+                    'dar_information' => 'DAR/ARB Information',
+                ][$placement] ?? Str::title(str_replace('_', ' ', $placement)),
+                'is_required' => (bool) $getGroupSetting($group, 'is_required', false),
+                'options' => $normalizeFieldOptions($items, []),
+            ];
+        })
+        ->filter(fn ($config) => $config['options']->isNotEmpty())
+        ->sortBy('label')
+        ->groupBy('placement_section');
+
+    $civilStatusRequired = $isGroupRequired('civil_status', true);
+    $highestEducationRequired = $isGroupRequired('highest_education', false);
+    $idTypeRequired = $isGroupRequired('id_type', false);
+    $farmOwnershipRequired = $isGroupRequired('farm_ownership', true);
+    $farmTypeRequired = $isGroupRequired('farm_type', true);
+    $fisherfolkTypeRequired = $isGroupRequired('fisherfolk_type', true);
+    $arbClassificationRequired = $isGroupRequired('arb_classification', true);
+    $ownershipSchemeRequired = $isGroupRequired('ownership_scheme', true);
 
     $civilStatusOptions = $normalizeFieldOptions($fo['civil_status'] ?? [], ['Single', 'Married', 'Widowed', 'Separated']);
     $highestEducationOptions = $normalizeFieldOptions($fo['highest_education'] ?? [], [
@@ -194,8 +258,8 @@
 
             {{-- Civil Status --}}
             <div class="col-md-3">
-                <label for="civil_status" class="form-label">Civil Status <span class="text-danger">*</span></label>
-                <select class="form-select @error('civil_status') is-invalid @enderror" id="civil_status" name="civil_status" required>
+                <label for="civil_status" class="form-label">Civil Status {!! $civilStatusRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
+                <select class="form-select @error('civil_status') is-invalid @enderror" id="civil_status" name="civil_status" {{ $civilStatusRequired ? 'required' : '' }}>
                     <option value="" disabled {{ old('civil_status', $beneficiary->civil_status ?? '') === '' ? 'selected' : '' }}>Select...</option>
                     @foreach($civilStatusOptions as $opt)
                         <option value="{{ $opt->value }}" {{ old('civil_status', $beneficiary->civil_status ?? '') === $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
@@ -206,8 +270,8 @@
 
             {{-- Highest Education --}}
             <div class="col-md-3">
-                <label for="highest_education" class="form-label">Highest Education</label>
-                <select class="form-select @error('highest_education') is-invalid @enderror" id="highest_education" name="highest_education">
+                <label for="highest_education" class="form-label">Highest Education {!! $highestEducationRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
+                <select class="form-select @error('highest_education') is-invalid @enderror" id="highest_education" name="highest_education" {{ $highestEducationRequired ? 'required' : '' }}>
                     <option value="" {{ old('highest_education', $beneficiary->highest_education ?? '') === '' ? 'selected' : '' }}>Select...</option>
                     @foreach($highestEducationOptions as $opt)
                         <option value="{{ $opt->value }}" {{ old('highest_education', $beneficiary->highest_education ?? '') === $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
@@ -218,8 +282,8 @@
 
             {{-- Government ID Type --}}
             <div class="col-md-3">
-                <label for="id_type" class="form-label">Government ID Type</label>
-                <select class="form-select @error('id_type') is-invalid @enderror" id="id_type" name="id_type">
+                <label for="id_type" class="form-label">Government ID Type {!! $idTypeRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
+                <select class="form-select @error('id_type') is-invalid @enderror" id="id_type" name="id_type" {{ $idTypeRequired ? 'required' : '' }}>
                     <option value="" {{ old('id_type', $beneficiary->id_type ?? '') === '' ? 'selected' : '' }}>Select...</option>
                     @foreach($idTypeOptions as $opt)
                         <option value="{{ $opt->value }}" {{ old('id_type', $beneficiary->id_type ?? '') === $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
@@ -245,6 +309,34 @@
                        value="{{ old('registered_at', isset($beneficiary) ? $beneficiary->registered_at->format('Y-m-d') : '') }}" required>
                 @error('registered_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
+
+            @foreach($customFieldGroups->get('personal_information', collect()) as $customField)
+                @php
+                    $customGroup = $customField['field_group'];
+                    $customFieldName = 'custom_fields.' . $customGroup;
+                    $customFieldValue = old($customFieldName, $beneficiaryCustomFields[$customGroup] ?? '');
+                @endphp
+                <div class="col-md-3">
+                    <label for="custom_{{ $customGroup }}" class="form-label">
+                        {{ $customField['label'] }}
+                        @if($customField['is_required'])
+                            <span class="text-danger">*</span>
+                        @endif
+                    </label>
+                    <select class="form-select @error($customFieldName) is-invalid @enderror"
+                            id="custom_{{ $customGroup }}"
+                            name="custom_fields[{{ $customGroup }}]"
+                            data-custom-required="{{ $customField['is_required'] ? '1' : '0' }}"
+                            data-custom-placement="personal_information"
+                            {{ $customField['is_required'] ? 'required' : '' }}>
+                        <option value="">Select...</option>
+                        @foreach($customField['options'] as $opt)
+                            <option value="{{ $opt->value }}" {{ (string) $customFieldValue === (string) $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
+                        @endforeach
+                    </select>
+                    @error($customFieldName)<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+            @endforeach
 
             <input type="hidden" name="photo_path" value="{{ old('photo_path', $beneficiary->photo_path ?? '') }}">
         </div>
@@ -290,7 +382,7 @@
                 <small class="text-muted">Can be added after registration</small>
             </div>
             <div class="col-md-4">
-                <label for="farm_ownership" class="form-label">Land Ownership / Tenure <span class="text-danger">*</span></label>
+                <label for="farm_ownership" class="form-label">Land Ownership / Tenure {!! $farmOwnershipRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('farm_ownership') is-invalid @enderror" id="farm_ownership" name="farm_ownership">
                     <option value="" disabled {{ old('farm_ownership', $beneficiary->farm_ownership ?? '') === '' ? 'selected' : '' }}>Select...</option>
                     @foreach($farmOwnershipOptions as $opt)
@@ -314,7 +406,7 @@
                 @error('primary_commodity')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             <div class="col-md-6">
-                <label for="farm_type" class="form-label">Farm Type / Irrigation <span class="text-danger">*</span></label>
+                <label for="farm_type" class="form-label">Farm Type / Irrigation {!! $farmTypeRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('farm_type') is-invalid @enderror" id="farm_type" name="farm_type">
                     <option value="" disabled {{ old('farm_type', $beneficiary->farm_type ?? '') === '' ? 'selected' : '' }}>Select...</option>
                     @foreach($farmTypeOptions as $opt)
@@ -330,6 +422,33 @@
                        value="{{ old('organization_membership', $beneficiary->organization_membership ?? '') }}">
                 @error('organization_membership')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
+
+            @foreach($customFieldGroups->get('farmer_information', collect()) as $customField)
+                @php
+                    $customGroup = $customField['field_group'];
+                    $customFieldName = 'custom_fields.' . $customGroup;
+                    $customFieldValue = old($customFieldName, $beneficiaryCustomFields[$customGroup] ?? '');
+                @endphp
+                <div class="col-md-6">
+                    <label for="custom_{{ $customGroup }}" class="form-label">
+                        {{ $customField['label'] }}
+                        @if($customField['is_required'])
+                            <span class="text-danger">*</span>
+                        @endif
+                    </label>
+                    <select class="form-select @error($customFieldName) is-invalid @enderror"
+                            id="custom_{{ $customGroup }}"
+                            name="custom_fields[{{ $customGroup }}]"
+                            data-custom-required="{{ $customField['is_required'] ? '1' : '0' }}"
+                            data-custom-placement="farmer_information">
+                        <option value="">Select...</option>
+                        @foreach($customField['options'] as $opt)
+                            <option value="{{ $opt->value }}" {{ (string) $customFieldValue === (string) $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
+                        @endforeach
+                    </select>
+                    @error($customFieldName)<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+            @endforeach
         </div>
     </div>
 </div>
@@ -347,7 +466,7 @@
                 <small class="text-muted">Can be added after registration</small>
             </div>
             <div class="col-md-4">
-                <label for="fisherfolk_type" class="form-label">Type of Fishing Activity <span class="text-danger">*</span></label>
+                <label for="fisherfolk_type" class="form-label">Type of Fishing Activity {!! $fisherfolkTypeRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('fisherfolk_type') is-invalid @enderror" id="fisherfolk_type" name="fisherfolk_type">
                     <option value="" disabled {{ old('fisherfolk_type', $beneficiary->fisherfolk_type ?? '') === '' ? 'selected' : '' }}>Select...</option>
                     @foreach($fisherfolkTypeOptions as $opt)
@@ -388,6 +507,33 @@
                 <input type="number" class="form-control" id="fishing_vessel_tonnage" name="fishing_vessel_tonnage"
                        value="{{ old('fishing_vessel_tonnage', $beneficiary->fishing_vessel_tonnage ?? '') }}" step="0.01" min="0">
             </div>
+
+            @foreach($customFieldGroups->get('fisherfolk_information', collect()) as $customField)
+                @php
+                    $customGroup = $customField['field_group'];
+                    $customFieldName = 'custom_fields.' . $customGroup;
+                    $customFieldValue = old($customFieldName, $beneficiaryCustomFields[$customGroup] ?? '');
+                @endphp
+                <div class="col-md-4">
+                    <label for="custom_{{ $customGroup }}" class="form-label">
+                        {{ $customField['label'] }}
+                        @if($customField['is_required'])
+                            <span class="text-danger">*</span>
+                        @endif
+                    </label>
+                    <select class="form-select @error($customFieldName) is-invalid @enderror"
+                            id="custom_{{ $customGroup }}"
+                            name="custom_fields[{{ $customGroup }}]"
+                            data-custom-required="{{ $customField['is_required'] ? '1' : '0' }}"
+                            data-custom-placement="fisherfolk_information">
+                        <option value="">Select...</option>
+                        @foreach($customField['options'] as $opt)
+                            <option value="{{ $opt->value }}" {{ (string) $customFieldValue === (string) $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
+                        @endforeach
+                    </select>
+                    @error($customFieldName)<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+            @endforeach
         </div>
     </div>
 </div>
@@ -411,7 +557,7 @@
                 @error('cloa_ep_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             <div class="col-md-4">
-                <label for="arb_classification" class="form-label">ARB Classification <span class="text-danger">*</span></label>
+                <label for="arb_classification" class="form-label">ARB Classification {!! $arbClassificationRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('arb_classification') is-invalid @enderror" id="arb_classification" name="arb_classification">
                     <option value="" disabled {{ old('arb_classification', $beneficiary->arb_classification ?? '') === '' ? 'selected' : '' }}>Select...</option>
                     @foreach($arbClassificationOptions as $opt)
@@ -421,7 +567,7 @@
                 @error('arb_classification')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             <div class="col-md-4">
-                <label for="ownership_scheme" class="form-label">Ownership Scheme <span class="text-danger">*</span></label>
+                <label for="ownership_scheme" class="form-label">Ownership Scheme {!! $ownershipSchemeRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('ownership_scheme') is-invalid @enderror" id="ownership_scheme" name="ownership_scheme">
                     <option value="" disabled {{ old('ownership_scheme', $beneficiary->ownership_scheme ?? '') === '' ? 'selected' : '' }}>Select...</option>
                     @foreach($ownershipSchemeOptions as $opt)
@@ -450,6 +596,33 @@
                        value="{{ old('barc_membership_status', $beneficiary->barc_membership_status ?? '') }}">
                 @error('barc_membership_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
+
+            @foreach($customFieldGroups->get('dar_information', collect()) as $customField)
+                @php
+                    $customGroup = $customField['field_group'];
+                    $customFieldName = 'custom_fields.' . $customGroup;
+                    $customFieldValue = old($customFieldName, $beneficiaryCustomFields[$customGroup] ?? '');
+                @endphp
+                <div class="col-md-6">
+                    <label for="custom_{{ $customGroup }}" class="form-label">
+                        {{ $customField['label'] }}
+                        @if($customField['is_required'])
+                            <span class="text-danger">*</span>
+                        @endif
+                    </label>
+                    <select class="form-select @error($customFieldName) is-invalid @enderror"
+                            id="custom_{{ $customGroup }}"
+                            name="custom_fields[{{ $customGroup }}]"
+                            data-custom-required="{{ $customField['is_required'] ? '1' : '0' }}"
+                            data-custom-placement="dar_information">
+                        <option value="">Select...</option>
+                        @foreach($customField['options'] as $opt)
+                            <option value="{{ $opt->value }}" {{ (string) $customFieldValue === (string) $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
+                        @endforeach
+                    </select>
+                    @error($customFieldName)<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+            @endforeach
         </div>
     </div>
 </div>
@@ -513,6 +686,24 @@ document.addEventListener('DOMContentLoaded', function () {
         farmerSection.style.display = showFarmer ? '' : 'none';
         fisherfolkSection.style.display = showFisherfolk ? '' : 'none';
         darSection.style.display = showDar ? '' : 'none';
+
+        document.querySelectorAll('select[data-custom-required]').forEach((field) => {
+            const placement = field.dataset.customPlacement || 'personal_information';
+            const configuredRequired = field.dataset.customRequired === '1';
+
+            if (!configuredRequired) {
+                field.required = false;
+                return;
+            }
+
+            const shouldRequire =
+                placement === 'personal_information'
+                || (placement === 'farmer_information' && showFarmer)
+                || (placement === 'fisherfolk_information' && showFisherfolk)
+                || (placement === 'dar_information' && showDar);
+
+            field.required = shouldRequire;
+        });
     }
 
     function toggleAssociation() {

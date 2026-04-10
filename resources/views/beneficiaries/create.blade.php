@@ -100,6 +100,13 @@ document.addEventListener('DOMContentLoaded', function () {
     function setFieldError(fieldName, message) {
         var selector = '[name="' + fieldName.replace(/"/g, '\\"') + '"]';
         var elements = form.querySelectorAll(selector);
+
+        if (!elements.length && fieldName.indexOf('.') !== -1) {
+            var bracketName = fieldName.replace(/\.([^\.]+)/g, '[$1]');
+            selector = '[name="' + bracketName.replace(/"/g, '\\"') + '"]';
+            elements = form.querySelectorAll(selector);
+        }
+
         if (!elements.length) {
             return;
         }

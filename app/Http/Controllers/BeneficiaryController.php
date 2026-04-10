@@ -61,8 +61,9 @@ class BeneficiaryController extends Controller
         $barangays = Barangay::orderBy('name')->get();
         $agencies = Agency::active()->orderBy('name')->get();
         $fieldOptions = $this->getFormFieldOptions();
+        $fieldGroupSettings = $this->getFieldGroupSettings();
 
-        return view('beneficiaries.create', compact('barangays', 'agencies', 'fieldOptions'));
+        return view('beneficiaries.create', compact('barangays', 'agencies', 'fieldOptions', 'fieldGroupSettings'));
     }
 
     /**
@@ -176,8 +177,9 @@ class BeneficiaryController extends Controller
         $barangays = Barangay::orderBy('name')->get();
         $agencies = Agency::active()->orderBy('name')->get();
         $fieldOptions = $this->getFormFieldOptions();
+        $fieldGroupSettings = $this->getFieldGroupSettings();
 
-        return view('beneficiaries.edit', compact('beneficiary', 'barangays', 'agencies', 'fieldOptions'));
+        return view('beneficiaries.edit', compact('beneficiary', 'barangays', 'agencies', 'fieldOptions', 'fieldGroupSettings'));
     }
 
     /**
@@ -311,7 +313,7 @@ class BeneficiaryController extends Controller
 
     private function getFormFieldOptions(): array
     {
-        $fields = [
+        $coreFields = [
             'farm_type',
             'farm_ownership',
             'fisherfolk_type',
@@ -321,18 +323,46 @@ class BeneficiaryController extends Controller
             'arb_classification',
             'ownership_scheme',
         ];
-        $options = [];
 
-        foreach ($fields as $field) {
-            $dbOptions = FormFieldOption::optionsFor($field);
+        $allGroups = FormFieldOption::query()
+            ->active()
+            ->orderBy('field_group')
+            ->orderBy('sort_order')
+            ->orderBy('label')
+            ->get()
+            ->groupBy('field_group');
 
-            if ($dbOptions->isEmpty()) {
+        $options = $allGroups
+            ->map(fn ($groupOptions) => $groupOptions->values())
+            ->toArray();
+
+        foreach ($coreFields as $field) {
+            if (! array_key_exists($field, $options) || empty($options[$field])) {
                 \Log::warning("FormFieldOption group is missing: {$field}. Please ensure this field group is configured in System Settings > Form Fields.");
-            }
 
-            $options[$field] = $dbOptions;
+                $options[$field] = collect();
+            }
         }
 
         return $options;
+    }
+
+    private function getFieldGroupSettings(): array
+    {
+        return FormFieldOption::query()
+            ->active()
+            ->orderBy('field_group')
+            ->orderByDesc('id')
+            ->get(['field_group', 'placement_section', 'is_required'])
+            ->groupBy('field_group')
+            ->map(function ($groupRows) {
+                $first = $groupRows->first();
+
+                return [
+                    'placement_section' => $first?->placement_section ?? FormFieldOption::PLACEMENT_PERSONAL_INFORMATION,
+                    'is_required' => (bool) ($first?->is_required ?? false),
+                ];
+            })
+            ->toArray();
     }
 }

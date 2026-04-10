@@ -9,6 +9,17 @@ use Illuminate\Validation\Rule;
 
 class BeneficiaryRequest extends FormRequest
 {
+    private const NATIVE_FIELD_GROUPS = [
+        'civil_status',
+        'highest_education',
+        'id_type',
+        'farm_ownership',
+        'farm_type',
+        'fisherfolk_type',
+        'arb_classification',
+        'ownership_scheme',
+    ];
+
     protected function prepareForValidation(): void
     {
         $first = trim((string) $this->input('first_name', ''));
@@ -38,6 +49,7 @@ class BeneficiaryRequest extends FormRequest
         $agencyId = $this->input('agency_id');
         $agency = $agencyId ? Agency::find($agencyId) : null;
         $agencyName = $agency?->name ? strtoupper($agency->name) : null;
+        $fieldGroupSettings = $this->fieldGroupSettings();
 
         $civilStatusValues = $this->allowedFieldValues('civil_status', ['Single', 'Married', 'Widowed', 'Separated']);
         $highestEducationValues = $this->allowedFieldValues('highest_education', [
@@ -72,6 +84,15 @@ class BeneficiaryRequest extends FormRequest
         ]);
         $ownershipSchemeValues = $this->allowedFieldValues('ownership_scheme', ['Individual', 'Collective', 'Cooperative']);
 
+        $civilStatusRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'civil_status', true);
+        $highestEducationRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'highest_education', false);
+        $idTypeRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'id_type', false);
+        $farmOwnershipRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'farm_ownership', true);
+        $farmTypeRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'farm_type', true);
+        $fisherfolkTypeRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'fisherfolk_type', true);
+        $arbClassificationRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'arb_classification', true);
+        $ownershipSchemeRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'ownership_scheme', true);
+
         $rules = [
             // Agency source (determines which fields are required)
             'agency_id'        => ['required', 'exists:agencies,id'],
@@ -88,12 +109,13 @@ class BeneficiaryRequest extends FormRequest
             'barangay_id'      => ['required', 'exists:barangays,id'],
             'contact_number'   => ['required', 'string', 'regex:/^09\d{9}$/'],
             'photo_path'       => ['nullable', 'string', 'max:255'],
-            'civil_status'     => ['required', Rule::in($civilStatusValues)],
-            'highest_education'=> ['nullable', Rule::in($highestEducationValues)],
-            'id_type'          => ['nullable', Rule::in($idTypeValues)],
+            'civil_status'     => [$civilStatusRequired ? 'required' : 'nullable', Rule::in($civilStatusValues)],
+            'highest_education'=> [$highestEducationRequired ? 'required' : 'nullable', Rule::in($highestEducationValues)],
+            'id_type'          => [$idTypeRequired ? 'required' : 'nullable', Rule::in($idTypeValues)],
             'status'           => ['required', Rule::in(['Active', 'Inactive'])],
             'registered_at'    => ['required', 'date', 'before_or_equal:today'],
             'classification'   => ['required', Rule::in(['Farmer', 'Fisherfolk', 'Both'])],
+            'custom_fields'    => ['nullable', 'array'],
 
             // Association membership (common to all)
             'association_member' => ['required', 'boolean'],
@@ -106,10 +128,10 @@ class BeneficiaryRequest extends FormRequest
 
         if ($isDa || $isFarmer) {
             $rules['rsbsa_number'] = ['nullable', 'string', 'max:50', Rule::unique('beneficiaries', 'rsbsa_number')->ignore($beneficiaryId)];
-            $rules['farm_ownership'] = ['required', Rule::in($farmOwnershipValues)];
+            $rules['farm_ownership'] = [$farmOwnershipRequired ? 'required' : 'nullable', Rule::in($farmOwnershipValues)];
             $rules['farm_size_hectares'] = ['required', 'numeric', 'min:0.01'];
             $rules['primary_commodity'] = ['required', 'string', 'max:255'];
-            $rules['farm_type'] = ['required', Rule::in($farmTypeValues)];
+            $rules['farm_type'] = [$farmTypeRequired ? 'required' : 'nullable', Rule::in($farmTypeValues)];
             $rules['organization_membership'] = ['nullable', 'string', 'max:255'];
         } else {
             $rules['rsbsa_number'] = ['nullable', 'string', 'max:50'];
@@ -126,7 +148,7 @@ class BeneficiaryRequest extends FormRequest
 
         if ($isBfar || $isFisherfolk) {
             $rules['fishr_number'] = ['nullable', 'string', 'max:50', Rule::unique('beneficiaries', 'fishr_number')->ignore($beneficiaryId)];
-            $rules['fisherfolk_type'] = ['required', Rule::in($fisherfolkTypeValues)];
+            $rules['fisherfolk_type'] = [$fisherfolkTypeRequired ? 'required' : 'nullable', Rule::in($fisherfolkTypeValues)];
             $rules['main_fishing_gear'] = ['nullable', 'string', 'max:255'];
             $rules['has_fishing_vessel'] = ['nullable', 'boolean'];
             $rules['fishing_vessel_type'] = ['nullable', 'string', 'max:255'];
@@ -148,10 +170,10 @@ class BeneficiaryRequest extends FormRequest
         if ($isDar) {
             // CLOA/EP number is REQUIRED for DAR beneficiaries per reference document
             $rules['cloa_ep_number'] = ['required', 'string', 'max:100', Rule::unique('beneficiaries', 'cloa_ep_number')->ignore($beneficiaryId)];
-            $rules['arb_classification'] = ['required', Rule::in($arbClassificationValues)];
+            $rules['arb_classification'] = [$arbClassificationRequired ? 'required' : 'nullable', Rule::in($arbClassificationValues)];
             $rules['landholding_description'] = ['required', 'string', 'max:1000'];
             $rules['land_area_awarded_hectares'] = ['required', 'numeric', 'min:0.01'];
-            $rules['ownership_scheme'] = ['required', Rule::in($ownershipSchemeValues)];
+            $rules['ownership_scheme'] = [$ownershipSchemeRequired ? 'required' : 'nullable', Rule::in($ownershipSchemeValues)];
             $rules['barc_membership_status'] = ['nullable', 'string', 'max:100'];
         } else {
             $rules['cloa_ep_number'] = ['nullable', 'string', 'max:100'];
@@ -160,6 +182,36 @@ class BeneficiaryRequest extends FormRequest
             $rules['land_area_awarded_hectares'] = ['nullable', 'numeric', 'min:0.01'];
             $rules['ownership_scheme'] = ['nullable', Rule::in($ownershipSchemeValues)];
             $rules['barc_membership_status'] = ['nullable', 'string', 'max:100'];
+        }
+
+        $customGroupSettings = collect($fieldGroupSettings)
+            ->except(self::NATIVE_FIELD_GROUPS)
+            ->all();
+
+        foreach ($customGroupSettings as $fieldGroup => $groupSetting) {
+            $allowedValues = $this->allowedFieldValues($fieldGroup, []);
+
+            if (empty($allowedValues)) {
+                continue;
+            }
+
+            $placement = $groupSetting['placement_section'] ?? FormFieldOption::PLACEMENT_PERSONAL_INFORMATION;
+
+            $isVisible = $this->isPlacementVisible(
+                $placement,
+                $isDa,
+                $isFarmer,
+                $isBfar,
+                $isFisherfolk,
+                $isDar,
+            );
+
+            $isRequired = (bool) ($groupSetting['is_required'] ?? false) && $isVisible;
+
+            $rules['custom_fields.' . $fieldGroup] = [
+                $isRequired ? 'required' : 'nullable',
+                Rule::in($allowedValues),
+            ];
         }
 
         return $rules;
@@ -197,5 +249,49 @@ class BeneficiaryRequest extends FormRequest
         }
 
         return array_values(array_unique(array_merge($fallback, $dbValues)));
+    }
+
+    private function fieldGroupSettings(): array
+    {
+        return FormFieldOption::query()
+            ->where('is_active', true)
+            ->orderBy('field_group')
+            ->orderByDesc('id')
+            ->get(['field_group', 'placement_section', 'is_required'])
+            ->groupBy('field_group')
+            ->map(function ($rows) {
+                $first = $rows->first();
+
+                return [
+                    'placement_section' => $first?->placement_section ?? FormFieldOption::PLACEMENT_PERSONAL_INFORMATION,
+                    'is_required' => (bool) ($first?->is_required ?? false),
+                ];
+            })
+            ->toArray();
+    }
+
+    private function isFieldGroupRequired(array $settings, string $fieldGroup, bool $fallback): bool
+    {
+        if (! array_key_exists($fieldGroup, $settings)) {
+            return $fallback;
+        }
+
+        return (bool) ($settings[$fieldGroup]['is_required'] ?? $fallback);
+    }
+
+    private function isPlacementVisible(
+        string $placement,
+        bool $isDa,
+        bool $isFarmer,
+        bool $isBfar,
+        bool $isFisherfolk,
+        bool $isDar,
+    ): bool {
+        return match ($placement) {
+            FormFieldOption::PLACEMENT_FARMER_INFORMATION => $isDa || $isFarmer,
+            FormFieldOption::PLACEMENT_FISHERFOLK_INFORMATION => $isBfar || $isFisherfolk,
+            FormFieldOption::PLACEMENT_DAR_INFORMATION => $isDar,
+            default => true,
+        };
     }
 }

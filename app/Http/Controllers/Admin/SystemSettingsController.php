@@ -13,11 +13,15 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class SystemSettingsController extends Controller
 {
+    private const ORDER_MODES = ['auto_end', 'start', 'end', 'before', 'after', 'custom'];
+
     public function __construct(
         private AuditLogService $audit,
     ) {}
@@ -67,7 +71,19 @@ class SystemSettingsController extends Controller
     {
         $this->validateFormFieldOptions();
         $formFields = FormFieldOption::orderBy('field_group')->orderBy('sort_order')->orderBy('label')->get()->groupBy('field_group');
-        return view('admin.settings.form-fields.index', compact('formFields'));
+
+        $fieldGroupMeta = $formFields->map(function ($options) {
+            $first = $options->first();
+
+            return [
+                'placement_section' => $first?->placement_section ?? FormFieldOption::PLACEMENT_PERSONAL_INFORMATION,
+                'is_required' => (bool) ($first?->is_required ?? false),
+            ];
+        });
+
+        $placementLabels = FormFieldOption::placementLabels();
+
+        return view('admin.settings.form-fields.index', compact('formFields', 'fieldGroupMeta', 'placementLabels'));
     }
 
     // ── API List Methods ────────────────────────────────────
@@ -450,11 +466,33 @@ class SystemSettingsController extends Controller
     {
         $validated = $request->validate([
             'field_group' => ['required', 'string', 'max:100'],
+            'placement_section' => ['required', Rule::in(FormFieldOption::allowedPlacements())],
             'label'      => ['required', 'string', 'max:255'],
             'value'      => ['required', 'string', 'max:255'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
+            'order_mode' => ['nullable', Rule::in(self::ORDER_MODES)],
+            'position_target_id' => ['nullable', 'integer', 'exists:form_field_options,id'],
+            'is_required' => ['boolean'],
             'is_active'  => ['boolean'],
         ]);
+
+        $validated['field_group'] = $this->normalizeKey($validated['field_group']);
+        $validated['value'] = $this->normalizeKey($validated['value']);
+
+        if ($validated['field_group'] === '' || $validated['value'] === '') {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'value' => ['Value and field group must contain letters or numbers.'],
+                ],
+            ], 422);
+        }
+
+        $resolvedOrderMode = $this->resolveOrderMode(
+            $validated['order_mode'] ?? null,
+            $validated['sort_order'] ?? null,
+            false,
+        );
 
         // Ensure unique field_group + value pair
         $exists = FormFieldOption::where('field_group', $validated['field_group'])
@@ -468,20 +506,33 @@ class SystemSettingsController extends Controller
             ], 422);
         }
 
-        $option = DB::transaction(function () use ($validated) {
-            // Auto-assign sort_order if not provided
-            if (empty($validated['sort_order'])) {
-                $maxOrder = FormFieldOption::where('field_group', $validated['field_group'])->max('sort_order');
-                $validated['sort_order'] = ($maxOrder ?? 0) + 10;
-            }
+        $option = DB::transaction(function () use ($validated, $resolvedOrderMode) {
+            $resolvedSortOrder = $this->resolveSortOrder(
+                $validated['field_group'],
+                null,
+                $resolvedOrderMode,
+                $validated['position_target_id'] ?? null,
+                $validated['sort_order'] ?? null,
+            );
+
+            // Keep group-level configuration aligned across all options in the same group.
+            FormFieldOption::where('field_group', $validated['field_group'])->update([
+                'placement_section' => $validated['placement_section'],
+                'is_required' => $validated['is_required'] ?? false,
+            ]);
 
             $option = FormFieldOption::create([
                 'field_group' => $validated['field_group'],
+                'placement_section' => $validated['placement_section'],
                 'label'      => $validated['label'],
                 'value'      => $validated['value'],
-                'sort_order' => $validated['sort_order'],
+                'sort_order' => $resolvedSortOrder,
+                'is_required' => $validated['is_required'] ?? false,
                 'is_active'  => $validated['is_active'] ?? true,
             ]);
+
+            $this->normalizeGroupSortOrder($validated['field_group']);
+            $option->refresh();
 
             $this->audit->log(
                 auth()->id(), 'created', 'form_field_options', $option->id,
@@ -497,11 +548,32 @@ class SystemSettingsController extends Controller
     public function updateFormField(Request $request, FormFieldOption $formFieldOption): JsonResponse
     {
         $validated = $request->validate([
+            'placement_section' => ['required', Rule::in(FormFieldOption::allowedPlacements())],
             'label'      => ['required', 'string', 'max:255'],
             'value'      => ['required', 'string', 'max:255'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
+            'order_mode' => ['nullable', Rule::in(self::ORDER_MODES)],
+            'position_target_id' => ['nullable', 'integer', 'exists:form_field_options,id'],
+            'is_required' => ['boolean'],
             'is_active'  => ['boolean'],
         ]);
+
+        $validated['value'] = $this->normalizeKey($validated['value']);
+
+        if ($validated['value'] === '') {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'value' => ['Value must contain letters or numbers.'],
+                ],
+            ], 422);
+        }
+
+        $orderMode = $this->resolveOrderMode(
+            $validated['order_mode'] ?? null,
+            $validated['sort_order'] ?? null,
+            true,
+        );
 
         // Ensure unique field_group + value pair (exclude self)
         $exists = FormFieldOption::where('field_group', $formFieldOption->field_group)
@@ -516,15 +588,38 @@ class SystemSettingsController extends Controller
             ], 422);
         }
 
-        DB::transaction(function () use ($validated, $formFieldOption) {
+        DB::transaction(function () use ($validated, $formFieldOption, $orderMode) {
             $oldValues = $formFieldOption->toArray();
 
+            $resolvedSortOrder = $formFieldOption->sort_order;
+            if ($orderMode !== 'keep') {
+                $resolvedSortOrder = $this->resolveSortOrder(
+                    $formFieldOption->field_group,
+                    $formFieldOption->id,
+                    $orderMode,
+                    $validated['position_target_id'] ?? null,
+                    $validated['sort_order'] ?? null,
+                );
+            }
+
+            FormFieldOption::where('field_group', $formFieldOption->field_group)
+                ->where('id', '!=', $formFieldOption->id)
+                ->update([
+                    'placement_section' => $validated['placement_section'],
+                    'is_required' => $validated['is_required'] ?? false,
+                ]);
+
             $formFieldOption->update([
+                'placement_section' => $validated['placement_section'],
                 'label'      => $validated['label'],
                 'value'      => $validated['value'],
-                'sort_order' => $validated['sort_order'] ?? $formFieldOption->sort_order,
+                'sort_order' => $resolvedSortOrder,
+                'is_required' => $validated['is_required'] ?? false,
                 'is_active'  => $validated['is_active'] ?? true,
             ]);
+
+            $this->normalizeGroupSortOrder($formFieldOption->field_group);
+            $formFieldOption->refresh();
 
             $this->audit->log(
                 auth()->id(), 'updated', 'form_field_options', $formFieldOption->id,
@@ -533,6 +628,92 @@ class SystemSettingsController extends Controller
         });
 
         return response()->json(['success' => true, 'option' => $formFieldOption->fresh()]);
+    }
+
+    private function normalizeKey(string $input): string
+    {
+        return Str::of($input)
+            ->trim()
+            ->lower()
+            ->replaceMatches('/[^a-z0-9]+/', '_')
+            ->trim('_')
+            ->toString();
+    }
+
+    private function resolveOrderMode(?string $requestedMode, ?int $sortOrder, bool $isUpdate): string
+    {
+        if ($requestedMode && in_array($requestedMode, self::ORDER_MODES, true)) {
+            return $requestedMode;
+        }
+
+        if ($sortOrder !== null) {
+            return 'custom';
+        }
+
+        return $isUpdate ? 'keep' : 'auto_end';
+    }
+
+    private function resolveSortOrder(
+        string $fieldGroup,
+        ?int $currentOptionId,
+        string $orderMode,
+        ?int $positionTargetId,
+        ?int $customSortOrder,
+    ): int {
+        $optionsQuery = FormFieldOption::query()->where('field_group', $fieldGroup);
+
+        if ($currentOptionId !== null) {
+            $optionsQuery->where('id', '!=', $currentOptionId);
+        }
+
+        $groupOptions = $optionsQuery
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get(['id', 'sort_order']);
+
+        $minSortOrder = (int) ($groupOptions->min('sort_order') ?? 10);
+        $maxSortOrder = (int) ($groupOptions->max('sort_order') ?? 0);
+
+        if (in_array($orderMode, ['before', 'after'], true)) {
+            if (! $positionTargetId) {
+                throw ValidationException::withMessages([
+                    'position_target_id' => ['Select a target option to place this item.'],
+                ]);
+            }
+
+            $target = $groupOptions->firstWhere('id', $positionTargetId);
+            if (! $target) {
+                throw ValidationException::withMessages([
+                    'position_target_id' => ['The selected target option must belong to the same field group.'],
+                ]);
+            }
+
+            return $orderMode === 'before'
+                ? ((int) $target->sort_order) - 1
+                : ((int) $target->sort_order) + 1;
+        }
+
+        return match ($orderMode) {
+            'start' => $groupOptions->isEmpty() ? 10 : $minSortOrder - 10,
+            'end', 'auto_end' => $groupOptions->isEmpty() ? 10 : $maxSortOrder + 10,
+            'custom' => $customSortOrder ?? ($groupOptions->isEmpty() ? 10 : $maxSortOrder + 10),
+            default => $groupOptions->isEmpty() ? 10 : $maxSortOrder + 10,
+        };
+    }
+
+    private function normalizeGroupSortOrder(string $fieldGroup): void
+    {
+        $options = FormFieldOption::query()
+            ->where('field_group', $fieldGroup)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get(['id']);
+
+        $nextOrder = 10;
+        foreach ($options as $option) {
+            FormFieldOption::where('id', $option->id)->update(['sort_order' => $nextOrder]);
+            $nextOrder += 10;
+        }
     }
 
     public function destroyFormField(FormFieldOption $formFieldOption): JsonResponse

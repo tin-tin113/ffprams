@@ -744,10 +744,37 @@
 
         <div class="header-right">
             <!-- Notification Bell -->
-            <button class="header-icon-btn" type="button" title="Notifications" disabled>
-                <i class="bi bi-bell"></i>
-                <span class="badge rounded-pill bg-secondary">0</span>
-            </button>
+            <div class="dropdown">
+                <button class="header-icon-btn" type="button" title="Notifications"
+                        id="notificationDropdown"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                    <i class="bi bi-bell"></i>
+                    <span class="badge rounded-pill bg-secondary">0</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="notificationDropdown">
+                    <li><h6 class="dropdown-header">Notifications</h6></li>
+                    <li><span class="dropdown-item-text text-muted small">No new notifications right now.</span></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="{{ route('distribution-events.index') }}">
+                            <i class="bi bi-calendar-event me-2"></i> Distribution Events
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{{ route('sms.index') }}">
+                            <i class="bi bi-chat-dots me-2"></i> SMS Broadcast
+                        </a>
+                    </li>
+                    @if(Auth::user()->isAdmin())
+                    <li>
+                        <a class="dropdown-item" href="{{ route('admin.audit-logs.index') }}">
+                            <i class="bi bi-journal-text me-2"></i> Audit Logs
+                        </a>
+                    </li>
+                    @endif
+                </ul>
+            </div>
 
             <!-- User Dropdown -->
             <div class="dropdown">

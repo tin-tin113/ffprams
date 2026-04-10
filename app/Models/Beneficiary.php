@@ -68,6 +68,7 @@ class Beneficiary extends Model
         'land_area_awarded_hectares',
         'ownership_scheme',
         'barc_membership_status',
+        'custom_fields',
     ];
 
     protected function casts(): array
@@ -81,6 +82,7 @@ class Beneficiary extends Model
             'fishing_vessel_tonnage'     => 'decimal:2',
             'land_area_awarded_hectares' => 'decimal:2',
             'length_of_residency_months' => 'integer',
+            'custom_fields'              => 'array',
         ];
     }
 

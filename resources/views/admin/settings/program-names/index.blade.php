@@ -60,12 +60,12 @@
                 <div class="card-body p-3">
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <label class="form-label fw-600">Classification</label>
-                            <select id="classificationFilter" class="form-select form-select-sm">
-                                <option value="">All Classifications</option>
-                                <option value="emergency">Emergency</option>
-                                <option value="regular">Regular</option>
-                                <option value="pilot">Pilot</option>
+                            <label class="form-label fw-600">Agency</label>
+                            <select id="agencyFilter" class="form-select form-select-sm">
+                                <option value="">All Agencies</option>
+                                @foreach($agencies as $agency)
+                                <option value="{{ $agency->id }}">{{ $agency->name }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-4">
@@ -105,7 +105,7 @@
                         </thead>
                         <tbody id="pnTableBody">
                             @forelse($programNames as $program)
-                            <tr data-pn-id="{{ $program->id }}">
+                            <tr data-pn-id="{{ $program->id }}" data-agency-id="{{ $program->agency_id }}">
                                 <td><strong>{{ $program->name }}</strong></td>
                                 <td>
                                     <span class="badge bg-secondary">{{ $program->agency->name ?? 'N/A' }}</span>
@@ -249,17 +249,16 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Combined filter function
     function applyFilters() {
-        const classificationFilter = document.getElementById('classificationFilter').value;
+        const agencyFilter = document.getElementById('agencyFilter').value;
         const statusFilter = document.getElementById('statusFilter').value;
         const searchQuery = document.getElementById('pnSearch').value.toLowerCase();
 
         document.querySelectorAll('#pnTableBody tr').forEach(row => {
             let show = true;
 
-            // Classification filter
-            if (classificationFilter && show) {
-                const classCell = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
-                show = show && classCell.includes(classificationFilter);
+            // Agency filter
+            if (agencyFilter && show) {
+                show = String(row.dataset.agencyId || '') === String(agencyFilter);
             }
 
             // Status filter
@@ -280,7 +279,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Filter change events
-    document.getElementById('classificationFilter').addEventListener('change', applyFilters);
+    document.getElementById('agencyFilter').addEventListener('change', applyFilters);
     document.getElementById('statusFilter').addEventListener('change', applyFilters);
     document.getElementById('pnSearch').addEventListener('input', applyFilters);
 
