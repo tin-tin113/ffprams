@@ -8,7 +8,9 @@ use App\Models\SmsLog;
 use App\Services\AuditLogService;
 use App\Services\SemaphoreService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -35,8 +37,33 @@ class SmsController extends Controller
             ->withQueryString();
 
         $totalActive = Beneficiary::where('status', 'Active')->count();
+        $sendOnBeneficiaryCreate = Cache::get(
+            'sms.send_on_beneficiary_create',
+            config('services.sms.send_on_beneficiary_create')
+        );
 
-        return view('sms.index', compact('barangays', 'smsLogs', 'totalActive'));
+        return view('sms.index', compact('barangays', 'smsLogs', 'totalActive', 'sendOnBeneficiaryCreate'));
+    }
+
+    public function updateBeneficiaryRegistrationSmsSetting(Request $request): RedirectResponse
+    {
+        $enabled = $request->boolean('send_on_beneficiary_create');
+
+        Cache::forever('sms.send_on_beneficiary_create', $enabled);
+
+        $this->audit->log(
+            auth()->id(),
+            'updated',
+            'sms_settings',
+            0,
+            [],
+            ['send_on_beneficiary_create' => $enabled],
+        );
+
+        return redirect()->route('sms.index')
+            ->with('success', $enabled
+                ? 'Auto-SMS on beneficiary registration is now enabled.'
+                : 'Auto-SMS on beneficiary registration is now disabled.');
     }
 
     public function preview(Request $request): JsonResponse

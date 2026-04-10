@@ -13,6 +13,7 @@ use App\Services\SemaphoreService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -67,7 +68,7 @@ class BeneficiaryController extends Controller
     /**
      * Store a new beneficiary.
      */
-    public function store(BeneficiaryRequest $request): RedirectResponse
+    public function store(BeneficiaryRequest $request): RedirectResponse|JsonResponse
     {
         $validated = $request->validated();
 
@@ -85,6 +86,16 @@ class BeneficiaryController extends Controller
                 $message .= " (Barangay {$existing->barangay->name})";
             }
             $message .= ". Match type: {$bestMatch['match_type']}, Score: {$bestMatch['score']}%.";
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'duplicate' => true,
+                    'message' => $message . ' Please verify and update this existing record if needed.',
+                    'existing_beneficiary_id' => $existing->id,
+                    'redirect_url' => route('beneficiaries.show', $existing),
+                ], 409);
+            }
 
             return redirect()->route('beneficiaries.show', $existing)
                 ->with('warning', $message . ' Please verify and update this existing record if needed.');
@@ -106,13 +117,28 @@ class BeneficiaryController extends Controller
             return $beneficiary;
         });
 
-        // Send SMS notification
-        $agencyName = $beneficiary->agency?->name ?? 'government';
-        $this->sms->sendSms(
-            $beneficiary->contact_number,
-            "Hello {$beneficiary->full_name}, you have been successfully registered as a {$beneficiary->classification} beneficiary under {$agencyName} in Enrique B. Magalona. For inquiries, contact the Municipal Agriculture Office.",
-            $beneficiary->id,
+        $sendOnCreate = Cache::get(
+            'sms.send_on_beneficiary_create',
+            config('services.sms.send_on_beneficiary_create')
         );
+
+        if ($sendOnCreate && ! empty($beneficiary->contact_number)) {
+            $agencyName = $beneficiary->agency?->name ?? 'government';
+            $this->sms->sendSms(
+                $beneficiary->contact_number,
+                "Hello {$beneficiary->full_name}, you have been successfully registered as a {$beneficiary->classification} beneficiary under {$agencyName} in Enrique B. Magalona. For inquiries, contact the Municipal Agriculture Office.",
+                $beneficiary->id,
+            );
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Beneficiary registered successfully.',
+                'beneficiary_id' => $beneficiary->id,
+                'redirect_url' => route('beneficiaries.show', $beneficiary),
+            ]);
+        }
 
         return redirect()->route('beneficiaries.index')
             ->with('success', 'Beneficiary registered successfully.');
@@ -157,12 +183,42 @@ class BeneficiaryController extends Controller
     /**
      * Update an existing beneficiary.
      */
-    public function update(BeneficiaryRequest $request, Beneficiary $beneficiary): RedirectResponse
+    public function update(BeneficiaryRequest $request, Beneficiary $beneficiary): RedirectResponse|JsonResponse
     {
-        DB::transaction(function () use ($request, $beneficiary) {
+        $validated = $request->validated();
+
+        // Prevent duplicate creation during profile updates as well.
+        $duplicates = $this->duplicateService->findPotentialDuplicates($validated, $beneficiary->id);
+
+        if ($duplicates->isNotEmpty()) {
+            $bestMatch = $duplicates->sortByDesc('score')->first();
+            $existing = $bestMatch['beneficiary'];
+
+            $message = "Update blocked: This change would match an existing beneficiary record. ";
+            $message .= "Existing beneficiary: {$existing->full_name}";
+            if ($existing->barangay) {
+                $message .= " (Barangay {$existing->barangay->name})";
+            }
+            $message .= ". Match type: {$bestMatch['match_type']}, Score: {$bestMatch['score']}%.";
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'duplicate' => true,
+                    'message' => $message . ' Please review the existing record before updating.',
+                    'existing_beneficiary_id' => $existing->id,
+                    'redirect_url' => route('beneficiaries.show', $existing),
+                ], 409);
+            }
+
+            return redirect()->route('beneficiaries.show', $existing)
+                ->with('warning', $message . ' Please review the existing record before updating.');
+        }
+
+        DB::transaction(function () use ($beneficiary, $validated) {
             $oldValues = $beneficiary->toArray();
 
-            $beneficiary->update($request->validated());
+            $beneficiary->update($validated);
 
             $this->audit->log(
                 auth()->id(),
@@ -173,6 +229,15 @@ class BeneficiaryController extends Controller
                 $beneficiary->fresh()->toArray(),
             );
         });
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Beneficiary updated successfully.',
+                'beneficiary_id' => $beneficiary->id,
+                'redirect_url' => route('beneficiaries.show', $beneficiary),
+            ]);
+        }
 
         return redirect()->route('beneficiaries.index')
             ->with('success', 'Beneficiary updated successfully.');
@@ -261,56 +326,13 @@ class BeneficiaryController extends Controller
         foreach ($fields as $field) {
             $dbOptions = FormFieldOption::optionsFor($field);
 
-            // If no DB options, use reference document defaults
             if ($dbOptions->isEmpty()) {
-                $options[$field] = $this->getDefaultOptions($field);
-            } else {
-                $options[$field] = $dbOptions;
+                \Log::warning("FormFieldOption group is missing: {$field}. Please ensure this field group is configured in System Settings > Form Fields.");
             }
+
+            $options[$field] = $dbOptions;
         }
 
         return $options;
-    }
-
-    private function getDefaultOptions(string $field): \Illuminate\Support\Collection
-    {
-        $defaults = [
-            'farm_ownership' => ['Registered Owner', 'Tenant', 'Lessee'],
-            'farm_type' => ['Irrigated', 'Rainfed Upland', 'Rainfed Lowland'],
-            'fisherfolk_type' => ['Capture Fishing', 'Aquaculture', 'Post-Harvest'],
-            'civil_status' => ['Single', 'Married', 'Widowed', 'Separated'],
-            'highest_education' => [
-                'No Formal Education',
-                'Elementary',
-                'High School',
-                'Vocational',
-                'College',
-                'Post Graduate',
-            ],
-            'id_type' => [
-                'PhilSys ID',
-                "Voter's ID",
-                "Driver's License",
-                'Passport',
-                'Senior Citizen ID',
-                'PWD ID',
-                'Postal ID',
-                'TIN ID',
-            ],
-            'arb_classification' => [
-                'Agricultural Lessee',
-                'Regular Farmworker',
-                'Seasonal Farmworker',
-                'Other Farmworker',
-                'Actual Tiller',
-                'Collective/Cooperative',
-                'Others',
-            ],
-            'ownership_scheme' => ['Individual', 'Collective', 'Cooperative'],
-        ];
-
-        $values = $defaults[$field] ?? [];
-
-        return collect($values)->map(fn ($v) => (object) ['value' => $v, 'label' => $v]);
     }
 }

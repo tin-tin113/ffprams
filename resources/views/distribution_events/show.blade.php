@@ -119,6 +119,12 @@
             <a href="{{ route('distribution-events.distributionList', $event) }}" class="btn btn-outline-dark">
                 <i class="bi bi-printer me-1"></i> Print Distribution List
             </a>
+            <a href="{{ route('distribution-events.distributionListPdf', $event) }}" class="btn btn-outline-danger">
+                <i class="bi bi-file-earmark-pdf me-1"></i> Download PDF
+            </a>
+            <a href="{{ route('distribution-events.distributionListCsv', $event) }}" class="btn btn-outline-success">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i> Download CSV
+            </a>
         </div>
     </div>
 
@@ -461,6 +467,12 @@
         </div>
     @endif
 
+    @php
+        $bulkEligibleCount = $event->allocations->filter(function ($allocation) {
+            return ! $allocation->distributed_at && $allocation->release_outcome !== 'not_received';
+        })->count();
+    @endphp
+
     {{-- ============================================================ --}}
     {{-- 3. ADD BENEFICIARIES SECTION                                 --}}
     {{-- ============================================================ --}}
@@ -475,6 +487,34 @@
         </div>
     @endif
 
+    @if($event->status !== 'Pending' && $bulkEligibleCount > 0)
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-2">
+                <div>
+                    <div class="fw-semibold">Bulk Release Update</div>
+                    <div class="text-muted small">
+                        Select multiple eligible rows and update release outcome in one action.
+                    </div>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button type="button" class="btn btn-outline-success btn-sm" data-bulk-release-action="distributed">
+                        <i class="bi bi-check2-all me-1"></i> Mark Selected as {{ $event->isFinancial() ? 'Claimed' : 'Distributed' }}
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-bulk-release-action="not_received">
+                        <i class="bi bi-x-circle me-1"></i> Mark Selected as Not Received
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ route('allocations.bulkReleaseOutcome') }}" id="bulkReleaseForm" class="d-none">
+            @csrf
+            <input type="hidden" name="distribution_event_id" value="{{ $event->id }}">
+            <input type="hidden" name="action" id="bulkReleaseAction" value="">
+            <div id="bulkReleaseIds"></div>
+        </form>
+    @endif
+
     {{-- ============================================================ --}}
     {{-- 4. ALLOCATIONS TABLE                                         --}}
     {{-- ============================================================ --}}
@@ -487,6 +527,11 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
+                            @if($event->status !== 'Pending' && $bulkEligibleCount > 0)
+                                <th class="text-center" style="width: 36px;">
+                                    <input type="checkbox" class="form-check-input" id="bulkSelectAll" aria-label="Select all eligible allocations">
+                                </th>
+                            @endif
                             <th>#</th>
                             <th>Beneficiary Name</th>
                             <th>Classification</th>
@@ -504,6 +549,16 @@
                     <tbody>
                         @forelse($event->allocations as $allocation)
                             <tr class="{{ $allocation->distributed_at ? 'table-success' : '' }}">
+                                @if($event->status !== 'Pending' && $bulkEligibleCount > 0)
+                                    <td class="text-center">
+                                        @if(!$allocation->distributed_at && $allocation->release_outcome !== 'not_received')
+                                            <input type="checkbox"
+                                                   class="form-check-input bulk-allocation-checkbox"
+                                                   value="{{ $allocation->id }}"
+                                                   aria-label="Select allocation for {{ $allocation->beneficiary->full_name }}">
+                                        @endif
+                                    </td>
+                                @endif
                                 <td class="text-muted">{{ $loop->iteration }}</td>
                                 <td>{{ $allocation->beneficiary->full_name }}</td>
                                 <td>
@@ -544,6 +599,21 @@
                                 </td>
                                 <td>{{ $allocation->remarks ?? '—' }}</td>
                                 <td class="text-end text-nowrap">
+                                    @if($event->status !== 'Completed' && in_array(Auth::user()->role, ['admin', 'staff'], true))
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-primary me-1"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#editAllocationModal"
+                                                data-update-url="{{ route('allocations.update', $allocation) }}"
+                                                data-beneficiary-name="{{ $allocation->beneficiary->full_name }}"
+                                                data-assistance-purpose-id="{{ $allocation->assistance_purpose_id ?? '' }}"
+                                                data-remarks="{{ $allocation->remarks ?? '' }}"
+                                                data-amount="{{ $allocation->amount ?? '' }}"
+                                                data-quantity="{{ $allocation->quantity ?? '' }}">
+                                            <i class="bi bi-pencil-square"></i> Edit
+                                        </button>
+                                    @endif
+
                                     @if(!$allocation->distributed_at && $allocation->release_outcome !== 'not_received' && $event->status !== 'Pending')
                                         <form method="POST"
                                               action="{{ route('allocations.markDistributed', $allocation) }}"
@@ -585,7 +655,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4">
+                                <td colspan="{{ ($event->status !== 'Pending' && $bulkEligibleCount > 0) ? 9 : 8 }}" class="text-center text-muted py-4">
                                     <i class="bi bi-inbox fs-3 d-block mb-2"></i>
                                     No beneficiaries allocated yet.
                                 </td>
@@ -745,6 +815,78 @@
         </div>
     </div>
 </div>
+
+{{-- Edit Allocation Modal --}}
+<div class="modal fade" id="editAllocationModal" tabindex="-1" aria-labelledby="editAllocationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="#" id="editAllocationForm">
+                @csrf
+                @method('PUT')
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editAllocationModalLabel">Edit Allocation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_allocation_beneficiary" class="form-label">Beneficiary</label>
+                        <input type="text" id="edit_allocation_beneficiary" class="form-control" readonly>
+                    </div>
+
+                    @if($event->isFinancial())
+                        <div class="mb-3">
+                            <label for="edit_allocation_amount" class="form-label">Amount (PHP) <span class="text-danger">*</span></label>
+                            <input type="number"
+                                   id="edit_allocation_amount"
+                                   name="amount"
+                                   class="form-control"
+                                   min="1"
+                                   step="0.01"
+                                   required>
+                        </div>
+                    @else
+                        <div class="mb-3">
+                            <label for="edit_allocation_quantity" class="form-label">Quantity ({{ $event->resourceType->unit }}) <span class="text-danger">*</span></label>
+                            <input type="number"
+                                   id="edit_allocation_quantity"
+                                   name="quantity"
+                                   class="form-control"
+                                   min="0.01"
+                                   max="9999.99"
+                                   step="0.01"
+                                   required>
+                        </div>
+                    @endif
+
+                    <div class="mb-3">
+                        <label for="edit_assistance_purpose_id" class="form-label">Assistance Purpose</label>
+                        <select class="form-select" id="edit_assistance_purpose_id" name="assistance_purpose_id">
+                            <option value="">Select Purpose (Optional)</option>
+                            @foreach($assistancePurposes as $purpose)
+                                <option value="{{ $purpose->id }}">{{ $purpose->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_allocation_remarks" class="form-label">Remarks</label>
+                        <textarea id="edit_allocation_remarks"
+                                  name="remarks"
+                                  class="form-control"
+                                  maxlength="500"
+                                  rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-1"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endif
 
 @endsection
@@ -890,6 +1032,128 @@ document.addEventListener('DOMContentLoaded', function () {
     showLiquidationStatus?.addEventListener('change', updateShowComplianceDependencies);
     showRequiresFarmc?.addEventListener('change', updateShowComplianceDependencies);
     updateShowComplianceDependencies();
+
+    const bulkSelectAll = document.getElementById('bulkSelectAll');
+    const bulkReleaseForm = document.getElementById('bulkReleaseForm');
+    const bulkReleaseAction = document.getElementById('bulkReleaseAction');
+    const bulkReleaseIds = document.getElementById('bulkReleaseIds');
+    const bulkButtons = document.querySelectorAll('[data-bulk-release-action]');
+    const bulkCheckboxes = Array.from(document.querySelectorAll('.bulk-allocation-checkbox'));
+    const bulkDistributedLabel = @json($event->isFinancial() ? 'claimed' : 'distributed');
+
+    function syncBulkSelectAllState() {
+        if (!bulkSelectAll || bulkCheckboxes.length === 0) {
+            return;
+        }
+
+        const selectedCount = bulkCheckboxes.filter(function (checkbox) {
+            return checkbox.checked;
+        }).length;
+
+        bulkSelectAll.checked = selectedCount > 0 && selectedCount === bulkCheckboxes.length;
+        bulkSelectAll.indeterminate = selectedCount > 0 && selectedCount < bulkCheckboxes.length;
+    }
+
+    if (bulkSelectAll) {
+        bulkSelectAll.addEventListener('change', function () {
+            bulkCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = bulkSelectAll.checked;
+            });
+            syncBulkSelectAllState();
+        });
+    }
+
+    bulkCheckboxes.forEach(function (checkbox) {
+        checkbox.addEventListener('change', syncBulkSelectAllState);
+    });
+
+    bulkButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            if (!bulkReleaseForm || !bulkReleaseAction || !bulkReleaseIds) {
+                return;
+            }
+
+            const selectedIds = bulkCheckboxes
+                .filter(function (checkbox) { return checkbox.checked; })
+                .map(function (checkbox) { return checkbox.value; });
+
+            if (selectedIds.length === 0) {
+                window.alert('Select at least one allocation first.');
+                return;
+            }
+
+            const action = button.getAttribute('data-bulk-release-action');
+            const isDistributedAction = action === 'distributed';
+
+            bulkReleaseAction.value = action;
+            bulkReleaseIds.innerHTML = '';
+
+            selectedIds.forEach(function (id) {
+                const hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = 'allocation_ids[]';
+                hidden.value = id;
+                bulkReleaseIds.appendChild(hidden);
+            });
+
+            const title = isDistributedAction
+                ? 'Confirm Bulk Distribution'
+                : 'Confirm Bulk Not Received';
+
+            const message = isDistributedAction
+                ? 'Mark ' + selectedIds.length + ' selected allocation(s) as ' + bulkDistributedLabel + '? This will set release outcome to received.'
+                : 'Mark ' + selectedIds.length + ' selected allocation(s) as Not Received for this release schedule?';
+
+            const submitBulk = function () {
+                bulkReleaseForm.submit();
+            };
+
+            if (typeof confirmThenRun === 'function') {
+                confirmThenRun(title, message, submitBulk);
+                return;
+            }
+
+            submitBulk();
+        });
+    });
+
+    const editAllocationModal = document.getElementById('editAllocationModal');
+    if (editAllocationModal) {
+        editAllocationModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            if (!button) {
+                return;
+            }
+
+            const form = document.getElementById('editAllocationForm');
+            const beneficiaryInput = document.getElementById('edit_allocation_beneficiary');
+            const purposeSelect = document.getElementById('edit_assistance_purpose_id');
+            const remarksInput = document.getElementById('edit_allocation_remarks');
+            const amountInput = document.getElementById('edit_allocation_amount');
+            const quantityInput = document.getElementById('edit_allocation_quantity');
+
+            form.setAttribute('action', button.getAttribute('data-update-url') || '#');
+            beneficiaryInput.value = button.getAttribute('data-beneficiary-name') || '';
+
+            if (purposeSelect) {
+                purposeSelect.value = button.getAttribute('data-assistance-purpose-id') || '';
+            }
+
+            if (remarksInput) {
+                remarksInput.value = button.getAttribute('data-remarks') || '';
+            }
+
+            if (amountInput) {
+                amountInput.value = button.getAttribute('data-amount') || '';
+            }
+
+            if (quantityInput) {
+                quantityInput.value = button.getAttribute('data-quantity') || '';
+            }
+        });
+    }
+
+    syncBulkSelectAllState();
 });
 </script>
 @endpush

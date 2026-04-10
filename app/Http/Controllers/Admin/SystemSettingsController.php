@@ -24,18 +24,53 @@ class SystemSettingsController extends Controller
 
     // ── Index ────────────────────────────────────
 
+    /**
+     * Show agencies page (main settings landing page)
+     */
     public function index(): View
     {
-        $this->validateFormFieldOptions();
-
-        $agencies   = Agency::orderBy('name')->get();
-        $purposes   = AssistancePurpose::orderBy('category')->orderBy('name')->get()->groupBy('category');
-        $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
-        $programNames = ProgramName::with('agency')->orderBy('name')->get();
-        $formFields = FormFieldOption::orderBy('field_group')->orderBy('sort_order')->orderBy('label')->get()->groupBy('field_group');
-
-        return view('admin.settings.index', compact('agencies', 'purposes', 'resourceTypes', 'programNames', 'formFields'));
+        $agencies = Agency::orderBy('name')->get();
+        return view('admin.settings.agencies.index', compact('agencies'));
     }
+
+    /**
+     * Separate Page Views for Multi-Page Interface
+     */
+
+    public function indexAgencies(): View
+    {
+        $agencies = Agency::orderBy('name')->get();
+        return view('admin.settings.agencies.index', compact('agencies'));
+    }
+
+    public function indexPurposes(): View
+    {
+        $purposes = AssistancePurpose::orderBy('category')->orderBy('name')->get();
+        return view('admin.settings.purposes.index', compact('purposes'));
+    }
+
+    public function indexResourceTypes(): View
+    {
+        $agencies = Agency::where('is_active', true)->orderBy('name')->get();
+        $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
+        return view('admin.settings.resource-types.index', compact('agencies', 'resourceTypes'));
+    }
+
+    public function indexProgramNames(): View
+    {
+        $agencies = Agency::where('is_active', true)->orderBy('name')->get();
+        $programNames = ProgramName::with('agency')->orderBy('name')->get();
+        return view('admin.settings.program-names.index', compact('agencies', 'programNames'));
+    }
+
+    public function indexFormFields(): View
+    {
+        $this->validateFormFieldOptions();
+        $formFields = FormFieldOption::orderBy('field_group')->orderBy('sort_order')->orderBy('label')->get()->groupBy('field_group');
+        return view('admin.settings.form-fields.index', compact('formFields'));
+    }
+
+    // ── API List Methods ────────────────────────────────────
 
     public function listAgencies(): JsonResponse
     {
@@ -55,6 +90,19 @@ class SystemSettingsController extends Controller
     public function listProgramNames(): JsonResponse
     {
         return response()->json(ProgramName::with('agency')->orderBy('name')->get());
+    }
+
+    /**
+     * Get active agencies for modal dropdowns (Phase D - Dynamic Modal Dropdowns)
+     * This endpoint is called when modals open to ensure fresh agency data in dropdowns
+     */
+    public function getActiveAgencies(): JsonResponse
+    {
+        $agencies = Agency::where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'full_name', 'is_active']);
+
+        return response()->json($agencies);
     }
 
     // ── Agencies ─────────────────────────────────

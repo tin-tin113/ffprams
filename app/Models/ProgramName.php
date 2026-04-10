@@ -12,6 +12,7 @@ class ProgramName extends Model
     protected $fillable = [
         'agency_id',
         'name',
+        'description',
         'is_active',
         'classification',
     ];

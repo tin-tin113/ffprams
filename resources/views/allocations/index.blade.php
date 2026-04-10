@@ -16,10 +16,17 @@
     </div>
 
     <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white fw-semibold">
-            <i class="bi bi-plus-circle me-1"></i> Add Direct Assistance
+        <div class="card-header bg-white">
+            <button type="button"
+                    class="btn btn-link text-start w-100 p-0 text-decoration-none fw-semibold"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#addAssistanceForm">
+                <i class="bi bi-chevron-down me-2"></i>
+                <i class="bi bi-plus-circle me-1"></i> Add Direct Assistance
+            </button>
         </div>
-        <div class="card-body">
+        <div id="addAssistanceForm" class="collapse">
+            <div class="card-body">
             <form method="POST"
                 action="{{ route('allocations.store') }}"
                 class="row g-3"
@@ -109,6 +116,7 @@
                     </button>
                 </div>
             </form>
+            </div>
         </div>
     </div>
 
@@ -150,31 +158,37 @@
                                     @endif
                                 </td>
                                 <td class="text-end">
-                                    @if(!$allocation->distributed_at && $allocation->release_outcome !== 'not_received')
-                                        <form method="POST"
-                                              action="{{ route('allocations.markDistributed', $allocation) }}"
-                                              class="d-inline"
-                                              data-confirm-title="Confirm Release"
-                                              data-confirm-message="Mark this direct allocation as released? This will timestamp the release transaction.">
-                                            @csrf
-                                            <button type="submit" class="btn btn-sm btn-outline-success">
-                                                <i class="bi bi-check2"></i> Mark Released
-                                            </button>
-                                        </form>
+                                    <div class="d-inline-flex align-items-center gap-1 flex-nowrap">
+                                        <a href="{{ route('allocations.show', $allocation) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye me-1"></i> View
+                                        </a>
 
-                                        <form method="POST"
-                                              action="{{ route('allocations.markNotReceived', $allocation) }}"
-                                              class="d-inline"
-                                              data-confirm-title="Confirm Not Received"
-                                              data-confirm-message="Mark this direct allocation as Not Received?">
-                                            @csrf
-                                            <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                <i class="bi bi-x-lg"></i> Not Received
-                                            </button>
-                                        </form>
-                                    @else
-                                        <span class="text-muted small">Completed</span>
-                                    @endif
+                                        @if(!$allocation->distributed_at && $allocation->release_outcome !== 'not_received')
+                                            <form method="POST"
+                                                  action="{{ route('allocations.markDistributed', $allocation) }}"
+                                                  class="d-inline"
+                                                  data-confirm-title="Confirm Release"
+                                                  data-confirm-message="Mark this direct allocation as released? This will timestamp the release transaction.">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-outline-success">
+                                                    <i class="bi bi-check2"></i> Mark Released
+                                                </button>
+                                            </form>
+
+                                            <form method="POST"
+                                                  action="{{ route('allocations.markNotReceived', $allocation) }}"
+                                                  class="d-inline"
+                                                  data-confirm-title="Confirm Not Received"
+                                                  data-confirm-message="Mark this direct allocation as Not Received?">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    <i class="bi bi-x-lg"></i> Not Received
+                                                </button>
+                                            </form>
+                                        @else
+                                            <span class="text-muted small ms-1">Completed</span>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @empty
@@ -208,6 +222,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
     resourceSelect.addEventListener('change', toggleValueInputs);
     toggleValueInputs();
+
+    // Rotate chevron on collapse toggle
+    const collapseElement = document.getElementById('addAssistanceForm');
+    const chevronIcon = collapseElement.previousElementSibling.querySelector('.bi-chevron-down');
+
+    collapseElement.addEventListener('show.bs.collapse', function() {
+        chevronIcon.style.transform = 'rotate(0deg)';
+    });
+
+    collapseElement.addEventListener('hide.bs.collapse', function() {
+        chevronIcon.style.transform = 'rotate(-90deg)';
+    });
 });
 </script>
 @endpush

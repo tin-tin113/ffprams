@@ -61,12 +61,30 @@ class FormFieldOptionSeeder extends Seeder
                 'Widowed',
                 'Separated',
             ],
+
+            // ── ARB Classification ──────────────────
+            'arb_classification' => [
+                'Agricultural Lessee',
+                'Regular Farmworker',
+                'Seasonal Farmworker',
+                'Other Farmworker',
+                'Actual Tiller',
+                'Collective/Cooperative',
+                'Others',
+            ],
+
+            // ── Ownership Scheme ────────────────────
+            'ownership_scheme' => [
+                'Individual',
+                'Collective',
+                'Cooperative',
+            ],
         ];
 
         foreach ($groups as $fieldGroup => $options) {
             foreach ($options as $index => $label) {
                 FormFieldOption::updateOrCreate(
-                    ['field_group' => $fieldGroup, 'value' => $label],
+                    ['field_group' => $fieldGroup, 'value' => strtolower(str_replace(' ', '_', $label))],
                     [
                         'label'      => $label,
                         'sort_order' => ($index + 1) * 10,
@@ -75,5 +93,7 @@ class FormFieldOptionSeeder extends Seeder
                 );
             }
         }
+
+        $this->command->info('Form field options seeded successfully (8 required groups).');
     }
 }

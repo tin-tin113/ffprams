@@ -24,11 +24,11 @@
         <div>This event can only be edited while its status is Pending.</div>
     </div>
 
-    <form action="{{ route('distribution-events.update', $event) }}"
-          method="POST"
-          data-submit-spinner
-          data-confirm-title="Confirm Event Update"
-          data-confirm-message="Apply these changes to the scheduled distribution event?">
+    <div id="distributionEventEditAjaxNotice" class="alert d-none" role="alert"></div>
+
+    <form id="distributionEventEditForm"
+          action="{{ route('distribution-events.update', $event) }}"
+          method="POST">
         @csrf
         @method('PUT')
 
@@ -85,6 +85,7 @@
                                 @foreach($resourceTypes as $type)
                                     <option value="{{ $type->id }}"
                                             data-unit="{{ $type->unit }}"
+                                            data-agency-id="{{ $type->agency_id }}"
                                             {{ old('resource_type_id', $event->resource_type_id) == $type->id ? 'selected' : '' }}>
                                         {{ $type->name }} ({{ $type->unit }}) — {{ $type->agency->name ?? 'N/A' }}
                                     </option>
@@ -95,6 +96,26 @@
                         @error('resource_type_id')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
+                    </div>
+
+                    {{-- Program Name --}}
+                    <div class="col-md-6">
+                        <label for="program_name_id" class="form-label">Program Name <span class="text-danger">*</span></label>
+                        <select class="form-select @error('program_name_id') is-invalid @enderror"
+                                id="program_name_id" name="program_name_id" required>
+                            <option value="" disabled {{ old('program_name_id', $event->program_name_id) ? '' : 'selected' }}>Select Program Name</option>
+                            @foreach($programNames as $program)
+                                <option value="{{ $program->id }}"
+                                        data-agency-id="{{ $program->agency_id }}"
+                                        {{ old('program_name_id', $event->program_name_id) == $program->id ? 'selected' : '' }}>
+                                    {{ $program->name }} — {{ $program->agency->name ?? 'N/A' }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('program_name_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <small class="text-muted">Filtered by resource type's agency</small>
                     </div>
 
                     {{-- Distribution Date --}}
@@ -258,6 +279,15 @@
             <a href="{{ route('distribution-events.index') }}" class="btn btn-outline-secondary">Cancel</a>
         </div>
     </form>
+
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090;">
+        <div id="distributionEventEditToast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="distributionEventEditToastMessage"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
 
@@ -265,6 +295,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const resourceSelect = document.getElementById('resource_type_id');
+    const programSelect = document.getElementById('program_name_id');
     const unitDisplay = document.getElementById('unitDisplay');
     const totalFundGroup = document.getElementById('totalFundGroup');
     const totalFundInput = document.getElementById('total_fund_amount');
@@ -289,6 +320,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const farmcEndorsedAtGroup = document.getElementById('farmcEndorsedAtGroup');
     const farmcEndorsedAt = document.getElementById('farmc_endorsed_at');
     const allOptions = Array.from(resourceSelect.options);
+    const allProgramOptions = programSelect ? Array.from(programSelect.options) : [];
 
     function setGroupState(groupEl, inputEl, show, required = false) {
         if (!groupEl || !inputEl) return;
@@ -342,6 +374,34 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function filterProgramsByAgency() {
+        if (!programSelect) return;
+
+        const selected = resourceSelect.options[resourceSelect.selectedIndex];
+        const agencyId = selected ? selected.dataset.agencyId : '';
+        const currentValue = programSelect.value;
+
+        programSelect.innerHTML = '';
+
+        allProgramOptions.forEach(function (opt) {
+            if (opt.value === '') {
+                programSelect.appendChild(opt.cloneNode(true));
+            } else if (!agencyId || opt.dataset.agencyId === agencyId) {
+                programSelect.appendChild(opt.cloneNode(true));
+            }
+        });
+
+        const exists = Array.from(programSelect.options).some(function (option) {
+            return option.value === currentValue;
+        });
+
+        if (exists) {
+            programSelect.value = currentValue;
+        } else {
+            programSelect.selectedIndex = 0;
+        }
+    }
+
     function toggleType() {
         const isFinancial = document.querySelector('input[name="type"]:checked').value === 'financial';
 
@@ -381,19 +441,243 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         updateUnit();
+        filterProgramsByAgency();
     }
 
     typeRadios.forEach(function (radio) {
         radio.addEventListener('change', toggleType);
     });
 
-    resourceSelect.addEventListener('change', updateUnit);
+    resourceSelect.addEventListener('change', function () {
+        updateUnit();
+        filterProgramsByAgency();
+    });
     legalBasisType?.addEventListener('change', updateComplianceDependencies);
     fundSource?.addEventListener('change', updateComplianceDependencies);
     liquidationStatus?.addEventListener('change', updateComplianceDependencies);
     requiresFarmc?.addEventListener('change', updateComplianceDependencies);
     toggleType();
     updateComplianceDependencies();
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var form = document.getElementById('distributionEventEditForm');
+    if (!form) return;
+
+    var submitButton = form.querySelector('button[type="submit"]');
+    var ajaxNotice = document.getElementById('distributionEventEditAjaxNotice');
+    var toastEl = document.getElementById('distributionEventEditToast');
+    var toastMessageEl = document.getElementById('distributionEventEditToastMessage');
+    var toast = toastEl ? bootstrap.Toast.getOrCreateInstance(toastEl, { delay: 4500 }) : null;
+
+    function showToast(type, message) {
+        if (!toast || !toastEl || !toastMessageEl) {
+            return;
+        }
+
+        var bgClass = 'text-bg-primary';
+        if (type === 'success') bgClass = 'text-bg-success';
+        if (type === 'error') bgClass = 'text-bg-danger';
+        if (type === 'warning') bgClass = 'text-bg-warning';
+
+        toastEl.className = 'toast align-items-center border-0 ' + bgClass;
+        toastMessageEl.textContent = message;
+        toast.show();
+    }
+
+    function clearNotice() {
+        if (!ajaxNotice) return;
+        ajaxNotice.className = 'alert d-none';
+        ajaxNotice.textContent = '';
+    }
+
+    function showNotice(type, message, linkUrl, linkText) {
+        if (!ajaxNotice) return;
+
+        var cssClass = 'alert-info';
+        if (type === 'success') cssClass = 'alert-success';
+        if (type === 'error') cssClass = 'alert-danger';
+        if (type === 'warning') cssClass = 'alert-warning';
+
+        ajaxNotice.className = 'alert ' + cssClass;
+        ajaxNotice.textContent = message;
+
+        if (linkUrl && linkText) {
+            var spacer = document.createTextNode(' ');
+            var link = document.createElement('a');
+            link.href = linkUrl;
+            link.className = 'alert-link';
+            link.textContent = linkText;
+            ajaxNotice.appendChild(spacer);
+            ajaxNotice.appendChild(link);
+        }
+    }
+
+    function clearFieldErrors() {
+        form.querySelectorAll('.is-invalid').forEach(function (el) {
+            el.classList.remove('is-invalid');
+        });
+
+        form.querySelectorAll('.invalid-feedback.js-invalid-feedback').forEach(function (el) {
+            el.remove();
+        });
+
+        form.querySelectorAll('.text-danger.js-inline-error').forEach(function (el) {
+            el.remove();
+        });
+    }
+
+    function setFieldError(fieldName, message) {
+        var selector = '[name="' + fieldName.replace(/"/g, '\\"') + '"]';
+        var elements = form.querySelectorAll(selector);
+        if (!elements.length) {
+            return;
+        }
+
+        var target = Array.from(elements).find(function (el) { return el.type !== 'hidden'; }) || elements[0];
+        var isChoiceGroup = target.type === 'radio' || (target.type === 'checkbox' && elements.length > 1);
+
+        elements.forEach(function (el) {
+            if (el.type !== 'hidden') {
+                el.classList.add('is-invalid');
+            }
+        });
+
+        var feedbackParent = target.closest('.col-md-2, .col-md-3, .col-md-4, .col-md-6, .col-md-8, .col-12') || target.parentElement;
+        if (!feedbackParent) {
+            return;
+        }
+
+        if (isChoiceGroup) {
+            var existingInline = feedbackParent.querySelector('.text-danger.small.js-inline-error');
+            if (existingInline) {
+                existingInline.textContent = message;
+                return;
+            }
+
+            var inlineError = document.createElement('div');
+            inlineError.className = 'text-danger small mt-1 js-inline-error';
+            inlineError.textContent = message;
+            feedbackParent.appendChild(inlineError);
+            return;
+        }
+
+        var existingFeedback = feedbackParent.querySelector('.invalid-feedback.js-invalid-feedback');
+        if (existingFeedback) {
+            existingFeedback.textContent = message;
+            return;
+        }
+
+        var feedback = document.createElement('div');
+        feedback.className = 'invalid-feedback js-invalid-feedback';
+        feedback.textContent = message;
+        feedbackParent.appendChild(feedback);
+    }
+
+    function setSubmittingState(isSubmitting) {
+        if (!submitButton) return;
+
+        if (isSubmitting) {
+            submitButton.disabled = true;
+            submitButton.dataset.originalHtml = submitButton.innerHTML;
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Saving...';
+            return;
+        }
+
+        submitButton.disabled = false;
+        if (submitButton.dataset.originalHtml) {
+            submitButton.innerHTML = submitButton.dataset.originalHtml;
+        }
+    }
+
+    function parseResponse(response) {
+        return response.text().then(function (raw) {
+            var data = {};
+            if (raw) {
+                try {
+                    data = JSON.parse(raw);
+                } catch (e) {
+                    data = {};
+                }
+            }
+
+            return {
+                ok: response.ok,
+                status: response.status,
+                data: data
+            };
+        });
+    }
+
+    function submitUpdateRequest() {
+        setSubmittingState(true);
+
+        fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: new FormData(form)
+        })
+        .then(parseResponse)
+        .then(function (result) {
+            if (result.ok) {
+                showToast('success', result.data.message || 'Distribution event updated successfully.');
+                showNotice('success', result.data.message || 'Distribution event updated successfully.', result.data.redirect_url, 'Open event details');
+                return;
+            }
+
+            if (result.status === 422 && result.data.errors) {
+                Object.keys(result.data.errors).forEach(function (field) {
+                    var messages = result.data.errors[field] || [];
+                    if (messages.length > 0) {
+                        setFieldError(field, messages[0]);
+                    }
+                });
+
+                showToast('error', 'Please fix the highlighted fields and try again.');
+                showNotice('error', 'Some required fields are missing or invalid. Please review the highlighted fields.');
+                return;
+            }
+
+            showToast('error', result.data.message || 'Unable to update distribution event.');
+            showNotice('error', result.data.message || 'Unable to update distribution event.');
+        })
+        .catch(function () {
+            showToast('error', 'Network error. Please check your connection and try again.');
+            showNotice('error', 'Network error. Please check your connection and try again.');
+        })
+        .finally(function () {
+            setSubmittingState(false);
+        });
+    }
+
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        clearNotice();
+        clearFieldErrors();
+
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        if (typeof confirmThenRun === 'function') {
+            confirmThenRun(
+                'Confirm Event Update',
+                'Apply these changes to this distribution event?',
+                submitUpdateRequest
+            );
+            return;
+        }
+
+        submitUpdateRequest();
+    });
 });
 </script>
 @endpush

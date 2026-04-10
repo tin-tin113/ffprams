@@ -21,27 +21,89 @@
     </div>
 </div>
 
+<style>
+    #confirmModal.confirm-modal-top-layer {
+        z-index: 1080;
+    }
+
+    .modal-backdrop.confirm-modal-top-backdrop {
+        z-index: 1075;
+    }
+</style>
+
 <script>
 let pendingConfirmForm = null;
+let pendingConfirmCallback = null;
+
+function ensureModalInBody(modalEl) {
+    if (modalEl && modalEl.parentElement !== document.body) {
+        document.body.appendChild(modalEl);
+    }
+}
+
+function getLatestBackdrop() {
+    var backdrops = document.querySelectorAll('.modal-backdrop');
+    return backdrops.length ? backdrops[backdrops.length - 1] : null;
+}
+
+function openConfirmModal(title, message) {
+    document.getElementById('confirmModalLabel').textContent = title || 'Confirm Action';
+    document.getElementById('confirmMessage').textContent = message || 'Are you sure?';
+
+    var confirmModalEl = document.getElementById('confirmModal');
+    ensureModalInBody(confirmModalEl);
+
+    var existingModal = bootstrap.Modal.getInstance(confirmModalEl);
+    if (existingModal) {
+        existingModal.dispose();
+    }
+
+    var modal = new bootstrap.Modal(confirmModalEl);
+    modal.show();
+}
 
 function confirmAction(title, message, actionUrl, method) {
     method = method || 'POST';
     pendingConfirmForm = null;
+    pendingConfirmCallback = null;
 
-    document.getElementById('confirmModalLabel').textContent = title;
-    document.getElementById('confirmMessage').textContent = message;
     document.getElementById('confirmForm').setAttribute('action', actionUrl);
     document.getElementById('confirmMethod').value = method;
 
-    var modal = new bootstrap.Modal(document.getElementById('confirmModal'));
-    modal.show();
+    openConfirmModal(title, message);
+}
+
+function confirmThenRun(title, message, onConfirm) {
+    pendingConfirmForm = null;
+    pendingConfirmCallback = typeof onConfirm === 'function' ? onConfirm : null;
+
+    // Keep a harmless default action for callback mode.
+    document.getElementById('confirmForm').setAttribute('action', '#');
+    document.getElementById('confirmMethod').value = 'POST';
+
+    openConfirmModal(title, message);
 }
 
 document.addEventListener('DOMContentLoaded', function () {
     var confirmModalEl = document.getElementById('confirmModal');
-    var confirmModal = new bootstrap.Modal(confirmModalEl);
     var confirmForm = document.getElementById('confirmForm');
-    var confirmBtn = document.getElementById('confirmBtn');
+
+    ensureModalInBody(confirmModalEl);
+
+    function clearConfirmTopLayer() {
+        confirmModalEl.classList.remove('confirm-modal-top-layer');
+        document.querySelectorAll('.modal-backdrop.confirm-modal-top-backdrop').forEach(function (backdrop) {
+            backdrop.classList.remove('confirm-modal-top-backdrop');
+        });
+    }
+
+    confirmModalEl.addEventListener('shown.bs.modal', function () {
+        confirmModalEl.classList.add('confirm-modal-top-layer');
+        var latestBackdrop = getLatestBackdrop();
+        if (latestBackdrop) {
+            latestBackdrop.classList.add('confirm-modal-top-backdrop');
+        }
+    });
 
     // Intercept forms marked with data-confirm-* attributes.
     document.querySelectorAll('form[data-confirm-message]').forEach(function (form) {
@@ -52,29 +114,51 @@ document.addEventListener('DOMContentLoaded', function () {
 
             e.preventDefault();
             pendingConfirmForm = form;
+            pendingConfirmCallback = null;
 
-            document.getElementById('confirmModalLabel').textContent = form.dataset.confirmTitle || 'Confirm Action';
-            document.getElementById('confirmMessage').textContent = form.dataset.confirmMessage;
-
-            confirmModal.show();
+            openConfirmModal(
+                form.dataset.confirmTitle || 'Confirm Action',
+                form.dataset.confirmMessage
+            );
         });
     });
 
-    confirmBtn.addEventListener('click', function (e) {
-        if (!pendingConfirmForm) {
+    confirmForm.addEventListener('submit', function (e) {
+        if (pendingConfirmForm) {
+            e.preventDefault();
+            var form = pendingConfirmForm;
+            pendingConfirmForm = null;
+            pendingConfirmCallback = null;
+            form.dataset.skipConfirm = '1';
+            var activeModal = bootstrap.Modal.getInstance(confirmModalEl);
+            if (activeModal) {
+                activeModal.hide();
+            }
+            form.submit();
             return;
         }
 
         e.preventDefault();
-        var form = pendingConfirmForm;
-        pendingConfirmForm = null;
-        form.dataset.skipConfirm = '1';
-        confirmModal.hide();
-        form.submit();
+        if (pendingConfirmCallback) {
+            var callback = pendingConfirmCallback;
+            pendingConfirmForm = null;
+            pendingConfirmCallback = null;
+            var activeCallbackModal = bootstrap.Modal.getInstance(confirmModalEl);
+            if (activeCallbackModal) {
+                activeCallbackModal.hide();
+            }
+            callback();
+            return;
+        }
+
+        // confirmAction mode: submit this modal form normally.
+        confirmForm.submit();
     });
 
     confirmModalEl.addEventListener('hidden.bs.modal', function () {
+        clearConfirmTopLayer();
         pendingConfirmForm = null;
+        pendingConfirmCallback = null;
     });
 });
 </script>

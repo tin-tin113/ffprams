@@ -25,7 +25,7 @@
             'users' => 'Users',
             'beneficiaries' => 'Beneficiaries',
             'allocations' => 'Assistance Allocations',
-            'distribution_events' => 'Scheduled Events',
+            'distribution_events' => 'Distribution Events',
             'resource_types' => 'Resource Types',
             'program_names' => 'Program Names',
             'agencies' => 'Agencies',

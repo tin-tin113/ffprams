@@ -13,6 +13,35 @@
         <p class="text-muted mb-0">Send messages directly to beneficiaries</p>
     </div>
 
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white fw-semibold">
+            <i class="bi bi-sliders me-1"></i> SMS Automation Settings
+        </div>
+        <div class="card-body d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+            <div>
+                <div class="fw-semibold">Send SMS when a beneficiary is created</div>
+                <div class="text-muted small">When enabled, newly created beneficiaries with a contact number will receive a registration message automatically.</div>
+            </div>
+            <form method="POST" action="{{ route('sms.settings.beneficiary-registration') }}" class="d-flex align-items-center gap-2">
+                @csrf
+                <div class="form-check form-switch m-0">
+                    <input
+                        class="form-check-input"
+                        type="checkbox"
+                        id="sendOnBeneficiaryCreate"
+                        name="send_on_beneficiary_create"
+                        value="1"
+                        {{ $sendOnBeneficiaryCreate ? 'checked' : '' }}
+                    >
+                    <label class="form-check-label" for="sendOnBeneficiaryCreate">
+                        {{ $sendOnBeneficiaryCreate ? 'Enabled' : 'Disabled' }}
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
+            </form>
+        </div>
+    </div>
+
     {{-- ══════════════════════════════════════════ --}}
     {{-- SECTION 1: COMPOSE MESSAGE                --}}
     {{-- ══════════════════════════════════════════ --}}

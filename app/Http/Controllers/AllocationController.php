@@ -55,6 +55,19 @@ class AllocationController extends Controller
         ));
     }
 
+    public function show(Allocation $allocation): View
+    {
+        $allocation->load([
+            'beneficiary.barangay',
+            'distributionEvent.barangay',
+            'programName.agency',
+            'resourceType.agency',
+            'assistancePurpose',
+        ]);
+
+        return view('allocations.show', compact('allocation'));
+    }
+
     public function store(AllocationRequest $request): RedirectResponse
     {
         $beneficiary = Beneficiary::findOrFail($request->beneficiary_id);
@@ -62,6 +75,11 @@ class AllocationController extends Controller
 
         if ($releaseMethod === 'event') {
             $event = DistributionEvent::with(['barangay', 'resourceType'])->findOrFail($request->distribution_event_id);
+
+            if ($event->status === 'Completed') {
+                return redirect()->back()
+                    ->with('error', 'Allocations cannot be created for a completed event.');
+            }
 
             if ($beneficiary->barangay_id !== $event->barangay_id) {
                 return redirect()->back()
@@ -83,30 +101,38 @@ class AllocationController extends Controller
                 ->where('beneficiary_id', $beneficiary->id)
                 ->forceDelete();
 
-            $allocation = DB::transaction(function () use ($request, $event, $beneficiary) {
-                $allocation = Allocation::create([
-                    'release_method'        => 'event',
-                    'distribution_event_id' => $event->id,
-                    'beneficiary_id'        => $beneficiary->id,
-                    'program_name_id'       => $event->program_name_id,
-                    'resource_type_id'      => $event->resource_type_id,
-                    'quantity'              => $event->isFinancial() ? null : $request->quantity,
-                    'amount'                => $event->isFinancial() ? $request->amount : null,
-                    'assistance_purpose_id' => $request->assistance_purpose_id,
-                    'remarks'               => $request->remarks,
-                ]);
+            try {
+                $allocation = DB::transaction(function () use ($request, $event, $beneficiary) {
+                    if ($event->isFinancial()) {
+                        $this->assertFinancialBudgetAvailable($event, (float) $request->amount);
+                    }
 
-                $this->audit->log(
-                    auth()->id(),
-                    'created',
-                    'allocations',
-                    $allocation->id,
-                    [],
-                    $allocation->toArray(),
-                );
+                    $allocation = Allocation::create([
+                        'release_method'        => 'event',
+                        'distribution_event_id' => $event->id,
+                        'beneficiary_id'        => $beneficiary->id,
+                        'program_name_id'       => $event->program_name_id,
+                        'resource_type_id'      => $event->resource_type_id,
+                        'quantity'              => $event->isFinancial() ? null : $request->quantity,
+                        'amount'                => $event->isFinancial() ? $request->amount : null,
+                        'assistance_purpose_id' => $request->assistance_purpose_id,
+                        'remarks'               => $request->remarks,
+                    ]);
 
-                return $allocation;
-            });
+                    $this->audit->log(
+                        auth()->id(),
+                        'created',
+                        'allocations',
+                        $allocation->id,
+                        [],
+                        $allocation->toArray(),
+                    );
+
+                    return $allocation;
+                });
+            } catch (\RuntimeException $e) {
+                return redirect()->back()->with('error', $e->getMessage());
+            }
 
             // SMS notification (outside transaction -- non-critical)
             if ($beneficiary->contact_number) {
@@ -178,6 +204,11 @@ class AllocationController extends Controller
     {
         $event = DistributionEvent::with(['barangay', 'resourceType'])->findOrFail($request->distribution_event_id);
 
+        if ($event->status === 'Completed') {
+            return redirect()->back()
+                ->with('error', 'Allocations cannot be created for a completed event.');
+        }
+
         $bulkRules = [
             'distribution_event_id'        => ['required', 'exists:distribution_events,id'],
             'allocations'                  => ['required', 'array', 'min:1'],
@@ -209,61 +240,69 @@ class AllocationController extends Controller
         $skipped   = 0;
         $smsQueue  = [];
 
-        DB::transaction(function () use ($request, $event, $existingIds, &$allocated, &$skipped, &$smsQueue) {
-            $seenInRequest = [];
+        try {
+            DB::transaction(function () use ($request, $event, $existingIds, &$allocated, &$skipped, &$smsQueue) {
+                $seenInRequest = [];
 
-            foreach ($request->input('allocations') as $row) {
-                $beneficiary = Beneficiary::find($row['beneficiary_id']);
+                foreach ($request->input('allocations') as $row) {
+                    $beneficiary = Beneficiary::find($row['beneficiary_id']);
 
-                if (! $beneficiary || $beneficiary->barangay_id !== $event->barangay_id) {
-                    $skipped++;
-                    continue;
+                    if (! $beneficiary || $beneficiary->barangay_id !== $event->barangay_id) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    if (in_array($beneficiary->id, $existingIds)) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    if (in_array($beneficiary->id, $seenInRequest, true)) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    if ($event->isFinancial()) {
+                        $this->assertFinancialBudgetAvailable($event, (float) $row['amount']);
+                    }
+
+                    $allocation = Allocation::create([
+                        'release_method'        => 'event',
+                        'distribution_event_id' => $event->id,
+                        'beneficiary_id'        => $beneficiary->id,
+                        'program_name_id'       => $event->program_name_id,
+                        'resource_type_id'      => $event->resource_type_id,
+                        'quantity'              => $event->isFinancial() ? null : $row['quantity'],
+                        'amount'                => $event->isFinancial() ? $row['amount'] : null,
+                        'assistance_purpose_id' => $row['assistance_purpose_id'] ?? null,
+                        'remarks'               => $row['remarks'] ?? null,
+                    ]);
+
+                    $seenInRequest[] = $beneficiary->id;
+
+                    $this->audit->log(
+                        auth()->id(),
+                        'created',
+                        'allocations',
+                        $allocation->id,
+                        [],
+                        $allocation->toArray(),
+                    );
+
+                    $smsQueue[] = [
+                        'number'         => $beneficiary->contact_number,
+                        'full_name'      => $beneficiary->full_name,
+                        'quantity'       => $allocation->quantity,
+                        'amount'         => $allocation->amount,
+                        'beneficiary_id' => $beneficiary->id,
+                    ];
+
+                    $allocated++;
                 }
-
-                if (in_array($beneficiary->id, $existingIds)) {
-                    $skipped++;
-                    continue;
-                }
-
-                if (in_array($beneficiary->id, $seenInRequest, true)) {
-                    $skipped++;
-                    continue;
-                }
-
-                $allocation = Allocation::create([
-                    'release_method'        => 'event',
-                    'distribution_event_id' => $event->id,
-                    'beneficiary_id'        => $beneficiary->id,
-                    'program_name_id'       => $event->program_name_id,
-                    'resource_type_id'      => $event->resource_type_id,
-                    'quantity'              => $event->isFinancial() ? null : $row['quantity'],
-                    'amount'                => $event->isFinancial() ? $row['amount'] : null,
-                    'assistance_purpose_id' => $row['assistance_purpose_id'] ?? null,
-                    'remarks'               => $row['remarks'] ?? null,
-                ]);
-
-                $seenInRequest[] = $beneficiary->id;
-
-                $this->audit->log(
-                    auth()->id(),
-                    'created',
-                    'allocations',
-                    $allocation->id,
-                    [],
-                    $allocation->toArray(),
-                );
-
-                $smsQueue[] = [
-                    'number'         => $beneficiary->contact_number,
-                    'full_name'      => $beneficiary->full_name,
-                    'quantity'       => $allocation->quantity,
-                    'amount'         => $allocation->amount,
-                    'beneficiary_id' => $beneficiary->id,
-                ];
-
-                $allocated++;
-            }
-        });
+            });
+        } catch (\RuntimeException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
 
         // SMS notifications (outside transaction -- non-critical)
         foreach ($smsQueue as $sms) {
@@ -297,6 +336,11 @@ class AllocationController extends Controller
                 ->with('error', 'Direct allocations can only be edited from the assistance allocation page.');
         }
 
+        if ($event->status === 'Completed') {
+            return redirect()->back()
+                ->with('error', 'Allocations cannot be updated for a completed event.');
+        }
+
         $rules = ['remarks' => ['nullable', 'string', 'max:500']];
         $rules['assistance_purpose_id'] = ['nullable', 'exists:assistance_purposes,id'];
 
@@ -310,25 +354,34 @@ class AllocationController extends Controller
 
         $request->validate($rules);
 
-        DB::transaction(function () use ($request, $allocation, $event) {
-            $oldValues = $allocation->toArray();
+        try {
+            DB::transaction(function () use ($request, $allocation, $event) {
+                $oldValues = $allocation->toArray();
 
-            $allocation->update([
-                'quantity' => $event->isFinancial() ? null : $request->quantity,
-                'amount'   => $event->isFinancial() ? $request->amount : null,
-                'assistance_purpose_id' => $request->assistance_purpose_id,
-                'remarks'  => $request->remarks,
-            ]);
+                if ($event->isFinancial()) {
+                    $newAmount = (float) $request->amount;
+                    $this->assertFinancialAllocationAmountFits($event, $newAmount, $allocation->id);
+                }
 
-            $this->audit->log(
-                auth()->id(),
-                'updated',
-                'allocations',
-                $allocation->id,
-                $oldValues,
-                $allocation->fresh()->toArray(),
-            );
-        });
+                $allocation->update([
+                    'quantity' => $event->isFinancial() ? null : $request->quantity,
+                    'amount'   => $event->isFinancial() ? $request->amount : null,
+                    'assistance_purpose_id' => $request->assistance_purpose_id,
+                    'remarks'  => $request->remarks,
+                ]);
+
+                $this->audit->log(
+                    auth()->id(),
+                    'updated',
+                    'allocations',
+                    $allocation->id,
+                    $oldValues,
+                    $allocation->fresh()->toArray(),
+                );
+            });
+        } catch (\RuntimeException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
 
         return redirect()->route('distribution-events.show', $allocation->distribution_event_id)
             ->with('success', 'Allocation updated successfully.');
@@ -434,5 +487,133 @@ class AllocationController extends Controller
 
         return redirect()->back()
             ->with('success', 'Allocation marked as not received.');
+    }
+
+    public function bulkUpdateReleaseOutcome(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'distribution_event_id' => ['required', 'exists:distribution_events,id'],
+            'allocation_ids' => ['required', 'array', 'min:1'],
+            'allocation_ids.*' => ['integer', 'distinct', 'exists:allocations,id'],
+            'action' => ['required', 'in:distributed,not_received'],
+        ]);
+
+        $event = DistributionEvent::findOrFail($validated['distribution_event_id']);
+
+        if ($event->status === 'Pending') {
+            return redirect()->back()
+                ->with('error', 'Bulk release updates are only allowed after the event starts.');
+        }
+
+        $allocationIds = collect($validated['allocation_ids'])
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $allocations = Allocation::whereIn('id', $allocationIds)
+            ->where('distribution_event_id', $event->id)
+            ->where('release_method', 'event')
+            ->get();
+
+        if ($allocations->isEmpty()) {
+            return redirect()->back()
+                ->with('error', 'No valid allocations were selected for this event.');
+        }
+
+        $updated = 0;
+        $skipped = 0;
+
+        DB::transaction(function () use ($allocations, $validated, &$updated, &$skipped) {
+            foreach ($allocations as $allocation) {
+                if ($allocation->distributed_at || $allocation->release_outcome === 'not_received') {
+                    $skipped++;
+                    continue;
+                }
+
+                $oldValues = $allocation->toArray();
+
+                if ($validated['action'] === 'distributed') {
+                    $allocation->update([
+                        'distributed_at' => Carbon::now(),
+                        'release_outcome' => 'received',
+                    ]);
+                } else {
+                    $allocation->update([
+                        'distributed_at' => null,
+                        'release_outcome' => 'not_received',
+                    ]);
+                }
+
+                $this->audit->log(
+                    auth()->id(),
+                    'updated',
+                    'allocations',
+                    $allocation->id,
+                    $oldValues,
+                    $allocation->fresh()->toArray(),
+                );
+
+                $updated++;
+            }
+        });
+
+        if ($updated === 0) {
+            return redirect()->back()
+                ->with('warning', 'No allocations were updated. Selected entries may already have final outcomes.');
+        }
+
+        $label = $validated['action'] === 'distributed'
+            ? 'marked as distributed'
+            : 'marked as not received';
+
+        return redirect()->back()
+            ->with('success', "{$updated} allocation(s) {$label}. {$skipped} skipped.");
+    }
+
+    private function assertFinancialBudgetAvailable(DistributionEvent $event, float $additionalAmount, ?int $excludeAllocationId = null): void
+    {
+        if (! $event->isFinancial() || $additionalAmount <= 0) {
+            return;
+        }
+
+        $lockedEvent = DistributionEvent::whereKey($event->id)->lockForUpdate()->firstOrFail();
+
+        $budget = (float) ($lockedEvent->total_fund_amount ?? 0);
+        if ($budget <= 0) {
+            throw new \RuntimeException('This financial event has no valid total fund amount configured.');
+        }
+
+        $currentAllocated = Allocation::where('distribution_event_id', $event->id)
+            ->when($excludeAllocationId, fn ($q) => $q->where('id', '!=', $excludeAllocationId))
+            ->sum('amount');
+
+        $remaining = $budget - (float) $currentAllocated;
+
+        if ($additionalAmount - $remaining > 0.00001) {
+            throw new \RuntimeException('Allocation exceeds remaining event budget. Remaining budget: PHP ' . number_format(max($remaining, 0), 2) . '.');
+        }
+    }
+
+    private function assertFinancialAllocationAmountFits(DistributionEvent $event, float $proposedAmount, ?int $excludeAllocationId = null): void
+    {
+        if (! $event->isFinancial() || $proposedAmount <= 0) {
+            return;
+        }
+
+        $lockedEvent = DistributionEvent::whereKey($event->id)->lockForUpdate()->firstOrFail();
+        $budget = (float) ($lockedEvent->total_fund_amount ?? 0);
+
+        if ($budget <= 0) {
+            throw new \RuntimeException('This financial event has no valid total fund amount configured.');
+        }
+
+        $otherAllocated = Allocation::where('distribution_event_id', $event->id)
+            ->when($excludeAllocationId, fn ($q) => $q->where('id', '!=', $excludeAllocationId))
+            ->sum('amount');
+
+        if (($otherAllocated + $proposedAmount) - $budget > 0.00001) {
+            $remaining = max($budget - (float) $otherAllocated, 0);
+            throw new \RuntimeException('Allocation exceeds remaining event budget. Remaining budget: PHP ' . number_format($remaining, 2) . '.');
+        }
     }
 }

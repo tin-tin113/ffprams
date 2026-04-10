@@ -11,7 +11,7 @@ class AuditLogService
         int $userId,
         string $action,
         string $tableName,
-        int $recordId,
+        ?int $recordId,
         array $oldValues = [],
         array $newValues = [],
     ): void {

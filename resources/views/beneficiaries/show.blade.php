@@ -238,7 +238,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($beneficiary->allocations as $allocation)
+                        @foreach($beneficiary->allocations as $allocation)
                             <tr>
                                 <td>
                                     @if($allocation->isDirect())
@@ -269,7 +269,7 @@
                                 <td class="text-muted small">{{ $allocation->distributed_at?->format('M d, Y h:i A') ?? '—' }}</td>
                                 <td>{{ $allocation->remarks ?? '—' }}</td>
                             </tr>
-                        @endforelse
+                        @endforeach
 
                         {{-- Direct Assistance Records --}}
                         @forelse($beneficiary->directAssistance as $assistance)

@@ -3,15 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\DistributionEventRequest;
+use App\Models\AssistancePurpose;
 use App\Models\Barangay;
 use App\Models\DistributionEvent;
 use App\Models\ProgramName;
 use App\Models\ResourceType;
 use App\Services\AuditLogService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DistributionEventController extends Controller
 {
@@ -76,7 +80,7 @@ class DistributionEventController extends Controller
         return view('distribution_events.create', compact('barangays', 'resourceTypes', 'programNames'));
     }
 
-    public function store(DistributionEventRequest $request): RedirectResponse
+    public function store(DistributionEventRequest $request): RedirectResponse|JsonResponse
     {
         $event = DB::transaction(function () use ($request) {
             $event = DistributionEvent::create([
@@ -96,6 +100,15 @@ class DistributionEventController extends Controller
             return $event;
         });
 
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Distribution event created successfully.',
+                'event_id' => $event->id,
+                'redirect_url' => route('distribution-events.show', $event),
+            ]);
+        }
+
         return redirect()->route('distribution-events.show', $event)
             ->with('success', 'Distribution event created successfully.');
     }
@@ -112,11 +125,84 @@ class DistributionEventController extends Controller
         ]);
 
         $allocatedBeneficiaryIds = $event->allocations->pluck('beneficiary_id')->toArray();
+        $assistancePurposes = AssistancePurpose::active()
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
-        return view('distribution_events.show', compact('event', 'allocatedBeneficiaryIds'));
+        return view('distribution_events.show', compact('event', 'allocatedBeneficiaryIds', 'assistancePurposes'));
     }
 
     public function distributionList(DistributionEvent $event): View
+    {
+        $this->loadDistributionListRelations($event);
+
+        return view('distribution_events.distribution_list', compact('event'));
+    }
+
+    public function distributionListPdf(DistributionEvent $event)
+    {
+        $this->loadDistributionListRelations($event);
+
+        $filename = 'distribution-list-event-' . $event->id . '-' . now()->format('Ymd-His') . '.pdf';
+
+        $pdf = Pdf::loadView('distribution_events.distribution_list_pdf', compact('event'))
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->download($filename);
+    }
+
+    public function distributionListCsv(DistributionEvent $event): StreamedResponse
+    {
+        $this->loadDistributionListRelations($event);
+
+        $filename = 'distribution-list-event-' . $event->id . '-' . now()->format('Ymd-His') . '.csv';
+
+        return response()->streamDownload(function () use ($event) {
+            $output = fopen('php://output', 'w');
+
+            fwrite($output, "\xEF\xBB\xBF");
+
+            fputcsv($output, [
+                'No',
+                'Beneficiary Name',
+                'Classification',
+                'Contact Number',
+                'Barangay',
+                $event->isFinancial() ? 'Amount (PHP)' : 'Quantity',
+                'Release Outcome',
+                'Remarks',
+            ]);
+
+            foreach ($event->allocations as $index => $allocation) {
+                $releaseOutcome = match (true) {
+                    (bool) $allocation->distributed_at => 'Received',
+                    $allocation->release_outcome === 'not_received' => 'Not Received',
+                    default => 'Pending',
+                };
+
+                $allocationValue = $event->isFinancial()
+                    ? number_format((float) $allocation->amount, 2, '.', '')
+                    : number_format((float) $allocation->quantity, 2, '.', '') . ' ' . $event->resourceType->unit;
+
+                fputcsv($output, [
+                    $index + 1,
+                    $allocation->beneficiary->full_name,
+                    $allocation->beneficiary->classification,
+                    $allocation->beneficiary->contact_number ?? '',
+                    $event->barangay->name,
+                    $allocationValue,
+                    $releaseOutcome,
+                    $allocation->remarks ?? '',
+                ]);
+            }
+
+            fclose($output);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    private function loadDistributionListRelations(DistributionEvent $event): void
     {
         $event->load([
             'barangay',
@@ -125,7 +211,13 @@ class DistributionEventController extends Controller
             'allocations.beneficiary',
         ]);
 
-        return view('distribution_events.distribution_list', compact('event'));
+        $sortedAllocations = $event->allocations
+            ->sortBy(function ($allocation) {
+                return $allocation->beneficiary->full_name;
+            })
+            ->values();
+
+        $event->setRelation('allocations', $sortedAllocations);
     }
 
     public function edit(DistributionEvent $event): View|RedirectResponse
@@ -142,9 +234,16 @@ class DistributionEventController extends Controller
         return view('distribution_events.edit', compact('event', 'barangays', 'resourceTypes', 'programNames'));
     }
 
-    public function update(DistributionEventRequest $request, DistributionEvent $event): RedirectResponse
+    public function update(DistributionEventRequest $request, DistributionEvent $event): RedirectResponse|JsonResponse
     {
         if ($event->status !== 'Pending') {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Only Pending events can be edited.',
+                ], 422);
+            }
+
             return redirect()->route('distribution-events.index')
                 ->with('error', 'Only Pending events can be edited.');
         }
@@ -163,6 +262,15 @@ class DistributionEventController extends Controller
                 $event->fresh()->toArray(),
             );
         });
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Distribution event updated successfully.',
+                'event_id' => $event->id,
+                'redirect_url' => route('distribution-events.show', $event),
+            ]);
+        }
 
         return redirect()->route('distribution-events.index')
             ->with('success', 'Distribution event updated successfully.');

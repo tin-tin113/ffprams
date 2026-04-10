@@ -38,10 +38,26 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            height: 100%;
+            width: 100%;
+        }
+
+        html {
+            /* Reserve space for scrollbar on all browsers */
+            scrollbar-gutter: stable;
+            /* Fallback for browsers without scrollbar-gutter support */
+            overflow-y: scroll;
+        }
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-color: var(--body-bg);
-            overflow-x: hidden;
+            /* Don't hide overflow; let scrollbar appear naturally */
+            overflow-x: visible;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         /* --- Page Loading Indicator --- */
@@ -70,44 +86,52 @@
             display: flex;
             flex-direction: column;
             transition: transform 0.3s ease;
+            will-change: transform;
+            /* Prevent layout shift caused by scrollbar */
+            backface-visibility: hidden;
+            perspective: 1000px;
         }
 
         .sidebar-header {
-            padding: 1rem 1rem 0.75rem;
+            padding: 0.7rem 1rem 0.5rem;
             text-align: center;
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
         .sidebar-logo {
-            width: 55px;
-            height: 55px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.25rem;
             border: 2px solid rgba(255,255,255,0.2);
             object-fit: cover;
         }
 
         .sidebar-title {
             color: #fff;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            line-height: 1.2;
+            line-height: 1.1;
         }
 
         .sidebar-nav {
             flex: 1;
-            overflow-y: hidden;
-            padding: 0.5rem 0;
+            overflow-y: auto;
+            padding: 0.3rem 0;
+            /* Reserve scrollbar space in sidebar */
+            scrollbar-gutter: stable;
+            /* Prevent internal scrollbar from affecting layout */
+            max-height: calc(100vh - 160px);
         }
 
         .sidebar .nav-link {
             display: flex;
             align-items: center;
             color: rgba(255,255,255,0.7);
-            padding: 0.55rem 1rem;
-            font-size: 0.85rem;
+            padding: 0.4rem 1rem;
+            font-size: 0.8rem;
             font-weight: 500;
             transition: all 0.2s;
             border-left: 3px solid transparent;
@@ -122,11 +146,18 @@
             color: #fff;
             background-color: var(--sidebar-active);
             border-left-color: var(--accent-green);
+            font-weight: 500;
+        }
+
+        /* Extra emphasis for Admin section active links */
+        .sidebar-heading:last-of-type ~ .nav-link.active {
+            background-color: var(--sidebar-active);
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.2);
         }
 
         .sidebar .nav-link i {
             width: 18px;
-            margin-right: 0.65rem;
+            margin-right: 0.5rem;
             font-size: 1rem;
             color: var(--accent-green);
         }
@@ -141,19 +172,19 @@
             text-transform: uppercase;
             letter-spacing: 1.5px;
             color: rgba(255,255,255,0.4);
-            padding: 0.9rem 1rem 0.4rem;
+            padding: 0.6rem 1rem 0.25rem;
             font-weight: 600;
         }
 
         .sidebar-user {
-            padding: 0.85rem 1rem;
+            padding: 0.65rem 1rem;
             border-top: 1px solid rgba(255,255,255,0.1);
             background-color: rgba(0,0,0,0.2);
         }
 
         .sidebar-user-avatar {
-            width: 32px;
-            height: 32px;
+            width: 30px;
+            height: 30px;
             background-color: var(--accent-green);
             border-radius: 50%;
             display: flex;
@@ -161,17 +192,17 @@
             justify-content: center;
             color: #fff;
             font-weight: 600;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
         }
 
         .sidebar-user-info {
-            margin-left: 0.65rem;
+            margin-left: 0.5rem;
             overflow: hidden;
         }
 
         .sidebar-user-name {
             color: #fff;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 500;
             white-space: nowrap;
             overflow: hidden;
@@ -179,7 +210,7 @@
         }
 
         .sidebar-user-role {
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             color: rgba(255,255,255,0.5);
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -210,6 +241,10 @@
             justify-content: space-between;
             padding: 0 1.5rem;
             transition: left 0.3s ease;
+            will-change: left;
+            /* Prevent layout shift caused by scrollbar */
+            backface-visibility: hidden;
+            perspective: 1000px;
         }
 
         .header-left {
@@ -341,6 +376,13 @@
             padding-bottom: 2rem;
             min-height: 100vh;
             transition: margin-left 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            /* Ensure scrollbar space is always reserved */
+            width: calc(100% - var(--sidebar-width));
+            /* Prevent layout shift */
+            backface-visibility: hidden;
+            perspective: 1000px;
         }
 
         .main-content .container-fluid {
@@ -524,7 +566,36 @@
             margin-right: 0.4rem;
         }
 
-        /* --- Responsive --- */
+        /* --- Modal Scrollbar Prevention --- */
+        body.modal-open {
+            overflow: hidden !important;
+            padding-right: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        /* Keep modals above fixed layout layers and overlays. */
+        .modal {
+            z-index: 1060;
+        }
+
+        .modal-backdrop {
+            z-index: 1055;
+        }
+
+        /* Ensure sidebar active state always shows on System Settings page */
+        @media (min-width: 992px) {
+            .sidebar .nav-link.active {
+                z-index: 10;
+            }
+
+            /* Prevent page styles from affecting sidebar */
+            .sidebar-nav {
+                position: relative;
+                z-index: 1050;
+            }
+        }
+
+        /* Responsive --- */
         @media (max-width: 991.98px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -603,7 +674,7 @@
 
                 <a class="nav-link {{ request()->routeIs('distribution-events.*') ? 'active' : '' }}"
                    href="{{ route('distribution-events.index') }}">
-                    <i class="bi bi-calendar-event-fill"></i> Scheduled Events
+                    <i class="bi bi-calendar-event-fill"></i> Distribution Events
                 </a>
 
                 <a class="nav-link {{ request()->routeIs('sms.*') ? 'active' : '' }}"
@@ -614,11 +685,6 @@
                 <a class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}"
                    href="{{ route('reports.index') }}">
                     <i class="bi bi-bar-chart-fill"></i> Reports
-                </a>
-
-                <a class="nav-link {{ request()->routeIs('resource-types.*') ? 'active' : '' }}"
-                   href="{{ route('resource-types.index') }}">
-                    <i class="bi bi-tags-fill"></i> Resource Types
                 </a>
 
                 <a class="nav-link {{ request()->routeIs('geo-map.*') ? 'active' : '' }}"
@@ -725,6 +791,79 @@
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Sidebar Active State & Scrollbar Fix -->
+    <script>
+    (function () {
+        // Ensure System Settings link stays active on all settings pages
+        function highlightSettingsLink() {
+            var currentPath = window.location.pathname;
+            var settingsLink = document.querySelector('a[href*="/admin/settings"]');
+
+            if (settingsLink && (currentPath.includes('/admin/settings') || currentPath.includes('admin.settings'))) {
+                settingsLink.classList.add('active');
+                settingsLink.style.backgroundColor = 'var(--sidebar-active)';
+                settingsLink.style.borderLeftColor = 'var(--accent-green)';
+            }
+        }
+
+        // Run on page load and after navigation
+        highlightSettingsLink();
+        window.addEventListener('load', highlightSettingsLink);
+
+        // Also ensure sidebar nav stays properly sized
+        function ensureSidebarHeight() {
+            var sidebarNav = document.querySelector('.sidebar-nav');
+            if (sidebarNav) {
+                sidebarNav.style.maxHeight = 'calc(100vh - 160px)';
+            }
+        }
+
+        ensureSidebarHeight();
+        window.addEventListener('resize', ensureSidebarHeight);
+    })();
+    </script>
+
+    <!-- Modal safety: avoid stacking-context click traps -->
+    <script>
+    (function () {
+        function moveModalToBody(modalEl) {
+            if (!modalEl || modalEl.parentElement === document.body) {
+                return;
+            }
+
+            // Bootstrap modals can become unclickable when nested in transformed containers.
+            document.body.appendChild(modalEl);
+        }
+
+        function resetBodyModalSpacing() {
+            document.body.style.paddingRight = '0';
+            document.body.style.marginRight = '0';
+        }
+
+        function closeSidebarOverlay() {
+            var sidebarOverlay = document.getElementById('sidebarOverlay');
+            if (sidebarOverlay) {
+                sidebarOverlay.classList.remove('show');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.modal').forEach(moveModalToBody);
+            resetBodyModalSpacing();
+        });
+
+        document.addEventListener('show.bs.modal', function (e) {
+            moveModalToBody(e.target);
+            closeSidebarOverlay();
+            resetBodyModalSpacing();
+        });
+
+        document.addEventListener('hidden.bs.modal', function () {
+            resetBodyModalSpacing();
+        });
+    })();
+    </script>
 
     <!-- Page Loading Indicator -->
     <script>

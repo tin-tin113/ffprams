@@ -83,7 +83,7 @@
         <i class="bi bi-box-seam me-1"></i> Assistance Operations
     </h6>
     <div class="row g-3">
-        <!-- Total Scheduled Events -->
+        <!-- Total Distribution Events -->
         <div class="col-sm-6 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
@@ -91,14 +91,14 @@
                         <i class="bi bi-calendar-event-fill text-secondary fs-4"></i>
                     </div>
                     <div>
-                        <div class="text-muted small">Total Scheduled Events</div>
+                        <div class="text-muted small">Total Distribution Events</div>
                         <div class="fs-4 fw-bold">{{ number_format($totalDistributionEvents) }}</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Completed Scheduled Events -->
+        <!-- Completed Distribution Events -->
         <div class="col-sm-6 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
@@ -106,7 +106,7 @@
                         <i class="bi bi-check-circle-fill text-success fs-4"></i>
                     </div>
                     <div>
-                        <div class="text-muted small">Completed Scheduled Events</div>
+                        <div class="text-muted small">Completed Distribution Events</div>
                         <div class="fs-4 fw-bold">{{ number_format($completedEvents) }}</div>
                     </div>
                 </div>

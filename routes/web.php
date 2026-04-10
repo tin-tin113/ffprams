@@ -78,6 +78,8 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
         ->name('allocations.markDistributed');
     Route::post('allocations/{allocation}/not-received', [AllocationController::class, 'markNotReceived'])
         ->name('allocations.markNotReceived');
+    Route::post('allocations/bulk-release-outcome', [AllocationController::class, 'bulkUpdateReleaseOutcome'])
+        ->name('allocations.bulkReleaseOutcome');
 
     // Direct Assistance
     Route::resource('direct-assistance', DirectAssistanceController::class);
@@ -94,11 +96,14 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
 
     // SMS Broadcast
     Route::get('sms', [SmsController::class, 'index'])->name('sms.index');
+    Route::post('sms/settings/beneficiary-registration', [SmsController::class, 'updateBeneficiaryRegistrationSmsSetting'])
+        ->name('sms.settings.beneficiary-registration');
     Route::post('sms/preview', [SmsController::class, 'preview'])->name('sms.preview');
     Route::post('sms/send', [SmsController::class, 'send'])->name('sms.send');
 
     // Operational read pages
     Route::get('allocations', [AllocationController::class, 'index'])->name('allocations.index');
+    Route::get('allocations/{allocation}', [AllocationController::class, 'show'])->name('allocations.show');
     Route::get('beneficiaries', [BeneficiaryController::class, 'index'])->name('beneficiaries.index');
     Route::get('beneficiaries/{beneficiary}', [BeneficiaryController::class, 'show'])->name('beneficiaries.show');
     Route::get('api/beneficiaries/{beneficiary}/summary', [BeneficiaryController::class, 'summary'])
@@ -107,6 +112,10 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
     Route::get('distribution-events/{event}', [DistributionEventController::class, 'show'])->name('distribution-events.show');
     Route::get('distribution-events/{event}/distribution-list', [DistributionEventController::class, 'distributionList'])
         ->name('distribution-events.distributionList');
+    Route::get('distribution-events/{event}/distribution-list/pdf', [DistributionEventController::class, 'distributionListPdf'])
+        ->name('distribution-events.distributionListPdf');
+    Route::get('distribution-events/{event}/distribution-list/csv', [DistributionEventController::class, 'distributionListCsv'])
+        ->name('distribution-events.distributionListCsv');
     Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
     Route::get('geo-map', [GeoMapController::class, 'index'])->name('geo-map.index');
     Route::get('geo-map/data', [GeoMapController::class, 'mapData'])->name('geo-map.data');
@@ -119,9 +128,7 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
 */
 Route::middleware(['auth', 'verified', 'role:partner'])->group(function () {
     // Read-only reports for national partner agencies
-    Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
-    Route::get('geo-map', [GeoMapController::class, 'index'])->name('geo-map.index');
-    Route::get('geo-map/data', [GeoMapController::class, 'mapData'])->name('geo-map.data');
+    // TODO: Add partner-specific filtering when partner role is fully implemented
 });
 
 /*
@@ -133,9 +140,6 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     // Admin-only allocation deletion endpoint
     Route::delete('allocations/{allocation}', [AllocationController::class, 'destroy'])
         ->name('allocations.destroy');
-
-    // Resource Types (admin-only write actions)
-    Route::resource('resource-types', ResourceTypeController::class)->only(['store', 'update', 'destroy']);
 });
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -147,7 +151,17 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 
     // System Settings
     Route::get('settings', [SystemSettingsController::class, 'index'])->name('settings.index');
+
+    // Settings — Separate Pages (Multi-page Interface)
+    Route::get('settings/agencies', [SystemSettingsController::class, 'indexAgencies'])->name('settings.agencies.index');
+    Route::get('settings/purposes', [SystemSettingsController::class, 'indexPurposes'])->name('settings.purposes.index');
+    Route::get('settings/resource-types', [SystemSettingsController::class, 'indexResourceTypes'])->name('settings.resource-types.index');
+    Route::get('settings/program-names', [SystemSettingsController::class, 'indexProgramNames'])->name('settings.program-names.index');
+    Route::get('settings/form-fields', [SystemSettingsController::class, 'indexFormFields'])->name('settings.form-fields.index');
+
+    // Settings — API List Endpoints
     Route::get('settings/agencies/list', [SystemSettingsController::class, 'listAgencies'])->name('settings.agencies.list');
+    Route::get('settings/agencies/active', [SystemSettingsController::class, 'getActiveAgencies'])->name('settings.agencies.active');
     Route::get('settings/purposes/list', [SystemSettingsController::class, 'listPurposes'])->name('settings.purposes.list');
     Route::get('settings/resource-types/list', [SystemSettingsController::class, 'listResourceTypes'])->name('settings.resource-types.list');
     Route::get('settings/program-names/list', [SystemSettingsController::class, 'listProgramNames'])->name('settings.program-names.list');
