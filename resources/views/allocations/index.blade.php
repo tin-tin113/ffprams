@@ -227,7 +227,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
         try {
             const response = await fetch(`/api/allocations/eligible-programs/${beneficiaryId}`);
+
+            if (!response.ok) {
+                console.error(`HTTP Error: ${response.status} ${response.statusText}`);
+                const text = await response.text();
+                console.error('Response body:', text);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
             const data = await response.json();
+            console.log('Programs loaded:', data);
 
             if (data.success && data.programs) {
                 // Clear existing options
@@ -255,11 +264,15 @@ document.addEventListener('DOMContentLoaded', function () {
                         delete programSelect.dataset.previousValue;
                     }
                 }
+            } else {
+                console.error('Invalid response format:', data);
+                throw new Error('Invalid response format from server');
             }
         } catch (error) {
             console.error('Error loading eligible programs:', error);
             programSelect.innerHTML = '<option value="" selected disabled>Error loading programs</option>';
             programSelect.disabled = true;
+            programInfo.style.display = 'none';
         }
     }
 

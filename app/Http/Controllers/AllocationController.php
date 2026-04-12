@@ -83,20 +83,31 @@ class AllocationController extends Controller
      */
     public function getEligiblePrograms(Beneficiary $beneficiary)
     {
-        $programs = ProgramEligibilityService::getEligiblePrograms($beneficiary)
-            ->load('agency')
-            ->orderBy('name')
-            ->get();
+        try {
+            $programs = ProgramEligibilityService::getEligiblePrograms($beneficiary);
 
-        return response()->json([
-            'success' => true,
-            'programs' => $programs->map(fn ($prog) => [
-                'id' => $prog->id,
-                'name' => $prog->name,
-                'agency_name' => $prog->agency->name,
-                'formatted' => "{$prog->name} - {$prog->agency->name}",
-            ]),
-        ]);
+            return response()->json([
+                'success' => true,
+                'programs' => $programs->map(fn ($prog) => [
+                    'id' => $prog->id,
+                    'name' => $prog->name,
+                    'agency_name' => $prog->agency?->name ?? 'N/A',
+                    'formatted' => "{$prog->name} - " . ($prog->agency?->name ?? 'Unknown Agency'),
+                ])->values(),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching eligible programs', [
+                'beneficiary_id' => $beneficiary->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Error loading programs: ' . $e->getMessage(),
+                'programs' => [],
+            ], 500);
+        }
     }
 
     public function store(AllocationRequest $request): RedirectResponse
