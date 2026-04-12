@@ -157,7 +157,34 @@ class BeneficiaryController extends Controller
 
         // No duplicates - proceed with registration
         $beneficiary = DB::transaction(function () use ($validated) {
+            // Extract agency IDs and set primary agency (first selected)
+            $agencyIds = (array) $validated['agencies'] ?? [];
+            $validated['agency_id'] = $agencyIds[0] ?? null;
+            unset($validated['agencies']);
+
             $beneficiary = Beneficiary::create(array_merge($validated, ['status' => 'Active']));
+
+            // Sync all selected agencies to pivot table with their identifiers
+            $agencies = Agency::whereIn('id', $agencyIds)->get();
+            foreach ($agencies as $agency) {
+                $agencyName = strtoupper($agency->name);
+                $identifier = null;
+
+                // Extract the correct identifier for this agency
+                if ($agencyName === 'DA') {
+                    $identifier = $beneficiary->rsbsa_number ?? null;
+                } elseif ($agencyName === 'BFAR') {
+                    $identifier = $beneficiary->fishr_number ?? null;
+                } elseif ($agencyName === 'DAR') {
+                    $identifier = $beneficiary->cloa_ep_number ?? null;
+                }
+
+                // Attach agency with identifier and registration date
+                $beneficiary->agencies()->attach($agency->id, [
+                    'identifier' => $identifier,
+                    'registered_at' => now()->toDateString(),
+                ]);
+            }
 
             $this->audit->log(
                 (int) Auth::id(),
@@ -274,7 +301,44 @@ class BeneficiaryController extends Controller
         DB::transaction(function () use ($beneficiary, $validated) {
             $oldValues = $beneficiary->toArray();
 
+            // Extract agency IDs and set primary agency (first selected)
+            $agencyIds = (array) $validated['agencies'] ?? [];
+            $validated['agency_id'] = $agencyIds[0] ?? null;
+            unset($validated['agencies']);
+
             $beneficiary->update($validated);
+
+            // Sync all selected agencies to pivot table with their identifiers
+            $agencies = Agency::whereIn('id', $agencyIds)->get();
+            $agencyPivotData = [];
+
+            foreach ($agencies as $agency) {
+                $agencyName = strtoupper($agency->name);
+                $identifier = null;
+
+                // Extract the correct identifier for this agency
+                if ($agencyName === 'DA') {
+                    $identifier = $beneficiary->rsbsa_number ?? null;
+                } elseif ($agencyName === 'BFAR') {
+                    $identifier = $beneficiary->fishr_number ?? null;
+                } elseif ($agencyName === 'DAR') {
+                    $identifier = $beneficiary->cloa_ep_number ?? null;
+                }
+
+                // Get existing registration date if agency was already registered, otherwise use today
+                $existingPivot = $beneficiary->agencies()
+                    ->where('agency_id', $agency->id)
+                    ->first();
+                $registeredAt = $existingPivot?->pivot->registered_at ?? now()->toDateString();
+
+                $agencyPivotData[$agency->id] = [
+                    'identifier' => $identifier,
+                    'registered_at' => $registeredAt,
+                ];
+            }
+
+            // Sync pivot table (adds new agencies, removes old ones)
+            $beneficiary->agencies()->sync($agencyPivotData);
 
             $this->audit->log(
                 (int) Auth::id(),

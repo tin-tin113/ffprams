@@ -118,6 +118,13 @@ class Beneficiary extends Model
         return $this->hasMany(BeneficiaryAttachment::class);
     }
 
+    public function agencies(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Agency::class, 'beneficiary_agencies')
+            ->withPivot('identifier', 'registered_at')
+            ->withTimestamps();
+    }
+
     // ── Helpers ───────────────────────────────────
 
     public function isFarmer(): bool

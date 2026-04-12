@@ -50,10 +50,10 @@ class BeneficiaryRequest extends FormRequest
         $nativeFallbackValues = $this->nativeFieldFallbackValues();
 
         $beneficiaryId = $this->route('beneficiary')?->id;
-        $agencyId = $this->input('agency_id');
-        $agency = $agencyId ? Agency::find($agencyId) : null;
-        $agencyName = $agency?->name ? strtoupper($agency->name) : null;
+        $agencyIds = (array) $this->input('agencies', []);
+        $selectedAgencies = Agency::whereIn('id', $agencyIds)->get();
         $fieldGroupSettings = $this->fieldGroupSettings();
+        $classification = $this->input('classification');
 
         $civilStatusValues = $this->allowedFieldValues('civil_status', $nativeFallbackValues['civil_status']);
         $highestEducationValues = $this->allowedFieldValues('highest_education', $nativeFallbackValues['highest_education']);
@@ -74,8 +74,27 @@ class BeneficiaryRequest extends FormRequest
         $ownershipSchemeRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'ownership_scheme', true);
 
         $rules = [
-            // Agency source (determines which fields are required)
-            'agency_id'        => ['required', 'exists:agencies,id'],
+            // Multiple agencies (multi-select)
+            'agencies'         => [
+                'required', 'array', 'min:1',
+                function ($attribute, $value, $fail) {
+                    $classification = $this->input('classification');
+                    $selectedAgencies = Agency::whereIn('id', $value)
+                        ->pluck('name')
+                        ->map(fn($n) => strtoupper($n))
+                        ->toArray();
+
+                    // Validate agency-classification compatibility
+                    if ($classification === 'Farmer' && in_array('BFAR', $selectedAgencies)) {
+                        $fail('BFAR (Bureau of Fisheries) cannot be selected for Farmer classification.');
+                    }
+
+                    if ($classification === 'Fisherfolk' && in_array('DAR', $selectedAgencies)) {
+                        $fail('DAR (Department of Agrarian Reform) cannot be selected for Fisherfolk classification.');
+                    }
+                }
+            ],
+            'agencies.*'       => ['required', 'integer', 'exists:agencies,id'],
 
             // Common fields per reference document
             'first_name'       => ['required', 'string', 'max:100'],
@@ -94,7 +113,25 @@ class BeneficiaryRequest extends FormRequest
             'id_type'          => [$idTypeRequired ? 'required' : 'nullable', Rule::in($idTypeValues)],
             'status'           => ['required', Rule::in(['Active', 'Inactive'])],
             'registered_at'    => ['required', 'date', 'before_or_equal:today'],
-            'classification'   => ['required', Rule::in(['Farmer', 'Fisherfolk'])],
+            'classification'   => [
+                'required',
+                Rule::in(['Farmer', 'Fisherfolk']),
+                function ($attribute, $value, $fail) {
+                    // Lock classification if editing and registration numbers exist
+                    $beneficiaryId = $this->route('beneficiary')?->id;
+                    if ($beneficiaryId) {
+                        $beneficiary = Beneficiary::find($beneficiaryId);
+                        if ($beneficiary && (!empty($beneficiary->rsbsa_number) ||
+                            !empty($beneficiary->fishr_number) ||
+                            !empty($beneficiary->cloa_ep_number))) {
+                            // Classification cannot be changed once identifiers are assigned
+                            if ($value !== $beneficiary->classification) {
+                                $fail('Classification cannot be changed after registration numbers are assigned.');
+                            }
+                        }
+                    }
+                },
+            ],
             'custom_fields'    => ['nullable', 'array'],
 
             // Association membership (common to all)
@@ -102,71 +139,124 @@ class BeneficiaryRequest extends FormRequest
             'association_name'   => ['nullable', 'required_if:association_member,true', 'required_if:association_member,1', 'string', 'max:255'],
         ];
 
-        // DA/RSBSA fields (required ONLY when classification is Farmer)
-        $isFarmer = $this->input('classification') === 'Farmer';
+        // Validate fields based on EACH selected agency + classification
+        foreach ($selectedAgencies as $agency) {
+            $agencyName = strtoupper($agency->name);
 
-        if ($isFarmer) {
-            $rules['rsbsa_number'] = ['nullable', 'string', 'max:50', Rule::unique('beneficiaries', 'rsbsa_number')->ignore($beneficiaryId)];
-            $rules['farm_ownership'] = [$farmOwnershipRequired ? 'required' : 'nullable', Rule::in($farmOwnershipValues)];
-            $rules['farm_size_hectares'] = ['required', 'numeric', 'min:0.01'];
-            $rules['primary_commodity'] = ['required', 'string', 'max:255'];
-            $rules['farm_type'] = [$farmTypeRequired ? 'required' : 'nullable', Rule::in($farmTypeValues)];
-            $rules['organization_membership'] = ['nullable', 'string', 'max:255'];
-        } else {
-            // Farmer classification requires DA fields; anything else must NOT have them
-            $rules['rsbsa_number'] = ['nullable', 'string', 'max:50'];
-            $rules['farm_ownership'] = ['nullable', Rule::in($farmOwnershipValues)];
-            $rules['farm_size_hectares'] = ['nullable', 'numeric', 'min:0.01'];
-            $rules['primary_commodity'] = ['nullable', 'string', 'max:255'];
-            $rules['farm_type'] = ['nullable', Rule::in($farmTypeValues)];
-            $rules['organization_membership'] = ['nullable', 'string', 'max:255'];
+            // DA with Farmer classification
+            if ($agencyName === 'DA' && $classification === 'Farmer') {
+                $rules['rsbsa_number'] = ['nullable', 'string', 'max:50', Rule::unique('beneficiaries', 'rsbsa_number')->ignore($beneficiaryId)];
+                $rules['farm_ownership'] = [$farmOwnershipRequired ? 'required' : 'nullable', Rule::in($farmOwnershipValues)];
+                $rules['farm_size_hectares'] = ['required', 'numeric', 'min:0.01'];
+                $rules['primary_commodity'] = ['required', 'string', 'max:255'];
+                $rules['farm_type'] = [$farmTypeRequired ? 'required' : 'nullable', Rule::in($farmTypeValues)];
+                $rules['organization_membership'] = ['nullable', 'string', 'max:255'];
+            }
+
+            // DA with Fisherfolk classification
+            if ($agencyName === 'DA' && $classification === 'Fisherfolk') {
+                $rules['rsbsa_number'] = ['nullable', 'string', 'max:50', Rule::unique('beneficiaries', 'rsbsa_number')->ignore($beneficiaryId)];
+                $rules['fisherfolk_type'] = [$fisherfolkTypeRequired ? 'required' : 'nullable', Rule::in($fisherfolkTypeValues)];
+                $rules['main_fishing_gear'] = ['nullable', 'string', 'max:255'];
+                $rules['has_fishing_vessel'] = ['nullable', 'boolean'];
+                $rules['fishing_vessel_type'] = ['nullable', 'string', 'max:255'];
+                $rules['fishing_vessel_tonnage'] = ['nullable', 'numeric', 'min:0'];
+                $rules['length_of_residency_months'] = ['required', 'integer', 'min:6'];
+            }
+
+            // BFAR with Fisherfolk classification
+            if ($agencyName === 'BFAR' && $classification === 'Fisherfolk') {
+                $rules['fishr_number'] = ['nullable', 'string', 'max:50', Rule::unique('beneficiaries', 'fishr_number')->ignore($beneficiaryId)];
+                $rules['fisherfolk_type'] = [$fisherfolkTypeRequired ? 'required' : 'nullable', Rule::in($fisherfolkTypeValues)];
+                $rules['main_fishing_gear'] = ['nullable', 'string', 'max:255'];
+                $rules['has_fishing_vessel'] = ['nullable', 'boolean'];
+                $rules['fishing_vessel_type'] = ['nullable', 'string', 'max:255'];
+                $rules['fishing_vessel_tonnage'] = ['nullable', 'numeric', 'min:0'];
+                $rules['length_of_residency_months'] = ['required', 'integer', 'min:6'];
+            }
+
+            // DAR with Farmer classification
+            if ($agencyName === 'DAR' && $classification === 'Farmer') {
+                $rules['cloa_ep_number'] = ['required', 'string', 'max:100', Rule::unique('beneficiaries', 'cloa_ep_number')->ignore($beneficiaryId)];
+                $rules['arb_classification'] = [$arbClassificationRequired ? 'required' : 'nullable', Rule::in($arbClassificationValues)];
+                $rules['landholding_description'] = ['required', 'string', 'max:1000'];
+                $rules['land_area_awarded_hectares'] = ['required', 'numeric', 'min:0.01'];
+                $rules['ownership_scheme'] = [$ownershipSchemeRequired ? 'required' : 'nullable', Rule::in($ownershipSchemeValues)];
+                $rules['barc_membership_status'] = ['nullable', 'string', 'max:100'];
+            }
         }
 
-        // BFAR/FishR fields (required ONLY when classification is Fisherfolk)
-        $isFisherfolk = $this->input('classification') === 'Fisherfolk';
-
-        if ($isFisherfolk) {
-            $rules['fishr_number'] = ['nullable', 'string', 'max:50', Rule::unique('beneficiaries', 'fishr_number')->ignore($beneficiaryId)];
-            $rules['fisherfolk_type'] = [$fisherfolkTypeRequired ? 'required' : 'nullable', Rule::in($fisherfolkTypeValues)];
-            $rules['main_fishing_gear'] = ['nullable', 'string', 'max:255'];
-            $rules['has_fishing_vessel'] = ['nullable', 'boolean'];
-            $rules['fishing_vessel_type'] = ['nullable', 'string', 'max:255'];
-            $rules['fishing_vessel_tonnage'] = ['nullable', 'numeric', 'min:0'];
-            $rules['length_of_residency_months'] = ['required', 'integer', 'min:6'];
-        } else {
-            // Fisherfolk classification requires BFAR fields; anything else must NOT have them
+        // If no fields have been set to required for farmer/fisherfolk/dar, make them optional
+        if (!isset($rules['rsbsa_number'])) {
+            $rules['rsbsa_number'] = ['nullable', 'string', 'max:50'];
+        }
+        if (!isset($rules['farm_ownership'])) {
+            $rules['farm_ownership'] = ['nullable', Rule::in($farmOwnershipValues)];
+        }
+        if (!isset($rules['farm_size_hectares'])) {
+            $rules['farm_size_hectares'] = ['nullable', 'numeric', 'min:0.01'];
+        }
+        if (!isset($rules['primary_commodity'])) {
+            $rules['primary_commodity'] = ['nullable', 'string', 'max:255'];
+        }
+        if (!isset($rules['farm_type'])) {
+            $rules['farm_type'] = ['nullable', Rule::in($farmTypeValues)];
+        }
+        if (!isset($rules['organization_membership'])) {
+            $rules['organization_membership'] = ['nullable', 'string', 'max:255'];
+        }
+        if (!isset($rules['fishr_number'])) {
             $rules['fishr_number'] = ['nullable', 'string', 'max:50'];
+        }
+        if (!isset($rules['fisherfolk_type'])) {
             $rules['fisherfolk_type'] = ['nullable', Rule::in($fisherfolkTypeValues)];
+        }
+        if (!isset($rules['main_fishing_gear'])) {
             $rules['main_fishing_gear'] = ['nullable', 'string', 'max:255'];
+        }
+        if (!isset($rules['has_fishing_vessel'])) {
             $rules['has_fishing_vessel'] = ['nullable', 'boolean'];
+        }
+        if (!isset($rules['fishing_vessel_type'])) {
             $rules['fishing_vessel_type'] = ['nullable', 'string', 'max:255'];
+        }
+        if (!isset($rules['fishing_vessel_tonnage'])) {
             $rules['fishing_vessel_tonnage'] = ['nullable', 'numeric', 'min:0'];
+        }
+        if (!isset($rules['length_of_residency_months'])) {
             $rules['length_of_residency_months'] = ['nullable', 'integer', 'min:0'];
         }
-
-        // DAR/ARB fields (required when agency is DAR)
-        $isDar = $agencyName === 'DAR';
-
-        if ($isDar) {
-            // CLOA/EP number is REQUIRED for DAR beneficiaries per reference document
-            $rules['cloa_ep_number'] = ['required', 'string', 'max:100', Rule::unique('beneficiaries', 'cloa_ep_number')->ignore($beneficiaryId)];
-            $rules['arb_classification'] = [$arbClassificationRequired ? 'required' : 'nullable', Rule::in($arbClassificationValues)];
-            $rules['landholding_description'] = ['required', 'string', 'max:1000'];
-            $rules['land_area_awarded_hectares'] = ['required', 'numeric', 'min:0.01'];
-            $rules['ownership_scheme'] = [$ownershipSchemeRequired ? 'required' : 'nullable', Rule::in($ownershipSchemeValues)];
-            $rules['barc_membership_status'] = ['nullable', 'string', 'max:100'];
-        } else {
+        if (!isset($rules['cloa_ep_number'])) {
             $rules['cloa_ep_number'] = ['nullable', 'string', 'max:100'];
+        }
+        if (!isset($rules['arb_classification'])) {
             $rules['arb_classification'] = ['nullable', 'string', 'max:100'];
+        }
+        if (!isset($rules['landholding_description'])) {
             $rules['landholding_description'] = ['nullable', 'string', 'max:1000'];
+        }
+        if (!isset($rules['land_area_awarded_hectares'])) {
             $rules['land_area_awarded_hectares'] = ['nullable', 'numeric', 'min:0.01'];
+        }
+        if (!isset($rules['ownership_scheme'])) {
             $rules['ownership_scheme'] = ['nullable', Rule::in($ownershipSchemeValues)];
+        }
+        if (!isset($rules['barc_membership_status'])) {
             $rules['barc_membership_status'] = ['nullable', 'string', 'max:100'];
         }
 
+        // Custom field validation
         $customGroupSettings = collect($fieldGroupSettings)
             ->except(self::NATIVE_FIELD_GROUPS)
             ->all();
+
+        // Build agency-classification context for custom field visibility
+        $selectedAgencyNames = $selectedAgencies->pluck('name')->map(fn($n) => strtoupper($n))->toArray();
+        $hasDa = in_array('DA', $selectedAgencyNames, true);
+        $hasBfar = in_array('BFAR', $selectedAgencyNames, true);
+        $hasDar = in_array('DAR', $selectedAgencyNames, true);
+        $isFarmer = $classification === 'Farmer';
+        $isFisherfolk = $classification === 'Fisherfolk';
 
         foreach ($customGroupSettings as $fieldGroup => $groupSetting) {
             $allowedValues = $this->allowedFieldValues($fieldGroup, []);
@@ -177,14 +267,13 @@ class BeneficiaryRequest extends FormRequest
 
             $placement = $groupSetting['placement_section'] ?? FormFieldOption::PLACEMENT_PERSONAL_INFORMATION;
 
-            $isVisible = $this->isPlacementVisible(
-                $placement,
-                $isDa,
-                $isFarmer,
-                $isBfar,
-                $isFisherfolk,
-                $isDar,
-            );
+            // Determine visibility based on multi-agency selection + classification
+            $isVisible = match ($placement) {
+                FormFieldOption::PLACEMENT_FARMER_INFORMATION => ($hasDa && $isFarmer) || $hasDar,
+                FormFieldOption::PLACEMENT_FISHERFOLK_INFORMATION => ($hasDa && $isFisherfolk) || $hasBfar,
+                FormFieldOption::PLACEMENT_DAR_INFORMATION => $hasDar,
+                default => true, // PLACEMENT_PERSONAL_INFORMATION and others are always visible
+            };
 
             $isRequired = (bool) ($groupSetting['is_required'] ?? false) && $isVisible;
 
@@ -393,20 +482,4 @@ class BeneficiaryRequest extends FormRequest
         return (bool) ($settings[$fieldGroup]['is_required'] ?? $fallback);
     }
 
-    private function isPlacementVisible(
-        string $placement,
-        bool $isDa,
-        bool $isFarmer,
-        bool $isBfar,
-        bool $isFisherfolk,
-        bool $isDar,
-    ): bool {
-        // Strict classification-based compliance: show sections based on classification only
-        return match ($placement) {
-            FormFieldOption::PLACEMENT_FARMER_INFORMATION => $isFarmer,
-            FormFieldOption::PLACEMENT_FISHERFOLK_INFORMATION => $isFisherfolk,
-            FormFieldOption::PLACEMENT_DAR_INFORMATION => $isDar,
-            default => true,
-        };
-    }
 }

@@ -153,24 +153,16 @@
     </div>
     <div class="card-body">
         <div class="row g-3">
-            {{-- Agency Selection --}}
-            <div class="col-12 col-md-4">
-                <label for="agency_id" class="form-label">Source Agency <span class="text-danger">*</span></label>
-                <select class="form-select @error('agency_id') is-invalid @enderror"
-                        id="agency_id" name="agency_id" required>
-                    <option value="" disabled {{ old('agency_id', $beneficiary->agency_id ?? '') === '' ? 'selected' : '' }}>Select agency...</option>
-                    @foreach($agencies as $agency)
-                        <option value="{{ $agency->id }}"
-                                data-name="{{ strtoupper($agency->name) }}"
-                                {{ (int) old('agency_id', $beneficiary->agency_id ?? '') === $agency->id ? 'selected' : '' }}>
-                            {{ $agency->name }} - {{ $agency->full_name }}
-                        </option>
-                    @endforeach
-                </select>
-                @error('agency_id')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-                <small class="text-muted">Determines which fields are required</small>
+            {{-- Agency Selection (Multi-Select) --}}
+            <div class="col-12">
+                <label class="form-label">Source Agencies <span class="text-danger">*</span></label>
+                <div id="agency-checkboxes" class="mb-3">
+                    {{-- Populated dynamically based on classification --}}
+                    {{-- Farmer classification shows: DA, DAR --}}
+                    {{-- Fisherfolk classification shows: DA, BFAR --}}
+                </div>
+                <small class="text-muted">Select all agencies this beneficiary is registered under</small>
+                @error('agencies')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
 
             {{-- Classification --}}
@@ -370,7 +362,7 @@
 </div>
 
 {{-- SECTION 3 — DA/RSBSA Information (Farmer) --}}
-<div class="card border-0 shadow-sm mb-4" id="farmer-section" style="display: none;">
+<div class="card border-0 shadow-sm mb-4" id="da-farmer-section" style="display: none;">
     <div class="card-header bg-white fw-semibold"><i class="bi bi-tree me-1"></i> DA/RSBSA Information (Farmer)</div>
     <div class="card-body">
         <div class="row g-3">
@@ -453,18 +445,11 @@
     </div>
 </div>
 
-{{-- SECTION 4 — BFAR/FishR Information (Fisherfolk) --}}
-<div class="card border-0 shadow-sm mb-4" id="fisherfolk-section" style="display: none;">
-    <div class="card-header bg-white fw-semibold"><i class="bi bi-water me-1"></i> BFAR/FishR Information (Fisherfolk)</div>
+{{-- SECTION 4 — Shared Fisherfolk Information (for ANY Fisherfolk classification) --}}
+<div class="card border-0 shadow-sm mb-4" id="shared-fisherfolk-section" style="display: none;">
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-water me-1"></i> Fisherfolk Information</div>
     <div class="card-body">
         <div class="row g-3">
-            <div class="col-12 col-md-4">
-                <label for="fishr_number" class="form-label">FishR Number</label>
-                <input type="text" class="form-control @error('fishr_number') is-invalid @enderror"
-                       id="fishr_number" name="fishr_number" value="{{ old('fishr_number', $beneficiary->fishr_number ?? '') }}">
-                @error('fishr_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                <small class="text-muted">Can be added after registration</small>
-            </div>
             <div class="col-12 col-md-4">
                 <label for="fisherfolk_type" class="form-label">Type of Fishing Activity {!! $fisherfolkTypeRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('fisherfolk_type') is-invalid @enderror" id="fisherfolk_type" name="fisherfolk_type">
@@ -538,7 +523,41 @@
     </div>
 </div>
 
-{{-- SECTION 5 — DAR/ARB Information --}}
+{{-- SECTION 5 — DA/RSBSA Information (Fisherfolk Registration) - SIMPLIFIED --}}
+<div class="card border-0 shadow-sm mb-4" id="da-fisherfolk-section" style="display: none;">
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-file-text me-1"></i> DA/RSBSA Registration (Fisherfolk)</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-12 col-md-4">
+                <label for="rsbsa_number" class="form-label">RSBSA Number</label>
+                <input type="text" class="form-control @error('rsbsa_number') is-invalid @enderror"
+                       id="rsbsa_number" name="rsbsa_number" placeholder="e.g. DA-2024-001"
+                       value="{{ old('rsbsa_number', $beneficiary->rsbsa_number ?? '') }}">
+                @error('rsbsa_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                <small class="text-muted">Can be added after registration</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- SECTION 6 — BFAR/FishR Information (Fisherfolk Registration) - SIMPLIFIED --}}
+<div class="card border-0 shadow-sm mb-4" id="bfar-section" style="display: none;">
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-file-text me-1"></i> BFAR/FishR Registration (Fisherfolk)</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-12 col-md-4">
+                <label for="fishr_number" class="form-label">FishR Number</label>
+                <input type="text" class="form-control @error('fishr_number') is-invalid @enderror"
+                       id="fishr_number" name="fishr_number" placeholder="e.g. FISHR-2024-567"
+                       value="{{ old('fishr_number', $beneficiary->fishr_number ?? '') }}">
+                @error('fishr_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                <small class="text-muted">Can be added after registration</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- SECTION 7 — DAR/ARB Information --}}
 <div class="card border-0 shadow-sm mb-4" id="dar-section" style="display: none;">
     <div class="card-header bg-white fw-semibold">
         <i class="bi bi-file-earmark-text me-1"></i> DAR/ARB Information
@@ -627,7 +646,7 @@
     </div>
 </div>
 
-{{-- SECTION 6 — Association Membership --}}
+{{-- SECTION 8 — Association Membership --}}
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-white fw-semibold"><i class="bi bi-people me-1"></i> Association Membership</div>
     <div class="card-body">
@@ -661,10 +680,11 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const agencySelect = document.getElementById('agency_id');
+    const agencyCheckboxesContainer = document.getElementById('agency-checkboxes');
     const classification = document.getElementById('classification');
-    const farmerSection = document.getElementById('farmer-section');
-    const fisherfolkSection = document.getElementById('fisherfolk-section');
+    const daFarmerSection = document.getElementById('da-farmer-section');
+    const daFisherfolkSection = document.getElementById('da-fisherfolk-section');
+    const bfarSection = document.getElementById('bfar-section');
     const darSection = document.getElementById('dar-section');
     const associationCheckbox = document.getElementById('association_member');
     const associationWrapper = document.getElementById('association-name-wrapper');
@@ -672,24 +692,102 @@ document.addEventListener('DOMContentLoaded', function () {
     const vesselTypeWrapper = document.getElementById('vessel-type-wrapper');
     const vesselTonnageWrapper = document.getElementById('vessel-tonnage-wrapper');
 
-    function getSelectedAgencyName() {
-        const selected = agencySelect.options[agencySelect.selectedIndex];
-        return selected ? (selected.dataset.name || '').toUpperCase() : '';
+    // Beneficiary data for edit mode
+    @php
+        $selectedAgencyIds = [];
+        if ($editing && $beneficiary->id) {
+            $selectedAgencyIds = $beneficiary->agencies()->pluck('id')->toArray();
+            if (empty($selectedAgencyIds) && $beneficiary->agency_id) {
+                $selectedAgencyIds = [$beneficiary->agency_id];
+            }
+        }
+    @endphp
+    const selectedAgencyIds = {{ json_encode($selectedAgencyIds) }};
+
+    // Agency mapping based on classification
+    const agencyMap = {
+        'Farmer': [
+            { id: 1, name: 'DA', label: 'DA (Department of Agriculture - RSBSA)' },
+            { id: 3, name: 'DAR', label: 'DAR (Department of Agrarian Reform)' }
+        ],
+        'Fisherfolk': [
+            { id: 1, name: 'DA', label: 'DA (Department of Agriculture - RSBSA)' },
+            { id: 2, name: 'BFAR', label: 'BFAR (Bureau of Fisheries & Aquatic Resources)' }
+        ]
+    };
+
+    // Populate agency checkboxes based on classification
+    function updateAgencyCheckboxes() {
+        const classVal = classification.value;
+        agencyCheckboxesContainer.innerHTML = '';
+
+        const agencies = agencyMap[classVal] || [];
+        agencies.forEach(agency => {
+            const checkbox = document.createElement('div');
+            checkbox.className = 'form-check mb-2';
+            const isChecked = selectedAgencyIds.includes(agency.id);
+            checkbox.innerHTML = `
+                <input class="form-check-input agency-checkbox"
+                       type="checkbox"
+                       id="agency_${agency.id}"
+                       name="agencies[]"
+                       value="${agency.id}"
+                       data-agency-name="${agency.name}"
+                       ${isChecked ? 'checked' : ''}>
+                <label class="form-check-label" for="agency_${agency.id}">
+                    ${agency.label}
+                </label>
+            `;
+            agencyCheckboxesContainer.appendChild(checkbox);
+
+            // Add event listener to checkboxes
+            checkbox.querySelector('.agency-checkbox').addEventListener('change', toggleSections);
+        });
+
+        toggleSections();
     }
 
+    // Show/hide sections based on selected agencies and classification
     function toggleSections() {
+        const agencyCheckboxes = document.querySelectorAll('input[name="agencies[]"]:checked');
+        const selectedAgencies = Array.from(agencyCheckboxes).map(cb => cb.dataset.agencyName.toUpperCase());
         const classVal = classification.value;
-        // Strict classification-based compliance: show sections based on classification only
-        const showFarmer = classVal === 'Farmer';
-        const showFisherfolk = classVal === 'Fisherfolk';
-        const agencyName = getSelectedAgencyName();
-        const showDar = agencyName === 'DAR';
-        farmerSection.style.display = showFarmer ? '' : 'none';
-        fisherfolkSection.style.display = showFisherfolk ? '' : 'none';
-        darSection.style.display = showDar ? '' : 'none';
 
-        document.querySelectorAll('select[data-custom-required]').forEach((field) => {
-            const placement = field.dataset.customPlacement || 'personal_information';
+        // Show DA Farmer section if: Farmer classification AND DA checked
+        if (daFarmerSection) {
+            daFarmerSection.style.display = (classVal === 'Farmer' && selectedAgencies.includes('DA')) ? '' : 'none';
+        }
+
+        // Show shared Fisherfolk section if: Fisherfolk classification AND (DA OR BFAR checked)
+        const sharedFisherfolkSection = document.getElementById('shared-fisherfolk-section');
+        if (sharedFisherfolkSection) {
+            const showShared = classVal === 'Fisherfolk' && (selectedAgencies.includes('DA') || selectedAgencies.includes('BFAR'));
+            sharedFisherfolkSection.style.display = showShared ? '' : 'none';
+        }
+
+        // Show DA Fisherfolk section if: Fisherfolk classification AND DA checked (RSBSA number only)
+        if (daFisherfolkSection) {
+            daFisherfolkSection.style.display = (classVal === 'Fisherfolk' && selectedAgencies.includes('DA')) ? '' : 'none';
+        }
+
+        // Show BFAR section if: Fisherfolk classification AND BFAR checked (FishR number only)
+        if (bfarSection) {
+            bfarSection.style.display = (classVal === 'Fisherfolk' && selectedAgencies.includes('BFAR')) ? '' : 'none';
+        }
+
+        // Show DAR section if: DAR checked (independent of classification)
+        if (darSection) {
+            darSection.style.display = selectedAgencies.includes('DAR') ? '' : 'none';
+        }
+
+        // Update required attributes for custom fields
+        updateRequiredFields(selectedAgencies, classVal);
+    }
+
+    // Update required attributes based on visible sections
+    function updateRequiredFields(selectedAgencies, classVal) {
+        document.querySelectorAll('[data-agency-required]').forEach((field) => {
+            const requiredFor = field.dataset.agencyRequired;
             const configuredRequired = field.dataset.customRequired === '1';
 
             if (!configuredRequired) {
@@ -697,11 +795,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            const shouldRequire =
-                placement === 'personal_information'
-                || (placement === 'farmer_information' && showFarmer)
-                || (placement === 'fisherfolk_information' && showFisherfolk)
-                || (placement === 'dar_information' && showDar);
+            let shouldRequire = false;
+
+            if (requiredFor === 'DA_FARMER' && selectedAgencies.includes('DA') && classVal === 'Farmer') {
+                shouldRequire = true;
+            } else if (requiredFor === 'DA_FISHERFOLK' && selectedAgencies.includes('DA') && classVal === 'Fisherfolk') {
+                shouldRequire = true;
+            } else if (requiredFor === 'BFAR' && selectedAgencies.includes('BFAR') && classVal === 'Fisherfolk') {
+                shouldRequire = true;
+            } else if (requiredFor === 'DAR' && selectedAgencies.includes('DAR')) {
+                shouldRequire = true;
+            }
 
             field.required = shouldRequire;
         });
@@ -717,12 +821,14 @@ document.addEventListener('DOMContentLoaded', function () {
         vesselTonnageWrapper.style.display = show ? '' : 'none';
     }
 
-    agencySelect.addEventListener('change', toggleSections);
-    classification.addEventListener('change', toggleSections);
+    classification.addEventListener('change', updateAgencyCheckboxes);
     associationCheckbox.addEventListener('change', toggleAssociation);
-    hasVesselCheckbox.addEventListener('change', toggleVesselFields);
+    if (hasVesselCheckbox) {
+        hasVesselCheckbox.addEventListener('change', toggleVesselFields);
+    }
 
-    toggleSections();
+    // Initial setup
+    updateAgencyCheckboxes();
     toggleAssociation();
     toggleVesselFields();
 });
