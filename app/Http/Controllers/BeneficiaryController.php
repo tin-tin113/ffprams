@@ -13,8 +13,10 @@ use App\Services\SemaphoreService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class BeneficiaryController extends Controller
@@ -30,27 +32,78 @@ class BeneficiaryController extends Controller
      */
     public function index(Request $request): View
     {
-        $beneficiaries = Beneficiary::with(['barangay', 'agency'])
-            ->when($request->filled('barangay_id'), fn ($q) => $q->where('barangay_id', $request->barangay_id))
-            ->when($request->filled('agency_id'), fn ($q) => $q->where('agency_id', $request->agency_id))
+        $search = trim((string) $request->input('search', ''));
+        $documentFilter = (string) $request->input('documents', '');
+
+        if (! in_array($documentFilter, ['with', 'without'], true)) {
+            $documentFilter = '';
+        }
+
+        $allowedPerPage = [25, 50, 100];
+
+        $perPage = (int) $request->input('per_page', 25);
+        if (! in_array($perPage, $allowedPerPage, true)) {
+            $perPage = 25;
+        }
+
+        $beneficiaries = Beneficiary::query()
+            ->with([
+                'barangay:id,name',
+                'agency:id,name',
+            ])
+            ->withCount('attachments')
+            ->when($request->filled('barangay_id'), fn ($q) => $q->where('barangay_id', (int) $request->barangay_id))
+            ->when($request->filled('agency_id'), fn ($q) => $q->where('agency_id', (int) $request->agency_id))
             ->when($request->filled('classification'), fn ($q) => $q->where('classification', $request->classification))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
-            ->when($request->filled('search'), function ($q) use ($request) {
-                $q->where(function ($q) use ($request) {
-                    $q->where('full_name', 'like', "%{$request->search}%")
-                        ->orWhere('rsbsa_number', 'like', "%{$request->search}%")
-                        ->orWhere('fishr_number', 'like', "%{$request->search}%")
-                        ->orWhere('cloa_ep_number', 'like', "%{$request->search}%");
+            ->when($documentFilter === 'with', fn ($q) => $q->has('attachments'))
+            ->when($documentFilter === 'without', fn ($q) => $q->doesntHave('attachments'))
+            ->when($search !== '', function ($q) use ($search) {
+                $like = "%{$search}%";
+
+                $q->where(function ($sub) use ($like) {
+                    $sub->where('full_name', 'like', $like)
+                        ->orWhere('first_name', 'like', $like)
+                        ->orWhere('middle_name', 'like', $like)
+                        ->orWhere('last_name', 'like', $like)
+                        ->orWhere('contact_number', 'like', $like)
+                        ->orWhere('rsbsa_number', 'like', $like)
+                        ->orWhere('fishr_number', 'like', $like)
+                        ->orWhere('cloa_ep_number', 'like', $like);
                 });
             })
             ->orderByDesc('created_at')
-            ->paginate(15)
+            ->paginate($perPage)
             ->withQueryString();
 
         $barangays = Barangay::orderBy('name')->get();
         $agencies = Agency::active()->orderBy('name')->get();
 
-        return view('beneficiaries.index', compact('beneficiaries', 'barangays', 'agencies'));
+        $summary = [
+            'total_all' => Beneficiary::count(),
+            'total_active' => Beneficiary::where('status', 'Active')->count(),
+            'with_documents' => Beneficiary::has('attachments')->count(),
+            'without_documents' => Beneficiary::doesntHave('attachments')->count(),
+        ];
+
+        $activeFilterCount = collect([
+            $search,
+            $request->input('barangay_id'),
+            $request->input('agency_id'),
+            $request->input('classification'),
+            $request->input('status'),
+            $documentFilter,
+        ])->filter(fn ($value) => $value !== null && $value !== '')->count();
+
+        return view('beneficiaries.index', compact(
+            'beneficiaries',
+            'barangays',
+            'agencies',
+            'summary',
+            'activeFilterCount',
+            'perPage',
+            'documentFilter',
+        ));
     }
 
     /**
@@ -107,7 +160,7 @@ class BeneficiaryController extends Controller
             $beneficiary = Beneficiary::create(array_merge($validated, ['status' => 'Active']));
 
             $this->audit->log(
-                auth()->id(),
+                (int) Auth::id(),
                 'created',
                 'beneficiaries',
                 $beneficiary->id,
@@ -224,7 +277,7 @@ class BeneficiaryController extends Controller
             $beneficiary->update($validated);
 
             $this->audit->log(
-                auth()->id(),
+                (int) Auth::id(),
                 'updated',
                 'beneficiaries',
                 $beneficiary->id,
@@ -251,14 +304,14 @@ class BeneficiaryController extends Controller
      */
     public function destroy(Beneficiary $beneficiary): RedirectResponse
     {
-        if (auth()->user()->role !== 'admin') {
+        if (Auth::user()?->role !== 'admin') {
             abort(403, 'Only admins can delete beneficiaries.');
         }
 
         $beneficiary->delete();
 
         $this->audit->log(
-            auth()->id(),
+            (int) Auth::id(),
             'deleted',
             'beneficiaries',
             $beneficiary->id,
@@ -291,6 +344,59 @@ class BeneficiaryController extends Controller
 
         return redirect()->route('beneficiaries.show', $beneficiary)
             ->with($sent ? 'success' : 'error', $sent ? 'SMS sent successfully.' : 'Failed to send SMS. Please try again.');
+    }
+
+    public function bulkUpdateStatus(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'selected_ids' => ['required', 'array', 'min:1'],
+            'selected_ids.*' => ['integer', 'distinct', 'exists:beneficiaries,id'],
+            'status' => ['required', 'in:Active,Inactive'],
+        ]);
+
+        $selectedIds = collect($validated['selected_ids'])
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $beneficiaries = Beneficiary::whereIn('id', $selectedIds)->get();
+
+        if ($beneficiaries->isEmpty()) {
+            return redirect()->back()->with('warning', 'No valid beneficiaries selected.');
+        }
+
+        $updatedCount = 0;
+
+        DB::transaction(function () use ($beneficiaries, $validated, &$updatedCount): void {
+            foreach ($beneficiaries as $beneficiary) {
+                if ($beneficiary->status === $validated['status']) {
+                    continue;
+                }
+
+                $oldValues = $beneficiary->toArray();
+
+                $beneficiary->update([
+                    'status' => $validated['status'],
+                ]);
+
+                $this->audit->log(
+                    (int) Auth::id(),
+                    'updated',
+                    'beneficiaries',
+                    $beneficiary->id,
+                    $oldValues,
+                    $beneficiary->fresh()->toArray(),
+                );
+
+                $updatedCount++;
+            }
+        });
+
+        if ($updatedCount === 0) {
+            return redirect()->back()->with('warning', 'Selected beneficiaries already have that status.');
+        }
+
+        return redirect()->back()->with('success', "Updated {$updatedCount} beneficiary status record(s) to {$validated['status']}.");
     }
 
     public function summary(Beneficiary $beneficiary): JsonResponse
@@ -339,7 +445,7 @@ class BeneficiaryController extends Controller
 
         foreach ($coreFields as $field) {
             if (! array_key_exists($field, $options) || empty($options[$field])) {
-                \Log::warning("FormFieldOption group is missing: {$field}. Please ensure this field group is configured in System Settings > Form Fields.");
+                Log::warning("FormFieldOption group is missing: {$field}. Please ensure this field group is configured in System Settings > Form Fields.");
 
                 $options[$field] = collect();
             }

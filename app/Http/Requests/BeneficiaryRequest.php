@@ -29,13 +29,15 @@ class BeneficiaryRequest extends FormRequest
 
         $fullName = trim(implode(' ', array_filter([$first, $middle, $last, $suffix])));
 
-        $this->merge([
+        $normalizedNativeFieldInputs = $this->normalizeNativeFieldInputs();
+
+        $this->merge(array_merge([
             'first_name' => $first,
             'middle_name' => $middle,
             'last_name' => $last,
             'name_suffix' => $suffix,
             'full_name' => $fullName,
-        ]);
+        ], $normalizedNativeFieldInputs));
     }
 
     public function authorize(): bool
@@ -45,44 +47,22 @@ class BeneficiaryRequest extends FormRequest
 
     public function rules(): array
     {
+        $nativeFallbackValues = $this->nativeFieldFallbackValues();
+
         $beneficiaryId = $this->route('beneficiary')?->id;
         $agencyId = $this->input('agency_id');
         $agency = $agencyId ? Agency::find($agencyId) : null;
         $agencyName = $agency?->name ? strtoupper($agency->name) : null;
         $fieldGroupSettings = $this->fieldGroupSettings();
 
-        $civilStatusValues = $this->allowedFieldValues('civil_status', ['Single', 'Married', 'Widowed', 'Separated']);
-        $highestEducationValues = $this->allowedFieldValues('highest_education', [
-            'No Formal Education',
-            'Elementary',
-            'High School',
-            'Vocational',
-            'College',
-            'Post Graduate',
-        ]);
-        $idTypeValues = $this->allowedFieldValues('id_type', [
-            'PhilSys ID',
-            "Voter's ID",
-            "Driver's License",
-            'Passport',
-            'Senior Citizen ID',
-            'PWD ID',
-            'Postal ID',
-            'TIN ID',
-        ]);
-        $farmOwnershipValues = $this->allowedFieldValues('farm_ownership', ['Registered Owner', 'Tenant', 'Lessee']);
-        $farmTypeValues = $this->allowedFieldValues('farm_type', ['Irrigated', 'Rainfed Upland', 'Rainfed Lowland']);
-        $fisherfolkTypeValues = $this->allowedFieldValues('fisherfolk_type', ['Capture Fishing', 'Aquaculture', 'Post-Harvest']);
-        $arbClassificationValues = $this->allowedFieldValues('arb_classification', [
-            'Agricultural Lessee',
-            'Regular Farmworker',
-            'Seasonal Farmworker',
-            'Other Farmworker',
-            'Actual Tiller',
-            'Collective/Cooperative',
-            'Others',
-        ]);
-        $ownershipSchemeValues = $this->allowedFieldValues('ownership_scheme', ['Individual', 'Collective', 'Cooperative']);
+        $civilStatusValues = $this->allowedFieldValues('civil_status', $nativeFallbackValues['civil_status']);
+        $highestEducationValues = $this->allowedFieldValues('highest_education', $nativeFallbackValues['highest_education']);
+        $idTypeValues = $this->allowedFieldValues('id_type', $nativeFallbackValues['id_type']);
+        $farmOwnershipValues = $this->allowedFieldValues('farm_ownership', $nativeFallbackValues['farm_ownership']);
+        $farmTypeValues = $this->allowedFieldValues('farm_type', $nativeFallbackValues['farm_type']);
+        $fisherfolkTypeValues = $this->allowedFieldValues('fisherfolk_type', $nativeFallbackValues['fisherfolk_type']);
+        $arbClassificationValues = $this->allowedFieldValues('arb_classification', $nativeFallbackValues['arb_classification']);
+        $ownershipSchemeValues = $this->allowedFieldValues('ownership_scheme', $nativeFallbackValues['ownership_scheme']);
 
         $civilStatusRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'civil_status', true);
         $highestEducationRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'highest_education', false);
@@ -239,7 +219,17 @@ class BeneficiaryRequest extends FormRequest
             ->where('field_group', $fieldGroup)
             ->where('is_active', true)
             ->orderBy('sort_order')
-            ->pluck('value')
+            ->get(['value', 'label'])
+            ->map(function (FormFieldOption $option) use ($fieldGroup): string {
+                $value = trim((string) $option->value);
+                $label = trim((string) $option->label);
+
+                if (in_array($fieldGroup, self::NATIVE_FIELD_GROUPS, true)) {
+                    return $label !== '' ? $label : $value;
+                }
+
+                return $value !== '' ? $value : $label;
+            })
             ->filter()
             ->values()
             ->all();
@@ -249,6 +239,130 @@ class BeneficiaryRequest extends FormRequest
         }
 
         return array_values(array_unique(array_merge($fallback, $dbValues)));
+    }
+
+    private function normalizeNativeFieldInputs(): array
+    {
+        $fallbackValues = $this->nativeFieldFallbackValues();
+        $nativeFieldGroups = array_keys($fallbackValues);
+
+        $maps = [];
+
+        foreach ($fallbackValues as $fieldGroup => $labels) {
+            foreach ($labels as $label) {
+                $resolvedLabel = trim((string) $label);
+
+                if ($resolvedLabel === '') {
+                    continue;
+                }
+
+                $maps[$fieldGroup][strtolower($resolvedLabel)] = $resolvedLabel;
+                $maps[$fieldGroup][$this->normalizeOptionKey($resolvedLabel)] = $resolvedLabel;
+            }
+        }
+
+        $nativeOptions = FormFieldOption::query()
+            ->whereIn('field_group', $nativeFieldGroups)
+            ->where('is_active', true)
+            ->get(['field_group', 'value', 'label']);
+
+        foreach ($nativeOptions as $option) {
+            $fieldGroup = (string) $option->field_group;
+            $label = trim((string) $option->label);
+
+            if ($label === '') {
+                continue;
+            }
+
+            $maps[$fieldGroup][strtolower($label)] = $label;
+
+            $valueKey = $this->normalizeOptionKey((string) $option->value);
+            if ($valueKey !== '') {
+                $maps[$fieldGroup][$valueKey] = $label;
+            }
+
+            $labelKey = $this->normalizeOptionKey($label);
+            if ($labelKey !== '') {
+                $maps[$fieldGroup][$labelKey] = $label;
+            }
+        }
+
+        $normalized = [];
+
+        foreach ($nativeFieldGroups as $fieldGroup) {
+            $rawValue = $this->input($fieldGroup);
+
+            if (! is_string($rawValue)) {
+                continue;
+            }
+
+            $rawValue = trim($rawValue);
+
+            if ($rawValue === '') {
+                continue;
+            }
+
+            $lowerRaw = strtolower($rawValue);
+            $normalizedRaw = $this->normalizeOptionKey($rawValue);
+
+            if (isset($maps[$fieldGroup][$lowerRaw])) {
+                $normalized[$fieldGroup] = $maps[$fieldGroup][$lowerRaw];
+
+                continue;
+            }
+
+            if ($normalizedRaw !== '' && isset($maps[$fieldGroup][$normalizedRaw])) {
+                $normalized[$fieldGroup] = $maps[$fieldGroup][$normalizedRaw];
+            }
+        }
+
+        return $normalized;
+    }
+
+    private function normalizeOptionKey(string $input): string
+    {
+        $normalized = strtolower(trim($input));
+        $normalized = preg_replace('/[^a-z0-9]+/', '_', $normalized) ?? '';
+
+        return trim($normalized, '_');
+    }
+
+    private function nativeFieldFallbackValues(): array
+    {
+        return [
+            'civil_status' => ['Single', 'Married', 'Widowed', 'Separated'],
+            'highest_education' => [
+                'No Formal Education',
+                'Elementary',
+                'High School',
+                'Vocational',
+                'College',
+                'Post Graduate',
+            ],
+            'id_type' => [
+                'PhilSys ID',
+                "Voter's ID",
+                "Driver's License",
+                'Passport',
+                'Senior Citizen ID',
+                'PWD ID',
+                'Postal ID',
+                'TIN ID',
+            ],
+            'farm_ownership' => ['Registered Owner', 'Tenant', 'Lessee', 'Owner', 'Share Tenant'],
+            'farm_type' => ['Irrigated', 'Rainfed Upland', 'Rainfed Lowland', 'Upland'],
+            'fisherfolk_type' => ['Capture Fishing', 'Aquaculture', 'Post-Harvest', 'Fish Farming', 'Fish Vendor', 'Fish Worker'],
+            'arb_classification' => [
+                'Agricultural Lessee',
+                'Regular Farmworker',
+                'Seasonal Farmworker',
+                'Other Farmworker',
+                'Actual Tiller',
+                'Collective/Cooperative',
+                'Others',
+            ],
+            'ownership_scheme' => ['Individual', 'Collective', 'Cooperative'],
+        ];
     }
 
     private function fieldGroupSettings(): array

@@ -35,14 +35,19 @@
         return (bool) $getGroupSetting($fieldGroup, 'is_required', $fallback);
     };
 
-    $normalizeFieldOptions = function ($items, array $fallback) {
+    $normalizeFieldOptions = function ($items, array $fallback, bool $useLabelAsValue = false) {
         if (empty($items) || (is_countable($items) && count($items) === 0)) {
             return collect($fallback)->map(fn ($value) => (object) ['value' => $value, 'label' => $value]);
         }
 
-        return collect($items)->map(function ($item) {
+        return collect($items)->map(function ($item) use ($useLabelAsValue) {
             $value = is_object($item) ? ($item->value ?? $item->label ?? '') : ($item['value'] ?? $item['label'] ?? '');
             $label = is_object($item) ? ($item->label ?? $item->value ?? '') : ($item['label'] ?? $item['value'] ?? '');
+
+            if ($useLabelAsValue) {
+                $value = $label;
+            }
+
             return (object) ['value' => $value, 'label' => $label];
         });
     };
@@ -79,7 +84,7 @@
     $arbClassificationRequired = $isGroupRequired('arb_classification', true);
     $ownershipSchemeRequired = $isGroupRequired('ownership_scheme', true);
 
-    $civilStatusOptions = $normalizeFieldOptions($fo['civil_status'] ?? [], ['Single', 'Married', 'Widowed', 'Separated']);
+    $civilStatusOptions = $normalizeFieldOptions($fo['civil_status'] ?? [], ['Single', 'Married', 'Widowed', 'Separated'], true);
     $highestEducationOptions = $normalizeFieldOptions($fo['highest_education'] ?? [], [
         'No Formal Education',
         'Elementary',
@@ -87,7 +92,7 @@
         'Vocational',
         'College',
         'Post Graduate',
-    ]);
+    ], true);
     $idTypeOptions = $normalizeFieldOptions($fo['id_type'] ?? [], [
         'PhilSys ID',
         "Voter's ID",
@@ -97,10 +102,10 @@
         'PWD ID',
         'Postal ID',
         'TIN ID',
-    ]);
-    $farmOwnershipOptions = $normalizeFieldOptions($fo['farm_ownership'] ?? [], ['Registered Owner', 'Tenant', 'Lessee']);
-    $farmTypeOptions = $normalizeFieldOptions($fo['farm_type'] ?? [], ['Irrigated', 'Rainfed Upland', 'Rainfed Lowland']);
-    $fisherfolkTypeOptions = $normalizeFieldOptions($fo['fisherfolk_type'] ?? [], ['Capture Fishing', 'Aquaculture', 'Post-Harvest']);
+    ], true);
+    $farmOwnershipOptions = $normalizeFieldOptions($fo['farm_ownership'] ?? [], ['Registered Owner', 'Tenant', 'Lessee', 'Owner', 'Share Tenant'], true);
+    $farmTypeOptions = $normalizeFieldOptions($fo['farm_type'] ?? [], ['Irrigated', 'Rainfed Upland', 'Rainfed Lowland', 'Upland'], true);
+    $fisherfolkTypeOptions = $normalizeFieldOptions($fo['fisherfolk_type'] ?? [], ['Capture Fishing', 'Aquaculture', 'Post-Harvest', 'Fish Farming', 'Fish Vendor', 'Fish Worker'], true);
     $arbClassificationOptions = $normalizeFieldOptions($fo['arb_classification'] ?? [], [
         'Agricultural Lessee',
         'Regular Farmworker',
@@ -109,8 +114,8 @@
         'Actual Tiller',
         'Collective/Cooperative',
         'Others',
-    ]);
-    $ownershipSchemeOptions = $normalizeFieldOptions($fo['ownership_scheme'] ?? [], ['Individual', 'Collective', 'Cooperative']);
+    ], true);
+    $ownershipSchemeOptions = $normalizeFieldOptions($fo['ownership_scheme'] ?? [], ['Individual', 'Collective', 'Cooperative'], true);
 
     $firstNameValue = old('first_name', $beneficiary->first_name ?? '');
     $middleNameValue = old('middle_name', $beneficiary->middle_name ?? '');

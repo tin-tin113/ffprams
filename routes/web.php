@@ -53,6 +53,8 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
     Route::resource('beneficiaries', BeneficiaryController::class)->except(['index', 'show']);
     Route::post('beneficiaries/{beneficiary}/send-sms', [BeneficiaryController::class, 'sendSms'])
         ->name('beneficiaries.sendSms');
+    Route::post('beneficiaries/bulk-status', [BeneficiaryController::class, 'bulkUpdateStatus'])
+        ->name('beneficiaries.bulkStatus');
     Route::get('beneficiaries/{beneficiary}/attachments/upload', [BeneficiaryAttachmentController::class, 'create'])
         ->name('beneficiaries.attachments.create');
     Route::post('beneficiaries/{beneficiary}/attachments', [BeneficiaryAttachmentController::class, 'store'])

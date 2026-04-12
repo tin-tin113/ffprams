@@ -46,8 +46,20 @@
         </div>
     </div>
 
-    {{-- Profile Card --}}
     <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body py-2">
+            <div class="d-flex flex-wrap gap-2">
+                <a href="#beneficiary-profile" class="btn btn-sm btn-outline-secondary">Profile</a>
+                <a href="#supporting-documents" class="btn btn-sm btn-outline-secondary">Documents</a>
+                <a href="#distribution-history" class="btn btn-sm btn-outline-secondary">Distribution History</a>
+                <a href="#send-sms" class="btn btn-sm btn-outline-secondary">Send SMS</a>
+                <a href="#sms-history" class="btn btn-sm btn-outline-secondary">SMS History</a>
+            </div>
+        </div>
+    </div>
+
+    {{-- Profile Card --}}
+    <div id="beneficiary-profile" class="card border-0 shadow-sm mb-4" style="scroll-margin-top: 90px;">
         {{-- Personal Information --}}
         <div class="card-header bg-white fw-semibold">
             <i class="bi bi-person me-1"></i> Personal Information
@@ -237,7 +249,7 @@
     </div>
 
     {{-- Supporting Documents --}}
-    <div class="card border-0 shadow-sm mb-4">
+    <div id="supporting-documents" class="card border-0 shadow-sm mb-4" style="scroll-margin-top: 90px;">
         <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
             <span><i class="bi bi-paperclip me-1"></i> Supporting Documents</span>
             <a href="{{ route('beneficiaries.attachments.create', $beneficiary) }}" class="btn btn-sm btn-outline-primary">
@@ -337,7 +349,7 @@
     </div>
 
     {{-- Distribution History --}}
-    <div class="card border-0 shadow-sm mb-4">
+    <div id="distribution-history" class="card border-0 shadow-sm mb-4" style="scroll-margin-top: 90px;">
         <div class="card-header bg-white fw-semibold">
             <i class="bi bi-box-seam me-1"></i> Distribution History (Event-Based & Direct Assistance)
         </div>
@@ -449,7 +461,7 @@
     </div>
 
     {{-- Send SMS --}}
-    <div class="card border-0 shadow-sm mb-4">
+    <div id="send-sms" class="card border-0 shadow-sm mb-4" style="scroll-margin-top: 90px;">
         <div class="card-header bg-white fw-semibold">
             <i class="bi bi-send me-1"></i> Send SMS
         </div>
@@ -480,7 +492,7 @@
     </div>
 
     {{-- SMS History --}}
-    <div class="card border-0 shadow-sm mb-4">
+    <div id="sms-history" class="card border-0 shadow-sm mb-4" style="scroll-margin-top: 90px;">
         <div class="card-header bg-white fw-semibold">
             <i class="bi bi-chat-dots me-1"></i> SMS History
         </div>
