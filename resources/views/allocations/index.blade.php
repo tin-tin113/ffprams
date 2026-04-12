@@ -671,7 +671,10 @@ document.addEventListener('DOMContentLoaded', function () {
             <td>
                 <select name="allocations[${index}][program_name_id]" class="form-select form-select-sm batch-program" required>
                     <option value="">Select Program</option>
-                    @foreach($resourceTypes->map->agency ? $resourceTypes->map->agency->programs()->active()->get()->flatten()->unique('id') : collect() as $prog)
+                    @php
+                        $allPrograms = \App\Models\ProgramName::where('is_active', true)->orderBy('name')->get();
+                    @endphp
+                    @foreach($allPrograms as $prog)
                         <option value="{{ $prog->id }}">{{ $prog->name }}</option>
                     @endforeach
                 </select>
