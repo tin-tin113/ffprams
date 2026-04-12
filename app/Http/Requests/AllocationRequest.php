@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\DistributionEvent;
 use App\Models\ResourceType;
+use App\Services\ProgramEligibilityService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -55,6 +56,23 @@ class AllocationRequest extends FormRequest
             $rules['quantity'] = ['required', 'numeric', 'min:0.01', 'max:9999.99'];
             $rules['amount']   = ['nullable'];
         }
+
+        // Add custom validation for beneficiary eligibility
+        $rules['beneficiary_id'][] = function ($attribute, $value, $fail) use ($releaseMethod, $event) {
+            $beneficiary = \App\Models\Beneficiary::find($value);
+            $program = null;
+
+            if ($releaseMethod === 'event' && $event) {
+                $program = $event->programName;
+            } else {
+                $program = \App\Models\ProgramName::find($this->input('program_name_id'));
+            }
+
+            if ($program && $beneficiary && ! ProgramEligibilityService::isEligible($beneficiary, $program)) {
+                $reason = ProgramEligibilityService::getIneligibilityReason($beneficiary, $program);
+                $fail('Beneficiary eligibility: ' . $reason);
+            }
+        };
 
         return $rules;
     }

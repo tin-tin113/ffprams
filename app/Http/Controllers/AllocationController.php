@@ -10,6 +10,7 @@ use App\Models\DistributionEvent;
 use App\Models\ProgramName;
 use App\Models\ResourceType;
 use App\Services\AuditLogService;
+use App\Services\ProgramEligibilityService;
 use App\Services\ReleaseOutcomeService;
 use App\Services\SemaphoreService;
 use Carbon\Carbon;
@@ -89,6 +90,14 @@ class AllocationController extends Controller
                     ->with('error', 'Allocations cannot be created for a completed event.');
             }
 
+            // Check program eligibility before allocating
+            $program = $event->programName;
+            if (! ProgramEligibilityService::isEligible($beneficiary, $program)) {
+                $reason = ProgramEligibilityService::getIneligibilityReason($beneficiary, $program);
+                return redirect()->back()
+                    ->with('error', 'Beneficiary is not eligible for this program: ' . $reason);
+            }
+
             if ($beneficiary->barangay_id !== $event->barangay_id) {
                 return redirect()->back()
                     ->with('error', 'This beneficiary does not belong to the same barangay as the distribution event.');
@@ -164,6 +173,13 @@ class AllocationController extends Controller
         $resourceType = ResourceType::with('agency')->findOrFail($request->resource_type_id);
 
         $allocation = DB::transaction(function () use ($request, $beneficiary, $resourceType) {
+            // Check program eligibility before allocating
+            $program = ProgramName::findOrFail($request->program_name_id);
+            if (! ProgramEligibilityService::isEligible($beneficiary, $program)) {
+                $reason = ProgramEligibilityService::getIneligibilityReason($beneficiary, $program);
+                throw new \RuntimeException('Beneficiary is not eligible for this program: ' . $reason);
+            }
+
             $isFinancial = $resourceType->unit === 'PHP';
 
             $allocation = Allocation::create([
@@ -256,6 +272,13 @@ class AllocationController extends Controller
                     $beneficiary = Beneficiary::find($row['beneficiary_id']);
 
                     if (! $beneficiary || $beneficiary->barangay_id !== $event->barangay_id) {
+                        $skipped++;
+
+                        continue;
+                    }
+
+                    // Check program eligibility
+                    if (! ProgramEligibilityService::isEligible($beneficiary, $event->programName)) {
                         $skipped++;
 
                         continue;

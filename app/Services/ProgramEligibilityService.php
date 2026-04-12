@@ -10,10 +10,19 @@ class ProgramEligibilityService
 {
     /**
      * Get programs eligible for a beneficiary based on agency and classification.
+     * Checks ALL registered agencies via pivot table (supports multi-agency beneficiaries).
      */
     public static function getEligiblePrograms(Beneficiary $beneficiary): Collection
     {
-        return ProgramName::where('agency_id', $beneficiary->agency_id)
+        // Get all agencies the beneficiary is registered under
+        $registeredAgencyIds = $beneficiary->agencies()->pluck('id')->toArray();
+
+        // If no agencies in pivot table, fall back to primary agency
+        if (empty($registeredAgencyIds)) {
+            $registeredAgencyIds = [$beneficiary->agency_id];
+        }
+
+        return ProgramName::whereIn('agency_id', $registeredAgencyIds)
             ->where('is_active', true)
             ->whereIn('classification', [$beneficiary->classification, 'Both'])
             ->with('agency')
@@ -23,10 +32,20 @@ class ProgramEligibilityService
 
     /**
      * Check if a program is eligible for a beneficiary.
+     * Checks ALL registered agencies via pivot table (supports multi-agency beneficiaries).
      */
     public static function isEligible(Beneficiary $beneficiary, ProgramName $program): bool
     {
-        if ($program->agency_id !== $beneficiary->agency_id) {
+        // Get all agencies the beneficiary is registered under
+        $registeredAgencyIds = $beneficiary->agencies()->pluck('id')->toArray();
+
+        // If no agencies in pivot table, fall back to primary agency
+        if (empty($registeredAgencyIds)) {
+            $registeredAgencyIds = [$beneficiary->agency_id];
+        }
+
+        // Check if beneficiary is registered under the program's agency
+        if (! in_array($program->agency_id, $registeredAgencyIds)) {
             return false;
         }
 
@@ -42,8 +61,21 @@ class ProgramEligibilityService
      */
     public static function getIneligibilityReason(Beneficiary $beneficiary, ProgramName $program): string
     {
-        if ($program->agency_id !== $beneficiary->agency_id) {
-            return "Program is for {$program->agency->name} agency only. Beneficiary is registered with {$beneficiary->agency->name}.";
+        // Get all agencies the beneficiary is registered under
+        $registeredAgencyIds = $beneficiary->agencies()->pluck('id')->toArray();
+
+        // If no agencies in pivot table, fall back to primary agency
+        if (empty($registeredAgencyIds)) {
+            $registeredAgencyIds = [$beneficiary->agency_id];
+        }
+
+        // Check if beneficiary is registered under the program's agency
+        if (! in_array($program->agency_id, $registeredAgencyIds)) {
+            $agenciesStr = implode(', ', $beneficiary->agencies()->pluck('name')->toArray());
+            if (empty($agenciesStr)) {
+                $agenciesStr = $beneficiary->agency->name ?? 'Unknown';
+            }
+            return "Program is for {$program->agency->name} agency only. Beneficiary is registered with {$agenciesStr}.";
         }
 
         if (! $program->is_active) {
