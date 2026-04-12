@@ -156,6 +156,38 @@ class AllocationController extends Controller
         ]);
     }
 
+    public function getResourceTypesByAgency(ProgramName $program)
+    {
+        try {
+            $resourceTypes = ResourceType::where('agency_id', $program->agency_id)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name', 'unit', 'agency_id'])
+                ->map(fn ($rt) => [
+                    'id' => $rt->id,
+                    'name' => $rt->name,
+                    'unit' => $rt->unit,
+                    'formatted' => "{$rt->name} ({$rt->unit})",
+                ]);
+
+            return response()->json([
+                'success' => true,
+                'resourceTypes' => $resourceTypes,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching resource types', [
+                'program_id' => $program->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Error loading resource types',
+                'resourceTypes' => [],
+            ], 500);
+        }
+    }
+
     public function store(AllocationRequest $request): RedirectResponse
     {
         $beneficiary = Beneficiary::findOrFail($request->beneficiary_id);
@@ -305,6 +337,13 @@ class AllocationController extends Controller
 
     public function storeBulk(Request $request): RedirectResponse
     {
+        $isDirectBatch = ! $request->filled('distribution_event_id');
+
+        if ($isDirectBatch) {
+            return $this->storeDirectBatch($request);
+        }
+
+        // Existing event-based batch logic
         $event = DistributionEvent::with(['barangay', 'resourceType'])->findOrFail($request->distribution_event_id);
 
         if ($event->status === 'Completed') {
@@ -438,6 +477,122 @@ class AllocationController extends Controller
 
         return redirect()->route('distribution-events.show', $event)
             ->with('success', "{$allocated} allocated, {$skipped} skipped.");
+    }
+
+    private function storeDirectBatch(Request $request): RedirectResponse
+    {
+        $bulkRules = [
+            'release_method' => ['required', 'in:direct'],
+            'allocations' => ['required', 'array', 'min:1'],
+            'allocations.*.beneficiary_id' => ['required', 'distinct', 'exists:beneficiaries,id'],
+            'allocations.*.program_name_id' => ['required', 'exists:program_names,id'],
+            'allocations.*.resource_type_id' => ['required', 'exists:resource_types,id'],
+            'allocations.*.quantity' => ['required', 'numeric', 'min:0.01', 'max:9999.99'],
+            'allocations.*.assistance_purpose_id' => ['nullable', 'exists:assistance_purposes,id'],
+        ];
+
+        $request->validate($bulkRules);
+
+        $allocated = 0;
+        $errors = [];
+        $smsQueue = [];
+
+        try {
+            DB::transaction(function () use ($request, &$allocated, &$errors, &$smsQueue) {
+                foreach ($request->input('allocations') as $idx => $row) {
+                    try {
+                        $beneficiary = Beneficiary::findOrFail($row['beneficiary_id']);
+                        $program = ProgramName::findOrFail($row['program_name_id']);
+                        $resourceType = ResourceType::findOrFail($row['resource_type_id']);
+
+                        // Validate program eligibility
+                        if (! ProgramEligibilityService::isEligible($beneficiary, $program)) {
+                            $reason = ProgramEligibilityService::getIneligibilityReason($beneficiary, $program);
+                            $errors[] = "Row " . ($idx + 1) . ": {$beneficiary->full_name} - {$reason}";
+                            continue;
+                        }
+
+                        // Check if resource belongs to program's agency
+                        if ($resourceType->agency_id !== $program->agency_id) {
+                            $errors[] = "Row " . ($idx + 1) . ": {$beneficiary->full_name} - Resource type not from program's agency";
+                            continue;
+                        }
+
+                        // Check for duplicates in batch
+                        $exists = Allocation::where('beneficiary_id', $beneficiary->id)
+                            ->where('program_name_id', $program->id)
+                            ->where('release_method', 'direct')
+                            ->whereNull('distribution_event_id')
+                            ->whereNull('distributed_at')
+                            ->exists();
+
+                        if ($exists) {
+                            $errors[] = "Row " . ($idx + 1) . ": {$beneficiary->full_name} - Already allocated to this program";
+                            continue;
+                        }
+
+                        $allocation = Allocation::create([
+                            'release_method' => 'direct',
+                            'distribution_event_id' => null,
+                            'beneficiary_id' => $beneficiary->id,
+                            'program_name_id' => $program->id,
+                            'resource_type_id' => $resourceType->id,
+                            'quantity' => $row['quantity'],
+                            'amount' => null,
+                            'assistance_purpose_id' => $row['assistance_purpose_id'] ?? null,
+                        ]);
+
+                        $this->audit->log(
+                            (int) Auth::id(),
+                            'created',
+                            'allocations',
+                            $allocation->id,
+                            [],
+                            $allocation->toArray(),
+                        );
+
+                        $smsQueue[] = [
+                            'number' => $beneficiary->contact_number,
+                            'full_name' => $beneficiary->full_name,
+                            'quantity' => $allocation->quantity,
+                            'resource_name' => $resourceType->name,
+                            'resource_unit' => $resourceType->unit,
+                            'beneficiary_id' => $beneficiary->id,
+                        ];
+
+                        $allocated++;
+                    } catch (\Exception $e) {
+                        $errors[] = "Row " . ($idx + 1) . ": " . $e->getMessage();
+                    }
+                }
+            });
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Batch operation failed: ' . $e->getMessage())
+                ->withInput();
+        }
+
+        // SMS notifications (outside transaction -- non-critical)
+        foreach ($smsQueue as $sms) {
+            if (! $sms['number']) {
+                continue;
+            }
+
+            $message = "Hello {$sms['full_name']}, you have been allocated {$sms['quantity']} {$sms['resource_unit']} of {$sms['resource_name']}. Please coordinate with your MAO/BFAR office for claiming details.";
+            $this->sms->sendSms(
+                $sms['number'],
+                $message,
+                $sms['beneficiary_id'],
+            );
+        }
+
+        $message = "{$allocated} allocations created successfully.";
+        if (! empty($errors)) {
+            $message .= " " . count($errors) . " row(s) failed: " . implode('; ', array_slice($errors, 0, 3));
+        }
+
+        return redirect()->route('allocations.index')
+            ->with($allocated > 0 ? 'success' : 'error', $message);
     }
 
     public function downloadImportCsvTemplate(Request $request): StreamedResponse

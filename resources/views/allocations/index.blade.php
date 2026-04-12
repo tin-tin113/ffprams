@@ -15,18 +15,44 @@
         </div>
     </div>
 
+    {{-- ============================================================ --}}
+    {{-- ADD DIRECT ASSISTANCE - TABBED INTERFACE                     --}}
+    {{-- ============================================================ --}}
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white">
-            <button type="button"
-                    class="btn btn-link text-start w-100 p-0 text-decoration-none fw-semibold"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#addAssistanceForm">
-                <i class="bi bi-chevron-down me-2"></i>
-                <i class="bi bi-plus-circle me-1"></i> Add Direct Assistance
-            </button>
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-plus-circle me-2"></i> Add Direct Assistance
+                </h5>
+                <ul class="nav nav-pills nav-fill" role="tablist" style="max-width: 300px;">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="tab_single" data-bs-toggle="tab" data-bs-target="#form_single"
+                                type="button" role="tab" aria-selected="true">
+                            <i class="bi bi-person me-1"></i><span class="d-none d-sm-inline">Single</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab_batch" data-bs-toggle="tab" data-bs-target="#form_batch"
+                                type="button" role="tab" aria-selected="false">
+                            <i class="bi bi-people me-1"></i><span class="d-none d-sm-inline">Batch</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
         </div>
-        <div id="addAssistanceForm" class="collapse">
-            <div class="card-body">
+
+        <div class="card-body">
+            <div class="tab-content">
+                {{-- SINGLE FORM TAB --}}
+                <div class="tab-pane fade show active" id="form_single" role="tabpanel">
+            <form method="POST"
+                action="{{ route('allocations.store') }}"
+                class="row g-3"
+                data-submit-spinner
+                data-confirm-title="Confirm Direct Allocation"
+                data-confirm-message="Save this direct assistance allocation? This will create an official transaction record.">
+                @csrf
+                <input type="hidden" name="release_method" value="direct">
             <form method="POST"
                 action="{{ route('allocations.store') }}"
                 class="row g-3"
@@ -179,6 +205,89 @@
                     </button>
                 </div>
             </form>
+                </div>
+
+                {{-- BATCH FORM TAB --}}
+                <div class="tab-pane fade" id="form_batch" role="tabpanel">
+            <div class="alert alert-info alert-sm mb-3" role="alert">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Batch Mode:</strong> Add multiple allocations at once. Resource types auto-filter based on program's agency.
+            </div>
+
+            {{-- Batch Controls --}}
+            <div class="row g-2 mb-3">
+                <div class="col-auto">
+                    <button type="button" id="batch_add_row" class="btn btn-sm btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i> Add Row
+                    </button>
+                </div>
+                <div class="col-auto">
+                    <button type="button" id="batch_remove_selected" class="btn btn-sm btn-outline-danger" disabled>
+                        <i class="bi bi-trash me-1"></i> Remove Selected
+                    </button>
+                </div>
+                <div class="col-auto ms-auto">
+                    <span class="badge bg-secondary" id="batch_row_count">0 rows</span>
+                </div>
+            </div>
+
+            <form id="batch_form" method="POST" action="{{ route('allocations.storeBulk') }}"
+                  data-submit-spinner
+                  data-confirm-title="Confirm Batch Allocation"
+                  data-confirm-message="Save all allocations in batch? This will create official transaction records for each row.">
+                @csrf
+                <input type="hidden" name="release_method" value="direct">
+
+                {{-- Batch Table --}}
+                <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                    <table class="table table-sm table-bordered mb-0" id="batch_table">
+                        <thead class="bg-light sticky-top">
+                            <tr>
+                                <th style="width: 3rem;">
+                                    <input type="checkbox" class="form-check-input" id="batch_select_all" title="Select all rows">
+                                </th>
+                                <th>Beneficiary</th>
+                                <th>Program</th>
+                                <th>Resource Type</th>
+                                <th>Quantity</th>
+                                <th>Purpose</th>
+                                <th style="width: 5rem;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="batch_tbody">
+                            {{-- Rows added via JS --}}
+                        </tbody>
+                    </table>
+                    <div id="batch_empty_state" class="text-center text-muted py-5">
+                        <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
+                        <p class="mb-0">Click <strong>"Add Row"</strong> to start adding allocations</p>
+                    </div>
+                </div>
+
+                {{-- Batch Summary --}}
+                <div id="batch_summary" class="card bg-light mt-3" style="display: none;">
+                    <div class="card-body py-2">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <div class="small text-muted">Total Allocations</div>
+                                <div id="summary_count" class="h6 mb-0">0</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="small text-muted">Validation Status</div>
+                                <div id="summary_status" class="h6 mb-0"><span class="badge bg-warning">Checking...</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Batch Submit --}}
+                <div class="mt-3">
+                    <button type="submit" id="batch_submit" class="btn btn-success" disabled>
+                        <i class="bi bi-check2-circle me-1"></i> Save All Allocations
+                    </button>
+                </div>
+            </form>
+                </div>
             </div>
         </div>
     </div>
@@ -477,16 +586,191 @@ document.addEventListener('DOMContentLoaded', function () {
         performSearch();
     });
 
-    // Rotate chevron on collapse toggle
-    const collapseElement = document.getElementById('addAssistanceForm');
-    const chevronIcon = collapseElement.previousElementSibling.querySelector('.bi-chevron-down');
+    // ===== RESOURCE TYPE FILTERING BY PROGRAM =====
+    async function loadResourceTypesByProgram(programSelect, resourceTypeSelect) {
+        const programId = programSelect.value;
+        if (!programId) {
+            resourceTypeSelect.innerHTML = '<option value="" selected disabled>Select Program First</option>';
+            resourceTypeSelect.disabled = true;
+            return;
+        }
 
-    collapseElement.addEventListener('show.bs.collapse', function() {
-        chevronIcon.style.transform = 'rotate(0deg)';
+        try {
+            const response = await fetch(`/api/programs/${programId}/resource-types`);
+            const data = await response.json();
+
+            if (data.success && data.resourceTypes) {
+                resourceTypeSelect.innerHTML = '<option value="" selected disabled>Select Resource Type</option>';
+
+                if (data.resourceTypes.length === 0) {
+                    resourceTypeSelect.innerHTML = '<option value="" selected disabled>No resources available for this program</option>';
+                    resourceTypeSelect.disabled = true;
+                } else {
+                    data.resourceTypes.forEach(rt => {
+                        const option = document.createElement('option');
+                        option.value = rt.id;
+                        option.dataset.unit = rt.unit;
+                        option.textContent = rt.formatted;
+                        resourceTypeSelect.appendChild(option);
+                    });
+                    resourceTypeSelect.disabled = false;
+                }
+            }
+        } catch (error) {
+            console.error('Error loading resource types:', error);
+            resourceTypeSelect.innerHTML = '<option value="" selected disabled>Error loading resources</option>';
+            resourceTypeSelect.disabled = true;
+        }
+    }
+
+    // Load resource types when program changes (single form)
+    programSelect.addEventListener('change', () => {
+        loadResourceTypesByProgram(programSelect, resourceSelect);
     });
 
-    collapseElement.addEventListener('hide.bs.collapse', function() {
-        chevronIcon.style.transform = 'rotate(-90deg)';
+    // ===== BATCH OPERATIONS =====
+    const batchAddRowBtn = document.getElementById('batch_add_row');
+    const batchRemoveBtn = document.getElementById('batch_remove_selected');
+    const batchSelectAllCheckbox = document.getElementById('batch_select_all');
+    const batchTbody = document.getElementById('batch_tbody');
+    const batchEmptyState = document.getElementById('batch_empty_state');
+    const batchSummary = document.getElementById('batch_summary');
+    const batchSummaryStatus = document.getElementById('summary_status');
+    const batchSubmitBtn = document.getElementById('batch_submit');
+    const batchRowCount = document.getElementById('batch_row_count');
+    const summaryCount = document.getElementById('summary_count');
+
+    let batchRowIndex = 0;
+    const assistancePurposes = @json($assistancePurposes ?? []);
+
+    function updateBatchSummary() {
+        const rows = document.querySelectorAll('#batch_tbody tr');
+        const count = rows.length;
+        summaryCount.textContent = count;
+        batchRowCount.textContent = count + (count === 1 ? ' row' : ' rows');
+
+        const isEmpty = count === 0;
+        batchEmptyState.style.display = isEmpty ? 'block' : 'none';
+        batchSummary.style.display = isEmpty ? 'none' : 'block';
+        batchRemoveBtn.disabled = isEmpty;
+        batchSubmitBtn.disabled = isEmpty;
+    }
+
+    function createBatchRow(index) {
+        const row = document.createElement('tr');
+        row.dataset.rowIndex = index;
+        row.innerHTML = `
+            <td class="text-center">
+                <input type="checkbox" class="form-check-input batch-row-checkbox">
+            </td>
+            <td>
+                <input type="text" class="form-control form-control-sm batch-beneficiary-search"
+                       placeholder="Type name..." data-row-index="${index}" required>
+                <input type="hidden" name="allocations[${index}][beneficiary_id]" class="batch-beneficiary-id">
+            </td>
+            <td>
+                <select name="allocations[${index}][program_name_id]" class="form-select form-select-sm batch-program" required>
+                    <option value="">Select Program</option>
+                    @foreach($resourceTypes->map->agency ? $resourceTypes->map->agency->programs()->active()->get()->flatten()->unique('id') : collect() as $prog)
+                        <option value="{{ $prog->id }}">{{ $prog->name }}</option>
+                    @endforeach
+                </select>
+            </td>
+            <td>
+                <select name="allocations[${index}][resource_type_id]" class="form-select form-select-sm batch-resource" required>
+                    <option value="">Select Resource</option>
+                </select>
+            </td>
+            <td>
+                <input type="number" step="0.01" min="0.01" name="allocations[${index}][quantity]"
+                       class="form-control form-control-sm batch-quantity" placeholder="Qty" required>
+            </td>
+            <td>
+                <select name="allocations[${index}][assistance_purpose_id]" class="form-select form-select-sm batch-purpose">
+                    <option value="">-</option>
+                    @foreach($assistancePurposes as $purpose)
+                        <option value="{{ $purpose->id }}">{{ $purpose->name }}</option>
+                    @endforeach
+                </select>
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-outline-danger batch-remove-row" title="Remove row">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+
+        // Beneficiary search in batch row
+        const beneficiarySearch = row.querySelector('.batch-beneficiary-search');
+        const programSelect = row.querySelector('.batch-program');
+        const resourceSelect = row.querySelector('.batch-resource');
+        const beneficiaryIdInput = row.querySelector('.batch-beneficiary-id');
+        let beneficiarySearchTimeout;
+
+        beneficiarySearch.addEventListener('keyup', async () => {
+            clearTimeout(beneficiarySearchTimeout);
+            const query = beneficiarySearch.value.trim();
+            if (query.length < 2) return;
+
+            beneficiarySearchTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(`/api/beneficiaries/search?q=${encodeURIComponent(query)}`);
+                    const data = await response.json();
+                    if (data.results && data.results.length > 0) {
+                        const beneficiary = data.results[0];
+                        beneficiarySearch.value = beneficiary.display;
+                        beneficiaryIdInput.value = beneficiary.id;
+                    }
+                } catch (e) {
+                    console.error('Error searching beneficiary:', e);
+                }
+            }, 300);
+        });
+
+        // Load resource types when program changes
+        programSelect.addEventListener('change', () => {
+            loadResourceTypesByProgram(programSelect, resourceSelect);
+        });
+
+        // Remove row
+        row.querySelector('.batch-remove-row').addEventListener('click', () => {
+            row.remove();
+            updateBatchSummary();
+        });
+
+        // Select checkbox
+        row.querySelector('.batch-row-checkbox').addEventListener('change', () => {
+            updateBatchSelectAll();
+        });
+
+        batchTbody.appendChild(row);
+        updateBatchSummary();
+    }
+
+    function updateBatchSelectAll() {
+        const checkboxes = document.querySelectorAll('.batch-row-checkbox');
+        const checked = document.querySelectorAll('.batch-row-checkbox:checked').length;
+        batchSelectAllCheckbox.checked = checked === checkboxes.length && checkboxes.length > 0;
+        batchSelectAllCheckbox.indeterminate = checked > 0 && checked < checkboxes.length;
+    }
+
+    // Batch controls
+    batchAddRowBtn.addEventListener('click', () => {
+        createBatchRow(batchRowIndex++);
+    });
+
+    batchSelectAllCheckbox.addEventListener('change', () => {
+        document.querySelectorAll('.batch-row-checkbox').forEach(checkbox => {
+            checkbox.checked = batchSelectAllCheckbox.checked;
+        });
+    });
+
+    batchRemoveBtn.addEventListener('click', () => {
+        document.querySelectorAll('.batch-row-checkbox:checked').forEach(checkbox => {
+            checkbox.closest('tr').remove();
+        });
+        batchSelectAllCheckbox.checked = false;
+        updateBatchSummary();
     });
 });
 </script>
