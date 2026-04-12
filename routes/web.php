@@ -108,9 +108,11 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
     Route::get('direct-assistance-barangay-analytics', [DirectAssistanceController::class, 'barangayAnalytics'])
         ->name('direct-assistance.barangay-analytics');
 
-    // API endpoint for eligible programs
+    // API endpoints for eligible programs (used by allocation forms)
     Route::get('api/eligible-programs/{beneficiary}', [DirectAssistanceController::class, 'getEligiblePrograms'])
         ->name('api.eligible-programs');
+    Route::get('api/allocations/eligible-programs/{beneficiary}', [AllocationController::class, 'getEligiblePrograms'])
+        ->name('api.allocations.eligible-programs');
 
     // SMS Broadcast
     Route::get('sms', [SmsController::class, 'index'])->name('sms.index');

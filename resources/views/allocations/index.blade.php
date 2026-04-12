@@ -51,15 +51,17 @@
 
                 <div class="col-md-4">
                     <label class="form-label">Program <span class="text-danger">*</span></label>
-                    <select class="form-select @error('program_name_id') is-invalid @enderror" name="program_name_id" required>
-                        <option value="" selected disabled>Select Program</option>
-                        @foreach($programNames as $program)
-                            <option value="{{ $program->id }}" {{ old('program_name_id') == $program->id ? 'selected' : '' }}>
-                                {{ $program->name }} - {{ $program->agency->name ?? 'N/A' }}
-                            </option>
-                        @endforeach
+                    <select class="form-select @error('program_name_id') is-invalid @enderror"
+                            name="program_name_id"
+                            id="program_name_id"
+                            required
+                            disabled>
+                        <option value="" selected disabled>Select Beneficiary First</option>
                     </select>
                     @error('program_name_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <small class="text-muted d-block mt-1" id="program_info" style="display: none;">
+                        Showing programs eligible for this beneficiary
+                    </small>
                 </div>
 
                 <div class="col-md-4">
@@ -207,10 +209,67 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const beneficiarySelect = document.querySelector('select[name="beneficiary_id"]');
     const resourceSelect = document.getElementById('resource_type_id');
+    const programSelect = document.getElementById('program_name_id');
     const quantityGroup = document.getElementById('quantityGroup');
     const amountGroup = document.getElementById('amountGroup');
+    const programInfo = document.getElementById('program_info');
 
+    // Fetch eligible programs when beneficiary is selected
+    async function loadEligiblePrograms(beneficiaryId) {
+        if (!beneficiaryId) {
+            programSelect.innerHTML = '<option value="" selected disabled>Select Beneficiary First</option>';
+            programSelect.disabled = true;
+            programInfo.style.display = 'none';
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/allocations/eligible-programs/${beneficiaryId}`);
+            const data = await response.json();
+
+            if (data.success && data.programs) {
+                // Clear existing options
+                programSelect.innerHTML = '<option value="" selected disabled>Select Program</option>';
+
+                if (data.programs.length === 0) {
+                    programSelect.innerHTML = '<option value="" selected disabled>No eligible programs for this beneficiary</option>';
+                    programSelect.disabled = true;
+                    programInfo.style.display = 'none';
+                } else {
+                    // Populate with eligible programs
+                    data.programs.forEach(prog => {
+                        const option = document.createElement('option');
+                        option.value = prog.id;
+                        option.textContent = prog.formatted;
+                        programSelect.appendChild(option);
+                    });
+
+                    programSelect.disabled = false;
+                    programInfo.style.display = 'block';
+
+                    // If there was a previous selection, try to keep it
+                    if (programSelect.dataset.previousValue) {
+                        programSelect.value = programSelect.dataset.previousValue;
+                        delete programSelect.dataset.previousValue;
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error loading eligible programs:', error);
+            programSelect.innerHTML = '<option value="" selected disabled>Error loading programs</option>';
+            programSelect.disabled = true;
+        }
+    }
+
+    // Load programs when beneficiary changes
+    beneficiarySelect.addEventListener('change', function () {
+        programSelect.dataset.previousValue = programSelect.value;
+        loadEligiblePrograms(this.value);
+    });
+
+    // Toggle quantity/amount inputs based on resource type
     function toggleValueInputs() {
         const selected = resourceSelect.options[resourceSelect.selectedIndex];
         const unit = selected ? selected.dataset.unit : '';

@@ -40,7 +40,8 @@ class AllocationController extends Controller
             ->orderBy('full_name')
             ->get(['id', 'full_name', 'barangay_id']);
 
-        $programNames = ProgramName::with('agency')->active()->orderBy('name')->get();
+        // Programs now loaded dynamically via AJAX when beneficiary is selected
+        // This prevents showing ineligible programs to users
         $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
         $assistancePurposes = AssistancePurpose::active()->orderBy('name')->get();
 
@@ -57,7 +58,6 @@ class AllocationController extends Controller
 
         return view('allocations.index', compact(
             'beneficiaries',
-            'programNames',
             'resourceTypes',
             'assistancePurposes',
             'directAllocations',
@@ -75,6 +75,28 @@ class AllocationController extends Controller
         ]);
 
         return view('allocations.show', compact('allocation'));
+    }
+
+    /**
+     * Get eligible programs for a beneficiary (API endpoint)
+     * Used for dynamic filtering in allocation forms
+     */
+    public function getEligiblePrograms(Beneficiary $beneficiary)
+    {
+        $programs = ProgramEligibilityService::getEligiblePrograms($beneficiary)
+            ->load('agency')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'programs' => $programs->map(fn ($prog) => [
+                'id' => $prog->id,
+                'name' => $prog->name,
+                'agency_name' => $prog->agency->name,
+                'formatted' => "{$prog->name} - {$prog->agency->name}",
+            ]),
+        ]);
     }
 
     public function store(AllocationRequest $request): RedirectResponse
