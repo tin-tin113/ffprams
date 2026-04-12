@@ -154,17 +154,17 @@
 
                 <div class="col-md-4">
                     <label class="form-label">Resource Type <span class="text-danger">*</span></label>
-                    <select class="form-select @error('resource_type_id') is-invalid @enderror" name="resource_type_id" id="resource_type_id" required>
-                        <option value="" selected disabled>Select Resource Type</option>
-                        @foreach($resourceTypes as $type)
-                            <option value="{{ $type->id }}"
-                                    data-unit="{{ $type->unit }}"
-                                    {{ old('resource_type_id') == $type->id ? 'selected' : '' }}>
-                                {{ $type->name }} ({{ $type->unit }}) - {{ $type->agency->name ?? 'N/A' }}
-                            </option>
-                        @endforeach
+                    <select class="form-select @error('resource_type_id') is-invalid @enderror"
+                            name="resource_type_id"
+                            id="resource_type_id"
+                            required
+                            disabled>
+                        <option value="" selected disabled>Select Program First</option>
                     </select>
                     @error('resource_type_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <small class="text-muted d-block mt-1" id="resource_info" style="display: none;">
+                        <i class="bi bi-info-circle me-1"></i>Showing resources from program's agency
+                    </small>
                 </div>
 
                 <div class="col-md-4" id="quantityGroup">
@@ -395,6 +395,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const quantityGroup = document.getElementById('quantityGroup');
     const amountGroup = document.getElementById('amountGroup');
     const programInfo = document.getElementById('program_info');
+    const resourceInfo = document.getElementById('resource_info');
 
     // Fetch eligible programs when beneficiary is selected
     async function loadEligiblePrograms(beneficiaryId) {
@@ -472,6 +473,12 @@ document.addEventListener('DOMContentLoaded', function () {
         amountGroup.classList.toggle('d-none', !isFinancial);
     }
 
+    resourceSelect.addEventListener('change', () => {
+        loadResourceTypesByProgram(programSelect, resourceSelect);
+        toggleValueInputs();
+    });
+
+    // Also toggle when directly selecting resource type
     resourceSelect.addEventListener('change', toggleValueInputs);
     toggleValueInputs();
 
@@ -602,6 +609,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!programId) {
             resourceTypeSelect.innerHTML = '<option value="" selected disabled>Select Program First</option>';
             resourceTypeSelect.disabled = true;
+            resourceInfo.style.display = 'none';
             return;
         }
 
@@ -615,6 +623,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (data.resourceTypes.length === 0) {
                     resourceTypeSelect.innerHTML = '<option value="" selected disabled>No resources available for this program</option>';
                     resourceTypeSelect.disabled = true;
+                    resourceInfo.style.display = 'none';
                 } else {
                     data.resourceTypes.forEach(rt => {
                         const option = document.createElement('option');
@@ -624,12 +633,14 @@ document.addEventListener('DOMContentLoaded', function () {
                         resourceTypeSelect.appendChild(option);
                     });
                     resourceTypeSelect.disabled = false;
+                    resourceInfo.style.display = 'block';
                 }
             }
         } catch (error) {
             console.error('Error loading resource types:', error);
             resourceTypeSelect.innerHTML = '<option value="" selected disabled>Error loading resources</option>';
             resourceTypeSelect.disabled = true;
+            resourceInfo.style.display = 'none';
         }
     }
 
