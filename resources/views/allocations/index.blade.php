@@ -16,54 +16,55 @@
     </div>
 
     {{-- ============================================================ --}}
-    {{-- ADD DIRECT ASSISTANCE - TABBED INTERFACE                     --}}
+    {{-- ADD DIRECT ASSISTANCE BUTTON                                 --}}
     {{-- ============================================================ --}}
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-plus-circle me-2"></i> Add Direct Assistance
-                </h5>
-                <ul class="nav nav-pills nav-fill" role="tablist" style="max-width: 300px;">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="tab_single" data-bs-toggle="tab" data-bs-target="#form_single"
-                                type="button" role="tab" aria-selected="true">
-                            <i class="bi bi-person me-1"></i><span class="d-none d-sm-inline">Single</span>
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="tab_batch" data-bs-toggle="tab" data-bs-target="#form_batch"
-                                type="button" role="tab" aria-selected="false">
-                            <i class="bi bi-people me-1"></i><span class="d-none d-sm-inline">Batch</span>
-                        </button>
-                    </li>
-                </ul>
-            </div>
-        </div>
+    <div class="mb-4">
+        <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#addDirectAssistanceModal">
+            <i class="bi bi-plus-circle me-2"></i> Add Direct Assistance
+        </button>
+    </div>
 
-        <div class="card-body">
-            <div class="tab-content">
-                {{-- SINGLE FORM TAB --}}
-                <div class="tab-pane fade show active" id="form_single" role="tabpanel">
-            <form method="POST"
-                action="{{ route('allocations.store') }}"
-                class="row g-3"
-                data-submit-spinner
-                data-confirm-title="Confirm Direct Allocation"
-                data-confirm-message="Save this direct assistance allocation? This will create an official transaction record.">
-                @csrf
-                <input type="hidden" name="release_method" value="direct">
-            <form method="POST"
-                action="{{ route('allocations.store') }}"
-                class="row g-3"
-                data-submit-spinner
-                data-confirm-title="Confirm Direct Allocation"
-                data-confirm-message="Save this direct assistance allocation? This will create an official transaction record.">
-                @csrf
-                <input type="hidden" name="release_method" value="direct">
+    {{-- ============================================================ --}}
+    {{-- MODAL: ADD DIRECT ASSISTANCE                                 --}}
+    {{-- ============================================================ --}}
+    <div class="modal fade modal-lg" id="addDirectAssistanceModal" tabindex="-1" aria-labelledby="addDirectAssistanceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-light border-bottom">
+                    <h5 class="modal-title" id="addDirectAssistanceModalLabel">
+                        <i class="bi bi-plus-circle me-2"></i> Add Direct Assistance
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
 
-                {{-- Beneficiary Search Section --}}
-                <div class="col-12">
+                {{-- Tab Navigation --}}
+                <div class="modal-body pt-0">
+                    <ul class="nav nav-pills nav-fill mb-3 sticky-top bg-white pt-3" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="modal_tab_single" data-bs-toggle="tab" data-bs-target="#modal_form_single"
+                                    type="button" role="tab" aria-selected="true">
+                                <i class="bi bi-person me-1"></i> Single
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="modal_tab_batch" data-bs-toggle="tab" data-bs-target="#modal_form_batch"
+                                    type="button" role="tab" aria-selected="false">
+                                <i class="bi bi-people me-1"></i> Batch
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        {{-- SINGLE FORM TAB --}}
+                        <div class="tab-pane fade show active" id="modal_form_single" role="tabpanel">
+                            <form method="POST"
+                                action="{{ route('allocations.store') }}"
+                                class="row g-3"
+                                data-submit-spinner
+                                data-confirm-title="Confirm Direct Allocation"
+                                data-confirm-message="Save this direct assistance allocation? This will create an official transaction record.">
+                                @csrf
+                                <input type="hidden" name="release_method" value="direct">
                     <div class="card border-light bg-light">
                         <div class="card-body">
                             <h6 class="card-title mb-3">
@@ -208,35 +209,35 @@
                 </div>
 
                 {{-- BATCH FORM TAB --}}
-                <div class="tab-pane fade" id="form_batch" role="tabpanel">
-            <div class="alert alert-info alert-sm mb-3" role="alert">
-                <i class="bi bi-info-circle me-2"></i>
-                <strong>Batch Mode:</strong> Add multiple allocations at once. Resource types auto-filter based on program's agency.
-            </div>
+                        <div class="tab-pane fade" id="modal_form_batch" role="tabpanel">
+                            <form id="batch_form" method="POST" action="{{ route('allocations.storeBulk') }}"
+                                  data-submit-spinner
+                                  data-confirm-title="Confirm Batch Allocation"
+                                  data-confirm-message="Save all allocations in batch? This will create official transaction records for each row.">
+                                @csrf
+                                <input type="hidden" name="release_method" value="direct">
 
-            {{-- Batch Controls --}}
-            <div class="row g-2 mb-3">
-                <div class="col-auto">
-                    <button type="button" id="batch_add_row" class="btn btn-sm btn-primary">
-                        <i class="bi bi-plus-lg me-1"></i> Add Row
-                    </button>
-                </div>
-                <div class="col-auto">
-                    <button type="button" id="batch_remove_selected" class="btn btn-sm btn-outline-danger" disabled>
-                        <i class="bi bi-trash me-1"></i> Remove Selected
-                    </button>
-                </div>
-                <div class="col-auto ms-auto">
-                    <span class="badge bg-secondary" id="batch_row_count">0 rows</span>
-                </div>
-            </div>
+                                <div class="alert alert-info alert-sm mb-3" role="alert">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <strong>Batch Mode:</strong> Add multiple allocations at once. Resource types auto-filter based on program's agency.
+                                </div>
 
-            <form id="batch_form" method="POST" action="{{ route('allocations.storeBulk') }}"
-                  data-submit-spinner
-                  data-confirm-title="Confirm Batch Allocation"
-                  data-confirm-message="Save all allocations in batch? This will create official transaction records for each row.">
-                @csrf
-                <input type="hidden" name="release_method" value="direct">
+                                {{-- Batch Controls --}}
+                                <div class="row g-2 mb-3">
+                                    <div class="col-auto">
+                                        <button type="button" id="batch_add_row" class="btn btn-sm btn-primary">
+                                            <i class="bi bi-plus-lg me-1"></i> Add Row
+                                        </button>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="button" id="batch_remove_selected" class="btn btn-sm btn-outline-danger" disabled>
+                                            <i class="bi bi-trash me-1"></i> Remove Selected
+                                        </button>
+                                    </div>
+                                    <div class="col-auto ms-auto">
+                                        <span class="badge bg-secondary" id="batch_row_count">0 rows</span>
+                                    </div>
+                                </div>
 
                 {{-- Batch Table --}}
                 <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
@@ -287,6 +288,15 @@
                     </button>
                 </div>
             </form>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Modal Footer --}}
+                <div class="modal-footer bg-light border-top">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i> Close
+                    </button>
                 </div>
             </div>
         </div>
