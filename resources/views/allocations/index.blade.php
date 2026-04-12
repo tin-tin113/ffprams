@@ -432,12 +432,25 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function selectBeneficiary(beneficiary) {
+        // Set the hidden field value
         beneficiaryIdField.value = beneficiary.id;
+
+        // Clear existing options and add the selected one
+        beneficiaryIdField.innerHTML = `
+            <option value="" disabled>Select Beneficiary</option>
+            <option value="${beneficiary.id}" selected>
+                ${beneficiary.name} (${beneficiary.classification}) - ${beneficiary.barangay}
+            </option>
+        `;
+
+        // Dispatch change event to trigger program loading
         beneficiaryIdField.dispatchEvent(new Event('change'));
 
+        // Show selected confirmation
         selectedBeneficiaryDisplay.textContent = `${beneficiary.name} (${beneficiary.classification}) - ${beneficiary.barangay}`;
         selectedBeneficiaryGroup.style.display = 'block';
 
+        // Hide search results
         resultsGroup.style.display = 'none';
         noResultsMsg.style.display = 'none';
         searchInput.value = '';
@@ -458,6 +471,7 @@ document.addEventListener('DOMContentLoaded', function () {
     clearBeneficiaryBtn.addEventListener('click', (e) => {
         e.preventDefault();
         beneficiaryIdField.value = '';
+        beneficiaryIdField.innerHTML = '<option value="" selected disabled>Use search above to select</option>';
         selectedBeneficiaryGroup.style.display = 'none';
         searchInput.focus();
         performSearch();
