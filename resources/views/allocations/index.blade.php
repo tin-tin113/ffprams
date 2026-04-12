@@ -59,7 +59,7 @@
                         <div class="tab-pane fade show active" id="modal_form_single" role="tabpanel">
                             <form method="POST"
                                 action="{{ route('allocations.store') }}"
-                                class="row g-3"
+                                class="row g-3 mb-0"
                                 data-submit-spinner
                                 data-confirm-title="Confirm Direct Allocation"
                                 data-confirm-message="Save this direct assistance allocation? This will create an official transaction record.">
