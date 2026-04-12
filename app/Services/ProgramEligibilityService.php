@@ -15,7 +15,7 @@ class ProgramEligibilityService
     public static function getEligiblePrograms(Beneficiary $beneficiary): Collection
     {
         // Get all agencies the beneficiary is registered under
-        $registeredAgencyIds = $beneficiary->agencies()->pluck('id')->toArray();
+        $registeredAgencyIds = $beneficiary->agencies()->pluck('agencies.id')->toArray();
 
         // If no agencies in pivot table, fall back to primary agency
         if (empty($registeredAgencyIds)) {
@@ -37,7 +37,7 @@ class ProgramEligibilityService
     public static function isEligible(Beneficiary $beneficiary, ProgramName $program): bool
     {
         // Get all agencies the beneficiary is registered under
-        $registeredAgencyIds = $beneficiary->agencies()->pluck('id')->toArray();
+        $registeredAgencyIds = $beneficiary->agencies()->pluck('agencies.id')->toArray();
 
         // If no agencies in pivot table, fall back to primary agency
         if (empty($registeredAgencyIds)) {
@@ -62,7 +62,7 @@ class ProgramEligibilityService
     public static function getIneligibilityReason(Beneficiary $beneficiary, ProgramName $program): string
     {
         // Get all agencies the beneficiary is registered under
-        $registeredAgencyIds = $beneficiary->agencies()->pluck('id')->toArray();
+        $registeredAgencyIds = $beneficiary->agencies()->pluck('agencies.id')->toArray();
 
         // If no agencies in pivot table, fall back to primary agency
         if (empty($registeredAgencyIds)) {
@@ -71,7 +71,7 @@ class ProgramEligibilityService
 
         // Check if beneficiary is registered under the program's agency
         if (! in_array($program->agency_id, $registeredAgencyIds)) {
-            $agenciesStr = implode(', ', $beneficiary->agencies()->pluck('name')->toArray());
+            $agenciesStr = implode(', ', $beneficiary->agencies()->pluck('agencies.name')->toArray());
             if (empty($agenciesStr)) {
                 $agenciesStr = $beneficiary->agency->name ?? 'Unknown';
             }
