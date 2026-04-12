@@ -113,6 +113,8 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
         ->name('api.eligible-programs');
     Route::get('api/allocations/eligible-programs/{beneficiary}', [AllocationController::class, 'getEligiblePrograms'])
         ->name('api.allocations.eligible-programs');
+    Route::get('api/beneficiaries/search', [AllocationController::class, 'searchBeneficiaries'])
+        ->name('api.beneficiaries.search');
 
     // SMS Broadcast
     Route::get('sms', [SmsController::class, 'index'])->name('sms.index');

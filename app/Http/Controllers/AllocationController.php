@@ -110,6 +110,52 @@ class AllocationController extends Controller
         }
     }
 
+    public function searchBeneficiaries(Request $request)
+    {
+        $query = $request->input('q', '');
+        $barangayId = $request->input('barangay_id');
+        $classification = $request->input('classification');
+
+        $beneficiaries = Beneficiary::with('barangay')
+            ->where('status', 'Active');
+
+        // Text search on full_name or contact_number
+        if ($query) {
+            $beneficiaries->where(function ($q) use ($query) {
+                $q->where('full_name', 'like', "%{$query}%")
+                  ->orWhere('contact_number', 'like', "%{$query}%");
+            });
+        }
+
+        // Filter by barangay
+        if ($barangayId) {
+            $beneficiaries->where('barangay_id', $barangayId);
+        }
+
+        // Filter by classification
+        if ($classification && in_array($classification, ['Farmer', 'Fisherfolk'])) {
+            $beneficiaries->where('classification', $classification);
+        }
+
+        $results = $beneficiaries
+            ->orderBy('full_name')
+            ->limit(20)
+            ->get(['id', 'full_name', 'classification', 'barangay_id', 'contact_number'])
+            ->map(fn ($b) => [
+                'id' => $b->id,
+                'name' => $b->full_name,
+                'classification' => $b->classification,
+                'barangay' => $b->barangay?->name ?? 'N/A',
+                'contact' => $b->contact_number ?? '',
+                'display' => "{$b->full_name} ({$b->classification}) - {$b->barangay?->name}",
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'results' => $results,
+        ]);
+    }
+
     public function store(AllocationRequest $request): RedirectResponse
     {
         $beneficiary = Beneficiary::findOrFail($request->beneficiary_id);

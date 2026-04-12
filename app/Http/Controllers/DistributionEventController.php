@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\DistributionEventRequest;
 use App\Models\AssistancePurpose;
 use App\Models\Barangay;
+use App\Models\Beneficiary;
 use App\Models\DistributionEvent;
 use App\Models\ProgramName;
 use App\Models\ResourceType;
 use App\Services\AuditLogService;
+use App\Services\ProgramEligibilityService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -129,7 +131,19 @@ class DistributionEventController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        return view('distribution_events.show', compact('event', 'allocatedBeneficiaryIds', 'assistancePurposes'));
+        // Get eligible beneficiaries for this event's program (with program eligibility filtering)
+        $availableBeneficiaries = Beneficiary::where('barangay_id', $event->barangay_id)
+            ->where('status', 'Active')
+            ->whereNotIn('id', $allocatedBeneficiaryIds)
+            ->orderBy('full_name')
+            ->get(['id', 'full_name', 'classification', 'agency_id'])
+            ->filter(function ($beneficiary) use ($event) {
+                // Only include beneficiaries eligible for this event's program
+                return ProgramEligibilityService::isEligible($beneficiary, $event->programName);
+            })
+            ->values();
+
+        return view('distribution_events.show', compact('event', 'allocatedBeneficiaryIds', 'assistancePurposes', 'availableBeneficiaries'));
     }
 
     public function distributionList(DistributionEvent $event): View

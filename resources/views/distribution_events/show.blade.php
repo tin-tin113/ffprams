@@ -10,28 +10,6 @@
 @section('content')
 <div class="container-fluid">
 
-    @if(session('import_error_report_file'))
-        <div class="alert alert-warning d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2" role="alert">
-            <div>
-                <strong>CSV Import Notice:</strong>
-                {{ session('import_error_report_count', 0) }} row(s) were skipped during import.
-                Download the detailed error report for row-level issues.
-            </div>
-            <a href="{{ route('allocations.importCsvErrorsReport', ['report' => session('import_error_report_file')]) }}"
-               class="btn btn-sm btn-outline-dark">
-                <i class="bi bi-file-earmark-arrow-down me-1"></i> Download Error Report
-            </a>
-        </div>
-    @endif
-
-    @php
-        $availableBeneficiaries = \App\Models\Beneficiary::where('barangay_id', $event->barangay_id)
-            ->where('status', 'Active')
-            ->whereNotIn('id', $allocatedBeneficiaryIds)
-            ->orderBy('full_name')
-            ->get(['id', 'full_name', 'classification']);
-    @endphp
-
     {{-- ============================================================ --}}
     {{-- 1. EVENT HEADER CARD                                         --}}
     {{-- ============================================================ --}}
@@ -65,14 +43,14 @@
         };
     @endphp
 
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
-        <div class="d-flex align-items-center flex-wrap gap-2 gap-sm-0">
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div class="d-flex align-items-center">
             <a href="{{ route('distribution-events.index') }}" class="btn btn-outline-secondary btn-sm me-3">
                 <i class="bi bi-arrow-left"></i>
             </a>
             <div>
                 <h1 class="h3 mb-1">{{ $event->barangay->name }}</h1>
-                <div class="d-flex gap-2 align-items-center flex-wrap">
+                <div class="d-flex gap-2 align-items-center">
                     <span class="badge {{ $statusBadge }}">{{ $event->status }}</span>
                     <span class="badge {{ $agencyBadge }}">{{ $agencyName }}</span>
                     @if($event->isFinancial())
@@ -137,7 +115,7 @@
     </div>
 
     @if($event->status === 'Completed')
-        <div class="alert alert-info d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4" role="alert">
+        <div class="alert alert-info d-flex justify-content-between align-items-center mb-4" role="alert">
             <div>
                 <strong>Next Step:</strong> Generate and review the distribution summary report for agency submission.
             </div>
@@ -375,7 +353,7 @@
             $remainingBudget = $event->total_fund_amount - $totalAmountAllocated;
         @endphp
         <div class="row g-3 mb-4">
-            <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+            <div class="col-sm-6 col-xl-3">
                 <div class="card border-0 shadow-sm">
                     <div class="card-body d-flex align-items-center">
                         <div class="rounded-3 bg-primary bg-opacity-10 p-3 me-3">
@@ -388,7 +366,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+            <div class="col-sm-6 col-xl-3">
                 <div class="card border-0 shadow-sm">
                     <div class="card-body d-flex align-items-center">
                         <div class="rounded-3 bg-info bg-opacity-10 p-3 me-3">
@@ -401,7 +379,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+            <div class="col-sm-6 col-xl-3">
                 <div class="card border-0 shadow-sm">
                     <div class="card-body d-flex align-items-center">
                         <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3">
@@ -414,7 +392,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+            <div class="col-sm-6 col-xl-3">
                 <div class="card border-0 shadow-sm">
                     <div class="card-body d-flex align-items-center">
                         <div class="rounded-3 bg-warning bg-opacity-10 p-3 me-3">
@@ -433,7 +411,7 @@
             $totalQuantity = $event->allocations->sum('quantity');
         @endphp
         <div class="row g-3 mb-4">
-            <div class="col-12 col-sm-6 col-lg-4 col-xl-4">
+            <div class="col-sm-6 col-xl-4">
                 <div class="card border-0 shadow-sm">
                     <div class="card-body d-flex align-items-center">
                         <div class="rounded-3 bg-primary bg-opacity-10 p-3 me-3">
@@ -446,7 +424,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-12 col-sm-6 col-lg-4 col-xl-4">
+            <div class="col-sm-6 col-xl-4">
                 <div class="card border-0 shadow-sm">
                     <div class="card-body d-flex align-items-center">
                         <div class="rounded-3 bg-info bg-opacity-10 p-3 me-3">
@@ -459,7 +437,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-12 col-sm-6 col-lg-4 col-xl-4">
+            <div class="col-sm-6 col-xl-4">
                 <div class="card border-0 shadow-sm">
                     <div class="card-body d-flex align-items-center">
                         <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3">
@@ -491,9 +469,6 @@
             </button>
             <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#addAllModal">
                 <i class="bi bi-people me-1"></i> Add All Barangay Beneficiaries
-            </button>
-            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importCsvModal">
-                <i class="bi bi-file-earmark-arrow-up me-1"></i> Import CSV
             </button>
         </div>
     @endif
@@ -535,11 +510,11 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0 table-responsive-cards">
+                <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
                             @if($event->status !== 'Pending' && $bulkEligibleCount > 0)
-                                <th class="text-center">
+                                <th class="text-center" style="width: 36px;">
                                     <input type="checkbox" class="form-check-input" id="bulkSelectAll" aria-label="Select all eligible allocations">
                                 </th>
                             @endif
@@ -561,7 +536,7 @@
                         @forelse($event->allocations as $allocation)
                             <tr class="{{ $allocation->distributed_at ? 'table-success' : '' }}">
                                 @if($event->status !== 'Pending' && $bulkEligibleCount > 0)
-                                    <td class="text-center" data-label="Select">
+                                    <td class="text-center">
                                         @if(!$allocation->distributed_at && $allocation->release_outcome !== 'not_received')
                                             <input type="checkbox"
                                                    class="form-check-input bulk-allocation-checkbox"
@@ -570,9 +545,9 @@
                                         @endif
                                     </td>
                                 @endif
-                                <td class="text-muted" data-label="#">{{ $loop->iteration }}</td>
-                                <td data-label="Beneficiary Name">{{ $allocation->beneficiary->full_name }}</td>
-                                <td data-label="Classification">
+                                <td class="text-muted">{{ $loop->iteration }}</td>
+                                <td>{{ $allocation->beneficiary->full_name }}</td>
+                                <td>
                                     @php
                                         $classificationBadge = match($allocation->beneficiary->classification) {
                                             'Farmer'     => 'bg-primary',
@@ -587,13 +562,13 @@
                                         <span class="badge {{ $classificationBadge }}">{{ $allocation->beneficiary->classification }}</span>
                                     @endif
                                 </td>
-                                <td data-label="Contact Number">{{ $allocation->beneficiary->contact_number ?? '—' }}</td>
+                                <td>{{ $allocation->beneficiary->contact_number ?? '—' }}</td>
                                 @if($event->isFinancial())
-                                    <td data-label="Amount (PHP)">&#8369;{{ number_format($allocation->amount, 2) }}</td>
+                                    <td>&#8369;{{ number_format($allocation->amount, 2) }}</td>
                                 @else
-                                    <td data-label="Quantity">{{ number_format($allocation->quantity, 2) }} {{ $event->resourceType->unit }}</td>
+                                    <td>{{ number_format($allocation->quantity, 2) }} {{ $event->resourceType->unit }}</td>
                                 @endif
-                                <td data-label="Distributed At">
+                                <td>
                                     @if($allocation->distributed_at)
                                         <span class="text-success">
                                             <i class="bi bi-check-circle-fill me-1"></i>
@@ -608,8 +583,8 @@
                                         <span class="text-muted">Not yet {{ $event->isFinancial() ? 'claimed' : 'distributed' }}</span>
                                     @endif
                                 </td>
-                                <td data-label="Remarks">{{ $allocation->remarks ?? '—' }}</td>
-                                <td class="text-end text-nowrap" data-label="Actions">
+                                <td>{{ $allocation->remarks ?? '—' }}</td>
+                                <td class="text-end text-nowrap">
                                     @if($event->status !== 'Completed' && in_array(Auth::user()->role, ['admin', 'staff'], true))
                                         <button type="button"
                                                 class="btn btn-sm btn-outline-primary me-1"
@@ -713,7 +688,6 @@
         <div class="modal-content">
             <form method="POST" action="{{ route('allocations.store') }}">
                 @csrf
-                <input type="hidden" name="form_context" value="add_single">
                 <input type="hidden" name="release_method" value="event">
                 <input type="hidden" name="distribution_event_id" value="{{ $event->id }}">
                 <div class="modal-header">
@@ -778,7 +752,7 @@
 
 {{-- Add All Barangay Beneficiaries Modal --}}
 <div class="modal fade" id="addAllModal" tabindex="-1" aria-labelledby="addAllModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form method="POST"
                 action="{{ route('allocations.storeBulk') }}"
@@ -794,17 +768,17 @@
                 </div>
                 <div class="modal-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0 table-responsive-cards">
+                        <table class="table table-hover align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
                                     <th>Beneficiary Name</th>
                                     <th>Classification</th>
                                     @if($event->isFinancial())
-                                        <th>Amount (PHP) <span class="text-danger">*</span></th>
+                                        <th style="width: 150px;">Amount (PHP) <span class="text-danger">*</span></th>
                                     @else
-                                        <th>Quantity ({{ $event->resourceType->unit }}) <span class="text-danger">*</span></th>
+                                        <th style="width: 150px;">Quantity ({{ $event->resourceType->unit }}) <span class="text-danger">*</span></th>
                                     @endif
-                                    <th>Remarks</th>
+                                    <th style="width: 200px;">Remarks</th>
                                 </tr>
                             </thead>
                             <tbody id="bulkTableBody">
@@ -821,59 +795,6 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-success" id="bulkSubmitBtn">
                         <i class="bi bi-plus-lg me-1"></i> Add All
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-{{-- Import Allocation CSV Modal --}}
-<div class="modal fade" id="importCsvModal" tabindex="-1" aria-labelledby="importCsvModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="POST" action="{{ route('allocations.importCsv') }}" enctype="multipart/form-data">
-                @csrf
-                <input type="hidden" name="form_context" value="import_csv">
-                <input type="hidden" name="distribution_event_id" value="{{ $event->id }}">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="importCsvModalLabel">Import Beneficiary Allocations (CSV)</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="csv_file" class="form-label">CSV File <span class="text-danger">*</span></label>
-                        <input type="file"
-                               class="form-control @error('csv_file') is-invalid @enderror"
-                               id="csv_file"
-                               name="csv_file"
-                               accept=".csv,text/csv"
-                               required>
-                        @error('csv_file')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="small text-muted">
-                        Required CSV header:
-                        <code>beneficiary_id</code>,
-                        <code>{{ $event->isFinancial() ? 'amount' : 'quantity' }}</code>.
-                        Optional headers:
-                        <code>assistance_purpose_id</code>, <code>remarks</code>.
-                    </div>
-                    <div class="small text-muted mt-2">
-                        Rules: only active beneficiaries from {{ $event->barangay->name }}, no duplicate allocations, and financial rows must fit remaining budget.
-                    </div>
-                    <div class="mt-3">
-                        <a href="{{ route('allocations.importCsvTemplate', ['distribution_event_id' => $event->id]) }}"
-                           class="btn btn-sm btn-outline-secondary">
-                            <i class="bi bi-download me-1"></i> Download CSV Template
-                        </a>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-upload me-1"></i> Import CSV
                     </button>
                 </div>
             </form>
@@ -1009,7 +930,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 'Fisherfolk': 'bg-info text-dark',
                 'Both': '',
             }[b.classification] || 'bg-secondary';
-            const valueLabel = isFinancial ? 'Amount (PHP)' : 'Quantity';
 
             const badgeHtml = b.classification === 'Both'
                 ? `<span class="badge" style="background-color: #6f42c1;">Both</span>`
@@ -1025,13 +945,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td data-label="Beneficiary Name">
+                <td>
                     ${b.full_name}
                     <input type="hidden" name="allocations[${i}][beneficiary_id]" value="${b.id}">
                 </td>
-                <td data-label="Classification">${badgeHtml}</td>
-                <td data-label="${valueLabel}">${valueInput}</td>
-                <td data-label="Remarks">
+                <td>${badgeHtml}</td>
+                <td>${valueInput}</td>
+                <td>
                     <input type="text" class="form-control form-control-sm"
                            name="allocations[${i}][remarks]" maxlength="500">
                 </td>
@@ -1041,12 +961,8 @@ document.addEventListener('DOMContentLoaded', function () {
     })();
 
     // Re-open add modal on validation errors
-    @if($errors->any() && old('form_context') === 'add_single')
+    @if($errors->any() && old('_token') && !old('_method'))
         new bootstrap.Modal(document.getElementById('addBeneficiaryModal')).show();
-    @endif
-
-    @if($errors->any() && old('form_context') === 'import_csv')
-        new bootstrap.Modal(document.getElementById('importCsvModal')).show();
     @endif
 
     // Compliance form dependencies (financial events)

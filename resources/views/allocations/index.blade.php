@@ -36,15 +36,76 @@
                 @csrf
                 <input type="hidden" name="release_method" value="direct">
 
+                {{-- Beneficiary Search Section --}}
+                <div class="col-12">
+                    <div class="card border-light bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">
+                                <i class="bi bi-search me-2"></i> Find Beneficiary
+                            </h6>
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label form-label-sm">Barangay</label>
+                                    <select id="beneficiary_barangay" class="form-select form-select-sm" data-beneficiary-filter="barangay">
+                                        <option value="">All Barangays</option>
+                                        @php
+                                            $barangays = \App\Models\Barangay::orderBy('name')->get();
+                                        @endphp
+                                        @foreach($barangays as $barangay)
+                                            <option value="{{ $barangay->id }}">{{ $barangay->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label form-label-sm">Classification</label>
+                                    <div class="btn-group btn-group-sm w-100" role="group">
+                                        <input type="radio" class="btn-check" id="classification_all" name="beneficiary_classification"
+                                               value="" checked data-beneficiary-filter="classification">
+                                        <label class="btn btn-outline-secondary" for="classification_all">All</label>
+                                        <input type="radio" class="btn-check" id="classification_farmer" name="beneficiary_classification"
+                                               value="Farmer" data-beneficiary-filter="classification">
+                                        <label class="btn btn-outline-primary" for="classification_farmer">Farmer</label>
+                                        <input type="radio" class="btn-check" id="classification_fisherfolk" name="beneficiary_classification"
+                                               value="Fisherfolk" data-beneficiary-filter="classification">
+                                        <label class="btn btn-outline-info" for="classification_fisherfolk">Fisherfolk</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label form-label-sm">Search by Name or Contact</label>
+                                    <input type="text" id="beneficiary_search" class="form-control form-control-sm"
+                                           placeholder="Type name or phone number..." data-beneficiary-filter="search">
+                                </div>
+                            </div>
+                            {{-- Search Results --}}
+                            <div id="beneficiary_results" class="border-top pt-3" style="display: none;">
+                                <div class="small text-muted mb-2">
+                                    Found <span id="results_count">0</span> beneficiary(ies)
+                                </div>
+                                <div id="results_list" class="list-group list-group-sm" style="max-height: 300px; overflow-y: auto;">
+                                    {{-- Populated via JS --}}
+                                </div>
+                            </div>
+                            <div id="beneficiary_no_results" class="alert alert-info alert-sm mb-0" style="display: none; font-size: 0.875rem;">
+                                <i class="bi bi-info-circle me-1"></i> Type to search for beneficiaries
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Selected Beneficiary Display --}}
+                <div class="col-12" id="selected_beneficiary_group" style="display: none;">
+                    <div class="alert alert-success py-2 px-3 mb-0">
+                        <small class="d-block">
+                            <strong>Selected:</strong> <span id="selected_beneficiary_display"></span>
+                            <button type="button" id="clear_beneficiary" class="btn btn-sm btn-link p-0 ms-2">Change</button>
+                        </small>
+                    </div>
+                </div>
+
                 <div class="col-md-4">
                     <label class="form-label">Beneficiary <span class="text-danger">*</span></label>
-                    <select class="form-select @error('beneficiary_id') is-invalid @enderror" name="beneficiary_id" required>
-                        <option value="" selected disabled>Select Beneficiary</option>
-                        @foreach($beneficiaries as $beneficiary)
-                            <option value="{{ $beneficiary->id }}" {{ old('beneficiary_id') == $beneficiary->id ? 'selected' : '' }}>
-                                {{ $beneficiary->full_name }} - {{ $beneficiary->barangay->name ?? 'N/A' }}
-                            </option>
-                        @endforeach
+                    <select class="form-select @error('beneficiary_id') is-invalid @enderror" name="beneficiary_id" id="beneficiary_id_field" required>
+                        <option value="" selected disabled>Use search above to select</option>
                     </select>
                     @error('beneficiary_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -294,6 +355,113 @@ document.addEventListener('DOMContentLoaded', function () {
 
     resourceSelect.addEventListener('change', toggleValueInputs);
     toggleValueInputs();
+
+    // ===== BENEFICIARY SEARCH FUNCTIONALITY =====
+    const searchInput = document.getElementById('beneficiary_search');
+    const barangayFilter = document.getElementById('beneficiary_barangay');
+    const classificationFilters = document.querySelectorAll('[data-beneficiary-filter="classification"]');
+    const resultsList = document.getElementById('results_list');
+    const resultsCount = document.getElementById('results_count');
+    const resultsGroup = document.getElementById('beneficiary_results');
+    const noResultsMsg = document.getElementById('beneficiary_no_results');
+    const beneficiaryIdField = document.getElementById('beneficiary_id_field');
+    const selectedBeneficiaryGroup = document.getElementById('selected_beneficiary_group');
+    const selectedBeneficiaryDisplay = document.getElementById('selected_beneficiary_display');
+    const clearBeneficiaryBtn = document.getElementById('clear_beneficiary');
+
+    let searchTimeout;
+
+    async function performSearch() {
+        const query = searchInput.value.trim();
+        const barangayId = barangayFilter.value;
+        const classification = document.querySelector('[data-beneficiary-filter="classification"]:checked')?.value || '';
+
+        // Show search hint if query is empty
+        if (!query && !barangayId && !classification) {
+            resultsGroup.style.display = 'none';
+            noResultsMsg.style.display = 'block';
+            return;
+        }
+
+        try {
+            const params = new URLSearchParams();
+            if (query) params.append('q', query);
+            if (barangayId) params.append('barangay_id', barangayId);
+            if (classification) params.append('classification', classification);
+
+            const response = await fetch(`/api/beneficiaries/search?${params}`);
+            const data = await response.json();
+
+            if (data.success && data.results) {
+                resultsList.innerHTML = '';
+
+                if (data.results.length === 0) {
+                    noResultsMsg.style.display = 'block';
+                    resultsGroup.style.display = 'none';
+                } else {
+                    noResultsMsg.style.display = 'none';
+                    resultsGroup.style.display = 'block';
+                    resultsCount.textContent = data.results.length;
+
+                    data.results.forEach(beneficiary => {
+                        const item = document.createElement('button');
+                        item.type = 'button';
+                        item.className = 'list-group-item list-group-item-action list-group-item-sm d-flex justify-content-between align-items-center';
+                        item.innerHTML = `
+                            <div class="text-start">
+                                <div class="fw-semibold small">${beneficiary.name}</div>
+                                <div class="text-muted small">
+                                    <span class="badge bg-sm ${beneficiary.classification === 'Farmer' ? 'bg-primary' : 'bg-info'}" style="font-size: 0.7rem;">${beneficiary.classification}</span>
+                                    ${beneficiary.barangay} ${beneficiary.contact ? '• ' + beneficiary.contact : ''}
+                                </div>
+                            </div>
+                        `;
+                        item.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            selectBeneficiary(beneficiary);
+                        });
+                        resultsList.appendChild(item);
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Search error:', error);
+            noResultsMsg.textContent = 'Error loading beneficiaries';
+            noResultsMsg.style.display = 'block';
+        }
+    }
+
+    function selectBeneficiary(beneficiary) {
+        beneficiaryIdField.value = beneficiary.id;
+        beneficiaryIdField.dispatchEvent(new Event('change'));
+
+        selectedBeneficiaryDisplay.textContent = `${beneficiary.name} (${beneficiary.classification}) - ${beneficiary.barangay}`;
+        selectedBeneficiaryGroup.style.display = 'block';
+
+        resultsGroup.style.display = 'none';
+        noResultsMsg.style.display = 'none';
+        searchInput.value = '';
+    }
+
+    // Search triggers
+    searchInput.addEventListener('keyup', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(performSearch, 300);
+    });
+
+    barangayFilter.addEventListener('change', performSearch);
+    classificationFilters.forEach(filter => {
+        filter.addEventListener('change', performSearch);
+    });
+
+    // Clear beneficiary selection
+    clearBeneficiaryBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        beneficiaryIdField.value = '';
+        selectedBeneficiaryGroup.style.display = 'none';
+        searchInput.focus();
+        performSearch();
+    });
 
     // Rotate chevron on collapse toggle
     const collapseElement = document.getElementById('addAssistanceForm');
