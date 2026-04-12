@@ -206,9 +206,9 @@
                     </button>
                 </div>
             </form>
-                </div>
+                        </div>
 
-                {{-- BATCH FORM TAB --}}
+                        {{-- BATCH FORM TAB --}}
                         <div class="tab-pane fade" id="modal_form_batch" role="tabpanel">
                             <form id="batch_form" method="POST" action="{{ route('allocations.storeBulk') }}"
                                   data-submit-spinner
@@ -239,55 +239,55 @@
                                     </div>
                                 </div>
 
-                {{-- Batch Table --}}
-                <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
-                    <table class="table table-sm table-bordered mb-0" id="batch_table">
-                        <thead class="bg-light sticky-top">
-                            <tr>
-                                <th style="width: 3rem;">
-                                    <input type="checkbox" class="form-check-input" id="batch_select_all" title="Select all rows">
-                                </th>
-                                <th>Beneficiary</th>
-                                <th>Program</th>
-                                <th>Resource Type</th>
-                                <th>Quantity</th>
-                                <th>Purpose</th>
-                                <th style="width: 5rem;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="batch_tbody">
-                            {{-- Rows added via JS --}}
-                        </tbody>
-                    </table>
-                    <div id="batch_empty_state" class="text-center text-muted py-5">
-                        <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
-                        <p class="mb-0">Click <strong>"Add Row"</strong> to start adding allocations</p>
-                    </div>
-                </div>
+                                {{-- Batch Table --}}
+                                <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                                    <table class="table table-sm table-bordered mb-0" id="batch_table">
+                                        <thead class="bg-light sticky-top">
+                                            <tr>
+                                                <th style="width: 3rem;">
+                                                    <input type="checkbox" class="form-check-input" id="batch_select_all" title="Select all rows">
+                                                </th>
+                                                <th>Beneficiary</th>
+                                                <th>Program</th>
+                                                <th>Resource Type</th>
+                                                <th>Quantity</th>
+                                                <th>Purpose</th>
+                                                <th style="width: 5rem;">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="batch_tbody">
+                                            {{-- Rows added via JS --}}
+                                        </tbody>
+                                    </table>
+                                    <div id="batch_empty_state" class="text-center text-muted py-5">
+                                        <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
+                                        <p class="mb-0">Click <strong>"Add Row"</strong> to start adding allocations</p>
+                                    </div>
+                                </div>
 
-                {{-- Batch Summary --}}
-                <div id="batch_summary" class="card bg-light mt-3" style="display: none;">
-                    <div class="card-body py-2">
-                        <div class="row g-3">
-                            <div class="col-md-3">
-                                <div class="small text-muted">Total Allocations</div>
-                                <div id="summary_count" class="h6 mb-0">0</div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="small text-muted">Validation Status</div>
-                                <div id="summary_status" class="h6 mb-0"><span class="badge bg-warning">Checking...</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                                {{-- Batch Summary --}}
+                                <div id="batch_summary" class="card bg-light mt-3" style="display: none;">
+                                    <div class="card-body py-2">
+                                        <div class="row g-3">
+                                            <div class="col-md-3">
+                                                <div class="small text-muted">Total Allocations</div>
+                                                <div id="summary_count" class="h6 mb-0">0</div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="small text-muted">Validation Status</div>
+                                                <div id="summary_status" class="h6 mb-0"><span class="badge bg-warning">Checking...</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
-                {{-- Batch Submit --}}
-                <div class="mt-3">
-                    <button type="submit" id="batch_submit" class="btn btn-success" disabled>
-                        <i class="bi bi-check2-circle me-1"></i> Save All Allocations
-                    </button>
-                </div>
-            </form>
+                                {{-- Batch Submit --}}
+                                <div class="mt-3">
+                                    <button type="submit" id="batch_submit" class="btn btn-success" disabled>
+                                        <i class="bi bi-check2-circle me-1"></i> Save All Allocations
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
