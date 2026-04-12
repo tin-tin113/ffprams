@@ -510,6 +510,12 @@ class SystemSettingsController extends Controller
             ], 422);
         }
 
+        // Check for strict classification compliance conflicts
+        $conflictWarning = $this->checkFieldPlacementConflict(
+            $validated['field_group'],
+            $validated['placement_section']
+        );
+
         $option = DB::transaction(function () use ($validated, $resolvedOrderMode) {
             $resolvedSortOrder = $this->resolveSortOrder(
                 $validated['field_group'],
@@ -546,7 +552,11 @@ class SystemSettingsController extends Controller
             return $option;
         });
 
-        return response()->json(['success' => true, 'option' => $option]);
+        return response()->json([
+            'success' => true,
+            'option' => $option,
+            'warning' => $conflictWarning,
+        ]);
     }
 
     public function updateFormField(Request $request, FormFieldOption $formFieldOption): JsonResponse
@@ -749,6 +759,47 @@ class SystemSettingsController extends Controller
         });
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Check for potential field placement conflicts in strict classification mode.
+     * In strict mode: Farmer fields (placement=farmer_information) should not overlap
+     * with Fisherfolk fields (placement=fisherfolk_information) for the same field group.
+     *
+     * Returns conflict warning message if overlap detected, null otherwise.
+     */
+    private function checkFieldPlacementConflict(string $fieldGroup, string $newPlacement): ?string
+    {
+        // Only check for conflicts between farmer and fisherfolk sections
+        if ($newPlacement === 'farmer_information') {
+            $conflictingPlacement = 'fisherfolk_information';
+        } elseif ($newPlacement === 'fisherfolk_information') {
+            $conflictingPlacement = 'farmer_information';
+        } else {
+            return null; // No conflict check needed for other placements
+        }
+
+        // Check if this field group already has options in the conflicting placement
+        $conflict = FormFieldOption::where('field_group', $fieldGroup)
+            ->where('placement_section', $conflictingPlacement)
+            ->where('is_active', true)
+            ->exists();
+
+        if ($conflict) {
+            $conflictingLabel = $conflictingPlacement === 'farmer_information'
+                ? 'DA/RSBSA Information (Farmer)'
+                : 'BFAR/FishR Information (Fisherfolk)';
+
+            $newLabel = $newPlacement === 'farmer_information'
+                ? 'DA/RSBSA Information (Farmer)'
+                : 'BFAR/FishR Information (Fisherfolk)';
+
+            return "⚠️ Warning: The field group '{$fieldGroup}' already has active options in {$conflictingLabel}. "
+                . "Adding options to {$newLabel} may cause form field overlap violations in strict classification mode. "
+                . "Ensure this is intentional — each beneficiary should have either Farmer OR Fisherfolk fields, never both.";
+        }
+
+        return null;
     }
 
     /**

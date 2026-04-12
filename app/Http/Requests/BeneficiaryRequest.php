@@ -94,7 +94,7 @@ class BeneficiaryRequest extends FormRequest
             'id_type'          => [$idTypeRequired ? 'required' : 'nullable', Rule::in($idTypeValues)],
             'status'           => ['required', Rule::in(['Active', 'Inactive'])],
             'registered_at'    => ['required', 'date', 'before_or_equal:today'],
-            'classification'   => ['required', Rule::in(['Farmer', 'Fisherfolk', 'Both'])],
+            'classification'   => ['required', Rule::in(['Farmer', 'Fisherfolk'])],
             'custom_fields'    => ['nullable', 'array'],
 
             // Association membership (common to all)
@@ -102,11 +102,10 @@ class BeneficiaryRequest extends FormRequest
             'association_name'   => ['nullable', 'required_if:association_member,true', 'required_if:association_member,1', 'string', 'max:255'],
         ];
 
-        // DA/RSBSA fields (required when agency is DA or classification is Farmer/Both)
-        $isDa = $agencyName === 'DA';
-        $isFarmer = in_array($this->input('classification'), ['Farmer', 'Both']);
+        // DA/RSBSA fields (required ONLY when classification is Farmer)
+        $isFarmer = $this->input('classification') === 'Farmer';
 
-        if ($isDa || $isFarmer) {
+        if ($isFarmer) {
             $rules['rsbsa_number'] = ['nullable', 'string', 'max:50', Rule::unique('beneficiaries', 'rsbsa_number')->ignore($beneficiaryId)];
             $rules['farm_ownership'] = [$farmOwnershipRequired ? 'required' : 'nullable', Rule::in($farmOwnershipValues)];
             $rules['farm_size_hectares'] = ['required', 'numeric', 'min:0.01'];
@@ -114,6 +113,7 @@ class BeneficiaryRequest extends FormRequest
             $rules['farm_type'] = [$farmTypeRequired ? 'required' : 'nullable', Rule::in($farmTypeValues)];
             $rules['organization_membership'] = ['nullable', 'string', 'max:255'];
         } else {
+            // Farmer classification requires DA fields; anything else must NOT have them
             $rules['rsbsa_number'] = ['nullable', 'string', 'max:50'];
             $rules['farm_ownership'] = ['nullable', Rule::in($farmOwnershipValues)];
             $rules['farm_size_hectares'] = ['nullable', 'numeric', 'min:0.01'];
@@ -122,11 +122,10 @@ class BeneficiaryRequest extends FormRequest
             $rules['organization_membership'] = ['nullable', 'string', 'max:255'];
         }
 
-        // BFAR/FishR fields (required when agency is BFAR or classification is Fisherfolk/Both)
-        $isBfar = $agencyName === 'BFAR';
-        $isFisherfolk = in_array($this->input('classification'), ['Fisherfolk', 'Both']);
+        // BFAR/FishR fields (required ONLY when classification is Fisherfolk)
+        $isFisherfolk = $this->input('classification') === 'Fisherfolk';
 
-        if ($isBfar || $isFisherfolk) {
+        if ($isFisherfolk) {
             $rules['fishr_number'] = ['nullable', 'string', 'max:50', Rule::unique('beneficiaries', 'fishr_number')->ignore($beneficiaryId)];
             $rules['fisherfolk_type'] = [$fisherfolkTypeRequired ? 'required' : 'nullable', Rule::in($fisherfolkTypeValues)];
             $rules['main_fishing_gear'] = ['nullable', 'string', 'max:255'];
@@ -135,6 +134,7 @@ class BeneficiaryRequest extends FormRequest
             $rules['fishing_vessel_tonnage'] = ['nullable', 'numeric', 'min:0'];
             $rules['length_of_residency_months'] = ['required', 'integer', 'min:6'];
         } else {
+            // Fisherfolk classification requires BFAR fields; anything else must NOT have them
             $rules['fishr_number'] = ['nullable', 'string', 'max:50'];
             $rules['fisherfolk_type'] = ['nullable', Rule::in($fisherfolkTypeValues)];
             $rules['main_fishing_gear'] = ['nullable', 'string', 'max:255'];
@@ -401,9 +401,10 @@ class BeneficiaryRequest extends FormRequest
         bool $isFisherfolk,
         bool $isDar,
     ): bool {
+        // Strict classification-based compliance: show sections based on classification only
         return match ($placement) {
-            FormFieldOption::PLACEMENT_FARMER_INFORMATION => $isDa || $isFarmer,
-            FormFieldOption::PLACEMENT_FISHERFOLK_INFORMATION => $isBfar || $isFisherfolk,
+            FormFieldOption::PLACEMENT_FARMER_INFORMATION => $isFarmer,
+            FormFieldOption::PLACEMENT_FISHERFOLK_INFORMATION => $isFisherfolk,
             FormFieldOption::PLACEMENT_DAR_INFORMATION => $isDar,
             default => true,
         };

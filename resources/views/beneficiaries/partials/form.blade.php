@@ -35,19 +35,14 @@
         return (bool) $getGroupSetting($fieldGroup, 'is_required', $fallback);
     };
 
-    $normalizeFieldOptions = function ($items, array $fallback, bool $useLabelAsValue = false) {
+    $normalizeFieldOptions = function ($items, array $fallback) {
         if (empty($items) || (is_countable($items) && count($items) === 0)) {
             return collect($fallback)->map(fn ($value) => (object) ['value' => $value, 'label' => $value]);
         }
 
-        return collect($items)->map(function ($item) use ($useLabelAsValue) {
+        return collect($items)->map(function ($item) {
             $value = is_object($item) ? ($item->value ?? $item->label ?? '') : ($item['value'] ?? $item['label'] ?? '');
             $label = is_object($item) ? ($item->label ?? $item->value ?? '') : ($item['label'] ?? $item['value'] ?? '');
-
-            if ($useLabelAsValue) {
-                $value = $label;
-            }
-
             return (object) ['value' => $value, 'label' => $label];
         });
     };
@@ -84,7 +79,7 @@
     $arbClassificationRequired = $isGroupRequired('arb_classification', true);
     $ownershipSchemeRequired = $isGroupRequired('ownership_scheme', true);
 
-    $civilStatusOptions = $normalizeFieldOptions($fo['civil_status'] ?? [], ['Single', 'Married', 'Widowed', 'Separated'], true);
+    $civilStatusOptions = $normalizeFieldOptions($fo['civil_status'] ?? [], ['Single', 'Married', 'Widowed', 'Separated']);
     $highestEducationOptions = $normalizeFieldOptions($fo['highest_education'] ?? [], [
         'No Formal Education',
         'Elementary',
@@ -92,7 +87,7 @@
         'Vocational',
         'College',
         'Post Graduate',
-    ], true);
+    ]);
     $idTypeOptions = $normalizeFieldOptions($fo['id_type'] ?? [], [
         'PhilSys ID',
         "Voter's ID",
@@ -102,10 +97,10 @@
         'PWD ID',
         'Postal ID',
         'TIN ID',
-    ], true);
-    $farmOwnershipOptions = $normalizeFieldOptions($fo['farm_ownership'] ?? [], ['Registered Owner', 'Tenant', 'Lessee', 'Owner', 'Share Tenant'], true);
-    $farmTypeOptions = $normalizeFieldOptions($fo['farm_type'] ?? [], ['Irrigated', 'Rainfed Upland', 'Rainfed Lowland', 'Upland'], true);
-    $fisherfolkTypeOptions = $normalizeFieldOptions($fo['fisherfolk_type'] ?? [], ['Capture Fishing', 'Aquaculture', 'Post-Harvest', 'Fish Farming', 'Fish Vendor', 'Fish Worker'], true);
+    ]);
+    $farmOwnershipOptions = $normalizeFieldOptions($fo['farm_ownership'] ?? [], ['Registered Owner', 'Tenant', 'Lessee']);
+    $farmTypeOptions = $normalizeFieldOptions($fo['farm_type'] ?? [], ['Irrigated', 'Rainfed Upland', 'Rainfed Lowland']);
+    $fisherfolkTypeOptions = $normalizeFieldOptions($fo['fisherfolk_type'] ?? [], ['Capture Fishing', 'Aquaculture', 'Post-Harvest']);
     $arbClassificationOptions = $normalizeFieldOptions($fo['arb_classification'] ?? [], [
         'Agricultural Lessee',
         'Regular Farmworker',
@@ -114,8 +109,8 @@
         'Actual Tiller',
         'Collective/Cooperative',
         'Others',
-    ], true);
-    $ownershipSchemeOptions = $normalizeFieldOptions($fo['ownership_scheme'] ?? [], ['Individual', 'Collective', 'Cooperative'], true);
+    ]);
+    $ownershipSchemeOptions = $normalizeFieldOptions($fo['ownership_scheme'] ?? [], ['Individual', 'Collective', 'Cooperative']);
 
     $firstNameValue = old('first_name', $beneficiary->first_name ?? '');
     $middleNameValue = old('middle_name', $beneficiary->middle_name ?? '');
@@ -184,7 +179,7 @@
                 <select class="form-select @error('classification') is-invalid @enderror"
                         id="classification" name="classification" required>
                     <option value="" disabled {{ old('classification', $beneficiary->classification ?? '') === '' ? 'selected' : '' }}>Select...</option>
-                    @foreach(['Farmer', 'Fisherfolk', 'Both'] as $type)
+                    @foreach(['Farmer', 'Fisherfolk'] as $type)
                         <option value="{{ $type }}" {{ old('classification', $beneficiary->classification ?? '') === $type ? 'selected' : '' }}>{{ $type }}</option>
                     @endforeach
                 </select>
@@ -683,10 +678,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function toggleSections() {
-        const agencyName = getSelectedAgencyName();
         const classVal = classification.value;
-        const showFarmer = agencyName === 'DA' || classVal === 'Farmer' || classVal === 'Both';
-        const showFisherfolk = agencyName === 'BFAR' || classVal === 'Fisherfolk' || classVal === 'Both';
+        // Strict classification-based compliance: show sections based on classification only
+        const showFarmer = classVal === 'Farmer';
+        const showFisherfolk = classVal === 'Fisherfolk';
+        const agencyName = getSelectedAgencyName();
         const showDar = agencyName === 'DAR';
         farmerSection.style.display = showFarmer ? '' : 'none';
         fisherfolkSection.style.display = showFisherfolk ? '' : 'none';
