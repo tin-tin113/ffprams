@@ -19,6 +19,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class DirectAssistanceController extends Controller
@@ -388,9 +389,29 @@ class DirectAssistanceController extends Controller
      */
     public function getEligiblePrograms(Beneficiary $beneficiary)
     {
-        $programs = ProgramEligibilityService::getEligiblePrograms($beneficiary);
+        try {
+            $programs = ProgramEligibilityService::getEligiblePrograms($beneficiary);
 
-        return response()->json($programs->toArray());
+            return response()->json([
+                'success' => true,
+                'programs' => $programs->map(fn ($prog) => [
+                    'id' => $prog->id,
+                    'name' => $prog->name,
+                    'agency_name' => $prog->agency?->name ?? 'N/A',
+                    'formatted' => "{$prog->name} - " . ($prog->agency?->name ?? 'Unknown Agency'),
+                ])->values(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching eligible programs for direct assistance', [
+                'beneficiary_id' => $beneficiary->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Unable to load programs. Please try again.',
+            ], 500);
+        }
     }
 
     /**

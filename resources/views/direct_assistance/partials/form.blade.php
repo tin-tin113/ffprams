@@ -248,15 +248,22 @@
 
             try {
                 const response = await fetch(`/api/eligible-programs/${this.value}`);
-                const programs = await response.json();
+                const data = await response.json();
+
+                if (!data.success) {
+                    console.error('API Error:', data.error);
+                    programSelect.innerHTML = '<option value="" selected disabled>Unable to load programs</option>';
+                    return;
+                }
 
                 let html = '<option value="" selected disabled>Select Program</option>';
-                programs.forEach(program => {
-                    html += `<option value="${program.id}">${program.name} - ${program.agency?.name ?? 'N/A'}</option>`;
+                data.programs.forEach(program => {
+                    html += `<option value="${program.id}">${program.formatted}</option>`;
                 });
                 programSelect.innerHTML = html;
             } catch (error) {
                 console.error('Error loading programs:', error);
+                programSelect.innerHTML = '<option value="" selected disabled>Error loading programs</option>';
             }
         });
 
