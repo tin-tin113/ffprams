@@ -14,7 +14,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
@@ -197,20 +196,6 @@ class BeneficiaryController extends Controller
 
             return $beneficiary;
         });
-
-        $sendOnCreate = Cache::get(
-            'sms.send_on_beneficiary_create',
-            config('services.sms.send_on_beneficiary_create')
-        );
-
-        if ($sendOnCreate && ! empty($beneficiary->contact_number)) {
-            $agencyName = $beneficiary->agency?->name ?? 'government';
-            $this->sms->sendSms(
-                $beneficiary->contact_number,
-                "Hello {$beneficiary->full_name}, you have been successfully registered as a {$beneficiary->classification} beneficiary under {$agencyName} in Enrique B. Magalona. For inquiries, contact the Municipal Agriculture Office.",
-                $beneficiary->id,
-            );
-        }
 
         if ($request->expectsJson()) {
             return response()->json([

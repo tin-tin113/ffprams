@@ -109,6 +109,8 @@ DB_PASSWORD=
 SMS_API_URL=https://your-sms-api-endpoint
 SMS_API_KEY=your-api-key
 SMS_SENDER_NAME=FFPRAMS
+SMS_SEND_ON_EVENT_ONGOING=true
+SMS_SEND_ON_DIRECT_ASSISTANCE_STATUS_CHANGE=true
 ```
 
 ### Seed the Database

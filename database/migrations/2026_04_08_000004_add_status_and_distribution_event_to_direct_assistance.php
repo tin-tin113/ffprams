@@ -8,15 +8,15 @@ return new class extends Migration
 {
     /**
      * Add workflow status and distribution event linking to direct_assistance table.
-     * Enables workflow tracking (recorded → distributed → completed) and flexible
+     * Enables workflow tracking (planned → ready_for_release → released / not_received) and flexible
      * linking with batch distribution events.
      */
     public function up(): void
     {
         Schema::table('direct_assistance', function (Blueprint $table) {
-            // Workflow status (recorded = pending, distributed = processed, completed = finished)
-            $table->enum('status', ['recorded', 'distributed', 'completed'])
-                ->default('recorded')
+            // Workflow status
+            $table->enum('status', ['planned', 'ready_for_release', 'released', 'not_received'])
+                ->default('planned')
                 ->after('release_outcome');
 
             // Optional link to distribution event (batch processing)

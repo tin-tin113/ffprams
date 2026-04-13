@@ -77,7 +77,7 @@ class DirectAssistanceAndReleaseFlowTest extends TestCase
 
         $this->assertSame('1250.50', (string) $record->amount);
         $this->assertNull($record->quantity);
-        $this->assertSame('recorded', $record->status);
+        $this->assertSame('planned', $record->status);
     }
 
     public function test_direct_assistance_update_requires_quantity_for_non_financial_resource(): void
@@ -94,7 +94,7 @@ class DirectAssistanceAndReleaseFlowTest extends TestCase
             'amount' => null,
             'remarks' => 'Original record',
             'created_by' => $admin->id,
-            'status' => 'recorded',
+            'status' => 'planned',
         ]);
 
         $response = $this->actingAs($admin)->put(route('direct-assistance.update', $record), [
@@ -154,17 +154,21 @@ class DirectAssistanceAndReleaseFlowTest extends TestCase
             'resource_type_id' => $resourceType->id,
             'amount' => 900,
             'created_by' => $admin->id,
-            'status' => 'recorded',
+            'status' => 'planned',
             'remarks' => 'Pending distribution',
         ]);
 
-        $response = $this->actingAs($admin)->post(route('direct-assistance.mark-distributed', $record));
+        $readyResponse = $this->actingAs($admin)->post(route('direct-assistance.mark-ready-for-release', $record));
+
+        $readyResponse->assertRedirect();
+
+        $response = $this->actingAs($admin)->post(route('direct-assistance.mark-released', $record));
 
         $response->assertRedirect();
 
         $record->refresh();
 
-        $this->assertSame('distributed', $record->status);
+        $this->assertSame('released', $record->status);
         $this->assertNotNull($record->distributed_at);
         $this->assertSame($admin->id, $record->distributed_by);
     }
@@ -181,9 +185,13 @@ class DirectAssistanceAndReleaseFlowTest extends TestCase
             'resource_type_id' => $resourceType->id,
             'amount' => 700,
             'created_by' => $admin->id,
-            'status' => 'recorded',
+            'status' => 'planned',
             'remarks' => 'Pending distribution',
         ]);
+
+        $readyResponse = $this->actingAs($admin)->post(route('direct-assistance.mark-ready-for-release', $record));
+
+        $readyResponse->assertRedirect();
 
         $response = $this->actingAs($admin)->post(route('direct-assistance.mark-not-received', $record));
 
@@ -191,8 +199,8 @@ class DirectAssistanceAndReleaseFlowTest extends TestCase
 
         $record->refresh();
 
-        $this->assertSame('recorded', $record->status);
-        $this->assertSame('not_received', $record->release_outcome);
+        $this->assertSame('not_received', $record->status);
+        $this->assertNull($record->release_outcome);
         $this->assertNull($record->distributed_at);
         $this->assertNull($record->distributed_by);
     }

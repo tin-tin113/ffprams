@@ -15,15 +15,37 @@
             <p class="text-muted mb-0">Direct Assistance Record</p>
         </div>
         <div>
-            @if($directAssistance->status === 'recorded')
+            @if(in_array($directAssistance->status, ['planned', 'not_received'], true))
                 <form method="POST"
-                      action="{{ route('direct-assistance.mark-distributed', $directAssistance) }}"
+                      action="{{ route('direct-assistance.mark-ready-for-release', $directAssistance) }}"
                       class="d-inline"
-                      data-confirm-title="Mark as Distributed"
-                      data-confirm-message="Mark this assistance as distributed?">
+                      data-confirm-title="Set Ready for Release"
+                      data-confirm-message="Set this assistance to Ready for Release? If SMS automation is enabled, this will send an automatic SMS to the beneficiary.">
+                    @csrf
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-bell me-1"></i> Ready for Release
+                    </button>
+                </form>
+            @endif
+            @if($directAssistance->status === 'ready_for_release')
+                <form method="POST"
+                      action="{{ route('direct-assistance.mark-released', $directAssistance) }}"
+                      class="d-inline"
+                      data-confirm-title="Mark as Released"
+                      data-confirm-message="Mark this assistance as Released now?">
                     @csrf
                     <button type="submit" class="btn btn-success">
-                        <i class="bi bi-check2-circle me-1"></i> Mark Distributed
+                        <i class="bi bi-check2-circle me-1"></i> Mark Released
+                    </button>
+                </form>
+                <form method="POST"
+                      action="{{ route('direct-assistance.mark-not-received', $directAssistance) }}"
+                      class="d-inline"
+                      data-confirm-title="Mark as Not Received"
+                      data-confirm-message="Mark this assistance as Not Received?">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-danger">
+                        <i class="bi bi-x-circle me-1"></i> Not Received
                     </button>
                 </form>
             @endif
@@ -115,19 +137,25 @@
                         <dt class="col-sm-3">Status</dt>
                         <dd class="col-sm-9">
                             @switch($directAssistance->status)
-                                @case('recorded')
-                                    <span class="badge bg-warning text-dark">Recorded (Pending)</span>
+                                @case('planned')
+                                    <span class="badge bg-warning text-dark">Planned</span>
                                     @break
-                                @case('distributed')
-                                    <span class="badge bg-success">Distributed</span>
+                                @case('ready_for_release')
+                                    <span class="badge bg-primary">Ready for Release</span>
                                     @break
-                                @case('completed')
-                                    <span class="badge bg-info">Completed</span>
+                                @case('released')
+                                    <span class="badge bg-success">Released</span>
+                                    @break
+                                @case('not_received')
+                                    <span class="badge bg-danger">Not Received</span>
+                                    @break
+                                @default
+                                    <span class="badge bg-secondary">{{ ucfirst(str_replace('_', ' ', $directAssistance->status)) }}</span>
                                     @break
                             @endswitch
                         </dd>
 
-                        <dt class="col-sm-3">Distributed At</dt>
+                        <dt class="col-sm-3">Released At</dt>
                         <dd class="col-sm-9">
                             @if($directAssistance->distributed_at)
                                 {{ $directAssistance->distributed_at->format('M d, Y H:i:s') }}
@@ -136,7 +164,7 @@
                             @endif
                         </dd>
 
-                        <dt class="col-sm-3">Distributed By</dt>
+                        <dt class="col-sm-3">Released By</dt>
                         <dd class="col-sm-9">
                             @if($directAssistance->distributedBy)
                                 {{ $directAssistance->distributedBy->name }}
@@ -155,6 +183,101 @@
                             @endif
                         </dd>
                     </dl>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mt-3">
+                <div class="card-header bg-white fw-semibold">
+                    <i class="bi bi-paperclip me-1"></i> Direct Assistance Documents
+                </div>
+                <div class="card-body">
+                    <form action="{{ route('direct-assistance.attachments.store', $directAssistance) }}"
+                          method="POST"
+                          enctype="multipart/form-data"
+                          class="row g-3 align-items-end mb-3"
+                          data-submit-spinner>
+                        @csrf
+                        <div class="col-md-4">
+                            <label for="direct_assistance_document_type" class="form-label">Document Type</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="direct_assistance_document_type"
+                                   name="document_type"
+                                   maxlength="100"
+                                   placeholder="e.g. Receipt, Acknowledgment Slip">
+                        </div>
+                        <div class="col-md-5">
+                            <label for="direct_assistance_attachment" class="form-label">Attachment File <span class="text-danger">*</span></label>
+                            <input type="file"
+                                   class="form-control"
+                                   id="direct_assistance_attachment"
+                                   name="attachment"
+                                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.txt"
+                                   required>
+                            <div class="form-text">Supported files: PDF, JPG, JPEG, PNG, DOC, DOCX, XLS, XLSX, CSV, TXT. Maximum: 10 MB.</div>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-upload me-1"></i> Upload Document
+                            </button>
+                        </div>
+                    </form>
+
+                    @if($directAssistance->attachments->isNotEmpty())
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0 table-responsive-cards">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>File Name</th>
+                                        <th>Size</th>
+                                        <th>Uploaded By</th>
+                                        <th>Uploaded At</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($directAssistance->attachments as $attachment)
+                                        <tr>
+                                            <td data-label="Type">{{ $attachment->document_type ?: 'Uncategorized' }}</td>
+                                            <td class="text-break" data-label="File Name">{{ $attachment->original_name }}</td>
+                                            <td data-label="Size">{{ number_format($attachment->size_bytes / 1024, 2) }} KB</td>
+                                            <td data-label="Uploaded By">{{ $attachment->uploader?->name ?? 'System' }}</td>
+                                            <td data-label="Uploaded At">{{ $attachment->created_at->format('M d, Y h:i A') }}</td>
+                                            <td class="text-end text-nowrap" data-label="Actions">
+                                                <a href="{{ route('direct-assistance.attachments.view', [$directAssistance, $attachment]) }}"
+                                                   class="btn btn-sm btn-outline-secondary me-1"
+                                                   target="_blank"
+                                                   rel="noopener">
+                                                    <i class="bi bi-eye"></i> View
+                                                </a>
+                                                <a href="{{ route('direct-assistance.attachments.download', [$directAssistance, $attachment]) }}"
+                                                   class="btn btn-sm btn-outline-primary me-1">
+                                                    <i class="bi bi-download"></i> Download
+                                                </a>
+                                                <form action="{{ route('direct-assistance.attachments.destroy', [$directAssistance, $attachment]) }}"
+                                                      method="POST"
+                                                      class="d-inline"
+                                                      data-confirm-title="Delete Attachment"
+                                                      data-confirm-message="Delete {{ $attachment->original_name }} from this direct assistance record?">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                        <i class="bi bi-trash"></i> Delete
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <p class="text-muted mb-0">
+                            <i class="bi bi-inbox me-1"></i>
+                            No direct assistance documents uploaded yet.
+                        </p>
+                    @endif
                 </div>
             </div>
         </div>

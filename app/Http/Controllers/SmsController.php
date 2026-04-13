@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Barangay;
 use App\Models\Beneficiary;
+use App\Models\DistributionEvent;
+use App\Models\ProgramName;
 use App\Models\SmsLog;
 use App\Services\AuditLogService;
 use App\Services\SemaphoreService;
@@ -24,6 +26,12 @@ class SmsController extends Controller
     public function index(Request $request): View
     {
         $barangays = Barangay::orderBy('name')->get();
+        $programs = ProgramName::active()->orderBy('name')->get(['id', 'name']);
+        $events = DistributionEvent::query()
+            ->with(['programName:id,name', 'barangay:id,name'])
+            ->whereIn('status', ['Pending', 'Ongoing'])
+            ->orderByDesc('distribution_date')
+            ->get(['id', 'program_name_id', 'barangay_id', 'distribution_date', 'status']);
 
         $smsLogs = SmsLog::with('beneficiary.barangay')
             ->when($request->filled('search'), function ($q) use ($request) {
@@ -36,20 +44,33 @@ class SmsController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $totalActive = Beneficiary::where('status', 'Active')->count();
-        $sendOnBeneficiaryCreate = Cache::get(
-            'sms.send_on_beneficiary_create',
-            config('services.sms.send_on_beneficiary_create')
+        $sendOnEventOngoing = Cache::get(
+            'sms.send_on_event_ongoing',
+            config('services.sms.send_on_event_ongoing')
         );
 
-        return view('sms.index', compact('barangays', 'smsLogs', 'totalActive', 'sendOnBeneficiaryCreate'));
+        $sendOnDirectAssistanceStatusChange = Cache::get(
+            'sms.send_on_direct_assistance_status_change',
+            config('services.sms.send_on_direct_assistance_status_change')
+        );
+
+        return view('sms.index', compact(
+            'barangays',
+            'programs',
+            'events',
+            'smsLogs',
+            'sendOnEventOngoing',
+            'sendOnDirectAssistanceStatusChange',
+        ));
     }
 
-    public function updateBeneficiaryRegistrationSmsSetting(Request $request): RedirectResponse
+    public function updateAutomationSettings(Request $request): RedirectResponse
     {
-        $enabled = $request->boolean('send_on_beneficiary_create');
+        $sendOnEventOngoing = $request->boolean('send_on_event_ongoing');
+        $sendOnDirectAssistanceStatusChange = $request->boolean('send_on_direct_assistance_status_change');
 
-        Cache::forever('sms.send_on_beneficiary_create', $enabled);
+        Cache::forever('sms.send_on_event_ongoing', $sendOnEventOngoing);
+        Cache::forever('sms.send_on_direct_assistance_status_change', $sendOnDirectAssistanceStatusChange);
 
         $this->audit->log(
             auth()->id(),
@@ -57,19 +78,32 @@ class SmsController extends Controller
             'sms_settings',
             0,
             [],
-            ['send_on_beneficiary_create' => $enabled],
+            [
+                'send_on_event_ongoing' => $sendOnEventOngoing,
+                'send_on_direct_assistance_status_change' => $sendOnDirectAssistanceStatusChange,
+            ],
         );
 
         return redirect()->route('sms.index')
-            ->with('success', $enabled
-                ? 'Auto-SMS on beneficiary registration is now enabled.'
-                : 'Auto-SMS on beneficiary registration is now disabled.');
+            ->with('success', 'SMS automation settings updated successfully.');
     }
 
     public function preview(Request $request): JsonResponse
     {
         $request->validate([
-            'recipient_type' => ['required', Rule::in(['all', 'by_barangay', 'by_classification', 'selected'])],
+            'recipient_type' => ['required', Rule::in(['by_program', 'by_event', 'by_barangay', 'by_classification', 'selected'])],
+            'program_name_id' => [
+                'required_if:recipient_type,by_program',
+                'nullable',
+                Rule::exists('program_names', 'id')->where(fn ($query) => $query->where('is_active', true)),
+            ],
+            'distribution_event_id' => [
+                'required_if:recipient_type,by_event',
+                'nullable',
+                Rule::exists('distribution_events', 'id')->where(
+                    fn ($query) => $query->whereIn('status', ['Pending', 'Ongoing'])
+                ),
+            ],
             'barangay_id' => ['required_if:recipient_type,by_barangay', 'nullable', 'exists:barangays,id'],
             'classification' => ['required_if:recipient_type,by_classification', 'nullable', Rule::in(['Farmer', 'Fisherfolk', 'Both'])],
             'beneficiary_ids' => ['required_if:recipient_type,selected', 'nullable', 'array', 'min:1'],
@@ -90,11 +124,42 @@ class SmsController extends Controller
         ]);
     }
 
+    public function beneficiaries(): JsonResponse
+    {
+        $beneficiaries = Beneficiary::with('barangay')
+            ->where('status', 'Active')
+            ->orderBy('full_name')
+            ->get();
+
+        return response()->json([
+            'count' => $beneficiaries->count(),
+            'recipients' => $beneficiaries->map(fn ($b) => [
+                'id' => $b->id,
+                'full_name' => $b->full_name,
+                'barangay' => $b->barangay->name ?? null,
+                'contact_number' => $b->contact_number,
+                'classification' => $b->classification,
+            ])->values(),
+        ]);
+    }
+
     public function send(Request $request): JsonResponse
     {
         $request->validate([
             'message' => ['required', 'string', 'min:5', 'max:160'],
-            'recipient_type' => ['required', Rule::in(['all', 'by_barangay', 'by_classification', 'selected'])],
+            'recipient_type' => ['required', Rule::in(['by_program', 'by_event', 'by_barangay', 'by_classification', 'selected'])],
+            'program_name_id' => [
+                'required_if:recipient_type,by_program',
+                'nullable',
+                Rule::exists('program_names', 'id')->where(fn ($query) => $query->where('is_active', true)),
+            ],
+            'distribution_event_id' => [
+                'required_if:recipient_type,by_event',
+                'nullable',
+                Rule::exists('distribution_events', 'id')->where(
+                    fn ($query) => $query->whereIn('status', ['Pending', 'Ongoing'])
+                ),
+            ],
             'barangay_id' => ['required_if:recipient_type,by_barangay', 'nullable', 'exists:barangays,id'],
             'classification' => ['required_if:recipient_type,by_classification', 'nullable', Rule::in(['Farmer', 'Fisherfolk', 'Both'])],
             'beneficiary_ids' => ['required_if:recipient_type,selected', 'nullable', 'array', 'min:1'],
@@ -132,6 +197,10 @@ class SmsController extends Controller
                 'message' => $request->message,
                 'recipient_count' => $recipients->count(),
                 'recipient_type' => $request->recipient_type,
+                'program_name_id' => $request->program_name_id,
+                'distribution_event_id' => $request->distribution_event_id,
+                'barangay_id' => $request->barangay_id,
+                'classification' => $request->classification,
             ],
         );
 
@@ -147,6 +216,18 @@ class SmsController extends Controller
         $query = Beneficiary::with('barangay')->where('status', 'Active');
 
         switch ($request->recipient_type) {
+            case 'by_program':
+                $query->where(function ($q) use ($request) {
+                    $q->whereHas('allocations', fn ($a) => $a->where('program_name_id', $request->program_name_id))
+                        ->orWhereHas('directAssistance', fn ($d) => $d->where('program_name_id', $request->program_name_id));
+                });
+                break;
+            case 'by_event':
+                $query->where(function ($q) use ($request) {
+                    $q->whereHas('allocations', fn ($a) => $a->where('distribution_event_id', $request->distribution_event_id))
+                        ->orWhereHas('directAssistance', fn ($d) => $d->where('distribution_event_id', $request->distribution_event_id));
+                });
+                break;
             case 'by_barangay':
                 $query->where('barangay_id', $request->barangay_id);
                 break;
@@ -157,8 +238,8 @@ class SmsController extends Controller
                 $ids = $request->beneficiary_ids ?? [];
                 $query->whereIn('id', $ids);
                 break;
-            case 'all':
             default:
+                $query->whereRaw('1 = 0');
                 break;
         }
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\AllocationRequest;
+use App\Models\Agency;
 use App\Models\Allocation;
 use App\Models\AssistancePurpose;
 use App\Models\Beneficiary;
@@ -12,13 +13,13 @@ use App\Models\ResourceType;
 use App\Services\AuditLogService;
 use App\Services\ProgramEligibilityService;
 use App\Services\ReleaseOutcomeService;
-use App\Services\SemaphoreService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -30,10 +31,9 @@ class AllocationController extends Controller
     public function __construct(
         private AuditLogService $audit,
         private ReleaseOutcomeService $releaseOutcome,
-        private SemaphoreService $sms,
     ) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $beneficiaries = Beneficiary::with('barangay')
             ->where('status', 'Active')
@@ -43,7 +43,22 @@ class AllocationController extends Controller
         // Programs now loaded dynamically via AJAX when beneficiary is selected
         // This prevents showing ineligible programs to users
         $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
+        $programNames = ProgramName::with('agency')->active()->orderBy('name')->get();
+        $agencies = Agency::orderBy('name')->get(['id', 'name']);
         $assistancePurposes = AssistancePurpose::active()->orderBy('name')->get();
+
+        $status = (string) $request->input('status', '');
+        $allowedStatusFilters = ['planned', 'released', 'not_received'];
+        $sort = (string) $request->input('sort', 'date_desc');
+        $allowedSorts = ['date_desc', 'date_asc', 'program_asc', 'program_desc', 'status_asc', 'status_desc'];
+
+        if (! in_array($status, $allowedStatusFilters, true)) {
+            $status = '';
+        }
+
+        if (! in_array($sort, $allowedSorts, true)) {
+            $sort = 'date_desc';
+        }
 
         $directAllocations = Allocation::with([
             'beneficiary',
@@ -52,13 +67,47 @@ class AllocationController extends Controller
             'assistancePurpose',
         ])
             ->where('release_method', 'direct')
-            ->latest()
-            ->take(30)
-            ->get();
+            ->when($request->filled('program_name_id'), fn ($query) => $query->where('program_name_id', $request->program_name_id))
+            ->when($request->filled('agency_id'), function ($query) use ($request) {
+                $agencyId = (int) $request->agency_id;
+
+                $query->where(function ($agencyQuery) use ($agencyId) {
+                    $agencyQuery
+                        ->whereHas('resourceType', fn ($resourceQuery) => $resourceQuery->where('agency_id', $agencyId))
+                        ->orWhereHas('programName', fn ($programQuery) => $programQuery->where('agency_id', $agencyId));
+                });
+            })
+            ->when($status === 'released', fn ($query) => $query->whereNotNull('distributed_at'))
+            ->when($status === 'not_received', fn ($query) => $query->where('release_outcome', 'not_received'))
+            ->when($status === 'planned', function ($query) {
+                $query->whereNull('distributed_at')
+                    ->where(function ($statusQuery) {
+                        $statusQuery->whereNull('release_outcome')
+                            ->orWhere('release_outcome', '!=', 'not_received');
+                    });
+            })
+            ->when($sort === 'date_desc', fn ($query) => $query->orderByDesc('created_at'))
+            ->when($sort === 'date_asc', fn ($query) => $query->orderBy('created_at'))
+            ->when($sort === 'program_asc', fn ($query) => $query->orderBy(
+                ProgramName::select('name')->whereColumn('program_names.id', 'allocations.program_name_id')
+            ))
+            ->when($sort === 'program_desc', fn ($query) => $query->orderByDesc(
+                ProgramName::select('name')->whereColumn('program_names.id', 'allocations.program_name_id')
+            ))
+            ->when($sort === 'status_asc', fn ($query) => $query->orderByRaw(
+                "CASE WHEN release_outcome = 'not_received' THEN 3 WHEN distributed_at IS NOT NULL THEN 2 ELSE 1 END ASC"
+            ))
+            ->when($sort === 'status_desc', fn ($query) => $query->orderByRaw(
+                "CASE WHEN release_outcome = 'not_received' THEN 3 WHEN distributed_at IS NOT NULL THEN 2 ELSE 1 END DESC"
+            ))
+            ->paginate(30)
+            ->withQueryString();
 
         return view('allocations.index', compact(
             'beneficiaries',
             'resourceTypes',
+            'programNames',
+            'agencies',
             'assistancePurposes',
             'directAllocations',
         ));
@@ -72,6 +121,7 @@ class AllocationController extends Controller
             'programName.agency',
             'resourceType.agency',
             'assistancePurpose',
+            'attachments' => fn ($q) => $q->latest('id')->with('uploader:id,name'),
         ]);
 
         return view('allocations.show', compact('allocation'));
@@ -96,7 +146,7 @@ class AllocationController extends Controller
                 ])->values(),
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error fetching eligible programs', [
+            Log::error('Error fetching eligible programs', [
                 'beneficiary_id' => $beneficiary->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -159,10 +209,29 @@ class AllocationController extends Controller
     public function getResourceTypesByAgency(ProgramName $program)
     {
         try {
-            $resourceTypes = ResourceType::where('agency_id', $program->agency_id)
-                ->where('is_active', true)
+            if (! $program->agency_id) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Selected program has no agency mapping.',
+                    'resourceTypes' => [],
+                ], 422);
+            }
+
+            $program->loadMissing('agency:id,name');
+            $agencyName = strtoupper(trim((string) ($program->agency?->name ?? '')));
+
+            $resourceTypes = ResourceType::query()
+                ->where(function ($query) use ($program, $agencyName) {
+                    $query->where('agency_id', $program->agency_id);
+
+                    if ($agencyName !== '') {
+                        $query->orWhereRaw('UPPER(COALESCE(source_agency, "")) = ?', [$agencyName]);
+                    }
+                })
                 ->orderBy('name')
                 ->get(['id', 'name', 'unit', 'agency_id'])
+                ->unique('id')
+                ->values()
                 ->map(fn ($rt) => [
                     'id' => $rt->id,
                     'name' => $rt->name,
@@ -170,12 +239,22 @@ class AllocationController extends Controller
                     'formatted' => "{$rt->name} ({$rt->unit})",
                 ]);
 
+            if ($resourceTypes->isEmpty()) {
+                $label = $agencyName !== '' ? $agencyName : 'selected agency';
+
+                return response()->json([
+                    'success' => true,
+                    'message' => "No resource types are configured for {$label} programs yet.",
+                    'resourceTypes' => [],
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
                 'resourceTypes' => $resourceTypes,
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error fetching resource types', [
+            Log::error('Error fetching resource types', [
                 'program_id' => $program->id,
                 'error' => $e->getMessage(),
             ]);
@@ -230,7 +309,7 @@ class AllocationController extends Controller
                 ->forceDelete();
 
             try {
-                $allocation = DB::transaction(function () use ($request, $event, $beneficiary) {
+                DB::transaction(function () use ($request, $event, $beneficiary) {
                     if ($event->isFinancial()) {
                         $this->assertFinancialBudgetAvailable($event, (float) $request->amount);
                     }
@@ -262,28 +341,13 @@ class AllocationController extends Controller
                 return redirect()->back()->with('error', $e->getMessage());
             }
 
-            // SMS notification (outside transaction -- non-critical)
-            if ($beneficiary->contact_number) {
-                if ($event->isFinancial()) {
-                    $smsMessage = "Hello {$beneficiary->full_name}, you have been allocated PHP {$allocation->amount} for {$event->resourceType->name} scheduled on {$event->distribution_date->format('M d, Y')} at Barangay {$event->barangay->name}. Please coordinate with your barangay official for claiming details.";
-                } else {
-                    $smsMessage = "Hello {$beneficiary->full_name}, you have been allocated {$allocation->quantity} {$event->resourceType->unit} of {$event->resourceType->name} scheduled on {$event->distribution_date->format('M d, Y')} at Barangay {$event->barangay->name}. Please coordinate with your barangay official for details.";
-                }
-
-                $this->sms->sendSms(
-                    $beneficiary->contact_number,
-                    $smsMessage,
-                    $beneficiary->id,
-                );
-            }
-
             return redirect()->route('distribution-events.show', $event)
                 ->with('success', 'Beneficiary allocated successfully.');
         }
 
         $resourceType = ResourceType::with('agency')->findOrFail($request->resource_type_id);
 
-        $allocation = DB::transaction(function () use ($request, $beneficiary, $resourceType) {
+        DB::transaction(function () use ($request, $beneficiary, $resourceType) {
             // Check program eligibility before allocating
             $program = ProgramName::findOrFail($request->program_name_id);
             if (! ProgramEligibilityService::isEligible($beneficiary, $program)) {
@@ -316,20 +380,6 @@ class AllocationController extends Controller
 
             return $allocation;
         });
-
-        if ($beneficiary->contact_number) {
-            $value = $resourceType->unit === 'PHP'
-                ? ('PHP '.number_format((float) $allocation->amount, 2))
-                : (number_format((float) $allocation->quantity, 2).' '.$resourceType->unit);
-
-            $message = "Hello {$beneficiary->full_name}, you have been allocated {$value} of {$resourceType->name} as direct assistance. Please coordinate with the office for release details.";
-
-            $this->sms->sendSms(
-                $beneficiary->contact_number,
-                $message,
-                $beneficiary->id,
-            );
-        }
 
         return redirect()->route('allocations.index')
             ->with('success', 'Direct assistance allocation saved successfully.');
@@ -380,10 +430,9 @@ class AllocationController extends Controller
 
         $allocated = 0;
         $skipped = 0;
-        $smsQueue = [];
 
         try {
-            DB::transaction(function () use ($request, $event, $existingIds, &$allocated, &$skipped, &$smsQueue) {
+            DB::transaction(function () use ($request, $event, $existingIds, &$allocated, &$skipped) {
                 $seenInRequest = [];
 
                 foreach ($request->input('allocations') as $row) {
@@ -441,38 +490,11 @@ class AllocationController extends Controller
                         $allocation->toArray(),
                     );
 
-                    $smsQueue[] = [
-                        'number' => $beneficiary->contact_number,
-                        'full_name' => $beneficiary->full_name,
-                        'quantity' => $allocation->quantity,
-                        'amount' => $allocation->amount,
-                        'beneficiary_id' => $beneficiary->id,
-                    ];
-
                     $allocated++;
                 }
             });
         } catch (\RuntimeException $e) {
             return redirect()->back()->with('error', $e->getMessage());
-        }
-
-        // SMS notifications (outside transaction -- non-critical)
-        foreach ($smsQueue as $sms) {
-            if (! $sms['number']) {
-                continue;
-            }
-
-            if ($event->isFinancial()) {
-                $message = "Hello {$sms['full_name']}, you have been allocated PHP {$sms['amount']} for {$event->resourceType->name} scheduled on {$event->distribution_date->format('M d, Y')} at Barangay {$event->barangay->name}. Please coordinate with your barangay official for claiming details.";
-            } else {
-                $message = "Hello {$sms['full_name']}, you have been allocated {$sms['quantity']} {$event->resourceType->unit} of {$event->resourceType->name} scheduled on {$event->distribution_date->format('M d, Y')} at Barangay {$event->barangay->name}. Please coordinate with your barangay official for details.";
-            }
-
-            $this->sms->sendSms(
-                $sms['number'],
-                $message,
-                $sms['beneficiary_id'],
-            );
         }
 
         return redirect()->route('distribution-events.show', $event)
@@ -495,10 +517,9 @@ class AllocationController extends Controller
 
         $allocated = 0;
         $errors = [];
-        $smsQueue = [];
 
         try {
-            DB::transaction(function () use ($request, &$allocated, &$errors, &$smsQueue) {
+            DB::transaction(function () use ($request, &$allocated, &$errors) {
                 foreach ($request->input('allocations') as $idx => $row) {
                     try {
                         $beneficiary = Beneficiary::findOrFail($row['beneficiary_id']);
@@ -551,15 +572,6 @@ class AllocationController extends Controller
                             $allocation->toArray(),
                         );
 
-                        $smsQueue[] = [
-                            'number' => $beneficiary->contact_number,
-                            'full_name' => $beneficiary->full_name,
-                            'quantity' => $allocation->quantity,
-                            'resource_name' => $resourceType->name,
-                            'resource_unit' => $resourceType->unit,
-                            'beneficiary_id' => $beneficiary->id,
-                        ];
-
                         $allocated++;
                     } catch (\Exception $e) {
                         $errors[] = "Row " . ($idx + 1) . ": " . $e->getMessage();
@@ -570,20 +582,6 @@ class AllocationController extends Controller
             return redirect()->back()
                 ->with('error', 'Batch operation failed: ' . $e->getMessage())
                 ->withInput();
-        }
-
-        // SMS notifications (outside transaction -- non-critical)
-        foreach ($smsQueue as $sms) {
-            if (! $sms['number']) {
-                continue;
-            }
-
-            $message = "Hello {$sms['full_name']}, you have been allocated {$sms['quantity']} {$sms['resource_unit']} of {$sms['resource_name']}. Please coordinate with your MAO/BFAR office for claiming details.";
-            $this->sms->sendSms(
-                $sms['number'],
-                $message,
-                $sms['beneficiary_id'],
-            );
         }
 
         $message = "{$allocated} allocations created successfully.";
@@ -707,9 +705,8 @@ class AllocationController extends Controller
         $allocated = 0;
         $skipped = 0;
         $rowErrors = [];
-        $smsQueue = [];
 
-        DB::transaction(function () use ($rows, $event, $existingIds, $validPurposeIds, &$allocated, &$skipped, &$rowErrors, &$smsQueue): void {
+        DB::transaction(function () use ($rows, $event, $existingIds, $validPurposeIds, &$allocated, &$skipped, &$rowErrors): void {
             $seenInFile = [];
 
             foreach ($rows as $row) {
@@ -811,36 +808,10 @@ class AllocationController extends Controller
                     $allocation->toArray(),
                 );
 
-                $smsQueue[] = [
-                    'number' => $beneficiary->contact_number,
-                    'full_name' => $beneficiary->full_name,
-                    'quantity' => $allocation->quantity,
-                    'amount' => $allocation->amount,
-                    'beneficiary_id' => $beneficiary->id,
-                ];
-
                 $seenInFile[] = $beneficiaryId;
                 $allocated++;
             }
         });
-
-        foreach ($smsQueue as $sms) {
-            if (! $sms['number']) {
-                continue;
-            }
-
-            if ($event->isFinancial()) {
-                $message = "Hello {$sms['full_name']}, you have been allocated PHP {$sms['amount']} for {$event->resourceType->name} scheduled on {$event->distribution_date->format('M d, Y')} at Barangay {$event->barangay->name}. Please coordinate with your barangay official for claiming details.";
-            } else {
-                $message = "Hello {$sms['full_name']}, you have been allocated {$sms['quantity']} {$event->resourceType->unit} of {$event->resourceType->name} scheduled on {$event->distribution_date->format('M d, Y')} at Barangay {$event->barangay->name}. Please coordinate with your barangay official for details.";
-            }
-
-            $this->sms->sendSms(
-                $sms['number'],
-                $message,
-                $sms['beneficiary_id'],
-            );
-        }
 
         $errorReportFile = ! empty($rowErrors)
             ? $this->storeCsvImportErrorReport($event->id, $rowErrors)

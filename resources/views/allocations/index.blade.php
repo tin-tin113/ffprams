@@ -27,8 +27,8 @@
     {{-- ============================================================ --}}
     {{-- MODAL: ADD DIRECT ASSISTANCE                                 --}}
     {{-- ============================================================ --}}
-    <div class="modal fade modal-lg" id="addDirectAssistanceModal" tabindex="-1" aria-labelledby="addDirectAssistanceModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal fade" id="addDirectAssistanceModal" tabindex="-1" aria-labelledby="addDirectAssistanceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-light border-bottom">
                     <h5 class="modal-title" id="addDirectAssistanceModalLabel">
@@ -65,6 +65,7 @@
                                 data-confirm-message="Save this direct assistance allocation? This will create an official transaction record.">
                                 @csrf
                                 <input type="hidden" name="release_method" value="direct">
+                                <div class="col-12">
                     <div class="card border-light bg-light">
                         <div class="card-body">
                             <h6 class="card-title mb-3">
@@ -222,6 +223,42 @@
                                     <strong>Batch Mode:</strong> Add multiple allocations at once. Resource types auto-filter based on program's agency.
                                 </div>
 
+                                {{-- Batch Beneficiary Finder --}}
+                                <div class="card border-light bg-light mb-3">
+                                    <div class="card-body py-3">
+                                        <h6 class="card-title mb-2">
+                                            <i class="bi bi-search me-1"></i> Find Beneficiary (Batch)
+                                        </h6>
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-md-3">
+                                                <select id="batch_beneficiary_barangay" class="form-select form-select-sm">
+                                                    <option value="">All Barangays</option>
+                                                    @foreach($barangays as $barangay)
+                                                        <option value="{{ $barangay->id }}">{{ $barangay->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <select id="batch_beneficiary_classification" class="form-select form-select-sm">
+                                                    <option value="">All Classifications</option>
+                                                    <option value="Farmer">Farmer</option>
+                                                    <option value="Fisherfolk">Fisherfolk</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <input type="text" id="batch_beneficiary_search" class="form-control form-control-sm" placeholder="Search name or contact...">
+                                            </div>
+                                            <div class="col-md-2 d-grid">
+                                                <button type="button" id="batch_beneficiary_search_btn" class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-search me-1"></i> Search
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="batch_beneficiary_results" class="list-group list-group-sm" style="max-height: 180px; overflow-y: auto; display:none;"></div>
+                                        <small id="batch_beneficiary_hint" class="text-muted">Search and click <strong>Add</strong> to append a beneficiary row quickly.</small>
+                                    </div>
+                                </div>
+
                                 {{-- Batch Controls --}}
                                 <div class="row g-2 mb-3">
                                     <div class="col-auto">
@@ -302,9 +339,69 @@
         </div>
     </div>
 
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ route('allocations.index') }}">
+                <div class="row g-2 align-items-end">
+                    <div class="col-xl-3 col-lg-3 col-md-6">
+                        <label class="form-label">Program</label>
+                        <select class="form-select" name="program_name_id">
+                            <option value="">All Programs</option>
+                            @foreach($programNames as $program)
+                                <option value="{{ $program->id }}" {{ (string) request('program_name_id') === (string) $program->id ? 'selected' : '' }}>
+                                    {{ $program->name }} ({{ $program->agency->name ?? 'N/A' }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-xl-2 col-lg-2 col-md-6">
+                        <label class="form-label">Agency</label>
+                        <select class="form-select" name="agency_id">
+                            <option value="">All Agencies</option>
+                            @foreach($agencies as $agency)
+                                <option value="{{ $agency->id }}" {{ (string) request('agency_id') === (string) $agency->id ? 'selected' : '' }}>
+                                    {{ $agency->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-xl-2 col-lg-2 col-md-6">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status">
+                            <option value="">All Statuses</option>
+                            <option value="planned" {{ request('status') === 'planned' ? 'selected' : '' }}>Planned</option>
+                            <option value="released" {{ request('status') === 'released' ? 'selected' : '' }}>Released</option>
+                            <option value="not_received" {{ request('status') === 'not_received' ? 'selected' : '' }}>Not Received</option>
+                        </select>
+                    </div>
+                    <div class="col-xl-2 col-lg-2 col-md-6">
+                        <label class="form-label">Sort</label>
+                        <select class="form-select" name="sort">
+                            <option value="date_desc" {{ request('sort', 'date_desc') === 'date_desc' ? 'selected' : '' }}>Date: Newest</option>
+                            <option value="date_asc" {{ request('sort') === 'date_asc' ? 'selected' : '' }}>Date: Oldest</option>
+                            <option value="program_asc" {{ request('sort') === 'program_asc' ? 'selected' : '' }}>Program: A-Z</option>
+                            <option value="program_desc" {{ request('sort') === 'program_desc' ? 'selected' : '' }}>Program: Z-A</option>
+                            <option value="status_asc" {{ request('sort') === 'status_asc' ? 'selected' : '' }}>Status: A-Z</option>
+                            <option value="status_desc" {{ request('sort') === 'status_desc' ? 'selected' : '' }}>Status: Z-A</option>
+                        </select>
+                    </div>
+                    <div class="col-xl-3 col-lg-3 col-md-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-funnel me-1"></i> Apply
+                        </button>
+                        <a href="{{ route('allocations.index') }}" class="btn btn-outline-secondary">Clear</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white fw-semibold">
-            <i class="bi bi-list-check me-1"></i> Latest Direct Allocations
+            <i class="bi bi-list-check me-1"></i> Direct Allocations
+        </div>
+        <div class="card-body pb-0">
+            <p class="text-muted mb-2">{{ $directAllocations->total() }} {{ Str::plural('record', $directAllocations->total()) }} found</p>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -382,6 +479,11 @@
                 </table>
             </div>
         </div>
+        @if($directAllocations->hasPages())
+            <div class="card-footer bg-white">
+                {{ $directAllocations->links() }}
+            </div>
+        @endif
     </div>
 </div>
 @endsection
@@ -396,6 +498,41 @@ document.addEventListener('DOMContentLoaded', function () {
     const amountGroup = document.getElementById('amountGroup');
     const programInfo = document.getElementById('program_info');
     const resourceInfo = document.getElementById('resource_info');
+    const resourceInfoDefaultHtml = resourceInfo ? resourceInfo.innerHTML : '';
+
+    function setResourceInfoVisibility(isVisible, messageHtml) {
+        if (!resourceInfo) return;
+
+        if (isVisible) {
+            resourceInfo.innerHTML = messageHtml || resourceInfoDefaultHtml;
+            resourceInfo.style.display = 'block';
+            return;
+        }
+
+        resourceInfo.style.display = 'none';
+        resourceInfo.innerHTML = resourceInfoDefaultHtml;
+    }
+
+    async function fetchEligiblePrograms(beneficiaryId) {
+        const response = await fetch(`/api/allocations/eligible-programs/${beneficiaryId}`);
+        if (!response.ok) {
+            const text = await response.text();
+            console.error('Eligible programs error response:', text);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        if (!data.success || !Array.isArray(data.programs)) {
+            throw new Error(data.error || 'Invalid eligible programs response.');
+        }
+
+        return data.programs;
+    }
+
+    function resetResourceSelectState(selectElement, placeholderText) {
+        selectElement.innerHTML = `<option value="" selected disabled>${placeholderText}</option>`;
+        selectElement.disabled = true;
+    }
 
     // Fetch eligible programs when beneficiary is selected
     async function loadEligiblePrograms(beneficiaryId) {
@@ -403,57 +540,51 @@ document.addEventListener('DOMContentLoaded', function () {
             programSelect.innerHTML = '<option value="" selected disabled>Select Beneficiary First</option>';
             programSelect.disabled = true;
             programInfo.style.display = 'none';
+
+            resetResourceSelectState(resourceSelect, 'Select Program First');
+            setResourceInfoVisibility(false);
+
             return;
         }
 
         try {
-            const response = await fetch(`/api/allocations/eligible-programs/${beneficiaryId}`);
+            const programs = await fetchEligiblePrograms(beneficiaryId);
 
-            if (!response.ok) {
-                console.error(`HTTP Error: ${response.status} ${response.statusText}`);
-                const text = await response.text();
-                console.error('Response body:', text);
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            programSelect.innerHTML = '<option value="" selected disabled>Select Program</option>';
+            resetResourceSelectState(resourceSelect, 'Select Program First');
+            setResourceInfoVisibility(false);
+
+            if (programs.length === 0) {
+                programSelect.innerHTML = '<option value="" selected disabled>No eligible programs for this beneficiary</option>';
+                programSelect.disabled = true;
+                programInfo.style.display = 'none';
+                return;
             }
 
-            const data = await response.json();
-            console.log('Programs loaded:', data);
+            programs.forEach(prog => {
+                const option = document.createElement('option');
+                option.value = prog.id;
+                option.textContent = prog.formatted;
+                programSelect.appendChild(option);
+            });
 
-            if (data.success && data.programs) {
-                // Clear existing options
-                programSelect.innerHTML = '<option value="" selected disabled>Select Program</option>';
+            programSelect.disabled = false;
+            programInfo.style.display = 'block';
 
-                if (data.programs.length === 0) {
-                    programSelect.innerHTML = '<option value="" selected disabled>No eligible programs for this beneficiary</option>';
-                    programSelect.disabled = true;
-                    programInfo.style.display = 'none';
-                } else {
-                    // Populate with eligible programs
-                    data.programs.forEach(prog => {
-                        const option = document.createElement('option');
-                        option.value = prog.id;
-                        option.textContent = prog.formatted;
-                        programSelect.appendChild(option);
-                    });
-
-                    programSelect.disabled = false;
-                    programInfo.style.display = 'block';
-
-                    // If there was a previous selection, try to keep it
-                    if (programSelect.dataset.previousValue) {
-                        programSelect.value = programSelect.dataset.previousValue;
-                        delete programSelect.dataset.previousValue;
-                    }
-                }
-            } else {
-                console.error('Invalid response format:', data);
-                throw new Error('Invalid response format from server');
+            const previousValue = programSelect.dataset.previousValue;
+            if (previousValue && Array.from(programSelect.options).some(opt => opt.value === previousValue)) {
+                programSelect.value = previousValue;
+                await loadResourceTypesByProgram(programSelect, resourceSelect);
             }
+
+            delete programSelect.dataset.previousValue;
         } catch (error) {
             console.error('Error loading eligible programs:', error);
             programSelect.innerHTML = '<option value="" selected disabled>Error loading programs</option>';
             programSelect.disabled = true;
             programInfo.style.display = 'none';
+            resetResourceSelectState(resourceSelect, 'Error loading resources');
+            setResourceInfoVisibility(false);
         }
     }
 
@@ -473,12 +604,7 @@ document.addEventListener('DOMContentLoaded', function () {
         amountGroup.classList.toggle('d-none', !isFinancial);
     }
 
-    resourceSelect.addEventListener('change', () => {
-        loadResourceTypesByProgram(programSelect, resourceSelect);
-        toggleValueInputs();
-    });
-
-    // Also toggle when directly selecting resource type
+    // Toggle value input mode when resource type changes.
     resourceSelect.addEventListener('change', toggleValueInputs);
     toggleValueInputs();
 
@@ -599,6 +725,7 @@ document.addEventListener('DOMContentLoaded', function () {
         beneficiaryIdField.value = '';
         beneficiaryIdField.innerHTML = '<option value="" selected disabled>Use search above to select</option>';
         selectedBeneficiaryGroup.style.display = 'none';
+        loadEligiblePrograms('');
         searchInput.focus();
         performSearch();
     });
@@ -606,41 +733,65 @@ document.addEventListener('DOMContentLoaded', function () {
     // ===== RESOURCE TYPE FILTERING BY PROGRAM =====
     async function loadResourceTypesByProgram(programSelect, resourceTypeSelect) {
         const programId = programSelect.value;
+        const isSingleForm = resourceTypeSelect === resourceSelect;
+
         if (!programId) {
-            resourceTypeSelect.innerHTML = '<option value="" selected disabled>Select Program First</option>';
-            resourceTypeSelect.disabled = true;
-            resourceInfo.style.display = 'none';
+            resetResourceSelectState(resourceTypeSelect, 'Select Program First');
+            if (isSingleForm) {
+                setResourceInfoVisibility(false);
+            }
             return;
         }
 
         try {
             const response = await fetch(`/api/programs/${programId}/resource-types`);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
             const data = await response.json();
 
-            if (data.success && data.resourceTypes) {
-                resourceTypeSelect.innerHTML = '<option value="" selected disabled>Select Resource Type</option>';
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to load resource types');
+            }
 
-                if (data.resourceTypes.length === 0) {
-                    resourceTypeSelect.innerHTML = '<option value="" selected disabled>No resources available for this program</option>';
-                    resourceTypeSelect.disabled = true;
-                    resourceInfo.style.display = 'none';
-                } else {
-                    data.resourceTypes.forEach(rt => {
-                        const option = document.createElement('option');
-                        option.value = rt.id;
-                        option.dataset.unit = rt.unit;
-                        option.textContent = rt.formatted;
-                        resourceTypeSelect.appendChild(option);
-                    });
-                    resourceTypeSelect.disabled = false;
-                    resourceInfo.style.display = 'block';
+            const resourceTypes = Array.isArray(data.resourceTypes) ? data.resourceTypes : [];
+            const emptyMessage = data.message || 'No resources available for this program';
+
+            resourceTypeSelect.innerHTML = '<option value="" selected disabled>Select Resource Type</option>';
+
+            if (resourceTypes.length === 0) {
+                resourceTypeSelect.innerHTML = `<option value="" selected disabled>${emptyMessage}</option>`;
+                resourceTypeSelect.disabled = true;
+                if (isSingleForm) {
+                    setResourceInfoVisibility(true, `<i class="bi bi-info-circle me-1"></i>${emptyMessage}`);
                 }
+                return;
+            }
+
+            resourceTypes.forEach(rt => {
+                const option = document.createElement('option');
+                option.value = rt.id;
+                option.dataset.unit = rt.unit;
+                option.textContent = rt.formatted;
+                resourceTypeSelect.appendChild(option);
+            });
+
+            resourceTypeSelect.disabled = false;
+            if (isSingleForm) {
+                setResourceInfoVisibility(true);
+            }
+
+            if (isSingleForm) {
+                toggleValueInputs();
             }
         } catch (error) {
             console.error('Error loading resource types:', error);
             resourceTypeSelect.innerHTML = '<option value="" selected disabled>Error loading resources</option>';
             resourceTypeSelect.disabled = true;
-            resourceInfo.style.display = 'none';
+            if (isSingleForm) {
+                setResourceInfoVisibility(true, '<i class="bi bi-exclamation-triangle me-1"></i>Error loading resources for this program.');
+            }
         }
     }
 
@@ -660,6 +811,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const batchSubmitBtn = document.getElementById('batch_submit');
     const batchRowCount = document.getElementById('batch_row_count');
     const summaryCount = document.getElementById('summary_count');
+    const batchFinderSearchInput = document.getElementById('batch_beneficiary_search');
+    const batchFinderBarangay = document.getElementById('batch_beneficiary_barangay');
+    const batchFinderClassification = document.getElementById('batch_beneficiary_classification');
+    const batchFinderSearchBtn = document.getElementById('batch_beneficiary_search_btn');
+    const batchFinderResults = document.getElementById('batch_beneficiary_results');
+    const batchFinderHint = document.getElementById('batch_beneficiary_hint');
 
     let batchRowIndex = 0;
     const assistancePurposes = @json($assistancePurposes ?? []);
@@ -677,32 +834,127 @@ document.addEventListener('DOMContentLoaded', function () {
         batchSubmitBtn.disabled = isEmpty;
     }
 
-    function createBatchRow(index) {
+    function getBatchSelectedBeneficiaryIds() {
+        return Array.from(document.querySelectorAll('#batch_tbody .batch-beneficiary-id'))
+            .map((el) => Number(el.value))
+            .filter((id) => Number.isFinite(id) && id > 0);
+    }
+
+    function renderBatchFinderResults(results) {
+        if (!batchFinderResults || !batchFinderHint) {
+            return;
+        }
+
+        batchFinderResults.innerHTML = '';
+
+        if (!results.length) {
+            batchFinderResults.style.display = 'none';
+            batchFinderHint.textContent = 'No matching beneficiaries found.';
+            return;
+        }
+
+        const selectedIds = new Set(getBatchSelectedBeneficiaryIds());
+
+        results.forEach((beneficiary) => {
+            const item = document.createElement('div');
+            item.className = 'list-group-item d-flex justify-content-between align-items-center';
+
+            const alreadyAdded = selectedIds.has(Number(beneficiary.id));
+
+            item.innerHTML = `
+                <div class="small">
+                    <div class="fw-semibold">${beneficiary.name}</div>
+                    <div class="text-muted">${beneficiary.classification} • ${beneficiary.barangay}</div>
+                </div>
+            `;
+
+            const addBtn = document.createElement('button');
+            addBtn.type = 'button';
+            addBtn.className = `btn btn-sm ${alreadyAdded ? 'btn-secondary' : 'btn-outline-primary'}`;
+            addBtn.textContent = alreadyAdded ? 'Added' : 'Add';
+            addBtn.disabled = alreadyAdded;
+
+            addBtn.addEventListener('click', () => {
+                const row = createBatchRow(batchRowIndex++, {
+                    beneficiary,
+                });
+
+                if (row) {
+                    addBtn.textContent = 'Added';
+                    addBtn.className = 'btn btn-sm btn-secondary';
+                    addBtn.disabled = true;
+                }
+            });
+
+            item.appendChild(addBtn);
+            batchFinderResults.appendChild(item);
+        });
+
+        batchFinderResults.style.display = 'block';
+        batchFinderHint.textContent = `Found ${results.length} beneficiary(ies).`;
+    }
+
+    async function searchBatchBeneficiaries() {
+        if (!batchFinderResults || !batchFinderSearchInput) {
+            return;
+        }
+
+        const query = batchFinderSearchInput.value.trim();
+        const barangayId = batchFinderBarangay ? batchFinderBarangay.value : '';
+        const classification = batchFinderClassification ? batchFinderClassification.value : '';
+
+        if (!query && !barangayId && !classification) {
+            batchFinderResults.style.display = 'none';
+            if (batchFinderHint) {
+                batchFinderHint.innerHTML = 'Search and click <strong>Add</strong> to append a beneficiary row quickly.';
+            }
+            return;
+        }
+
+        try {
+            const params = new URLSearchParams();
+            if (query) params.append('q', query);
+            if (barangayId) params.append('barangay_id', barangayId);
+            if (classification) params.append('classification', classification);
+
+            const response = await fetch(`/api/beneficiaries/search?${params.toString()}`);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            renderBatchFinderResults(Array.isArray(data.results) ? data.results : []);
+        } catch (error) {
+            console.error('Batch beneficiary search error:', error);
+            batchFinderResults.style.display = 'none';
+            if (batchFinderHint) {
+                batchFinderHint.textContent = 'Error loading beneficiaries. Please try again.';
+            }
+        }
+    }
+
+    function createBatchRow(index, preset = null) {
         const row = document.createElement('tr');
         row.dataset.rowIndex = index;
+        const suggestionsId = `batch_beneficiary_suggestions_${index}`;
         row.innerHTML = `
             <td class="text-center">
                 <input type="checkbox" class="form-check-input batch-row-checkbox">
             </td>
             <td>
                 <input type="text" class="form-control form-control-sm batch-beneficiary-search"
-                       placeholder="Type name..." data-row-index="${index}" required>
+                       placeholder="Type beneficiary name..." data-row-index="${index}" list="${suggestionsId}" autocomplete="off" required>
+                <datalist id="${suggestionsId}"></datalist>
                 <input type="hidden" name="allocations[${index}][beneficiary_id]" class="batch-beneficiary-id">
             </td>
             <td>
-                <select name="allocations[${index}][program_name_id]" class="form-select form-select-sm batch-program" required>
-                    <option value="">Select Program</option>
-                    @php
-                        $allPrograms = \App\Models\ProgramName::where('is_active', true)->orderBy('name')->get();
-                    @endphp
-                    @foreach($allPrograms as $prog)
-                        <option value="{{ $prog->id }}">{{ $prog->name }}</option>
-                    @endforeach
+                <select name="allocations[${index}][program_name_id]" class="form-select form-select-sm batch-program" required disabled>
+                    <option value="">Select Beneficiary First</option>
                 </select>
             </td>
             <td>
-                <select name="allocations[${index}][resource_type_id]" class="form-select form-select-sm batch-resource" required>
-                    <option value="">Select Resource</option>
+                <select name="allocations[${index}][resource_type_id]" class="form-select form-select-sm batch-resource" required disabled>
+                    <option value="">Select Program First</option>
                 </select>
             </td>
             <td>
@@ -729,26 +981,113 @@ document.addEventListener('DOMContentLoaded', function () {
         const programSelect = row.querySelector('.batch-program');
         const resourceSelect = row.querySelector('.batch-resource');
         const beneficiaryIdInput = row.querySelector('.batch-beneficiary-id');
+        const suggestionList = row.querySelector(`#${suggestionsId}`);
+        const beneficiaryMap = new Map();
         let beneficiarySearchTimeout;
 
-        beneficiarySearch.addEventListener('keyup', async () => {
-            clearTimeout(beneficiarySearchTimeout);
+        async function loadBatchProgramsForBeneficiary(beneficiaryId) {
+            if (!beneficiaryId) {
+                programSelect.innerHTML = '<option value="" selected disabled>Select Beneficiary First</option>';
+                programSelect.disabled = true;
+                resetResourceSelectState(resourceSelect, 'Select Program First');
+                return;
+            }
+
+            try {
+                const programs = await fetchEligiblePrograms(beneficiaryId);
+                programSelect.innerHTML = '<option value="" selected disabled>Select Program</option>';
+                resetResourceSelectState(resourceSelect, 'Select Program First');
+
+                if (programs.length === 0) {
+                    programSelect.innerHTML = '<option value="" selected disabled>No eligible programs</option>';
+                    programSelect.disabled = true;
+                    return;
+                }
+
+                programs.forEach(prog => {
+                    const option = document.createElement('option');
+                    option.value = prog.id;
+                    option.textContent = prog.formatted;
+                    programSelect.appendChild(option);
+                });
+
+                programSelect.disabled = false;
+
+                if (programs.length === 1) {
+                    programSelect.value = String(programs[0].id);
+                    await loadResourceTypesByProgram(programSelect, resourceSelect);
+                }
+            } catch (error) {
+                console.error('Error loading batch eligible programs:', error);
+                programSelect.innerHTML = '<option value="" selected disabled>Error loading programs</option>';
+                programSelect.disabled = true;
+                resetResourceSelectState(resourceSelect, 'Error loading resources');
+            }
+        }
+
+        function applyBatchBeneficiarySelection(displayValue) {
+            const selectedBeneficiary = beneficiaryMap.get(displayValue);
+            if (!selectedBeneficiary) {
+                beneficiaryIdInput.value = '';
+                loadBatchProgramsForBeneficiary('');
+                return;
+            }
+
+            beneficiaryIdInput.value = String(selectedBeneficiary.id);
+            beneficiarySearch.value = selectedBeneficiary.display;
+            loadBatchProgramsForBeneficiary(selectedBeneficiary.id);
+        }
+
+        beneficiarySearch.addEventListener('input', () => {
             const query = beneficiarySearch.value.trim();
-            if (query.length < 2) return;
+            beneficiaryIdInput.value = '';
+            beneficiaryMap.clear();
+            suggestionList.innerHTML = '';
+            clearTimeout(beneficiarySearchTimeout);
+
+            if (query.length < 2) {
+                loadBatchProgramsForBeneficiary('');
+                return;
+            }
 
             beneficiarySearchTimeout = setTimeout(async () => {
                 try {
                     const response = await fetch(`/api/beneficiaries/search?q=${encodeURIComponent(query)}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
                     const data = await response.json();
-                    if (data.results && data.results.length > 0) {
-                        const beneficiary = data.results[0];
-                        beneficiarySearch.value = beneficiary.display;
-                        beneficiaryIdInput.value = beneficiary.id;
+                    const results = Array.isArray(data.results) ? data.results : [];
+
+                    suggestionList.innerHTML = '';
+                    beneficiaryMap.clear();
+
+                    results.forEach((beneficiary) => {
+                        beneficiaryMap.set(beneficiary.display, beneficiary);
+
+                        const option = document.createElement('option');
+                        option.value = beneficiary.display;
+                        suggestionList.appendChild(option);
+                    });
+
+                    if (results.length === 1) {
+                        applyBatchBeneficiarySelection(results[0].display);
                     }
                 } catch (e) {
                     console.error('Error searching beneficiary:', e);
                 }
-            }, 300);
+            }, 250);
+        });
+
+        beneficiarySearch.addEventListener('change', () => {
+            applyBatchBeneficiarySelection(beneficiarySearch.value.trim());
+        });
+
+        beneficiarySearch.addEventListener('blur', () => {
+            if (!beneficiaryIdInput.value) {
+                applyBatchBeneficiarySelection(beneficiarySearch.value.trim());
+            }
         });
 
         // Load resource types when program changes
@@ -767,8 +1106,16 @@ document.addEventListener('DOMContentLoaded', function () {
             updateBatchSelectAll();
         });
 
+        if (preset && preset.beneficiary) {
+            beneficiaryMap.set(preset.beneficiary.display, preset.beneficiary);
+            beneficiarySearch.value = preset.beneficiary.display;
+            applyBatchBeneficiarySelection(preset.beneficiary.display);
+        }
+
         batchTbody.appendChild(row);
         updateBatchSummary();
+
+        return row;
     }
 
     function updateBatchSelectAll() {
@@ -795,7 +1142,30 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         batchSelectAllCheckbox.checked = false;
         updateBatchSummary();
+
+        if (batchFinderResults && batchFinderResults.style.display !== 'none') {
+            searchBatchBeneficiaries();
+        }
     });
+
+    if (batchFinderSearchBtn) {
+        batchFinderSearchBtn.addEventListener('click', searchBatchBeneficiaries);
+    }
+
+    if (batchFinderSearchInput) {
+        batchFinderSearchInput.addEventListener('keyup', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(searchBatchBeneficiaries, 250);
+        });
+    }
+
+    if (batchFinderBarangay) {
+        batchFinderBarangay.addEventListener('change', searchBatchBeneficiaries);
+    }
+
+    if (batchFinderClassification) {
+        batchFinderClassification.addEventListener('change', searchBatchBeneficiaries);
+    }
 });
 </script>
 @endpush

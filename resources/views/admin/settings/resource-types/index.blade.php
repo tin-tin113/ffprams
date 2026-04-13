@@ -87,6 +87,7 @@
                         <thead class="table-light">
                             <tr>
                                 <th>Name</th>
+                                <th>Unit</th>
                                 <th>Agency</th>
                                 <th>Description</th>
                                 <th>Status</th>
@@ -97,6 +98,9 @@
                             @forelse($resourceTypes as $resourceType)
                             <tr data-rt-id="{{ $resourceType->id }}">
                                 <td data-label="Name"><strong>{{ $resourceType->name }}</strong></td>
+                                <td data-label="Unit">
+                                    <span class="badge bg-light text-dark border">{{ $resourceType->unit }}</span>
+                                </td>
                                 <td data-label="Agency">
                                     <span class="badge bg-secondary">{{ $resourceType->agency->name ?? 'N/A' }}</span>
                                 </td>
@@ -104,17 +108,19 @@
                                     <small class="text-muted">{{ Str::limit($resourceType->description, 50) }}</small>
                                 </td>
                                 <td data-label="Status">
-                                    <span class="badge {{ $resourceType->is_active ? 'bg-success' : 'bg-secondary' }}">
-                                        {{ $resourceType->is_active ? 'Active' : 'Inactive' }}
+                                    @php $isActive = (bool) ($resourceType->is_active ?? true); @endphp
+                                    <span class="badge {{ $isActive ? 'bg-success' : 'bg-secondary' }}">
+                                        {{ $isActive ? 'Active' : 'Inactive' }}
                                     </span>
                                 </td>
                                 <td class="text-center" data-label="Actions">
                                     <button class="btn btn-sm btn-outline-primary edit-rt"
                                             data-id="{{ $resourceType->id }}"
                                             data-name="{{ $resourceType->name }}"
+                                            data-unit="{{ $resourceType->unit }}"
                                             data-agency-id="{{ $resourceType->agency_id }}"
                                             data-description="{{ $resourceType->description }}"
-                                            data-active="{{ $resourceType->is_active }}"
+                                            data-active="{{ (int) ($resourceType->is_active ?? 1) }}"
                                             data-bs-toggle="modal"
                                             data-bs-target="#rtModal"
                                             title="Edit this resource type">
@@ -130,7 +136,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="5" class="text-center text-muted py-4">
+                                <td colspan="6" class="text-center text-muted py-4">
                                     No resource types found
                                 </td>
                             </tr>
@@ -152,6 +158,18 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+                @php
+                    $defaultUnits = ['kg', 'sacks', 'units', 'heads', 'liters', 'bags', 'packs', 'sets', 'pieces', 'PHP'];
+                    $unitOptions = collect($resourceTypes)
+                        ->pluck('unit')
+                        ->filter()
+                        ->map(fn ($unit) => trim((string) $unit))
+                        ->filter()
+                        ->merge($defaultUnits)
+                        ->unique()
+                        ->sort()
+                        ->values();
+                @endphp
                 <form id="rtForm">
                     <input type="hidden" id="rtId">
 
@@ -170,6 +188,16 @@
                     <div class="mb-3">
                         <label for="rtName" class="form-label">Name <span class="text-danger">*</span></label>
                         <input type="text" id="rtName" class="form-control form-control-sm" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="rtUnit" class="form-label">Unit <span class="text-danger">*</span></label>
+                        <select id="rtUnit" class="form-select form-select-sm" required>
+                            <option value="" disabled selected>Select unit...</option>
+                            @foreach($unitOptions as $unit)
+                            <option value="{{ $unit }}">{{ $unit }}</option>
+                            @endforeach
+                        </select>
                     </div>
 
                     <div class="mb-3">
@@ -227,6 +255,20 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    function ensureUnitOption(value) {
+        if (!value) return;
+
+        const unitSelect = document.getElementById('rtUnit');
+        const hasOption = Array.from(unitSelect.options).some(option => option.value === value);
+
+        if (!hasOption) {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = value;
+            unitSelect.appendChild(option);
+        }
+    }
+
     // Combined filter function
     function applyFilters() {
         const statusFilter = document.getElementById('statusFilter').value;
@@ -261,6 +303,8 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function() {
             document.getElementById('rtId').value = this.dataset.id;
             document.getElementById('rtName').value = this.dataset.name;
+            ensureUnitOption(this.dataset.unit);
+            document.getElementById('rtUnit').value = this.dataset.unit || '';
             document.getElementById('rtAgencyId').value = this.dataset.agencyId;
             document.getElementById('rtDescription').value = this.dataset.description;
             document.getElementById('rtIsActive').checked = this.dataset.active === '1';
@@ -295,6 +339,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({
                     agency_id: document.getElementById('rtAgencyId').value,
                     name: document.getElementById('rtName').value,
+                    unit: document.getElementById('rtUnit').value,
                     description: document.getElementById('rtDescription').value,
                     is_active: document.getElementById('rtIsActive').checked
                 })

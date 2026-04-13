@@ -180,9 +180,9 @@
     @if($isEdit && $directAssistance->distributed_at)
         <div class="col-12">
             <div class="alert alert-info border-0">
-                <strong>Distribution Information</strong><br>
+                <strong>Release Information</strong><br>
                 <small>
-                    Distributed on: <strong>{{ $directAssistance->distributed_at->format('M d, Y H:i') }}</strong><br>
+                    Released on: <strong>{{ $directAssistance->distributed_at->format('M d, Y H:i') }}</strong><br>
                     By: <strong>{{ $directAssistance->distributedBy->name ?? 'N/A' }}</strong><br>
                     Release Outcome: <strong>{{ ucfirst(str_replace('_', ' ', $directAssistance->release_outcome ?? 'N/A')) }}</strong>
                 </small>

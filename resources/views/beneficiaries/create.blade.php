@@ -95,6 +95,14 @@ document.addEventListener('DOMContentLoaded', function () {
         form.querySelectorAll('.invalid-feedback.js-invalid-feedback').forEach(function (el) {
             el.remove();
         });
+
+        form.querySelectorAll('.text-danger.js-inline-error').forEach(function (el) {
+            el.remove();
+        });
+    }
+
+    function isVisibleElement(element) {
+        return !!(element.offsetWidth || element.offsetHeight || element.getClientRects().length);
     }
 
     function setFieldError(fieldName, message) {
@@ -107,15 +115,42 @@ document.addEventListener('DOMContentLoaded', function () {
             elements = form.querySelectorAll(selector);
         }
 
+        if (!elements.length && (fieldName === 'agencies' || fieldName.indexOf('agencies.') === 0)) {
+            elements = form.querySelectorAll('input[name="agencies[]"]');
+        }
+
         if (!elements.length) {
             return;
         }
 
-        var target = Array.from(elements).find(function (el) { return el.type !== 'hidden'; }) || elements[0];
-        target.classList.add('is-invalid');
+        var target = Array.from(elements).find(function (el) { return el.type !== 'hidden' && isVisibleElement(el); })
+            || Array.from(elements).find(function (el) { return el.type !== 'hidden'; })
+            || elements[0];
+
+        var isChoiceGroup = target.type === 'radio' || target.type === 'checkbox' || fieldName === 'agencies' || fieldName.indexOf('agencies.') === 0;
+
+        elements.forEach(function (el) {
+            if (el.type !== 'hidden') {
+                el.classList.add('is-invalid');
+            }
+        });
 
         var feedbackParent = target.closest('.col-md-2, .col-md-3, .col-md-4, .col-md-6, .col-md-8, .col-12') || target.parentElement;
         if (!feedbackParent) {
+            return;
+        }
+
+        if (isChoiceGroup) {
+            var existingInline = feedbackParent.querySelector('.text-danger.small.js-inline-error');
+            if (existingInline) {
+                existingInline.textContent = message;
+                return;
+            }
+
+            var inlineError = document.createElement('div');
+            inlineError.className = 'text-danger small mt-1 js-inline-error';
+            inlineError.textContent = message;
+            feedbackParent.appendChild(inlineError);
             return;
         }
 
@@ -159,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function () {
             registeredAt.value = yyyy + '-' + mm + '-' + dd;
         }
 
-        ['agency_id', 'classification', 'association_member', 'has_fishing_vessel'].forEach(function (id) {
+        ['classification', 'association_member', 'has_fishing_vessel'].forEach(function (id) {
             var element = document.getElementById(id);
             if (element) {
                 element.dispatchEvent(new Event('change', { bubbles: true }));
@@ -203,15 +238,21 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (result.status === 422 && result.data.errors) {
+                var firstErrorMessage = null;
+
                 Object.keys(result.data.errors).forEach(function (field) {
                     var messages = result.data.errors[field] || [];
                     if (messages.length > 0) {
+                        if (!firstErrorMessage) {
+                            firstErrorMessage = messages[0];
+                        }
+
                         setFieldError(field, messages[0]);
                     }
                 });
 
                 showToast('error', 'Please fix the highlighted fields and try again.');
-                showNotice('error', 'Some required fields are missing or invalid. Please review the highlighted fields.');
+                showNotice('error', firstErrorMessage || 'Some required fields are missing or invalid. Please review the highlighted fields.');
                 return;
             }
 

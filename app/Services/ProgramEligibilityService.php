@@ -53,7 +53,7 @@ class ProgramEligibilityService
             return false;
         }
 
-        return in_array($beneficiary->classification, [$program->classification, 'Both']);
+        return in_array($program->classification, [$beneficiary->classification, 'Both'], true);
     }
 
     /**

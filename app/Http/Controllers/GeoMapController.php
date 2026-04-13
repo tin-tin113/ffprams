@@ -166,9 +166,10 @@ class GeoMapController extends Controller
                     })
                     ->selectRaw('beneficiaries.barangay_id as barangay_id')
                     ->selectRaw('COUNT(*) as total_direct_assistance')
-                    ->selectRaw("SUM(CASE WHEN direct_assistance.status = 'recorded' THEN 1 ELSE 0 END) as direct_assistance_recorded")
-                    ->selectRaw("SUM(CASE WHEN direct_assistance.status = 'distributed' THEN 1 ELSE 0 END) as direct_assistance_distributed")
-                    ->selectRaw("SUM(CASE WHEN direct_assistance.status = 'completed' THEN 1 ELSE 0 END) as direct_assistance_completed")
+                    ->selectRaw("SUM(CASE WHEN direct_assistance.status = 'planned' THEN 1 ELSE 0 END) as direct_assistance_planned")
+                    ->selectRaw("SUM(CASE WHEN direct_assistance.status = 'ready_for_release' THEN 1 ELSE 0 END) as direct_assistance_ready_for_release")
+                    ->selectRaw("SUM(CASE WHEN direct_assistance.status = 'released' THEN 1 ELSE 0 END) as direct_assistance_released")
+                    ->selectRaw("SUM(CASE WHEN direct_assistance.status = 'not_received' THEN 1 ELSE 0 END) as direct_assistance_not_received")
                     ->groupBy('beneficiaries.barangay_id')
                     ->get()
                     ->keyBy('barangay_id');
@@ -274,9 +275,10 @@ class GeoMapController extends Controller
                         'coverage_rate' => $coverageRate,
                         // Direct Assistance (D9)
                         'total_direct_assistance' => (int) ($directAssistance->total_direct_assistance ?? 0),
-                        'direct_assistance_recorded' => (int) ($directAssistance->direct_assistance_recorded ?? 0),
-                        'direct_assistance_distributed' => (int) ($directAssistance->direct_assistance_distributed ?? 0),
-                        'direct_assistance_completed' => (int) ($directAssistance->direct_assistance_completed ?? 0),
+                        'direct_assistance_planned' => (int) ($directAssistance->direct_assistance_planned ?? 0),
+                        'direct_assistance_ready_for_release' => (int) ($directAssistance->direct_assistance_ready_for_release ?? 0),
+                        'direct_assistance_released' => (int) ($directAssistance->direct_assistance_released ?? 0),
+                        'direct_assistance_not_received' => (int) ($directAssistance->direct_assistance_not_received ?? 0),
                         // Dates
                         'first_distribution_date' => $barangay->first_distribution_date,
                         'last_distribution_date' => $barangay->last_distribution_date,

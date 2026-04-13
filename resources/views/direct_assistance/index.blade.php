@@ -25,8 +25,8 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <p class="text-muted small mb-1">Pending</p>
-                            <h3 class="mb-0">{{ $stats['pending'] }}</h3>
+                            <p class="text-muted small mb-1">Planned</p>
+                            <h3 class="mb-0">{{ $stats['planned'] }}</h3>
                         </div>
                         <i class="bi bi-clock-history text-warning" style="font-size: 24px;"></i>
                     </div>
@@ -38,10 +38,10 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <p class="text-muted small mb-1">Distributed Today</p>
-                            <h3 class="mb-0">{{ $stats['distributed_today'] }}</h3>
+                            <p class="text-muted small mb-1">Ready for Release</p>
+                            <h3 class="mb-0">{{ $stats['ready_for_release'] }}</h3>
                         </div>
-                        <i class="bi bi-check-circle text-success" style="font-size: 24px;"></i>
+                        <i class="bi bi-bell text-primary" style="font-size: 24px;"></i>
                     </div>
                 </div>
             </div>
@@ -51,10 +51,10 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <p class="text-muted small mb-1">This Month</p>
-                            <h3 class="mb-0">{{ $stats['this_month'] }}</h3>
+                            <p class="text-muted small mb-1">Released Today</p>
+                            <h3 class="mb-0">{{ $stats['released_today'] }}</h3>
                         </div>
-                        <i class="bi bi-calendar-check text-info" style="font-size: 24px;"></i>
+                        <i class="bi bi-check-circle text-success" style="font-size: 24px;"></i>
                     </div>
                 </div>
             </div>
@@ -82,30 +82,8 @@
             <i class="bi bi-funnel me-1"></i> Filters
         </div>
         <div class="card-body">
-            <form method="GET" action="{{ route('direct-assistance.index') }}" class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label">Barangay</label>
-                    <select class="form-select" name="barangay_id">
-                        <option value="">All Barangays</option>
-                        @foreach($barangays as $barangay)
-                            <option value="{{ $barangay->id }}" {{ request('barangay_id') == $barangay->id ? 'selected' : '' }}>
-                                {{ $barangay->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Agency</label>
-                    <select class="form-select" name="agency_id">
-                        <option value="">All Agencies</option>
-                        @foreach($agencies as $agency)
-                            <option value="{{ $agency->id }}" {{ request('agency_id') == $agency->id ? 'selected' : '' }}>
-                                {{ $agency->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-3">
+            <form method="GET" action="{{ route('direct-assistance.index') }}" class="row g-2 align-items-end">
+                <div class="col-xl-3 col-lg-3 col-md-6">
                     <label class="form-label">Program</label>
                     <select class="form-select" name="program_id">
                         <option value="">All Programs</option>
@@ -116,27 +94,44 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-xl-2 col-lg-2 col-md-6">
+                    <label class="form-label">Agency</label>
+                    <select class="form-select" name="agency_id">
+                        <option value="">All Agencies</option>
+                        @foreach($agencies as $agency)
+                            <option value="{{ $agency->id }}" {{ request('agency_id') == $agency->id ? 'selected' : '' }}>
+                                {{ $agency->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-xl-2 col-lg-2 col-md-6">
                     <label class="form-label">Status</label>
                     <select class="form-select" name="status">
                         <option value="">All Statuses</option>
-                        <option value="recorded" {{ request('status') == 'recorded' ? 'selected' : '' }}>Recorded (Pending)</option>
-                        <option value="distributed" {{ request('status') == 'distributed' ? 'selected' : '' }}>Distributed</option>
-                        <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                        <option value="planned" {{ request('status') == 'planned' ? 'selected' : '' }}>Planned</option>
+                        <option value="ready_for_release" {{ request('status') == 'ready_for_release' ? 'selected' : '' }}>Ready for Release</option>
+                        <option value="released" {{ request('status') == 'released' ? 'selected' : '' }}>Released</option>
+                        <option value="not_received" {{ request('status') == 'not_received' ? 'selected' : '' }}>Not Received</option>
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Beneficiary Search</label>
-                    <input type="text" class="form-control" name="beneficiary_search" placeholder="Name or contact..." value="{{ request('beneficiary_search') }}">
+                <div class="col-xl-2 col-lg-2 col-md-6">
+                    <label class="form-label">Sort</label>
+                    <select class="form-select" name="sort">
+                        <option value="created_desc" {{ request('sort', 'created_desc') === 'created_desc' ? 'selected' : '' }}>Date: Newest</option>
+                        <option value="created_asc" {{ request('sort') === 'created_asc' ? 'selected' : '' }}>Date: Oldest</option>
+                        <option value="program_asc" {{ request('sort') === 'program_asc' ? 'selected' : '' }}>Program: A-Z</option>
+                        <option value="program_desc" {{ request('sort') === 'program_desc' ? 'selected' : '' }}>Program: Z-A</option>
+                        <option value="status_asc" {{ request('sort') === 'status_asc' ? 'selected' : '' }}>Status: A-Z</option>
+                        <option value="status_desc" {{ request('sort') === 'status_desc' ? 'selected' : '' }}>Status: Z-A</option>
+                    </select>
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-outline-primary w-100">
-                        <i class="bi bi-search me-1"></i> Search
+                <div class="col-xl-3 col-lg-3 col-md-12 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-funnel me-1"></i> Apply
                     </button>
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <a href="{{ route('direct-assistance.index') }}" class="btn btn-outline-secondary w-100">
-                        <i class="bi bi-arrow-clockwise me-1"></i> Reset
+                    <a href="{{ route('direct-assistance.index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Clear
                     </a>
                 </div>
             </form>
@@ -160,7 +155,7 @@
                             <th>Resource</th>
                             <th>Value</th>
                             <th>Status</th>
-                            <th>Distributed</th>
+                            <th>Released At</th>
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
@@ -179,18 +174,24 @@
                                 <td data-label="Value">{{ $assistance->getDisplayValue() }}</td>
                                 <td data-label="Status">
                                     @switch($assistance->status)
-                                        @case('recorded')
-                                            <span class="badge bg-warning text-dark">Recorded</span>
+                                        @case('planned')
+                                            <span class="badge bg-warning text-dark">Planned</span>
                                             @break
-                                        @case('distributed')
-                                            <span class="badge bg-success">Distributed</span>
+                                        @case('ready_for_release')
+                                            <span class="badge bg-primary">Ready for Release</span>
                                             @break
-                                        @case('completed')
-                                            <span class="badge bg-info">Completed</span>
+                                        @case('released')
+                                            <span class="badge bg-success">Released</span>
+                                            @break
+                                        @case('not_received')
+                                            <span class="badge bg-danger">Not Received</span>
+                                            @break
+                                        @default
+                                            <span class="badge bg-secondary">{{ ucfirst(str_replace('_', ' ', $assistance->status)) }}</span>
                                             @break
                                     @endswitch
                                 </td>
-                                <td data-label="Distributed">
+                                <td data-label="Released At">
                                     @if($assistance->distributed_at)
                                         <small class="text-muted">{{ $assistance->distributed_at->format('M d, Y') }}</small>
                                     @else
@@ -201,18 +202,44 @@
                                     <a href="{{ route('direct-assistance.show', $assistance) }}" class="btn btn-sm btn-outline-info">
                                         <i class="bi bi-eye"></i> View
                                     </a>
-                                    @if($assistance->status === 'recorded')
+                                    @if($assistance->status !== 'released')
                                         <a href="{{ route('direct-assistance.edit', $assistance) }}" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-pencil"></i> Edit
                                         </a>
+                                    @endif
+
+                                    @if(in_array($assistance->status, ['planned', 'not_received'], true))
                                         <form method="POST"
-                                              action="{{ route('direct-assistance.mark-distributed', $assistance) }}"
+                                              action="{{ route('direct-assistance.mark-ready-for-release', $assistance) }}"
                                                 class="direct-assistance-action-form"
-                                              data-confirm-title="Mark as Distributed"
-                                              data-confirm-message="Mark this assistance as distributed?">
+                                              data-confirm-title="Set Ready for Release"
+                                              data-confirm-message="Set this assistance to Ready for Release? If SMS automation is enabled, this will send an automatic SMS to the beneficiary.">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-bell"></i> Ready for Release
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    @if($assistance->status === 'ready_for_release')
+                                        <form method="POST"
+                                              action="{{ route('direct-assistance.mark-released', $assistance) }}"
+                                              class="direct-assistance-action-form"
+                                              data-confirm-title="Mark as Released"
+                                              data-confirm-message="Mark this assistance as Released now?">
                                             @csrf
                                             <button type="submit" class="btn btn-sm btn-outline-success">
-                                                <i class="bi bi-check2"></i> Distribute
+                                                <i class="bi bi-check2"></i> Mark Released
+                                            </button>
+                                        </form>
+                                        <form method="POST"
+                                              action="{{ route('direct-assistance.mark-not-received', $assistance) }}"
+                                              class="direct-assistance-action-form"
+                                              data-confirm-title="Mark as Not Received"
+                                              data-confirm-message="Mark this assistance as Not Received?">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-x-circle"></i> Not Received
                                             </button>
                                         </form>
                                     @endif

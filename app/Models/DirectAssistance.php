@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DirectAssistance extends Model
@@ -61,7 +62,7 @@ class DirectAssistance extends Model
      */
     public function isDistributed(): bool
     {
-        return $this->distributed_at !== null || $this->status === 'distributed';
+        return $this->distributed_at !== null || $this->status === 'released';
     }
 
     /**
@@ -107,5 +108,10 @@ class DirectAssistance extends Model
     public function distributionEvent(): BelongsTo
     {
         return $this->belongsTo(DistributionEvent::class)->nullable();
+    }
+
+    public function attachments(): MorphMany
+    {
+        return $this->morphMany(RecordAttachment::class, 'attachable');
     }
 }

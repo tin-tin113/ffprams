@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\DistributionEventRequest;
+use App\Models\Agency;
 use App\Models\AssistancePurpose;
 use App\Models\Barangay;
 use App\Models\Beneficiary;
@@ -11,10 +12,12 @@ use App\Models\ProgramName;
 use App\Models\ResourceType;
 use App\Services\AuditLogService;
 use App\Services\ProgramEligibilityService;
+use App\Services\SemaphoreService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -23,20 +26,41 @@ class DistributionEventController extends Controller
 {
     public function __construct(
         private AuditLogService $audit,
+        private SemaphoreService $sms,
     ) {}
 
     public function index(Request $request): View
     {
+        $sort = (string) $request->input('sort', 'date_desc');
+        $allowedSorts = ['date_desc', 'date_asc', 'program_asc', 'program_desc', 'status_asc', 'status_desc'];
+
+        if (! in_array($sort, $allowedSorts, true)) {
+            $sort = 'date_desc';
+        }
+
         $events = DistributionEvent::with(['barangay', 'resourceType.agency', 'programName', 'createdBy'])
             ->withCount('allocations')
-            ->when($request->filled('barangay_id'), fn ($q) => $q->where('barangay_id', $request->barangay_id))
-            ->when($request->filled('resource_type_id'), fn ($q) => $q->where('resource_type_id', $request->resource_type_id))
             ->when($request->filled('program_name_id'), fn ($q) => $q->where('program_name_id', $request->program_name_id))
+            ->when($request->filled('agency_id'), function ($q) use ($request) {
+                $agencyId = (int) $request->agency_id;
+
+                $q->where(function ($agencyQuery) use ($agencyId) {
+                    $agencyQuery
+                        ->whereHas('resourceType', fn ($resourceQuery) => $resourceQuery->where('agency_id', $agencyId))
+                        ->orWhereHas('programName', fn ($programQuery) => $programQuery->where('agency_id', $agencyId));
+                });
+            })
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
-            ->when($request->filled('type'), fn ($q) => $q->where('type', $request->type))
-            ->when($request->filled('from'), fn ($q) => $q->whereDate('distribution_date', '>=', $request->from))
-            ->when($request->filled('to'), fn ($q) => $q->whereDate('distribution_date', '<=', $request->to))
-            ->orderByDesc('distribution_date')
+            ->when($sort === 'date_desc', fn ($q) => $q->orderByDesc('distribution_date'))
+            ->when($sort === 'date_asc', fn ($q) => $q->orderBy('distribution_date'))
+            ->when($sort === 'program_asc', fn ($q) => $q->orderBy(
+                ProgramName::select('name')->whereColumn('program_names.id', 'distribution_events.program_name_id')
+            ))
+            ->when($sort === 'program_desc', fn ($q) => $q->orderByDesc(
+                ProgramName::select('name')->whereColumn('program_names.id', 'distribution_events.program_name_id')
+            ))
+            ->when($sort === 'status_asc', fn ($q) => $q->orderBy('status'))
+            ->when($sort === 'status_desc', fn ($q) => $q->orderByDesc('status'))
             ->paginate(15)
             ->withQueryString();
 
@@ -55,8 +79,7 @@ class DistributionEventController extends Controller
             ->whereNull('allocations.deleted_at')
             ->sum('allocations.amount');
 
-        $barangays = Barangay::orderBy('name')->get();
-        $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
+        $agencies = Agency::orderBy('name')->get(['id', 'name']);
         $programNames = ProgramName::with('agency')->active()->orderBy('name')->get();
 
         return view('distribution_events.index', compact(
@@ -67,8 +90,7 @@ class DistributionEventController extends Controller
             'completed',
             'totalFinancialEvents',
             'totalCashDisbursed',
-            'barangays',
-            'resourceTypes',
+            'agencies',
             'programNames',
         ));
     }
@@ -124,6 +146,7 @@ class DistributionEventController extends Controller
             'createdBy',
             'beneficiaryListApprovedBy',
             'allocations.beneficiary',
+            'attachments' => fn ($q) => $q->latest('id')->with('uploader:id,name'),
         ]);
 
         $allocatedBeneficiaryIds = $event->allocations->pluck('beneficiary_id')->toArray();
@@ -384,8 +407,61 @@ class DistributionEventController extends Controller
             );
         });
 
+        if ($newStatus === 'Ongoing') {
+            $this->sendEventOngoingSms($event->fresh());
+        }
+
         return redirect()->back()
             ->with('success', "Distribution event status updated to {$newStatus}.");
+    }
+
+    private function sendEventOngoingSms(DistributionEvent $event): void
+    {
+        if (! $this->shouldSendEventOngoingSms()) {
+            return;
+        }
+
+        $event->loadMissing([
+            'barangay:id,name',
+            'programName:id,name',
+            'resourceType:id,name,unit',
+        ]);
+
+        $recipients = Beneficiary::query()
+            ->where('status', 'Active')
+            ->whereNotNull('contact_number')
+            ->where(function ($query) use ($event) {
+                $query->whereHas('allocations', fn ($allocationQuery) => $allocationQuery->where('distribution_event_id', $event->id))
+                    ->orWhereHas('directAssistance', fn ($directQuery) => $directQuery->where('distribution_event_id', $event->id));
+            })
+            ->orderBy('full_name')
+            ->get(['id', 'full_name', 'contact_number']);
+
+        if ($recipients->isEmpty()) {
+            return;
+        }
+
+        $programName = $event->programName?->name ?? 'your assistance program';
+        $barangayName = $event->barangay?->name ?? 'your barangay';
+        $dateLabel = $event->distribution_date?->format('M d, Y') ?? now()->format('M d, Y');
+
+        foreach ($recipients as $beneficiary) {
+            $message = "Hello {$beneficiary->full_name}, the {$programName} distribution event scheduled on {$dateLabel} at Barangay {$barangayName} is now Ongoing. Please coordinate with your barangay official for release details.";
+
+            $this->sms->sendSms(
+                $beneficiary->contact_number,
+                $message,
+                $beneficiary->id,
+            );
+        }
+    }
+
+    private function shouldSendEventOngoingSms(): bool
+    {
+        return (bool) Cache::get(
+            'sms.send_on_event_ongoing',
+            config('services.sms.send_on_event_ongoing')
+        );
     }
 
     public function updateCompliance(Request $request, DistributionEvent $event): RedirectResponse

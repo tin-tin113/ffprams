@@ -290,7 +290,10 @@ class SystemSettingsController extends Controller
             'unit' => ['required', 'string', 'max:50'],
             'agency_id' => ['required', 'exists:agencies,id'],
             'description' => ['nullable', 'string', 'max:500'],
+            'is_active' => ['sometimes', 'boolean'],
         ]);
+
+        $validated['is_active'] = (bool) ($validated['is_active'] ?? true);
 
         $resourceType = DB::transaction(function () use ($validated) {
             $resourceType = ResourceType::create($validated);
@@ -313,7 +316,10 @@ class SystemSettingsController extends Controller
             'unit' => ['required', 'string', 'max:50'],
             'agency_id' => ['required', 'exists:agencies,id'],
             'description' => ['nullable', 'string', 'max:500'],
+            'is_active' => ['sometimes', 'boolean'],
         ]);
+
+        $validated['is_active'] = (bool) ($validated['is_active'] ?? $resourceType->is_active);
 
         DB::transaction(function () use ($validated, $resourceType) {
             $oldValues = $resourceType->toArray();

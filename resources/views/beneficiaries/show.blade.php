@@ -318,6 +318,12 @@
                                     <td data-label="Uploaded By">{{ $attachment->uploader?->name ?? 'System' }}</td>
                                     <td data-label="Uploaded At">{{ $attachment->created_at->format('M d, Y h:i A') }}</td>
                                     <td class="text-end text-nowrap" data-label="Actions">
+                                        <a href="{{ route('beneficiaries.attachments.view', [$beneficiary, $attachment]) }}"
+                                           class="btn btn-sm btn-outline-secondary me-1"
+                                           target="_blank"
+                                           rel="noopener">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
                                         <a href="{{ route('beneficiaries.attachments.download', [$beneficiary, $attachment]) }}"
                                            class="btn btn-sm btn-outline-primary me-1">
                                             <i class="bi bi-download"></i> Download

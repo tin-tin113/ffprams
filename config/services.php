@@ -39,7 +39,8 @@ return [
         'api_url'     => env('SMS_API_URL', 'https://smsapiph.onrender.com/api/v1/send/sms'),
         'api_key'     => env('SMS_API_KEY'),
         'sender_name' => env('SMS_SENDER_NAME', 'FFPRAMS'),
-        'send_on_beneficiary_create' => env('SMS_SEND_ON_BENEFICIARY_CREATE', false),
+        'send_on_event_ongoing' => env('SMS_SEND_ON_EVENT_ONGOING', true),
+        'send_on_direct_assistance_status_change' => env('SMS_SEND_ON_DIRECT_ASSISTANCE_STATUS_CHANGE', true),
     ],
 
 ];

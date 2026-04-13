@@ -41,14 +41,20 @@
                         <dt class="col-sm-6 text-muted small">Status</dt>
                         <dd class="col-sm-6">
                             @switch($directAssistance->status)
-                                @case('recorded')
-                                    <span class="badge bg-warning text-dark">Recorded</span>
+                                @case('planned')
+                                    <span class="badge bg-warning text-dark">Planned</span>
                                     @break
-                                @case('distributed')
-                                    <span class="badge bg-success">Distributed</span>
+                                @case('ready_for_release')
+                                    <span class="badge bg-primary">Ready for Release</span>
                                     @break
-                                @case('completed')
-                                    <span class="badge bg-info">Completed</span>
+                                @case('released')
+                                    <span class="badge bg-success">Released</span>
+                                    @break
+                                @case('not_received')
+                                    <span class="badge bg-danger">Not Received</span>
+                                    @break
+                                @default
+                                    <span class="badge bg-secondary">{{ ucfirst(str_replace('_', ' ', $directAssistance->status)) }}</span>
                                     @break
                             @endswitch
                         </dd>
@@ -68,7 +74,7 @@
                 </div>
             </div>
 
-            @if($directAssistance->status === 'recorded')
+            @if($directAssistance->status !== 'released')
                 <div class="card border-0 shadow-sm bg-light mt-3">
                     <div class="card-header bg-white fw-semibold text-danger">
                         Danger Zone

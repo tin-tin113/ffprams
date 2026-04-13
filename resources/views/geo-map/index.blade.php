@@ -559,18 +559,22 @@
                         </div>
                         <div class="col-6">
                             <div class="panel-stat-card">
-                                <div class="panel-stat-value text-success" id="modal-direct-completed">0</div>
-                                <div class="panel-stat-label">Completed</div>
+                                <div class="panel-stat-value text-success" id="modal-direct-released">0</div>
+                                <div class="panel-stat-label">Released</div>
                             </div>
                         </div>
                     </div>
                     <div class="panel-info-row">
-                        <span class="label"><i class="bi bi-clock-history text-muted me-1"></i>Recorded</span>
-                        <span class="value text-muted" id="modal-direct-recorded">0</span>
+                        <span class="label"><i class="bi bi-clock-history text-muted me-1"></i>Planned</span>
+                        <span class="value text-muted" id="modal-direct-planned">0</span>
                     </div>
                     <div class="panel-info-row">
-                        <span class="label"><i class="bi bi-truck text-primary me-1"></i>Distributed</span>
-                        <span class="value text-primary" id="modal-direct-distributed">0</span>
+                        <span class="label"><i class="bi bi-bell text-primary me-1"></i>Ready for Release</span>
+                        <span class="value text-primary" id="modal-direct-ready">0</span>
+                    </div>
+                    <div class="panel-info-row">
+                        <span class="label"><i class="bi bi-x-circle text-danger me-1"></i>Not Received</span>
+                        <span class="value text-danger" id="modal-direct-not-received">0</span>
                     </div>
                 </div>
 
@@ -837,9 +841,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Direct assistance
         document.getElementById('modal-direct-total').textContent = b.total_direct_assistance;
-        document.getElementById('modal-direct-recorded').textContent = b.direct_assistance_recorded;
-        document.getElementById('modal-direct-distributed').textContent = b.direct_assistance_distributed;
-        document.getElementById('modal-direct-completed').textContent = b.direct_assistance_completed;
+        document.getElementById('modal-direct-planned').textContent = b.direct_assistance_planned;
+        document.getElementById('modal-direct-ready').textContent = b.direct_assistance_ready_for_release;
+        document.getElementById('modal-direct-released').textContent = b.direct_assistance_released;
+        document.getElementById('modal-direct-not-received').textContent = b.direct_assistance_not_received;
 
         // Financial
         document.getElementById('modal-fund-allocated').textContent = formatPeso(b.total_fund_allocated);

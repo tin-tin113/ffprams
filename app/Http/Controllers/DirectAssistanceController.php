@@ -17,6 +17,7 @@ use App\Services\ReleaseOutcomeService;
 use App\Services\SemaphoreService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -30,6 +31,13 @@ class DirectAssistanceController extends Controller
 
     public function index(Request $request): View
     {
+        $sort = (string) $request->input('sort', 'created_desc');
+        $allowedSorts = ['created_desc', 'created_asc', 'program_asc', 'program_desc', 'status_asc', 'status_desc'];
+
+        if (! in_array($sort, $allowedSorts, true)) {
+            $sort = 'created_desc';
+        }
+
         $query = DirectAssistance::with([
             'beneficiary.barangay',
             'beneficiary.agency',
@@ -42,10 +50,6 @@ class DirectAssistanceController extends Controller
         ]);
 
         // Filters
-        if ($request->filled('barangay_id')) {
-            $query->whereHas('beneficiary', fn ($q) => $q->where('barangay_id', $request->barangay_id));
-        }
-
         if ($request->filled('agency_id')) {
             $query->whereHas('beneficiary', fn ($q) => $q->where('agency_id', $request->agency_id));
         }
@@ -55,27 +59,37 @@ class DirectAssistanceController extends Controller
         }
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $status = (string) $request->input('status');
+            $allowedStatuses = ['planned', 'ready_for_release', 'released', 'not_received'];
+
+            if (in_array($status, $allowedStatuses, true)) {
+                $query->where('status', $status);
+            }
         }
 
-        if ($request->filled('beneficiary_search')) {
-            $search = $request->beneficiary_search;
-            $query->whereHas('beneficiary', fn ($q) => $q->where('full_name', 'like', "%{$search}%")
-                ->orWhere('contact_number', 'like', "%{$search}%")
-            );
-        }
+        $query
+            ->when($sort === 'created_desc', fn ($q) => $q->latest())
+            ->when($sort === 'created_asc', fn ($q) => $q->oldest())
+            ->when($sort === 'program_asc', fn ($q) => $q->orderBy(
+                ProgramName::select('name')->whereColumn('program_names.id', 'direct_assistance.program_name_id')
+            ))
+            ->when($sort === 'program_desc', fn ($q) => $q->orderByDesc(
+                ProgramName::select('name')->whereColumn('program_names.id', 'direct_assistance.program_name_id')
+            ))
+            ->when($sort === 'status_asc', fn ($q) => $q->orderBy('status'))
+            ->when($sort === 'status_desc', fn ($q) => $q->orderByDesc('status'));
 
-        $directAssistance = $query->latest()->paginate(15);
+        $directAssistance = $query->paginate(15)->withQueryString();
 
         // Load filter options
-        $barangays = Barangay::orderBy('name')->get();
         $agencies = Agency::orderBy('name')->get();
         $programs = ProgramName::with('agency')->active()->orderBy('name')->get();
 
         // Summary stats
         $stats = [
-            'pending' => DirectAssistance::where('status', 'recorded')->count(),
-            'distributed_today' => DirectAssistance::where('status', 'distributed')
+            'planned' => DirectAssistance::where('status', 'planned')->count(),
+            'ready_for_release' => DirectAssistance::where('status', 'ready_for_release')->count(),
+            'released_today' => DirectAssistance::where('status', 'released')
                 ->whereDate('distributed_at', today())
                 ->count(),
             'this_month' => DirectAssistance::whereMonth('created_at', now()->month)
@@ -85,7 +99,6 @@ class DirectAssistanceController extends Controller
 
         return view('direct_assistance.index', compact(
             'directAssistance',
-            'barangays',
             'agencies',
             'programs',
             'stats',
@@ -131,7 +144,7 @@ class DirectAssistanceController extends Controller
             $directAssistance = DirectAssistance::create([
                 ...$validated,
                 'created_by' => auth()->id(),
-                'status' => 'recorded',
+                'status' => 'planned',
             ]);
 
             $this->audit->log(
@@ -145,16 +158,6 @@ class DirectAssistanceController extends Controller
 
             return $directAssistance;
         });
-
-        // SMS notification
-        if ($beneficiary->contact_number) {
-            $message = "Hello {$beneficiary->full_name}, direct assistance has been recorded for {$program->name}. Status: Pending distribution. Thank you!";
-            $this->sms->sendSms(
-                $beneficiary->contact_number,
-                $message,
-                $beneficiary->id,
-            );
-        }
 
         return redirect()->route('direct-assistance.index')
             ->with('success', 'Direct assistance recorded successfully.');
@@ -171,6 +174,7 @@ class DirectAssistanceController extends Controller
             'distributionEvent.barangay',
             'createdBy',
             'distributedBy',
+            'attachments' => fn ($q) => $q->latest('id')->with('uploader:id,name'),
         ]);
 
         return view('direct_assistance.show', compact('directAssistance'));
@@ -250,11 +254,64 @@ class DirectAssistanceController extends Controller
             ->with('success', 'Direct assistance record deleted successfully.');
     }
 
+    public function markReadyForRelease(DirectAssistance $directAssistance): RedirectResponse
+    {
+        if ($directAssistance->status === 'ready_for_release') {
+            return redirect()->back()
+                ->with('warning', 'This record is already marked as Ready for Release.');
+        }
+
+        if ($directAssistance->status === 'released') {
+            return redirect()->back()
+                ->with('warning', 'Released records cannot be moved back to Ready for Release.');
+        }
+
+        $this->releaseOutcome->apply(
+            $directAssistance,
+            [
+                'status' => 'ready_for_release',
+                'release_outcome' => null,
+                'distributed_at' => null,
+                'distributed_by' => null,
+            ],
+            $this->audit,
+            'marked_ready_for_release',
+            'direct_assistance',
+        );
+
+        if ($this->shouldSendStatusChangeSms()) {
+            $beneficiary = $directAssistance->beneficiary;
+            if (! empty($beneficiary?->contact_number)) {
+                $programName = $directAssistance->programName?->name ?? 'your assistance program';
+                $message = "Hello {$beneficiary->full_name}, your direct assistance for {$programName} is now Ready for Release. Please coordinate with the office for claiming details.";
+                $this->sms->sendSms(
+                    $beneficiary->contact_number,
+                    $message,
+                    $beneficiary->id,
+                );
+            }
+        }
+
+        return redirect()->back()
+            ->with('success', 'Direct assistance marked as Ready for Release.');
+    }
+
+    // Legacy route alias kept for backward compatibility.
     public function markDistributed(DirectAssistance $directAssistance): RedirectResponse
     {
-        if ($directAssistance->status === 'distributed') {
+        return $this->markReleased($directAssistance);
+    }
+
+    public function markReleased(DirectAssistance $directAssistance): RedirectResponse
+    {
+        if ($directAssistance->status === 'released') {
             return redirect()->back()
-                ->with('warning', 'This record is already marked as distributed.');
+                ->with('warning', 'This record is already marked as released.');
+        }
+
+        if ($directAssistance->status !== 'ready_for_release') {
+            return redirect()->back()
+                ->with('warning', 'Set this record to Ready for Release before marking it as released.');
         }
 
         $this->releaseOutcome->apply(
@@ -262,37 +319,42 @@ class DirectAssistanceController extends Controller
             [
                 'distributed_at' => now(),
                 'distributed_by' => auth()->id(),
-                'status' => 'distributed',
+                'status' => 'released',
+                'release_outcome' => 'accepted',
             ],
             $this->audit,
-            'marked_distributed',
+            'marked_released',
             'direct_assistance',
         );
 
-        // SMS notification with outcome
-        $beneficiary = $directAssistance->beneficiary;
-        if ($beneficiary->contact_number) {
-            $message = "Hello {$beneficiary->full_name}, your direct assistance has been distributed. Release outcome: {$directAssistance->release_outcome}. Thank you!";
-            $this->sms->sendSms(
-                $beneficiary->contact_number,
-                $message,
-                $beneficiary->id,
-            );
-        }
-
         return redirect()->back()
-            ->with('success', 'Direct assistance marked as distributed.');
+            ->with('success', 'Direct assistance marked as released.');
     }
 
     public function markNotReceived(DirectAssistance $directAssistance): RedirectResponse
     {
+        if ($directAssistance->status === 'not_received') {
+            return redirect()->back()
+                ->with('warning', 'This record is already marked as Not Received.');
+        }
+
+        if ($directAssistance->status === 'released') {
+            return redirect()->back()
+                ->with('warning', 'Released records cannot be marked as Not Received.');
+        }
+
+        if ($directAssistance->status !== 'ready_for_release') {
+            return redirect()->back()
+                ->with('warning', 'Set this record to Ready for Release before marking it as Not Received.');
+        }
+
         $this->releaseOutcome->apply(
             $directAssistance,
             [
-                'release_outcome' => 'not_received',
+                'status' => 'not_received',
+                'release_outcome' => null,
                 'distributed_at' => null,
                 'distributed_by' => null,
-                'status' => 'recorded',
             ],
             $this->audit,
             'marked_not_received',
@@ -301,6 +363,14 @@ class DirectAssistanceController extends Controller
 
         return redirect()->back()
             ->with('success', 'Direct assistance marked as not received.');
+    }
+
+    private function shouldSendStatusChangeSms(): bool
+    {
+        return (bool) Cache::get(
+            'sms.send_on_direct_assistance_status_change',
+            config('services.sms.send_on_direct_assistance_status_change')
+        );
     }
 
     /**
@@ -327,11 +397,12 @@ class DirectAssistanceController extends Controller
             $analytics[] = [
                 'barangay' => $barangay,
                 'total' => (clone $barangayRecords)->count(),
-                'pending' => (clone $barangayRecords)->where('status', 'recorded')->count(),
-                'distributed' => (clone $barangayRecords)->where('status', 'distributed')->count(),
-                'completed' => (clone $barangayRecords)->where('status', 'completed')->count(),
-                'distributed_today' => (clone $barangayRecords)
-                    ->where('status', 'distributed')
+                'planned' => (clone $barangayRecords)->where('status', 'planned')->count(),
+                'ready_for_release' => (clone $barangayRecords)->where('status', 'ready_for_release')->count(),
+                'released' => (clone $barangayRecords)->where('status', 'released')->count(),
+                'not_received' => (clone $barangayRecords)->where('status', 'not_received')->count(),
+                'released_today' => (clone $barangayRecords)
+                    ->where('status', 'released')
                     ->whereDate('distributed_at', today())
                     ->count(),
             ];

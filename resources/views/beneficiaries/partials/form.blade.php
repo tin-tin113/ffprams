@@ -696,36 +696,142 @@ document.addEventListener('DOMContentLoaded', function () {
     @php
         $selectedAgencyIds = [];
         if ($editing && $beneficiary->id) {
-            $selectedAgencyIds = $beneficiary->agencies()->pluck('id')->toArray();
+            $selectedAgencyIds = $beneficiary->agencies()->pluck('agencies.id')->toArray();
             if (empty($selectedAgencyIds) && $beneficiary->agency_id) {
                 $selectedAgencyIds = [$beneficiary->agency_id];
             }
         }
+
+        $agencyLookup = [];
+        foreach (($agencies ?? collect()) as $agency) {
+            $name = strtoupper((string) $agency->name);
+            if ($name === '') {
+                continue;
+            }
+
+            $agencyLookup[$name] = [
+                'id' => (int) $agency->id,
+                'name' => $name,
+                'full_name' => (string) $agency->full_name,
+            ];
+        }
     @endphp
     const selectedAgencyIds = {{ json_encode($selectedAgencyIds) }};
+    const agencyLookup = @json($agencyLookup);
+
+    const conditionalRequirements = {
+        farmOwnership: @json($farmOwnershipRequired),
+        farmType: @json($farmTypeRequired),
+        fisherfolkType: @json($fisherfolkTypeRequired),
+        arbClassification: @json($arbClassificationRequired),
+        ownershipScheme: @json($ownershipSchemeRequired)
+    };
+
+    let selectedAgencyIdSet = new Set((selectedAgencyIds || []).map(function (id) {
+        return Number(id);
+    }).filter(function (id) {
+        return Number.isFinite(id);
+    }));
+
+    function formatAgencyLabel(agencyName, fullName) {
+        if (agencyName === 'DA') {
+            return 'DA (Department of Agriculture - RSBSA)';
+        }
+
+        if (agencyName === 'BFAR') {
+            return 'BFAR (Bureau of Fisheries & Aquatic Resources)';
+        }
+
+        if (agencyName === 'DAR') {
+            return 'DAR (Department of Agrarian Reform)';
+        }
+
+        return agencyName + ' (' + (fullName || agencyName) + ')';
+    }
+
+    function resolveAgencyConfig(agencyName) {
+        const agency = agencyLookup[agencyName];
+        if (!agency) {
+            return null;
+        }
+
+        return {
+            id: Number(agency.id),
+            name: agency.name,
+            label: formatAgencyLabel(agency.name, agency.full_name)
+        };
+    }
 
     // Agency mapping based on classification
     const agencyMap = {
-        'Farmer': [
-            { id: 1, name: 'DA', label: 'DA (Department of Agriculture - RSBSA)' },
-            { id: 3, name: 'DAR', label: 'DAR (Department of Agrarian Reform)' }
-        ],
-        'Fisherfolk': [
-            { id: 1, name: 'DA', label: 'DA (Department of Agriculture - RSBSA)' },
-            { id: 2, name: 'BFAR', label: 'BFAR (Bureau of Fisheries & Aquatic Resources)' }
-        ]
+        'Farmer': ['DA', 'DAR'].map(resolveAgencyConfig).filter(Boolean),
+        'Fisherfolk': ['DA', 'BFAR'].map(resolveAgencyConfig).filter(Boolean)
     };
+
+    function syncSelectedAgencyIdsFromDom() {
+        const existingCheckboxes = document.querySelectorAll('input[name="agencies[]"]');
+        if (!existingCheckboxes.length) {
+            return;
+        }
+
+        selectedAgencyIdSet = new Set(Array.from(existingCheckboxes)
+            .filter(function (checkbox) {
+                return checkbox.checked;
+            })
+            .map(function (checkbox) {
+                return Number(checkbox.value);
+            })
+            .filter(function (id) {
+                return Number.isFinite(id);
+            }));
+    }
+
+    function updateAgencySelectionValidity() {
+        const agencyCheckboxes = document.querySelectorAll('input[name="agencies[]"]');
+        if (!agencyCheckboxes.length) {
+            return;
+        }
+
+        const hasSelection = Array.from(agencyCheckboxes).some(function (checkbox) {
+            return checkbox.checked;
+        });
+
+        agencyCheckboxes.forEach(function (checkbox) {
+            checkbox.setCustomValidity(hasSelection ? '' : 'Select at least one source agency.');
+        });
+    }
+
+    function setFieldRequired(fieldName, shouldRequire) {
+        document.querySelectorAll('[name="' + fieldName + '"]').forEach(function (field) {
+            if (field.type === 'hidden') {
+                return;
+            }
+
+            field.required = shouldRequire;
+            if (!shouldRequire) {
+                field.setCustomValidity('');
+            }
+        });
+    }
 
     // Populate agency checkboxes based on classification
     function updateAgencyCheckboxes() {
+        syncSelectedAgencyIdsFromDom();
+
         const classVal = classification.value;
         agencyCheckboxesContainer.innerHTML = '';
 
         const agencies = agencyMap[classVal] || [];
+
+        if (!agencies.length) {
+            toggleSections();
+            return;
+        }
+
         agencies.forEach(agency => {
             const checkbox = document.createElement('div');
             checkbox.className = 'form-check mb-2';
-            const isChecked = selectedAgencyIds.includes(agency.id);
+            const isChecked = selectedAgencyIdSet.has(agency.id);
             checkbox.innerHTML = `
                 <input class="form-check-input agency-checkbox"
                        type="checkbox"
@@ -741,7 +847,16 @@ document.addEventListener('DOMContentLoaded', function () {
             agencyCheckboxesContainer.appendChild(checkbox);
 
             // Add event listener to checkboxes
-            checkbox.querySelector('.agency-checkbox').addEventListener('change', toggleSections);
+            checkbox.querySelector('.agency-checkbox').addEventListener('change', function (event) {
+                const agencyId = Number(event.target.value);
+                if (event.target.checked) {
+                    selectedAgencyIdSet.add(agencyId);
+                } else {
+                    selectedAgencyIdSet.delete(agencyId);
+                }
+
+                toggleSections();
+            });
         });
 
         toggleSections();
@@ -752,67 +867,103 @@ document.addEventListener('DOMContentLoaded', function () {
         const agencyCheckboxes = document.querySelectorAll('input[name="agencies[]"]:checked');
         const selectedAgencies = Array.from(agencyCheckboxes).map(cb => cb.dataset.agencyName.toUpperCase());
         const classVal = classification.value;
+        const hasDa = selectedAgencies.includes('DA');
+        const hasBfar = selectedAgencies.includes('BFAR');
+        const hasDar = selectedAgencies.includes('DAR');
+        const isFarmer = classVal === 'Farmer';
+        const isFisherfolk = classVal === 'Fisherfolk';
 
-        // Show DA Farmer section if: Farmer classification AND DA checked
+        // Show DA Farmer section for DA farmers and DAR farmers to keep custom field visibility aligned.
         if (daFarmerSection) {
-            daFarmerSection.style.display = (classVal === 'Farmer' && selectedAgencies.includes('DA')) ? '' : 'none';
+            daFarmerSection.style.display = (isFarmer && (hasDa || hasDar)) ? '' : 'none';
         }
 
         // Show shared Fisherfolk section if: Fisherfolk classification AND (DA OR BFAR checked)
         const sharedFisherfolkSection = document.getElementById('shared-fisherfolk-section');
         if (sharedFisherfolkSection) {
-            const showShared = classVal === 'Fisherfolk' && (selectedAgencies.includes('DA') || selectedAgencies.includes('BFAR'));
+            const showShared = isFisherfolk && (hasDa || hasBfar);
             sharedFisherfolkSection.style.display = showShared ? '' : 'none';
         }
 
         // Show DA Fisherfolk section if: Fisherfolk classification AND DA checked (RSBSA number only)
         if (daFisherfolkSection) {
-            daFisherfolkSection.style.display = (classVal === 'Fisherfolk' && selectedAgencies.includes('DA')) ? '' : 'none';
+            daFisherfolkSection.style.display = (isFisherfolk && hasDa) ? '' : 'none';
         }
 
         // Show BFAR section if: Fisherfolk classification AND BFAR checked (FishR number only)
         if (bfarSection) {
-            bfarSection.style.display = (classVal === 'Fisherfolk' && selectedAgencies.includes('BFAR')) ? '' : 'none';
+            bfarSection.style.display = (isFisherfolk && hasBfar) ? '' : 'none';
         }
 
         // Show DAR section if: DAR checked (independent of classification)
         if (darSection) {
-            darSection.style.display = selectedAgencies.includes('DAR') ? '' : 'none';
+            darSection.style.display = hasDar ? '' : 'none';
         }
 
-        // Update required attributes for custom fields
+        updateAgencySelectionValidity();
+
+        // Update required attributes to match server-side validation.
         updateRequiredFields(selectedAgencies, classVal);
     }
 
     // Update required attributes based on visible sections
     function updateRequiredFields(selectedAgencies, classVal) {
-        document.querySelectorAll('[data-agency-required]').forEach((field) => {
-            const requiredFor = field.dataset.agencyRequired;
-            const configuredRequired = field.dataset.customRequired === '1';
+        const hasDa = selectedAgencies.includes('DA');
+        const hasBfar = selectedAgencies.includes('BFAR');
+        const hasDar = selectedAgencies.includes('DAR');
+        const isFarmer = classVal === 'Farmer';
+        const isFisherfolk = classVal === 'Fisherfolk';
+        const showSharedFisherfolk = isFisherfolk && (hasDa || hasBfar);
 
-            if (!configuredRequired) {
-                field.required = false;
-                return;
-            }
+        setFieldRequired('farm_ownership', conditionalRequirements.farmOwnership && hasDa && isFarmer);
+        setFieldRequired('farm_size_hectares', hasDa && isFarmer);
+        setFieldRequired('primary_commodity', hasDa && isFarmer);
+        setFieldRequired('farm_type', conditionalRequirements.farmType && hasDa && isFarmer);
+
+        setFieldRequired('fisherfolk_type', conditionalRequirements.fisherfolkType && showSharedFisherfolk);
+        setFieldRequired('length_of_residency_months', showSharedFisherfolk);
+
+        setFieldRequired('cloa_ep_number', hasDar);
+        setFieldRequired('arb_classification', conditionalRequirements.arbClassification && hasDar);
+        setFieldRequired('landholding_description', hasDar);
+        setFieldRequired('land_area_awarded_hectares', hasDar);
+        setFieldRequired('ownership_scheme', conditionalRequirements.ownershipScheme && hasDar);
+
+        document.querySelectorAll('[data-custom-placement]').forEach((field) => {
+            const configuredRequired = field.dataset.customRequired === '1';
+            const placement = field.dataset.customPlacement;
 
             let shouldRequire = false;
 
-            if (requiredFor === 'DA_FARMER' && selectedAgencies.includes('DA') && classVal === 'Farmer') {
-                shouldRequire = true;
-            } else if (requiredFor === 'DA_FISHERFOLK' && selectedAgencies.includes('DA') && classVal === 'Fisherfolk') {
-                shouldRequire = true;
-            } else if (requiredFor === 'BFAR' && selectedAgencies.includes('BFAR') && classVal === 'Fisherfolk') {
-                shouldRequire = true;
-            } else if (requiredFor === 'DAR' && selectedAgencies.includes('DAR')) {
-                shouldRequire = true;
+            if (configuredRequired) {
+                if (placement === 'farmer_information') {
+                    shouldRequire = (hasDa && isFarmer) || hasDar;
+                } else if (placement === 'fisherfolk_information') {
+                    shouldRequire = (hasDa && isFisherfolk) || hasBfar;
+                } else if (placement === 'dar_information') {
+                    shouldRequire = hasDar;
+                } else {
+                    shouldRequire = true;
+                }
             }
 
             field.required = shouldRequire;
+            if (!shouldRequire) {
+                field.setCustomValidity('');
+            }
         });
     }
 
     function toggleAssociation() {
         associationWrapper.style.display = associationCheckbox.checked ? '' : 'none';
+
+        const associationNameField = document.getElementById('association_name');
+        if (associationNameField) {
+            associationNameField.required = associationCheckbox.checked;
+            if (!associationCheckbox.checked) {
+                associationNameField.setCustomValidity('');
+            }
+        }
     }
 
     function toggleVesselFields() {

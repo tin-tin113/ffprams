@@ -31,11 +31,12 @@
                         <tr>
                             <th>Barangay</th>
                             <th class="text-center">Total Records</th>
-                            <th class="text-center">Pending</th>
-                            <th class="text-center">Distributed</th>
-                            <th class="text-center">Completed</th>
-                            <th class="text-center">Distributed Today</th>
-                            <th class="text-center">Distribution Rate</th>
+                            <th class="text-center">Planned</th>
+                            <th class="text-center">Ready for Release</th>
+                            <th class="text-center">Released</th>
+                            <th class="text-center">Not Received</th>
+                            <th class="text-center">Released Today</th>
+                            <th class="text-center">Release Rate</th>
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
@@ -43,7 +44,7 @@
                         @forelse($analytics as $barangayAnalytic)
                             @php
                                 $distributionRate = $barangayAnalytic['total'] > 0
-                                    ? ($barangayAnalytic['distributed'] / $barangayAnalytic['total'] * 100)
+                                    ? ($barangayAnalytic['released'] / $barangayAnalytic['total'] * 100)
                                     : 0;
                             @endphp
                             <tr>
@@ -53,30 +54,37 @@
                                 <td class="text-center" data-label="Total Records">
                                     <span class="badge bg-light text-dark">{{ $barangayAnalytic['total'] }}</span>
                                 </td>
-                                <td class="text-center" data-label="Pending">
-                                    @if($barangayAnalytic['pending'] > 0)
-                                        <span class="badge bg-warning text-dark">{{ $barangayAnalytic['pending'] }}</span>
+                                <td class="text-center" data-label="Planned">
+                                    @if($barangayAnalytic['planned'] > 0)
+                                        <span class="badge bg-warning text-dark">{{ $barangayAnalytic['planned'] }}</span>
                                     @else
                                         <span class="badge bg-light text-muted">0</span>
                                     @endif
                                 </td>
-                                <td class="text-center" data-label="Distributed">
-                                    @if($barangayAnalytic['distributed'] > 0)
-                                        <span class="badge bg-success">{{ $barangayAnalytic['distributed'] }}</span>
+                                <td class="text-center" data-label="Ready for Release">
+                                    @if($barangayAnalytic['ready_for_release'] > 0)
+                                        <span class="badge bg-primary">{{ $barangayAnalytic['ready_for_release'] }}</span>
                                     @else
                                         <span class="badge bg-light text-muted">0</span>
                                     @endif
                                 </td>
-                                <td class="text-center" data-label="Completed">
-                                    @if($barangayAnalytic['completed'] > 0)
-                                        <span class="badge bg-info">{{ $barangayAnalytic['completed'] }}</span>
+                                <td class="text-center" data-label="Released">
+                                    @if($barangayAnalytic['released'] > 0)
+                                        <span class="badge bg-success">{{ $barangayAnalytic['released'] }}</span>
                                     @else
                                         <span class="badge bg-light text-muted">0</span>
                                     @endif
                                 </td>
-                                <td class="text-center" data-label="Distributed Today">
-                                    @if($barangayAnalytic['distributed_today'] > 0)
-                                        <span class="badge bg-primary">{{ $barangayAnalytic['distributed_today'] }}</span>
+                                <td class="text-center" data-label="Not Received">
+                                    @if($barangayAnalytic['not_received'] > 0)
+                                        <span class="badge bg-danger">{{ $barangayAnalytic['not_received'] }}</span>
+                                    @else
+                                        <span class="badge bg-light text-muted">0</span>
+                                    @endif
+                                </td>
+                                <td class="text-center" data-label="Released Today">
+                                    @if($barangayAnalytic['released_today'] > 0)
+                                        <span class="badge bg-primary">{{ $barangayAnalytic['released_today'] }}</span>
                                     @else
                                         <span class="text-muted">—</span>
                                     @endif
@@ -134,19 +142,19 @@
         <div class="col-12 col-sm-6 col-lg-3">
             <div class="card border-0 shadow-sm bg-light">
                 <div class="card-body text-center">
-                    <h5 class="card-title text-muted">Total Distributed</h5>
-                    <h2 class="mb-0">{{ array_sum(array_column($analytics, 'distributed')) }}</h2>
+                    <h5 class="card-title text-muted">Total Released</h5>
+                    <h2 class="mb-0">{{ array_sum(array_column($analytics, 'released')) }}</h2>
                 </div>
             </div>
         </div>
         <div class="col-12 col-sm-6 col-lg-3">
             <div class="card border-0 shadow-sm bg-light">
                 <div class="card-body text-center">
-                    <h5 class="card-title text-muted">Overall Rate</h5>
+                    <h5 class="card-title text-muted">Overall Release Rate</h5>
                     @php
                         $totalRecords = array_sum(array_column($analytics, 'total'));
-                        $totalDistributed = array_sum(array_column($analytics, 'distributed'));
-                        $overallRate = $totalRecords > 0 ? ($totalDistributed / $totalRecords * 100) : 0;
+                        $totalReleased = array_sum(array_column($analytics, 'released'));
+                        $overallRate = $totalRecords > 0 ? ($totalReleased / $totalRecords * 100) : 0;
                     @endphp
                     <h2 class="mb-0">{{ round($overallRate) }}%</h2>
                 </div>

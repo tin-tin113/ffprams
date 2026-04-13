@@ -14,7 +14,15 @@ class ResourceType extends Model
         'description',
         'source_agency',
         'agency_id',
+        'is_active',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+        ];
+    }
 
     protected static function boot(): void
     {

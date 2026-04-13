@@ -111,6 +111,41 @@ class BeneficiaryAttachmentController extends Controller
         );
     }
 
+    public function view(Beneficiary $beneficiary, BeneficiaryAttachment $attachment): BinaryFileResponse
+    {
+        $userId = Auth::id();
+        if ($userId === null) {
+            abort(403, 'Authentication is required to view attachments.');
+        }
+
+        abort_unless($attachment->beneficiary_id === $beneficiary->id, 404);
+
+        if (! Storage::disk($attachment->disk)->exists($attachment->path)) {
+            abort(404, 'Attachment file not found in storage.');
+        }
+
+        $this->audit->log(
+            $userId,
+            'viewed',
+            'beneficiary_attachments',
+            $attachment->id,
+            [],
+            [
+                'beneficiary_id' => $beneficiary->id,
+                'path' => $attachment->path,
+                'original_name' => $attachment->original_name,
+            ],
+        );
+
+        return response()->file(
+            Storage::disk($attachment->disk)->path($attachment->path),
+            [
+                'Content-Type' => $attachment->mime_type ?: 'application/octet-stream',
+                'X-Content-Type-Options' => 'nosniff',
+            ],
+        );
+    }
+
     public function destroy(Beneficiary $beneficiary, BeneficiaryAttachment $attachment): RedirectResponse
     {
         $userId = Auth::id();

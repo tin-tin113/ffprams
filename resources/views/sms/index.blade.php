@@ -58,27 +58,53 @@
         <div class="card-header bg-white fw-semibold">
             <i class="bi bi-sliders me-1"></i> SMS Automation Settings
         </div>
-        <div class="card-body d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-            <div>
-                <div class="fw-semibold">Send SMS when a beneficiary is created</div>
-                <div class="text-muted small">When enabled, newly created beneficiaries with a contact number will receive a registration message automatically.</div>
-            </div>
-            <form method="POST" action="{{ route('sms.settings.beneficiary-registration') }}" class="d-flex align-items-center gap-2">
+        <div class="card-body">
+            <form method="POST" action="{{ route('sms.settings.automation') }}" class="d-flex flex-column gap-3">
                 @csrf
-                <div class="form-check form-switch m-0">
-                    <input
-                        class="form-check-input"
-                        type="checkbox"
-                        id="sendOnBeneficiaryCreate"
-                        name="send_on_beneficiary_create"
-                        value="1"
-                        {{ $sendOnBeneficiaryCreate ? 'checked' : '' }}
-                    >
-                    <label class="form-check-label" for="sendOnBeneficiaryCreate">
-                        {{ $sendOnBeneficiaryCreate ? 'Enabled' : 'Disabled' }}
-                    </label>
+
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+                    <div>
+                        <div class="fw-semibold">Send SMS when a distribution event becomes Ongoing</div>
+                        <div class="text-muted small">When enabled, beneficiaries linked to the event will receive an automatic schedule notification.</div>
+                    </div>
+                    <div class="form-check form-switch m-0">
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            id="sendOnEventOngoing"
+                            name="send_on_event_ongoing"
+                            value="1"
+                            {{ $sendOnEventOngoing ? 'checked' : '' }}
+                        >
+                        <label class="form-check-label" for="sendOnEventOngoing">
+                            {{ $sendOnEventOngoing ? 'Enabled' : 'Disabled' }}
+                        </label>
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
+
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+                    <div>
+                        <div class="fw-semibold">Send SMS when direct assistance becomes Ready for Release</div>
+                        <div class="text-muted small">When enabled, beneficiaries are notified once their direct assistance is set to Ready for Release.</div>
+                    </div>
+                    <div class="form-check form-switch m-0">
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            id="sendOnDirectAssistanceStatusChange"
+                            name="send_on_direct_assistance_status_change"
+                            value="1"
+                            {{ $sendOnDirectAssistanceStatusChange ? 'checked' : '' }}
+                        >
+                        <label class="form-check-label" for="sendOnDirectAssistanceStatusChange">
+                            {{ $sendOnDirectAssistanceStatusChange ? 'Enabled' : 'Disabled' }}
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
+                </div>
             </form>
         </div>
     </div>
@@ -95,18 +121,26 @@
             {{-- Step 1 — Select Recipients --}}
             <label class="form-label fw-semibold mb-3">Send To</label>
             <div class="row g-3 mb-3" id="recipientCards">
-                {{-- All Beneficiaries --}}
-                <div class="col-md-3 col-6">
-                    <div class="card h-100 text-center recipient-card" data-type="all" role="button" tabindex="0">
+                {{-- By Program --}}
+                <div class="col-lg-3 col-md-4 col-6">
+                    <div class="card h-100 text-center recipient-card" data-type="by_program" role="button" tabindex="0">
                         <div class="card-body py-3">
-                            <i class="bi bi-people-fill fs-3 d-block mb-1"></i>
-                            <div class="fw-semibold small">All Beneficiaries</div>
-                            <span class="badge bg-secondary mt-1">{{ $totalActive }}</span>
+                            <i class="bi bi-diagram-3-fill fs-3 d-block mb-1"></i>
+                            <div class="fw-semibold small">By Program</div>
+                        </div>
+                    </div>
+                </div>
+                {{-- By Distribution Event --}}
+                <div class="col-lg-3 col-md-4 col-6">
+                    <div class="card h-100 text-center recipient-card" data-type="by_event" role="button" tabindex="0">
+                        <div class="card-body py-3">
+                            <i class="bi bi-calendar-event-fill fs-3 d-block mb-1"></i>
+                            <div class="fw-semibold small">By Event</div>
                         </div>
                     </div>
                 </div>
                 {{-- By Barangay --}}
-                <div class="col-md-3 col-6">
+                <div class="col-lg-3 col-md-4 col-6">
                     <div class="card h-100 text-center recipient-card" data-type="by_barangay" role="button" tabindex="0">
                         <div class="card-body py-3">
                             <i class="bi bi-geo-alt-fill fs-3 d-block mb-1"></i>
@@ -115,7 +149,7 @@
                     </div>
                 </div>
                 {{-- By Classification --}}
-                <div class="col-md-3 col-6">
+                <div class="col-lg-3 col-md-4 col-6">
                     <div class="card h-100 text-center recipient-card" data-type="by_classification" role="button" tabindex="0">
                         <div class="card-body py-3">
                             <i class="bi bi-funnel-fill fs-3 d-block mb-1"></i>
@@ -124,7 +158,7 @@
                     </div>
                 </div>
                 {{-- Select Specific --}}
-                <div class="col-md-3 col-6">
+                <div class="col-lg-3 col-md-4 col-6">
                     <div class="card h-100 text-center recipient-card" data-type="selected" role="button" tabindex="0">
                         <div class="card-body py-3">
                             <i class="bi bi-person-check-fill fs-3 d-block mb-1"></i>
@@ -132,6 +166,30 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {{-- Program Dropdown (hidden) --}}
+            <div id="programFilter" class="mb-3" style="display:none;">
+                <label for="programSelect" class="form-label">Select Program</label>
+                <select class="form-select" id="programSelect">
+                    <option value="" disabled selected>Choose program...</option>
+                    @foreach($programs as $program)
+                        <option value="{{ $program->id }}">{{ $program->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Event Dropdown (hidden) --}}
+            <div id="eventFilter" class="mb-3" style="display:none;">
+                <label for="eventSelect" class="form-label">Select Event</label>
+                <select class="form-select" id="eventSelect">
+                    <option value="" disabled selected>Choose event...</option>
+                    @foreach($events as $event)
+                        <option value="{{ $event->id }}">
+                            {{ $event->programName->name ?? 'Program N/A' }} - {{ $event->barangay->name ?? 'Barangay N/A' }} - {{ $event->distribution_date?->format('M d, Y') }} ({{ $event->status }})
+                        </option>
+                    @endforeach
+                </select>
             </div>
 
             {{-- Barangay Dropdown (hidden) --}}
@@ -403,9 +461,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ── Elements ────────────────────────────────
     var cards              = document.querySelectorAll('.recipient-card');
+    var programFilter      = document.getElementById('programFilter');
+    var eventFilter        = document.getElementById('eventFilter');
     var barangayFilter     = document.getElementById('barangayFilter');
     var classificationFilter = document.getElementById('classificationFilter');
     var specificSelector   = document.getElementById('specificSelector');
+    var programSelect      = document.getElementById('programSelect');
+    var eventSelect        = document.getElementById('eventSelect');
     var barangaySelect     = document.getElementById('barangaySelect');
     var classificationSelect = document.getElementById('classificationSelect');
     var previewCard        = document.getElementById('previewCard');
@@ -440,13 +502,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
             recipientType = card.dataset.type;
 
+            programFilter.style.display      = recipientType === 'by_program' ? '' : 'none';
+            eventFilter.style.display        = recipientType === 'by_event' ? '' : 'none';
             barangayFilter.style.display     = recipientType === 'by_barangay' ? '' : 'none';
             classificationFilter.style.display = recipientType === 'by_classification' ? '' : 'none';
             specificSelector.style.display   = recipientType === 'selected' ? '' : 'none';
 
-            if (recipientType === 'all') {
-                fetchPreview();
-            } else if (recipientType === 'selected') {
+            if (recipientType === 'selected') {
                 loadAllBeneficiaries();
                 previewData = { count: 0, recipients: [] };
                 updatePreviewUI();
@@ -458,7 +520,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // ── Barangay / Classification change ────────
+    // ── Filter change handlers ───────────────────
+    programSelect.addEventListener('change', function () { fetchPreview(); });
+    eventSelect.addEventListener('change', function () { fetchPreview(); });
     barangaySelect.addEventListener('change', function () { fetchPreview(); });
     classificationSelect.addEventListener('change', function () { fetchPreview(); });
 
@@ -467,10 +531,14 @@ document.addEventListener('DOMContentLoaded', function () {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(function () {
             var body = { recipient_type: recipientType };
+            if (recipientType === 'by_program') body.program_name_id = programSelect.value;
+            if (recipientType === 'by_event') body.distribution_event_id = eventSelect.value;
             if (recipientType === 'by_barangay') body.barangay_id = barangaySelect.value;
             if (recipientType === 'by_classification') body.classification = classificationSelect.value;
             if (recipientType === 'selected') body.beneficiary_ids = getSelectedIds();
 
+            if (recipientType === 'by_program' && !body.program_name_id) return;
+            if (recipientType === 'by_event' && !body.distribution_event_id) return;
             if (recipientType === 'by_barangay' && !body.barangay_id) return;
             if (recipientType === 'by_classification' && !body.classification) return;
 
@@ -516,10 +584,9 @@ document.addEventListener('DOMContentLoaded', function () {
             renderBeneficiaryList();
             return;
         }
-        fetch('{{ route("sms.preview") }}', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
-            body: JSON.stringify({ recipient_type: 'all' })
+        fetch('{{ route("sms.beneficiaries") }}', {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
         })
         .then(function (r) { return r.json(); })
         .then(function (data) {
@@ -644,6 +711,8 @@ document.addEventListener('DOMContentLoaded', function () {
             recipient_type: recipientType,
             message: smsMessage.value,
         };
+        if (recipientType === 'by_program') body.program_name_id = programSelect.value;
+        if (recipientType === 'by_event') body.distribution_event_id = eventSelect.value;
         if (recipientType === 'by_barangay') body.barangay_id = barangaySelect.value;
         if (recipientType === 'by_classification') body.classification = classificationSelect.value;
         if (recipientType === 'selected') body.beneficiary_ids = getSelectedIds();

@@ -12,6 +12,7 @@ use App\Http\Controllers\DistributionEventController;
 use App\Http\Controllers\AllocationController;
 use App\Http\Controllers\DirectAssistanceController;
 use App\Http\Controllers\GeoMapController;
+use App\Http\Controllers\RecordAttachmentController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\SmsController;
 use Illuminate\Support\Facades\Auth;
@@ -59,6 +60,8 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
         ->name('beneficiaries.attachments.create');
     Route::post('beneficiaries/{beneficiary}/attachments', [BeneficiaryAttachmentController::class, 'store'])
         ->name('beneficiaries.attachments.store');
+    Route::get('beneficiaries/{beneficiary}/attachments/{attachment}/view', [BeneficiaryAttachmentController::class, 'view'])
+        ->name('beneficiaries.attachments.view');
     Route::get('beneficiaries/{beneficiary}/attachments/{attachment}', [BeneficiaryAttachmentController::class, 'download'])
         ->name('beneficiaries.attachments.download');
     Route::delete('beneficiaries/{beneficiary}/attachments/{attachment}', [BeneficiaryAttachmentController::class, 'destroy'])
@@ -77,6 +80,14 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
         ->name('distribution-events.approveBeneficiaryList');
     Route::post('distribution-events/{event}/compliance', [DistributionEventController::class, 'updateCompliance'])
         ->name('distribution-events.updateCompliance');
+    Route::post('distribution-events/{event}/attachments', [RecordAttachmentController::class, 'storeForEvent'])
+        ->name('distribution-events.attachments.store');
+    Route::get('distribution-events/{event}/attachments/{recordAttachment}/view', [RecordAttachmentController::class, 'viewForEvent'])
+        ->name('distribution-events.attachments.view');
+    Route::get('distribution-events/{event}/attachments/{recordAttachment}/download', [RecordAttachmentController::class, 'downloadForEvent'])
+        ->name('distribution-events.attachments.download');
+    Route::delete('distribution-events/{event}/attachments/{recordAttachment}', [RecordAttachmentController::class, 'destroyForEvent'])
+        ->name('distribution-events.attachments.destroy');
 
     // Allocations
     Route::post('allocations', [AllocationController::class, 'store'])
@@ -98,15 +109,36 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
         ->name('allocations.markNotReceived');
     Route::post('allocations/bulk-release-outcome', [AllocationController::class, 'bulkUpdateReleaseOutcome'])
         ->name('allocations.bulkReleaseOutcome');
+    Route::post('allocations/{allocation}/attachments', [RecordAttachmentController::class, 'storeForAllocation'])
+        ->name('allocations.attachments.store');
+    Route::get('allocations/{allocation}/attachments/{recordAttachment}/view', [RecordAttachmentController::class, 'viewForAllocation'])
+        ->name('allocations.attachments.view');
+    Route::get('allocations/{allocation}/attachments/{recordAttachment}/download', [RecordAttachmentController::class, 'downloadForAllocation'])
+        ->name('allocations.attachments.download');
+    Route::delete('allocations/{allocation}/attachments/{recordAttachment}', [RecordAttachmentController::class, 'destroyForAllocation'])
+        ->name('allocations.attachments.destroy');
 
     // Direct Assistance
     Route::resource('direct-assistance', DirectAssistanceController::class);
+    Route::post('direct-assistance/{direct_assistance}/mark-ready-for-release', [DirectAssistanceController::class, 'markReadyForRelease'])
+        ->name('direct-assistance.mark-ready-for-release');
+    Route::post('direct-assistance/{direct_assistance}/mark-released', [DirectAssistanceController::class, 'markReleased'])
+        ->name('direct-assistance.mark-released');
+    // Legacy alias for older UI/tests calling mark-distributed.
     Route::post('direct-assistance/{direct_assistance}/mark-distributed', [DirectAssistanceController::class, 'markDistributed'])
         ->name('direct-assistance.mark-distributed');
     Route::post('direct-assistance/{direct_assistance}/mark-not-received', [DirectAssistanceController::class, 'markNotReceived'])
         ->name('direct-assistance.mark-not-received');
     Route::get('direct-assistance-barangay-analytics', [DirectAssistanceController::class, 'barangayAnalytics'])
         ->name('direct-assistance.barangay-analytics');
+    Route::post('direct-assistance/{direct_assistance}/attachments', [RecordAttachmentController::class, 'storeForDirectAssistance'])
+        ->name('direct-assistance.attachments.store');
+    Route::get('direct-assistance/{direct_assistance}/attachments/{recordAttachment}/view', [RecordAttachmentController::class, 'viewForDirectAssistance'])
+        ->name('direct-assistance.attachments.view');
+    Route::get('direct-assistance/{direct_assistance}/attachments/{recordAttachment}/download', [RecordAttachmentController::class, 'downloadForDirectAssistance'])
+        ->name('direct-assistance.attachments.download');
+    Route::delete('direct-assistance/{direct_assistance}/attachments/{recordAttachment}', [RecordAttachmentController::class, 'destroyForDirectAssistance'])
+        ->name('direct-assistance.attachments.destroy');
 
     // API endpoints for eligible programs (used by allocation forms)
     Route::get('api/eligible-programs/{beneficiary}', [DirectAssistanceController::class, 'getEligiblePrograms'])
@@ -120,8 +152,9 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
 
     // SMS Broadcast
     Route::get('sms', [SmsController::class, 'index'])->name('sms.index');
-    Route::post('sms/settings/beneficiary-registration', [SmsController::class, 'updateBeneficiaryRegistrationSmsSetting'])
-        ->name('sms.settings.beneficiary-registration');
+    Route::post('sms/settings/automation', [SmsController::class, 'updateAutomationSettings'])
+        ->name('sms.settings.automation');
+    Route::get('sms/beneficiaries', [SmsController::class, 'beneficiaries'])->name('sms.beneficiaries');
     Route::post('sms/preview', [SmsController::class, 'preview'])->name('sms.preview');
     Route::post('sms/send', [SmsController::class, 'send'])->name('sms.send');
 

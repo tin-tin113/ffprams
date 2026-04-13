@@ -338,6 +338,101 @@
         </div>
     @endif
 
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white fw-semibold">
+            <i class="bi bi-paperclip me-1"></i> Event Documents
+        </div>
+        <div class="card-body">
+            <form action="{{ route('distribution-events.attachments.store', $event) }}"
+                  method="POST"
+                  enctype="multipart/form-data"
+                  class="row g-3 align-items-end mb-3"
+                  data-submit-spinner>
+                @csrf
+                <div class="col-md-4">
+                    <label for="event_document_type" class="form-label">Document Type</label>
+                    <input type="text"
+                           class="form-control"
+                           id="event_document_type"
+                           name="document_type"
+                           maxlength="100"
+                           placeholder="e.g. Attendance Sheet, Delivery Receipt">
+                </div>
+                <div class="col-md-5">
+                    <label for="event_attachment" class="form-label">Attachment File <span class="text-danger">*</span></label>
+                    <input type="file"
+                           class="form-control"
+                           id="event_attachment"
+                           name="attachment"
+                           accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.txt"
+                           required>
+                    <div class="form-text">Supported files: PDF, JPG, JPEG, PNG, DOC, DOCX, XLS, XLSX, CSV, TXT. Maximum: 10 MB.</div>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-upload me-1"></i> Upload Document
+                    </button>
+                </div>
+            </form>
+
+            @if($event->attachments->isNotEmpty())
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 table-responsive-cards">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Type</th>
+                                <th>File Name</th>
+                                <th>Size</th>
+                                <th>Uploaded By</th>
+                                <th>Uploaded At</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($event->attachments as $attachment)
+                                <tr>
+                                    <td data-label="Type">{{ $attachment->document_type ?: 'Uncategorized' }}</td>
+                                    <td class="text-break" data-label="File Name">{{ $attachment->original_name }}</td>
+                                    <td data-label="Size">{{ number_format($attachment->size_bytes / 1024, 2) }} KB</td>
+                                    <td data-label="Uploaded By">{{ $attachment->uploader?->name ?? 'System' }}</td>
+                                    <td data-label="Uploaded At">{{ $attachment->created_at->format('M d, Y h:i A') }}</td>
+                                    <td class="text-end text-nowrap" data-label="Actions">
+                                        <a href="{{ route('distribution-events.attachments.view', [$event, $attachment]) }}"
+                                           class="btn btn-sm btn-outline-secondary me-1"
+                                           target="_blank"
+                                           rel="noopener">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                        <a href="{{ route('distribution-events.attachments.download', [$event, $attachment]) }}"
+                                           class="btn btn-sm btn-outline-primary me-1">
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
+                                        <form action="{{ route('distribution-events.attachments.destroy', [$event, $attachment]) }}"
+                                              method="POST"
+                                              class="d-inline"
+                                              data-confirm-title="Delete Attachment"
+                                              data-confirm-message="Delete {{ $attachment->original_name }} from this event?">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash"></i> Delete
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <p class="text-muted mb-0">
+                    <i class="bi bi-inbox me-1"></i>
+                    No event documents uploaded yet.
+                </p>
+            @endif
+        </div>
+    </div>
+
     {{-- ============================================================ --}}
     {{-- 2. ALLOCATION SUMMARY CARDS                                  --}}
     {{-- ============================================================ --}}

@@ -108,30 +108,30 @@
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body">
             <form method="GET" action="{{ route('distribution-events.index') }}">
-                <div class="row g-3 align-items-end">
-                    <div class="col-md">
-                        <label class="form-label">Barangay</label>
-                        <select class="form-select" name="barangay_id">
-                            <option value="">All Barangays</option>
-                            @foreach($barangays as $barangay)
-                                <option value="{{ $barangay->id }}" {{ request('barangay_id') == $barangay->id ? 'selected' : '' }}>
-                                    {{ $barangay->name }}
+                <div class="row g-2 align-items-end">
+                    <div class="col-xl-3 col-lg-3 col-md-6">
+                        <label class="form-label">Program</label>
+                        <select class="form-select" name="program_name_id">
+                            <option value="">All Programs</option>
+                            @foreach($programNames as $program)
+                                <option value="{{ $program->id }}" {{ request('program_name_id') == $program->id ? 'selected' : '' }}>
+                                    {{ $program->name }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md">
-                        <label class="form-label">Resource Type</label>
-                        <select class="form-select" name="resource_type_id">
-                            <option value="">All Types</option>
-                            @foreach($resourceTypes as $type)
-                                <option value="{{ $type->id }}" {{ request('resource_type_id') == $type->id ? 'selected' : '' }}>
-                                    {{ $type->name }}
+                    <div class="col-xl-2 col-lg-2 col-md-6">
+                        <label class="form-label">Agency</label>
+                        <select class="form-select" name="agency_id">
+                            <option value="">All Agencies</option>
+                            @foreach($agencies as $agency)
+                                <option value="{{ $agency->id }}" {{ (string) request('agency_id') === (string) $agency->id ? 'selected' : '' }}>
+                                    {{ $agency->name }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md">
+                    <div class="col-xl-2 col-lg-2 col-md-6">
                         <label class="form-label">Status</label>
                         <select class="form-select" name="status">
                             <option value="">All Statuses</option>
@@ -142,25 +142,20 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md">
-                        <label class="form-label">Type</label>
-                        <select class="form-select" name="type">
-                            <option value="">All</option>
-                            <option value="physical" {{ request('type') === 'physical' ? 'selected' : '' }}>Physical</option>
-                            <option value="financial" {{ request('type') === 'financial' ? 'selected' : '' }}>Financial</option>
+                    <div class="col-xl-2 col-lg-2 col-md-6">
+                        <label class="form-label">Sort</label>
+                        <select class="form-select" name="sort">
+                            <option value="date_desc" {{ request('sort', 'date_desc') === 'date_desc' ? 'selected' : '' }}>Date: Newest</option>
+                            <option value="date_asc" {{ request('sort') === 'date_asc' ? 'selected' : '' }}>Date: Oldest</option>
+                            <option value="program_asc" {{ request('sort') === 'program_asc' ? 'selected' : '' }}>Program: A-Z</option>
+                            <option value="program_desc" {{ request('sort') === 'program_desc' ? 'selected' : '' }}>Program: Z-A</option>
+                            <option value="status_asc" {{ request('sort') === 'status_asc' ? 'selected' : '' }}>Status: A-Z</option>
+                            <option value="status_desc" {{ request('sort') === 'status_desc' ? 'selected' : '' }}>Status: Z-A</option>
                         </select>
                     </div>
-                    <div class="col-md">
-                        <label class="form-label">From</label>
-                        <input type="date" class="form-control" name="from" value="{{ request('from') }}">
-                    </div>
-                    <div class="col-md">
-                        <label class="form-label">To</label>
-                        <input type="date" class="form-control" name="to" value="{{ request('to') }}">
-                    </div>
-                    <div class="col-md-auto d-flex gap-2">
+                    <div class="col-xl-3 col-lg-3 col-md-12 d-flex gap-2">
                         <button type="submit" class="btn btn-success">
-                            <i class="bi bi-search me-1"></i> Search
+                            <i class="bi bi-funnel me-1"></i> Apply
                         </button>
                         <a href="{{ route('distribution-events.index') }}" class="btn btn-outline-secondary">Clear</a>
                     </div>
@@ -240,9 +235,14 @@
                                             <i class="bi bi-pencil-square"></i> <span class="btn-action-label">Edit</span>
                                         </a>
                                         @if(Auth::user()->role === 'admin')
+                                            @php
+                                                $deleteMessage = "Are you sure you want to delete event in {$event->barangay->name} on {$event->distribution_date->format('M d, Y')}? This action cannot be undone.";
+                                            @endphp
                                             <button type="button"
                                                     class="btn btn-sm btn-outline-danger" title="Delete"
-                                                    onclick="confirmAction('Confirm Deletion', 'Are you sure you want to delete event in {{ e($event->barangay->name) }} on {{ $event->distribution_date->format('M d, Y') }}? This action cannot be undone.', '{{ route('distribution-events.destroy', $event) }}', 'DELETE')">
+                                                    data-confirm-message="{{ $deleteMessage }}"
+                                                    data-delete-url="{{ route('distribution-events.destroy', $event) }}"
+                                                    onclick="confirmAction('Confirm Deletion', this.dataset.confirmMessage, this.dataset.deleteUrl, 'DELETE')">
                                                 <i class="bi bi-trash"></i> <span class="btn-action-label">Delete</span>
                                             </button>
                                         @endif
