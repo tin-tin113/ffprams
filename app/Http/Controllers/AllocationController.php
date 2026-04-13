@@ -13,11 +13,13 @@ use App\Models\ResourceType;
 use App\Services\AuditLogService;
 use App\Services\ProgramEligibilityService;
 use App\Services\ReleaseOutcomeService;
+use App\Services\SemaphoreService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -31,6 +33,7 @@ class AllocationController extends Controller
     public function __construct(
         private AuditLogService $audit,
         private ReleaseOutcomeService $releaseOutcome,
+        private SemaphoreService $sms,
     ) {}
 
     public function index(Request $request): View
@@ -48,7 +51,7 @@ class AllocationController extends Controller
         $assistancePurposes = AssistancePurpose::active()->orderBy('name')->get();
 
         $status = (string) $request->input('status', '');
-        $allowedStatusFilters = ['planned', 'released', 'not_received'];
+        $allowedStatusFilters = ['planned', 'ready_for_release', 'released', 'not_received'];
         $sort = (string) $request->input('sort', 'date_desc');
         $allowedSorts = ['date_desc', 'date_asc', 'program_asc', 'program_desc', 'status_asc', 'status_desc'];
 
@@ -77,15 +80,7 @@ class AllocationController extends Controller
                         ->orWhereHas('programName', fn ($programQuery) => $programQuery->where('agency_id', $agencyId));
                 });
             })
-            ->when($status === 'released', fn ($query) => $query->whereNotNull('distributed_at'))
-            ->when($status === 'not_received', fn ($query) => $query->where('release_outcome', 'not_received'))
-            ->when($status === 'planned', function ($query) {
-                $query->whereNull('distributed_at')
-                    ->where(function ($statusQuery) {
-                        $statusQuery->whereNull('release_outcome')
-                            ->orWhere('release_outcome', '!=', 'not_received');
-                    });
-            })
+            ->when($status !== '', fn ($query) => $query->whereReleaseStatus($status))
             ->when($sort === 'date_desc', fn ($query) => $query->orderByDesc('created_at'))
             ->when($sort === 'date_asc', fn ($query) => $query->orderBy('created_at'))
             ->when($sort === 'program_asc', fn ($query) => $query->orderBy(
@@ -95,10 +90,10 @@ class AllocationController extends Controller
                 ProgramName::select('name')->whereColumn('program_names.id', 'allocations.program_name_id')
             ))
             ->when($sort === 'status_asc', fn ($query) => $query->orderByRaw(
-                "CASE WHEN release_outcome = 'not_received' THEN 3 WHEN distributed_at IS NOT NULL THEN 2 ELSE 1 END ASC"
+                "CASE WHEN release_outcome = 'not_received' THEN 4 WHEN distributed_at IS NOT NULL OR release_outcome = 'received' THEN 3 WHEN is_ready_for_release = 1 THEN 2 ELSE 1 END ASC"
             ))
             ->when($sort === 'status_desc', fn ($query) => $query->orderByRaw(
-                "CASE WHEN release_outcome = 'not_received' THEN 3 WHEN distributed_at IS NOT NULL THEN 2 ELSE 1 END DESC"
+                "CASE WHEN release_outcome = 'not_received' THEN 4 WHEN distributed_at IS NOT NULL OR release_outcome = 'received' THEN 3 WHEN is_ready_for_release = 1 THEN 2 ELSE 1 END DESC"
             ))
             ->paginate(30)
             ->withQueryString();
@@ -956,7 +951,22 @@ class AllocationController extends Controller
                 ->with('error', 'Cannot mark as distributed while event is still Pending.');
         }
 
-        if ($allocation->distributed_at || $allocation->release_outcome === 'not_received') {
+        if ($allocation->isDirect()) {
+            if ($allocation->release_status === 'released') {
+                return redirect()->back()
+                    ->with('error', 'This direct allocation is already marked as released.');
+            }
+
+            if ($allocation->release_status === 'not_received') {
+                return redirect()->back()
+                    ->with('error', 'Set this direct allocation to Ready for Release before marking it as released.');
+            }
+
+            if (! (bool) $allocation->is_ready_for_release) {
+                return redirect()->back()
+                    ->with('error', 'Set this direct allocation to Ready for Release before marking it as released.');
+            }
+        } elseif ($allocation->distributed_at || $allocation->release_outcome === 'not_received') {
             return redirect()->back()
                 ->with('error', 'This allocation already has a final release outcome.');
         }
@@ -964,6 +974,7 @@ class AllocationController extends Controller
         $this->releaseOutcome->apply(
             $allocation,
             [
+                'is_ready_for_release' => false,
                 'distributed_at' => Carbon::now(),
                 'release_outcome' => 'received',
             ],
@@ -976,6 +987,61 @@ class AllocationController extends Controller
             ->with('success', 'Allocation marked as distributed.');
     }
 
+    public function markReadyForRelease(Allocation $allocation): RedirectResponse
+    {
+        if (! $allocation->isDirect()) {
+            return redirect()->back()
+                ->with('error', 'Ready for Release transition is available only for direct allocations.');
+        }
+
+        $event = $allocation->distributionEvent;
+        if ($event && $event->status === 'Pending') {
+            return redirect()->back()
+                ->with('error', 'Cannot mark as Ready for Release while event is still Pending.');
+        }
+
+        if ($allocation->release_status === 'released') {
+            return redirect()->back()
+                ->with('error', 'Released allocations cannot be moved back to Ready for Release.');
+        }
+
+        if ((bool) $allocation->is_ready_for_release) {
+            return redirect()->back()
+                ->with('warning', 'This allocation is already marked as Ready for Release.');
+        }
+
+        $this->releaseOutcome->apply(
+            $allocation,
+            [
+                'is_ready_for_release' => true,
+                'distributed_at' => null,
+                'release_outcome' => null,
+            ],
+            $this->audit,
+            'updated',
+            'allocations',
+        );
+
+        if ($this->shouldSendReadyForReleaseSms()) {
+            $allocation->loadMissing(['beneficiary', 'programName']);
+
+            $beneficiary = $allocation->beneficiary;
+            if (! empty($beneficiary?->contact_number)) {
+                $programName = $allocation->programName?->name ?? 'your assistance program';
+                $message = "Hello {$beneficiary->full_name}, your direct assistance allocation for {$programName} is now Ready for Release. Please coordinate with the office for claiming details.";
+
+                $this->sms->sendSms(
+                    $beneficiary->contact_number,
+                    $message,
+                    $beneficiary->id,
+                );
+            }
+        }
+
+        return redirect()->back()
+            ->with('success', 'Allocation marked as Ready for Release.');
+    }
+
     public function markNotReceived(Allocation $allocation): RedirectResponse
     {
         $event = $allocation->distributionEvent;
@@ -985,7 +1051,22 @@ class AllocationController extends Controller
                 ->with('error', 'Cannot mark as not received while event is still Pending.');
         }
 
-        if ($allocation->distributed_at || $allocation->release_outcome === 'not_received') {
+        if ($allocation->isDirect()) {
+            if ($allocation->release_status === 'released') {
+                return redirect()->back()
+                    ->with('error', 'Released direct allocations cannot be marked as not received.');
+            }
+
+            if ($allocation->release_status === 'not_received') {
+                return redirect()->back()
+                    ->with('error', 'This direct allocation is already marked as Not Received.');
+            }
+
+            if (! (bool) $allocation->is_ready_for_release) {
+                return redirect()->back()
+                    ->with('error', 'Set this direct allocation to Ready for Release before marking it as Not Received.');
+            }
+        } elseif ($allocation->distributed_at || $allocation->release_outcome === 'not_received') {
             return redirect()->back()
                 ->with('error', 'This allocation already has a final release outcome.');
         }
@@ -993,6 +1074,7 @@ class AllocationController extends Controller
         $this->releaseOutcome->apply(
             $allocation,
             [
+                'is_ready_for_release' => false,
                 'distributed_at' => null,
                 'release_outcome' => 'not_received',
             ],
@@ -1051,11 +1133,13 @@ class AllocationController extends Controller
 
                 if ($validated['action'] === 'distributed') {
                     $allocation->update([
+                        'is_ready_for_release' => false,
                         'distributed_at' => Carbon::now(),
                         'release_outcome' => 'received',
                     ]);
                 } else {
                     $allocation->update([
+                        'is_ready_for_release' => false,
                         'distributed_at' => null,
                         'release_outcome' => 'not_received',
                     ]);
@@ -1085,6 +1169,14 @@ class AllocationController extends Controller
 
         return redirect()->back()
             ->with('success', "{$updated} allocation(s) {$label}. {$skipped} skipped.");
+    }
+
+    private function shouldSendReadyForReleaseSms(): bool
+    {
+        return (bool) Cache::get(
+            'sms.send_on_direct_assistance_status_change',
+            config('services.sms.send_on_direct_assistance_status_change')
+        );
     }
 
     private function assertFinancialBudgetAvailable(DistributionEvent $event, float $additionalAmount, ?int $excludeAllocationId = null): void

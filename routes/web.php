@@ -103,6 +103,8 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
         ->name('allocations.importCsvErrorsReport');
     Route::put('allocations/{allocation}', [AllocationController::class, 'update'])
         ->name('allocations.update');
+    Route::post('allocations/{allocation}/mark-ready-for-release', [AllocationController::class, 'markReadyForRelease'])
+        ->name('allocations.mark-ready-for-release');
     Route::post('allocations/{allocation}/distribute', [AllocationController::class, 'markDistributed'])
         ->name('allocations.markDistributed');
     Route::post('allocations/{allocation}/not-received', [AllocationController::class, 'markNotReceived'])

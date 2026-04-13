@@ -15,7 +15,8 @@
             <p class="text-muted mb-0">Direct Assistance Record</p>
         </div>
         <div>
-            @if(in_array($directAssistance->status, ['planned', 'not_received'], true))
+            @php($normalizedStatus = $directAssistance->normalized_status)
+            @if(in_array($normalizedStatus, ['planned', 'not_received'], true))
                 <form method="POST"
                       action="{{ route('direct-assistance.mark-ready-for-release', $directAssistance) }}"
                       class="d-inline"
@@ -27,7 +28,7 @@
                     </button>
                 </form>
             @endif
-            @if($directAssistance->status === 'ready_for_release')
+            @if($normalizedStatus === 'ready_for_release')
                 <form method="POST"
                       action="{{ route('direct-assistance.mark-released', $directAssistance) }}"
                       class="d-inline"
@@ -136,7 +137,7 @@
                     <dl class="row">
                         <dt class="col-sm-3">Status</dt>
                         <dd class="col-sm-9">
-                            @switch($directAssistance->status)
+                            @switch($normalizedStatus)
                                 @case('planned')
                                     <span class="badge bg-warning text-dark">Planned</span>
                                     @break
@@ -150,7 +151,7 @@
                                     <span class="badge bg-danger">Not Received</span>
                                     @break
                                 @default
-                                    <span class="badge bg-secondary">{{ ucfirst(str_replace('_', ' ', $directAssistance->status)) }}</span>
+                                    <span class="badge bg-secondary">{{ $directAssistance->status_label }}</span>
                                     @break
                             @endswitch
                         </dd>

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\PhilippineMobileNumber;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -164,6 +165,25 @@ class Beneficiary extends Model
     public function getNameAttribute(): string
     {
         return $this->full_name;
+    }
+
+    public function setContactNumberAttribute(?string $value): void
+    {
+        if ($value === null) {
+            $this->attributes['contact_number'] = null;
+
+            return;
+        }
+
+        $trimmedValue = trim($value);
+
+        if ($trimmedValue === '') {
+            $this->attributes['contact_number'] = '';
+
+            return;
+        }
+
+        $this->attributes['contact_number'] = PhilippineMobileNumber::normalize($trimmedValue) ?? $trimmedValue;
     }
 
     public function buildFullName(): string

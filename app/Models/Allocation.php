@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -20,6 +21,7 @@ class Allocation extends Model
         'resource_type_id',
         'quantity',
         'amount',
+        'is_ready_for_release',
         'distributed_at',
         'release_outcome',
         'remarks',
@@ -31,9 +33,59 @@ class Allocation extends Model
         return [
             'quantity'       => 'decimal:2',
             'amount'         => 'decimal:2',
+            'is_ready_for_release' => 'boolean',
             'distributed_at' => 'datetime',
             'release_outcome' => 'string',
         ];
+    }
+
+    public function scopeWhereReleaseStatus(Builder $query, string $status): Builder
+    {
+        return match ($status) {
+            'released' => $query->where(function (Builder $releasedQuery) {
+                $releasedQuery->whereNotNull('distributed_at')
+                    ->orWhere('release_outcome', 'received');
+            }),
+            'not_received' => $query->where('release_outcome', 'not_received'),
+            'ready_for_release' => $query
+                ->where('is_ready_for_release', true)
+                ->whereNull('distributed_at'),
+            'planned' => $query
+                ->whereNull('distributed_at')
+                ->whereNull('release_outcome')
+                ->where(function (Builder $plannedQuery) {
+                    $plannedQuery->whereNull('is_ready_for_release')
+                        ->orWhere('is_ready_for_release', false);
+                }),
+            default => $query,
+        };
+    }
+
+    public function getReleaseStatusAttribute(): string
+    {
+        if ($this->distributed_at !== null || $this->release_outcome === 'received') {
+            return 'released';
+        }
+
+        if ($this->release_outcome === 'not_received') {
+            return 'not_received';
+        }
+
+        if ((bool) $this->is_ready_for_release) {
+            return 'ready_for_release';
+        }
+
+        return 'planned';
+    }
+
+    public function getReleaseStatusLabelAttribute(): string
+    {
+        return match ($this->release_status) {
+            'ready_for_release' => 'Ready for Release',
+            'released' => 'Released',
+            'not_received' => 'Not Received',
+            default => 'Planned',
+        };
     }
 
     public function getDisplayValue(): string

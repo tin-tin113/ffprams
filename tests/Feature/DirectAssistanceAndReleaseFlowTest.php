@@ -142,6 +142,62 @@ class DirectAssistanceAndReleaseFlowTest extends TestCase
         $this->assertNull($allocation->distributed_at);
     }
 
+    public function test_direct_allocation_mark_ready_for_release_sets_intermediate_state(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $allocation = $this->makeDirectAllocationFixture();
+
+        $response = $this->actingAs($admin)->post(route('allocations.mark-ready-for-release', $allocation));
+
+        $response->assertRedirect();
+
+        $allocation->refresh();
+
+        $this->assertTrue((bool) $allocation->is_ready_for_release);
+        $this->assertNull($allocation->release_outcome);
+        $this->assertNull($allocation->distributed_at);
+        $this->assertSame('ready_for_release', $allocation->release_status);
+    }
+
+    public function test_direct_allocation_mark_released_requires_ready_for_release(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $allocation = $this->makeDirectAllocationFixture();
+
+        $response = $this->actingAs($admin)->post(route('allocations.markDistributed', $allocation));
+
+        $response
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $allocation->refresh();
+
+        $this->assertFalse((bool) $allocation->is_ready_for_release);
+        $this->assertNull($allocation->release_outcome);
+        $this->assertNull($allocation->distributed_at);
+        $this->assertSame('planned', $allocation->release_status);
+    }
+
+    public function test_direct_allocation_ready_for_release_can_be_marked_released(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $allocation = $this->makeDirectAllocationFixture();
+
+        $this->actingAs($admin)->post(route('allocations.mark-ready-for-release', $allocation))
+            ->assertRedirect();
+
+        $response = $this->actingAs($admin)->post(route('allocations.markDistributed', $allocation));
+
+        $response->assertRedirect();
+
+        $allocation->refresh();
+
+        $this->assertFalse((bool) $allocation->is_ready_for_release);
+        $this->assertSame('received', $allocation->release_outcome);
+        $this->assertNotNull($allocation->distributed_at);
+        $this->assertSame('released', $allocation->release_status);
+    }
+
     public function test_direct_assistance_mark_distributed_updates_status_and_distributor(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
@@ -443,6 +499,33 @@ class DirectAssistanceAndReleaseFlowTest extends TestCase
         ]);
 
         return [$event, $allocation];
+    }
+
+    private function makeDirectAllocationFixture(): Allocation
+    {
+        [$beneficiary, $program, $resourceType] = $this->makeDirectAssistanceFixtures('kg');
+
+        $event = DistributionEvent::create([
+            'barangay_id' => $beneficiary->barangay_id,
+            'resource_type_id' => $resourceType->id,
+            'program_name_id' => $program->id,
+            'distribution_date' => now()->toDateString(),
+            'status' => 'Ongoing',
+            'created_by' => User::factory()->create(['role' => 'admin'])->id,
+            'type' => 'physical',
+            'total_fund_amount' => null,
+        ]);
+
+        return Allocation::create([
+            'distribution_event_id' => $event->id,
+            'release_method' => 'direct',
+            'beneficiary_id' => $beneficiary->id,
+            'program_name_id' => $program->id,
+            'resource_type_id' => $resourceType->id,
+            'quantity' => 2,
+            'amount' => null,
+            'remarks' => 'Direct allocation release workflow test.',
+        ]);
     }
 
     /**

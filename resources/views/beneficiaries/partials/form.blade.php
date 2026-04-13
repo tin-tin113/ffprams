@@ -288,9 +288,10 @@
             <div class="col-12 col-md-3">
                 <label for="contact_number" class="form-label">Contact Number <span class="text-danger">*</span></label>
                 <input type="text" class="form-control @error('contact_number') is-invalid @enderror"
-                       id="contact_number" name="contact_number" placeholder="09XXXXXXXXX"
+                       id="contact_number" name="contact_number" placeholder="09XXXXXXXXX or +639XXXXXXXXX"
                        value="{{ old('contact_number', $beneficiary->contact_number ?? '') }}" required>
                 @error('contact_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                <small class="text-muted">Accepted: 09XXXXXXXXX, 9XXXXXXXXX, 639XXXXXXXXX, +639XXXXXXXXX</small>
             </div>
 
             {{-- Registration Date --}}

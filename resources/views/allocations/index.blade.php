@@ -370,6 +370,7 @@
                         <select class="form-select" name="status">
                             <option value="">All Statuses</option>
                             <option value="planned" {{ request('status') === 'planned' ? 'selected' : '' }}>Planned</option>
+                            <option value="ready_for_release" {{ request('status') === 'ready_for_release' ? 'selected' : '' }}>Ready for Release</option>
                             <option value="released" {{ request('status') === 'released' ? 'selected' : '' }}>Released</option>
                             <option value="not_received" {{ request('status') === 'not_received' ? 'selected' : '' }}>Not Received</option>
                         </select>
@@ -427,14 +428,25 @@
                                 <td data-label="Resource">{{ $allocation->resourceType->name ?? 'N/A' }}</td>
                                 <td data-label="Value">{{ $allocation->getDisplayValue() }}</td>
                                 <td data-label="Purpose">{{ $allocation->assistancePurpose->name ?? 'N/A' }}</td>
+                                @php($releaseStatus = $allocation->release_status)
                                 <td data-label="Status">
-                                    @if($allocation->distributed_at)
-                                        <span class="badge bg-success">Released</span>
-                                    @elseif($allocation->release_outcome === 'not_received')
-                                        <span class="badge bg-danger">Not Received</span>
-                                    @else
-                                        <span class="badge bg-warning text-dark">Planned</span>
-                                    @endif
+                                    @switch($releaseStatus)
+                                        @case('planned')
+                                            <span class="badge bg-warning text-dark">Planned</span>
+                                            @break
+                                        @case('ready_for_release')
+                                            <span class="badge bg-primary">Ready for Release</span>
+                                            @break
+                                        @case('released')
+                                            <span class="badge bg-success">Released</span>
+                                            @break
+                                        @case('not_received')
+                                            <span class="badge bg-danger">Not Received</span>
+                                            @break
+                                        @default
+                                            <span class="badge bg-secondary">{{ $allocation->release_status_label }}</span>
+                                            @break
+                                    @endswitch
                                 </td>
                                 <td class="text-end text-nowrap" data-label="Actions">
                                     <div class="d-inline-flex align-items-center gap-1 flex-nowrap justify-content-end">
@@ -442,7 +454,18 @@
                                             <i class="bi bi-eye me-1"></i> View
                                         </a>
 
-                                        @if(!$allocation->distributed_at && $allocation->release_outcome !== 'not_received')
+                                        @if(in_array($releaseStatus, ['planned', 'not_received'], true))
+                                            <form method="POST"
+                                                  action="{{ route('allocations.mark-ready-for-release', $allocation) }}"
+                                                  class="allocation-action-form d-inline"
+                                                  data-confirm-title="Set Ready for Release"
+                                                  data-confirm-message="Set this direct allocation to Ready for Release? If SMS automation is enabled, this will send an automatic SMS to the beneficiary.">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-bell"></i> Ready for Release
+                                                </button>
+                                            </form>
+                                        @elseif($releaseStatus === 'ready_for_release')
                                             <form method="POST"
                                                   action="{{ route('allocations.markDistributed', $allocation) }}"
                                                   class="allocation-action-form d-inline"
@@ -465,7 +488,7 @@
                                                 </button>
                                             </form>
                                         @else
-                                            <span class="text-muted small ms-1">Completed</span>
+                                            <span class="text-muted small ms-1">Finalized</span>
                                         @endif
                                     </div>
                                 </td>

@@ -245,6 +245,90 @@ class SmsAutomationPolicyTest extends TestCase
         $this->assertDatabaseCount('sms_logs', 0);
     }
 
+    public function test_direct_allocation_mark_ready_for_release_sends_sms_when_enabled(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $fixtures = $this->makeFixtures($admin);
+
+        $allocation = $this->makeDirectAllocationFixture($admin, $fixtures);
+
+        Cache::forever('sms.send_on_direct_assistance_status_change', true);
+
+        $response = $this->actingAs($admin)->post(route('allocations.mark-ready-for-release', $allocation));
+
+        $response->assertRedirect();
+
+        $allocation->refresh();
+        $this->assertSame('ready_for_release', $allocation->release_status);
+
+        $this->assertDatabaseHas('sms_logs', [
+            'beneficiary_id' => $fixtures['beneficiary']->id,
+            'status' => 'sent',
+        ]);
+    }
+
+    public function test_direct_allocation_mark_ready_for_release_does_not_send_sms_when_disabled(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $fixtures = $this->makeFixtures($admin);
+
+        $allocation = $this->makeDirectAllocationFixture($admin, $fixtures);
+
+        Cache::forever('sms.send_on_direct_assistance_status_change', false);
+
+        $response = $this->actingAs($admin)->post(route('allocations.mark-ready-for-release', $allocation));
+
+        $response->assertRedirect();
+
+        $allocation->refresh();
+        $this->assertSame('ready_for_release', $allocation->release_status);
+        $this->assertDatabaseCount('sms_logs', 0);
+    }
+
+    public function test_sms_settings_route_disables_direct_allocation_ready_for_release_sms(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $fixtures = $this->makeFixtures($admin);
+        $allocation = $this->makeDirectAllocationFixture($admin, $fixtures);
+
+        $this->actingAs($admin)->post(route('sms.settings.automation'), [
+            'send_on_event_ongoing' => '1',
+            // Intentionally omitted: send_on_direct_assistance_status_change
+        ])->assertRedirect(route('sms.index'));
+
+        $response = $this->actingAs($admin)->post(route('allocations.mark-ready-for-release', $allocation));
+
+        $response->assertRedirect();
+
+        $allocation->refresh();
+        $this->assertSame('ready_for_release', $allocation->release_status);
+        $this->assertDatabaseCount('sms_logs', 0);
+    }
+
+    public function test_sms_settings_route_enables_direct_allocation_ready_for_release_sms(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $fixtures = $this->makeFixtures($admin);
+        $allocation = $this->makeDirectAllocationFixture($admin, $fixtures);
+
+        $this->actingAs($admin)->post(route('sms.settings.automation'), [
+            'send_on_event_ongoing' => '0',
+            'send_on_direct_assistance_status_change' => '1',
+        ])->assertRedirect(route('sms.index'));
+
+        $response = $this->actingAs($admin)->post(route('allocations.mark-ready-for-release', $allocation));
+
+        $response->assertRedirect();
+
+        $allocation->refresh();
+        $this->assertSame('ready_for_release', $allocation->release_status);
+
+        $this->assertDatabaseHas('sms_logs', [
+            'beneficiary_id' => $fixtures['beneficiary']->id,
+            'status' => 'sent',
+        ]);
+    }
+
     /**
      * @return array{agency: Agency, barangay: Barangay, program: ProgramName, resourceType: ResourceType, beneficiary: Beneficiary}
      */
@@ -295,5 +379,33 @@ class SmsAutomationPolicyTest extends TestCase
             'resourceType' => $resourceType,
             'beneficiary' => $beneficiary,
         ];
+    }
+
+    /**
+     * @param  array{agency: Agency, barangay: Barangay, program: ProgramName, resourceType: ResourceType, beneficiary: Beneficiary}  $fixtures
+     */
+    private function makeDirectAllocationFixture(User $admin, array $fixtures): Allocation
+    {
+        $event = DistributionEvent::create([
+            'barangay_id' => $fixtures['barangay']->id,
+            'resource_type_id' => $fixtures['resourceType']->id,
+            'program_name_id' => $fixtures['program']->id,
+            'distribution_date' => now()->toDateString(),
+            'status' => 'Ongoing',
+            'created_by' => $admin->id,
+            'type' => 'physical',
+            'total_fund_amount' => null,
+        ]);
+
+        return Allocation::create([
+            'distribution_event_id' => $event->id,
+            'release_method' => 'direct',
+            'beneficiary_id' => $fixtures['beneficiary']->id,
+            'program_name_id' => $fixtures['program']->id,
+            'resource_type_id' => $fixtures['resourceType']->id,
+            'quantity' => 2,
+            'amount' => null,
+            'remarks' => 'Direct allocation SMS automation test',
+        ]);
     }
 }

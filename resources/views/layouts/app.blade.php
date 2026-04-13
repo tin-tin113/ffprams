@@ -32,9 +32,15 @@
             --body-bg: #f1f5f9;
 
             /* Semantic Status Colors */
-            --color-status-recorded: #f59e0b;   /* Amber - pending */
-            --color-status-distributed: #3b82f6; /* Blue - in progress */
-            --color-status-completed: #22c55e;  /* Green - done */
+            --color-status-planned: #f59e0b; /* Amber - planned */
+            --color-status-ready-for-release: #3b82f6; /* Blue - ready */
+            --color-status-released: #22c55e; /* Green - released */
+            --color-status-not-received: #ef4444; /* Red - not received */
+
+            /* Backward-compatible aliases */
+            --color-status-recorded: var(--color-status-planned);
+            --color-status-distributed: var(--color-status-ready-for-release);
+            --color-status-completed: var(--color-status-released);
             --color-status-cancelled: #ef4444;  /* Red - cancelled */
 
             /* Bootstrap Standard Colors (for geo-map & other specific uses) */

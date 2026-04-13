@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Beneficiary;
+use App\Support\PhilippineMobileNumber;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -189,19 +190,14 @@ class DuplicateDetectionService
      */
     private function normalizePhoneNumber(string $phone): string
     {
-        $digits = preg_replace('/\D/', '', $phone);
+        $normalized = PhilippineMobileNumber::normalize($phone);
 
-        // Convert 09XX to 639XX format for consistency
-        if (strlen($digits) === 11 && str_starts_with($digits, '0')) {
-            $digits = '63'.substr($digits, 1);
+        if ($normalized !== null) {
+            // Compare using the 9XXXXXXXXX segment to match equivalent local/international forms.
+            return substr($normalized, 1);
         }
 
-        // Remove country code prefix for comparison
-        if (str_starts_with($digits, '63')) {
-            $digits = substr($digits, 2);
-        }
-
-        return $digits;
+        return preg_replace('/\D/', '', $phone) ?? '';
     }
 
     /**

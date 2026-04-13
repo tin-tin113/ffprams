@@ -84,8 +84,8 @@
 
                 <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
                     <div>
-                        <div class="fw-semibold">Send SMS when direct assistance becomes Ready for Release</div>
-                        <div class="text-muted small">When enabled, beneficiaries are notified once their direct assistance is set to Ready for Release.</div>
+                        <div class="fw-semibold">Send SMS when direct assistance or direct allocation becomes Ready for Release</div>
+                        <div class="text-muted small">When enabled, beneficiaries are notified once their direct assistance record or direct allocation is set to Ready for Release.</div>
                     </div>
                     <div class="form-check form-switch m-0">
                         <input

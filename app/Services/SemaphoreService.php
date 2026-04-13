@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\PhilippineMobileNumber;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -37,11 +38,22 @@ class SemaphoreService
             return false;
         }
 
+        $recipient = PhilippineMobileNumber::toInternationalDigits($number);
+
+        if ($recipient === null) {
+            Log::warning('SemaphoreService: Cannot send SMS — invalid Philippine mobile number.', [
+                'beneficiary_id' => $beneficiaryId,
+                'number' => $number,
+            ]);
+
+            return false;
+        }
+
         try {
             $response = Http::withHeaders([
                 'x-api-key' => $this->apiKey,
             ])->post($this->endpoint, [
-                'recipient' => $number,
+                'recipient' => $recipient,
                 'message' => $message,
             ]);
 
@@ -57,7 +69,7 @@ class SemaphoreService
             return $success;
         } catch (\Throwable $e) {
             Log::error('SemaphoreService: SMS sending failed', [
-                'number' => $number,
+                'number' => $recipient,
                 'error' => $e->getMessage(),
             ]);
 

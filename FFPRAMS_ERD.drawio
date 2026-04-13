@@ -1,406 +1,616 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mxfile host="draw.io" modified="2026-04-13" agent="Claude" version="21.2.8" type="device">
-  <diagram id="ER-Diagram" name="FFPRAMS Database ERD">
-    <mxGraphModel dx="4000" dy="2500" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" background="ffffff" math="0" shadow="0">
+  <diagram id="ER-Diagram" name="FFPRAMS Database ERD - Professional">
+    <mxGraphModel dx="15000" dy="12000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="4800" pageHeight="3600" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
 
-        <!-- ROW 1: USERS, BARANGAYS, DISTRIBUTION_EVENTS, RESOURCE_TYPES -->
+        <!-- ==================== LAYER 0: TOP CENTER - AGENCIES (Master Reference) ==================== -->
 
-        <!-- USERS Table -->
-        <mxCell id="users_table" value="USERS" style="rounded=0;whiteSpace=wrap;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="30" width="140" height="25" as="geometry"/>
+        <mxCell id="agency_h" value="AGENCIES" style="rounded=0;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="2100" y="50" width="150" height="24" as="geometry"/>
         </mxCell>
-        <mxCell id="users_pk" value="PK  id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="55" width="140" height="20" as="geometry"/>
+        <mxCell id="agency_c1" value="PK  id" style="rounded=0;html=1;fontSize=9;fillColor=#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2100" y="74" width="150" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="users_fk" value="FK  agency_id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="75" width="140" height="20" as="geometry"/>
+        <mxCell id="agency_c2" value="name, full_name" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2100" y="90" width="150" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="users_1" value="name" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="95" width="140" height="18" as="geometry"/>
+        <mxCell id="agency_c3" value="description, is_active" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2100" y="106" width="150" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="users_2" value="email" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="113" width="140" height="18" as="geometry"/>
-        </mxCell>
-        <mxCell id="users_3" value="password" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="131" width="140" height="18" as="geometry"/>
-        </mxCell>
-        <mxCell id="users_4" value="role" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="149" width="140" height="18" as="geometry"/>
-        </mxCell>
-        <mxCell id="users_5" value="created_at/updated_at" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="167" width="140" height="18" as="geometry"/>
+        <mxCell id="agency_c4" value="timestamps" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2100" y="122" width="150" height="16" as="geometry"/>
         </mxCell>
 
-        <!-- BARANGAYS Table -->
-        <mxCell id="barangays_table" value="BARANGAYS" style="rounded=0;whiteSpace=wrap;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="30" width="140" height="25" as="geometry"/>
+        <!-- ==================== LAYER 1: REFERENCE DATA (Depends on AGENCIES) ==================== -->
+
+        <!-- USERS (Left) -->
+        <mxCell id="users_h" value="USERS" style="rounded=0;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor:#000000;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="320" width="150" height="24" as="geometry"/>
         </mxCell>
-        <mxCell id="barangays_pk" value="PK  id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="55" width="140" height="20" as="geometry"/>
+        <mxCell id="users_c1" value="PK  id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="344" width="150" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="barangays_1" value="name" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="75" width="140" height="20" as="geometry"/>
+        <mxCell id="users_c2" value="FK  agency_id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="360" width="150" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="barangays_2" value="latitude" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="95" width="140" height="20" as="geometry"/>
+        <mxCell id="users_c3" value="name, email, password" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="376" width="150" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="barangays_3" value="longitude" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="115" width="140" height="20" as="geometry"/>
+        <mxCell id="users_c4" value="role, email_verified_at" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="392" width="150" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="barangays_4" value="created_at/updated_at" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="135" width="140" height="20" as="geometry"/>
+        <mxCell id="users_c5" value="timestamps" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="408" width="150" height="16" as="geometry"/>
         </mxCell>
 
-        <!-- DISTRIBUTION_EVENTS Table -->
-        <mxCell id="dist_table" value="DISTRIBUTION_EVENTS" style="rounded=0;whiteSpace=wrap;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="410" y="30" width="160" height="25" as="geometry"/>
+        <!-- BARANGAYS (Center) -->
+        <mxCell id="baran_h" value="BARANGAYS" style="rounded=0;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor:#000000;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="2100" y="320" width="150" height="24" as="geometry"/>
         </mxCell>
-        <mxCell id="dist_pk" value="PK  id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="410" y="55" width="160" height="20" as="geometry"/>
+        <mxCell id="baran_c1" value="PK  id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2100" y="344" width="150" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="dist_fk1" value="FK  barangay_id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="410" y="75" width="160" height="20" as="geometry"/>
+        <mxCell id="baran_c2" value="name" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2100" y="360" width="150" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="dist_fk2" value="FK  program_name_id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="410" y="95" width="160" height="20" as="geometry"/>
+        <mxCell id="baran_c3" value="latitude, longitude" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2100" y="376" width="150" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="dist_fk3" value="FK  resource_type_id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="410" y="115" width="160" height="20" as="geometry"/>
-        </mxCell>
-        <mxCell id="dist_1" value="distribution_date" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="410" y="135" width="160" height="18" as="geometry"/>
-        </mxCell>
-        <mxCell id="dist_2" value="type (physical/financial)" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="410" y="153" width="160" height="18" as="geometry"/>
-        </mxCell>
-        <mxCell id="dist_3" value="status, total_fund_amount" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="410" y="171" width="160" height="18" as="geometry"/>
-        </mxCell>
-        <mxCell id="dist_4" value="created_by, created_at/updated_at" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="410" y="189" width="160" height="18" as="geometry"/>
+        <mxCell id="baran_c4" value="timestamps" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2100" y="392" width="150" height="16" as="geometry"/>
         </mxCell>
 
-        <!-- RESOURCE_TYPES Table -->
-        <mxCell id="resource_table" value="RESOURCE_TYPES" style="rounded=0;whiteSpace=wrap;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="630" y="30" width="140" height="25" as="geometry"/>
+        <!-- PROGRAM_NAMES (Right-Center) -->
+        <mxCell id="prog_h" value="PROGRAM_NAMES" style="rounded=0;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor:#000000;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="3000" y="320" width="150" height="24" as="geometry"/>
         </mxCell>
-        <mxCell id="resource_pk" value="PK  id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="630" y="55" width="140" height="20" as="geometry"/>
+        <mxCell id="prog_c1" value="PK  id" style="rounded=0;html=1;fontSize=9;fillColor=#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3000" y="344" width="150" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="resource_fk" value="FK  agency_id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="630" y="75" width="140" height="20" as="geometry"/>
+        <mxCell id="prog_c2" value="FK  agency_id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3000" y="360" width="150" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="resource_1" value="name" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="630" y="95" width="140" height="20" as="geometry"/>
+        <mxCell id="prog_c3" value="name, classification" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3000" y="376" width="150" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="resource_2" value="unit" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="630" y="115" width="140" height="20" as="geometry"/>
+        <mxCell id="prog_c4" value="description, is_active" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3000" y="392" width="150" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="resource_3" value="description" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="630" y="135" width="140" height="20" as="geometry"/>
-        </mxCell>
-        <mxCell id="resource_4" value="is_active" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="630" y="155" width="140" height="20" as="geometry"/>
+        <mxCell id="prog_c5" value="timestamps" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3000" y="408" width="150" height="16" as="geometry"/>
         </mxCell>
 
-        <!-- ROW 2: AUDIT_LOGS, BENEFICIARIES, DIRECT_ASSISTANCE, ALLOCATIONS -->
-
-        <!-- AUDIT_LOGS Table -->
-        <mxCell id="audit_table" value="AUDIT_LOGS" style="rounded=0;whiteSpace=wrap;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="280" width="140" height="25" as="geometry"/>
+        <!-- RESOURCE_TYPES (Far Right) -->
+        <mxCell id="res_h" value="RESOURCE_TYPES" style="rounded=0;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor:#000000;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="3900" y="320" width="150" height="24" as="geometry"/>
         </mxCell>
-        <mxCell id="audit_pk" value="PK  id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="305" width="140" height="20" as="geometry"/>
+        <mxCell id="res_c1" value="PK  id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3900" y="344" width="150" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="audit_fk" value="FK  user_id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="325" width="140" height="20" as="geometry"/>
+        <mxCell id="res_c2" value="FK  agency_id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3900" y="360" width="150" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="audit_1" value="action" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="345" width="140" height="18" as="geometry"/>
+        <mxCell id="res_c3" value="name, unit, description" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3900" y="376" width="150" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="audit_2" value="table_name" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="363" width="140" height="18" as="geometry"/>
+        <mxCell id="res_c4" value="source_agency, is_active" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3900" y="392" width="150" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="audit_3" value="record_id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="381" width="140" height="18" as="geometry"/>
-        </mxCell>
-        <mxCell id="audit_4" value="old_values, new_values" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="399" width="140" height="18" as="geometry"/>
-        </mxCell>
-        <mxCell id="audit_5" value="created_at/updated_at" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="417" width="140" height="18" as="geometry"/>
+        <mxCell id="res_c5" value="timestamps" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3900" y="408" width="150" height="16" as="geometry"/>
         </mxCell>
 
-        <!-- BENEFICIARIES Table -->
-        <mxCell id="beneficiaries_table" value="BENEFICIARIES" style="rounded=0;whiteSpace=wrap;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="280" width="160" height="25" as="geometry"/>
+        <!-- ASSISTANCE_PURPOSES (Far Left) -->
+        <mxCell id="purpose_h" value="ASSISTANCE_PURPOSES" style="rounded=0;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor:#000000;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="300" y="320" width="160" height="24" as="geometry"/>
         </mxCell>
-        <mxCell id="beneficiaries_pk" value="PK  id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="305" width="160" height="20" as="geometry"/>
+        <mxCell id="purpose_c1" value="PK  id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="300" y="344" width="160" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="beneficiaries_fk1" value="FK  agency_id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="325" width="160" height="20" as="geometry"/>
+        <mxCell id="purpose_c2" value="name, category" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="300" y="360" width="160" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="beneficiaries_fk2" value="FK  barangay_id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="345" width="160" height="20" as="geometry"/>
-        </mxCell>
-        <mxCell id="beneficiaries_1" value="first_name, middle_name, last_name" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="365" width="160" height="18" as="geometry"/>
-        </mxCell>
-        <mxCell id="beneficiaries_2" value="full_name" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="383" width="160" height="18" as="geometry"/>
-        </mxCell>
-        <mxCell id="beneficiaries_3" value="classification" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="401" width="160" height="18" as="geometry"/>
-        </mxCell>
-        <mxCell id="beneficiaries_4" value="contact_number" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="419" width="160" height="18" as="geometry"/>
-        </mxCell>
-        <mxCell id="beneficiaries_5" value="sex, date_of_birth" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="437" width="160" height="18" as="geometry"/>
+        <mxCell id="purpose_c3" value="is_active, timestamps" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="300" y="376" width="160" height="16" as="geometry"/>
         </mxCell>
 
-        <!-- DIRECT_ASSISTANCE Table -->
-        <mxCell id="direct_table" value="DIRECT_ASSISTANCE" style="rounded=0;whiteSpace=wrap;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="440" y="280" width="160" height="25" as="geometry"/>
+        <!-- ==================== LAYER 2: OPERATIONAL DATA ==================== -->
+
+        <!-- BENEFICIARIES (Left) -->
+        <mxCell id="benef_h" value="BENEFICIARIES" style="rounded=0;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor:#000000;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="800" y="800" width="170" height="24" as="geometry"/>
         </mxCell>
-        <mxCell id="direct_pk" value="PK  id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="440" y="305" width="160" height="20" as="geometry"/>
+        <mxCell id="benef_c1" value="PK  id" style="rounded=0;html=1;fontSize=9;fillColor=#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="800" y="824" width="170" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="direct_fk1" value="FK  beneficiary_id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="440" y="325" width="160" height="20" as="geometry"/>
+        <mxCell id="benef_c2" value="FK  barangay_id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="800" y="840" width="170" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="direct_fk2" value="FK  program_name_id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="440" y="345" width="160" height="20" as="geometry"/>
+        <mxCell id="benef_c3" value="full_name, classification" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="800" y="856" width="170" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="direct_fk3" value="FK  resource_type_id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="440" y="365" width="160" height="20" as="geometry"/>
+        <mxCell id="benef_c4" value="contact_number, government_id" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="800" y="872" width="170" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="direct_fk4" value="FK  distribution_event_id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="440" y="385" width="160" height="20" as="geometry"/>
+        <mxCell id="benef_c5" value="id_type, status, registered_at" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="800" y="888" width="170" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="direct_1" value="quantity, amount" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="440" y="405" width="160" height="18" as="geometry"/>
+        <mxCell id="benef_c6" value="household_size, rsbsa_number" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="800" y="904" width="170" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="direct_2" value="status, distributed_at" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="440" y="423" width="160" height="18" as="geometry"/>
+        <mxCell id="benef_c7" value="farm_ownership, farm_size_hectares" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="800" y="920" width="170" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="benef_c8" value="primary_commodity, farm_type" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="800" y="936" width="170" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="benef_c9" value="fishr_number, fisherfolk_type" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="800" y="952" width="170" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="benef_c10" value="main_fishing_gear, has_fishing_vessel" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="800" y="968" width="170" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="benef_c11" value="civil_status, highest_education" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="800" y="984" width="170" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="benef_c12" value="deleted_at, timestamps" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="800" y="1000" width="170" height="16" as="geometry"/>
         </mxCell>
 
-        <!-- ALLOCATIONS Table -->
-        <mxCell id="alloc_table" value="ALLOCATIONS" style="rounded=0;whiteSpace=wrap;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="660" y="280" width="160" height="25" as="geometry"/>
+        <!-- DISTRIBUTION_EVENTS (Center-Left) -->
+        <mxCell id="dist_h" value="DISTRIBUTION_EVENTS" style="rounded=0;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor:#000000;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="2000" y="800" width="170" height="24" as="geometry"/>
         </mxCell>
-        <mxCell id="alloc_pk" value="PK  id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="660" y="305" width="160" height="20" as="geometry"/>
+        <mxCell id="dist_c1" value="PK  id" style="rounded=0;html=1;fontSize=9;fillColor=#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2000" y="824" width="170" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="alloc_fk1" value="FK  distribution_event_id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="660" y="325" width="160" height="20" as="geometry"/>
+        <mxCell id="dist_c2" value="FK  barangay_id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2000" y="840" width="170" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="alloc_fk2" value="FK  beneficiary_id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="660" y="345" width="160" height="20" as="geometry"/>
+        <mxCell id="dist_c3" value="FK  program_name_id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2000" y="856" width="170" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="alloc_fk3" value="FK  program_name_id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="660" y="365" width="160" height="20" as="geometry"/>
+        <mxCell id="dist_c4" value="FK  resource_type_id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2000" y="872" width="170" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="alloc_fk4" value="FK  resource_type_id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="660" y="385" width="160" height="20" as="geometry"/>
+        <mxCell id="dist_c5" value="FK  created_by" style="rounded=0;html=1;fontSize=9;fillColor=#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2000" y="888" width="170" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="alloc_1" value="quantity, amount" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="660" y="405" width="160" height="18" as="geometry"/>
+        <mxCell id="dist_c6" value="distribution_date, status, type" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2000" y="904" width="170" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="alloc_2" value="distributed_at, release_outcome" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="660" y="423" width="160" height="18" as="geometry"/>
+        <mxCell id="dist_c7" value="total_fund_amount" style="rounded=0;html=1;fontSize=9;fillColor=#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2000" y="920" width="170" height="16" as="geometry"/>
         </mxCell>
-
-        <!-- ROW 3: SMS_LOGS, PROGRAM_NAMES, AGENCIES, BENEFICIARY_AGENCIES -->
-
-        <!-- SMS_LOGS Table -->
-        <mxCell id="sms_table" value="SMS_LOGS" style="rounded=0;whiteSpace=wrap;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="530" width="140" height="25" as="geometry"/>
-        </mxCell>
-        <mxCell id="sms_pk" value="PK  id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="555" width="140" height="20" as="geometry"/>
-        </mxCell>
-        <mxCell id="sms_fk" value="FK  beneficiary_id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="575" width="140" height="20" as="geometry"/>
-        </mxCell>
-        <mxCell id="sms_1" value="message" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="595" width="140" height="18" as="geometry"/>
-        </mxCell>
-        <mxCell id="sms_2" value="status" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="613" width="140" height="18" as="geometry"/>
-        </mxCell>
-        <mxCell id="sms_3" value="delivery_status" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="631" width="140" height="18" as="geometry"/>
-        </mxCell>
-        <mxCell id="sms_4" value="sent_at, retry_count" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="30" y="649" width="140" height="18" as="geometry"/>
+        <mxCell id="dist_c8" value="deleted_at, timestamps" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2000" y="936" width="170" height="16" as="geometry"/>
         </mxCell>
 
-        <!-- PROGRAM_NAMES Table -->
-        <mxCell id="program_table" value="PROGRAM_NAMES" style="rounded=0;whiteSpace=wrap;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="530" width="160" height="25" as="geometry"/>
+        <!-- ALLOCATIONS (Center-Right) -->
+        <mxCell id="alloc_h" value="ALLOCATIONS" style="rounded=0;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor:#000000;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="3200" y="800" width="170" height="24" as="geometry"/>
         </mxCell>
-        <mxCell id="program_pk" value="PK  id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="555" width="160" height="20" as="geometry"/>
+        <mxCell id="alloc_c1" value="PK  id" style="rounded=0;html=1;fontSize=9;fillColor=#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3200" y="824" width="170" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="program_fk" value="FK  agency_id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="575" width="160" height="20" as="geometry"/>
+        <mxCell id="alloc_c2" value="FK  distribution_event_id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3200" y="840" width="170" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="program_1" value="name" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="595" width="160" height="18" as="geometry"/>
+        <mxCell id="alloc_c3" value="FK  beneficiary_id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3200" y="856" width="170" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="program_2" value="classification" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="613" width="160" height="18" as="geometry"/>
+        <mxCell id="alloc_c4" value="FK  program_name_id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3200" y="872" width="170" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="program_3" value="description" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="631" width="160" height="18" as="geometry"/>
+        <mxCell id="alloc_c5" value="FK  resource_type_id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3200" y="888" width="170" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="program_4" value="is_active" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="220" y="649" width="160" height="18" as="geometry"/>
+        <mxCell id="alloc_c6" value="quantity, amount, status" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3200" y="904" width="170" height="16" as="geometry"/>
         </mxCell>
-
-        <!-- AGENCIES Table -->
-        <mxCell id="agencies_table" value="AGENCIES" style="rounded=0;whiteSpace=wrap;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="440" y="530" width="140" height="25" as="geometry"/>
+        <mxCell id="alloc_c7" value="distributed_at, release_outcome" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3200" y="920" width="170" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="agencies_pk" value="PK  id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=10;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="440" y="555" width="140" height="20" as="geometry"/>
-        </mxCell>
-        <mxCell id="agencies_1" value="name" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="440" y="575" width="140" height="20" as="geometry"/>
-        </mxCell>
-        <mxCell id="agencies_2" value="full_name" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="440" y="595" width="140" height="18" as="geometry"/>
-        </mxCell>
-        <mxCell id="agencies_3" value="description" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="440" y="613" width="140" height="18" as="geometry"/>
-        </mxCell>
-        <mxCell id="agencies_4" value="is_active" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="440" y="631" width="140" height="18" as="geometry"/>
+        <mxCell id="alloc_c8" value="remarks, deleted_at, timestamps" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3200" y="936" width="170" height="16" as="geometry"/>
         </mxCell>
 
-        <!-- BENEFICIARY_AGENCIES Table -->
-        <mxCell id="bena_table" value="BENEFICIARY_AGENCIES" style="rounded=0;whiteSpace=wrap;html=1;fontSize=11;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="640" y="530" width="160" height="25" as="geometry"/>
+        <!-- DIRECT_ASSISTANCE (Right) -->
+        <mxCell id="direct_h" value="DIRECT_ASSISTANCE" style="rounded=0;html=1;fontSize=12;fontStyle=1;fillColor:#ffffff;strokeColor:#000000;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="4300" y="800" width="170" height="24" as="geometry"/>
         </mxCell>
-        <mxCell id="bena_pk" value="PK  beneficiary_id, agency_id" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="640" y="555" width="160" height="20" as="geometry"/>
+        <mxCell id="direct_c1" value="PK  id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="4300" y="824" width="170" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="bena_1" value="identifier" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="640" y="575" width="160" height="20" as="geometry"/>
+        <mxCell id="direct_c2" value="FK  beneficiary_id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="4300" y="840" width="170" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="bena_2" value="registered_at" style="rounded=0;whiteSpace=wrap;html=1;fontSize=9;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;" vertex="1" parent="1">
-          <mxGeometry x="640" y="595" width="160" height="18" as="geometry"/>
+        <mxCell id="direct_c3" value="FK  program_name_id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="4300" y="856" width="170" height="16" as="geometry"/>
         </mxCell>
-
-        <!-- CONNECTORS -->
-        <!-- Users to Agencies -->
-        <mxCell id="conn1" value="" style="edgeStyle=none;rounded=0;html=1;strokeColor=#000000;" edge="1" parent="1" source="users_fk" target="agencies_pk">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="direct_c4" value="FK  resource_type_id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="4300" y="872" width="170" height="16" as="geometry"/>
         </mxCell>
-
-        <!-- Agencies to Users -->
-        <mxCell id="conn2" value="" style="edgeStyle=none;rounded=0;html=1;strokeColor=#000000;" edge="1" parent="1" source="agencies_pk" target="users_fk">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="direct_c5" value="FK  assistance_purpose_id" style="rounded=0;html=1;fontSize=9;fillColor=#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="4300" y="888" width="170" height="16" as="geometry"/>
         </mxCell>
-
-        <!-- Agencies to Beneficiaries -->
-        <mxCell id="conn3" value="" style="edgeStyle=none;rounded=0;html=1;strokeColor=#000000;" edge="1" parent="1" source="agencies_pk" target="beneficiaries_fk1">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="direct_c6" value="FK  created_by, distributed_by" style="rounded=0;html=1;fontSize=8;fillColor=#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="4300" y="904" width="170" height="16" as="geometry"/>
         </mxCell>
-
-        <!-- Agencies to Resources -->
-        <mxCell id="conn4" value="" style="edgeStyle=none;rounded=0;html=1;strokeColor=#000000;" edge="1" parent="1" source="agencies_pk" target="resource_fk">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="direct_c7" value="quantity, amount, status" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="4300" y="920" width="170" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="direct_c8" value="distributed_at, release_outcome" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="4300" y="936" width="170" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="direct_c9" value="remarks, deleted_at, timestamps" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="4300" y="952" width="170" height="16" as="geometry"/>
         </mxCell>
 
-        <!-- Agencies to Programs -->
-        <mxCell id="conn5" value="" style="edgeStyle=none;rounded=0;html=1;strokeColor=#000000;" edge="1" parent="1" source="agencies_pk" target="program_fk">
-          <mxGeometry relative="1" as="geometry"/>
+        <!-- ==================== LAYER 3: SUPPORTING/LOGGING DATA ==================== -->
+
+        <!-- AUDIT_LOGS (Left) -->
+        <mxCell id="audit_h" value="AUDIT_LOGS" style="rounded=0;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor:#000000;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="400" y="1250" width="160" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="audit_c1" value="PK  id" style="rounded=0;html=1;fontSize=9;fillColor=#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="400" y="1274" width="160" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="audit_c2" value="FK  user_id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="400" y="1290" width="160" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="audit_c3" value="action, table_name, record_id" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="400" y="1306" width="160" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="audit_c4" value="old_values, new_values (JSON)" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="400" y="1322" width="160" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="audit_c5" value="timestamps" style="rounded=0;html=1;fontSize=8;fillColor=#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="400" y="1338" width="160" height="16" as="geometry"/>
         </mxCell>
 
-        <!-- Barangays to Beneficiaries -->
-        <mxCell id="conn6" value="" style="edgeStyle=none;rounded=0;html=1;strokeColor=#000000;" edge="1" parent="1" source="barangays_pk" target="beneficiaries_fk2">
-          <mxGeometry relative="1" as="geometry"/>
+        <!-- SMS_LOGS (Center-Left) -->
+        <mxCell id="sms_h" value="SMS_LOGS" style="rounded=0;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor:#000000;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="1150" y="1250" width="160" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="sms_c1" value="PK  id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="1150" y="1274" width="160" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="sms_c2" value="FK  beneficiary_id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="1150" y="1290" width="160" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="sms_c3" value="message, status, response" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="1150" y="1306" width="160" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="sms_c4" value="sent_at, timestamps" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="1150" y="1322" width="160" height="16" as="geometry"/>
         </mxCell>
 
-        <!-- Barangays to Distribution Events -->
-        <mxCell id="conn7" value="" style="edgeStyle=none;rounded=0;html=1;strokeColor=#000000;" edge="1" parent="1" source="barangays_pk" target="dist_fk1">
-          <mxGeometry relative="1" as="geometry"/>
+        <!-- BENEFICIARY_AGENCIES (Center) -->
+        <mxCell id="bena_h" value="BENEFICIARY_AGENCIES" style="rounded=0;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor:#000000;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="2050" y="1250" width="180" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="bena_c1" value="PK  beneficiary_id + agency_id" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2050" y="1274" width="180" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="bena_c2" value="identifier (RSBSA/FishR/CLOA)" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2050" y="1290" width="180" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="bena_c3" value="registered_at, timestamps" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2050" y="1306" width="180" height="16" as="geometry"/>
         </mxCell>
 
-        <!-- Programs to Distribution Events -->
-        <mxCell id="conn8" value="" style="edgeStyle=none;rounded=0;html=1;strokeColor=#000000;" edge="1" parent="1" source="program_pk" target="dist_fk2">
-          <mxGeometry relative="1" as="geometry"/>
+        <!-- FORM_FIELD_OPTIONS (Center-Right) -->
+        <mxCell id="form_h" value="FORM_FIELD_OPTIONS" style="rounded=0;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor:#000000;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="3200" y="1250" width="180" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="form_c1" value="PK  id" style="rounded=0;html=1;fontSize=9;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3200" y="1274" width="180" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="form_c2" value="field_name, label, value" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3200" y="1290" width="180" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="form_c3" value="sort_order, is_active" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3200" y="1306" width="180" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="form_c4" value="timestamps" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="3200" y="1322" width="180" height="16" as="geometry"/>
         </mxCell>
 
-        <!-- Resources to Distribution Events -->
-        <mxCell id="conn9" value="" style="edgeStyle=none;rounded=0;html=1;strokeColor=#000000;" edge="1" parent="1" source="resource_pk" target="dist_fk3">
-          <mxGeometry relative="1" as="geometry"/>
+        <!-- ==================== LAYER 4: ATTACHMENT TABLES ==================== -->
+
+        <!-- BENEFICIARY_ATTACHMENTS (Left) -->
+        <mxCell id="benef_att_h" value="BENEFICIARY_ATTACHMENTS" style="rounded=0;html=1;fontSize=12;fontStyle=1;fillColor=#ffffff;strokeColor:#000000;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="400" y="1650" width="200" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="benef_att_c1" value="PK  id" style="rounded=0;html=1;fontSize=9;fillColor=#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="400" y="1674" width="200" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="benef_att_c2" value="FK  beneficiary_id, uploaded_by" style="rounded=0;html=1;fontSize=8;fillColor=#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="400" y="1690" width="200" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="benef_att_c3" value="document_type, original_name" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="400" y="1706" width="200" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="benef_att_c4" value="stored_name, path, disk, mime_type" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="400" y="1722" width="200" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="benef_att_c5" value="extension, size_bytes, sha256, timestamps" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="400" y="1738" width="200" height="16" as="geometry"/>
         </mxCell>
 
-        <!-- Distribution Events to Allocations -->
-        <mxCell id="conn10" value="" style="edgeStyle=none;rounded=0;html=1;strokeColor=#000000;" edge="1" parent="1" source="dist_pk" target="alloc_fk1">
-          <mxGeometry relative="1" as="geometry"/>
+        <!-- RECORD_ATTACHMENTS (Right) -->
+        <mxCell id="rec_att_h" value="RECORD_ATTACHMENTS" style="rounded=0;html=1;fontSize=12;fontStyle=1;fillColor:#ffffff;strokeColor:#000000;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="2150" y="1650" width="200" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="rec_att_c1" value="PK  id" style="rounded=0;html=1;fontSize=9;fillColor=#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2150" y="1674" width="200" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="rec_att_c2" value="attachable_type, attachable_id" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2150" y="1690" width="200" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="rec_att_c3" value="FK  uploaded_by" style="rounded=0;html=1;fontSize=9;fillColor=#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2150" y="1706" width="200" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="rec_att_c4" value="document_type, original_name" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2150" y="1722" width="200" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="rec_att_c5" value="stored_name, path, disk, mime_type" style="rounded=0;html=1;fontSize=8;fillColor:#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2150" y="1738" width="200" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="rec_att_c6" value="extension, size_bytes, sha256, timestamps" style="rounded=0;html=1;fontSize=8;fillColor=#ffffff;strokeColor:#000000;" vertex="1" parent="1">
+          <mxGeometry x="2150" y="1754" width="200" height="16" as="geometry"/>
         </mxCell>
 
-        <!-- Beneficiaries to Allocations -->
-        <mxCell id="conn11" value="" style="edgeStyle=none;rounded=0;html=1;strokeColor=#000000;" edge="1" parent="1" source="beneficiaries_pk" target="alloc_fk2">
-          <mxGeometry relative="1" as="geometry"/>
+        <!-- ==================== CONNECTORS (Crow's Foot Notation, Non-Crossing) ==================== -->
+
+        <!-- LAYER 0 TO LAYER 1: AGENCIES as Hub -->
+        <!-- AGENCIES -> USERS -->
+        <mxCell id="conn_agency_users" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=1;exitX=0.1;entryY=0;entryX=0.5;" edge="1" parent="1" source="agency_c1" target="users_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2115" y="280"/>
+              <mxPoint x="1275" y="280"/>
+            </Array>
+          </mxGeometry>
         </mxCell>
 
-        <!-- Programs to Allocations -->
-        <mxCell id="conn12" value="" style="edgeStyle=none;rounded=0;html=1;strokeColor=#000000;" edge="1" parent="1" source="program_pk" target="alloc_fk3">
-          <mxGeometry relative="1" as="geometry"/>
+        <!-- AGENCIES -> BARANGAYS (None - Independent) -->
+
+        <!-- AGENCIES -> PROGRAM_NAMES -->
+        <mxCell id="conn_agency_prog" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=1;exitX=0.5;entryY=0;entryX=0.5;" edge="1" parent="1" source="agency_c1" target="prog_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2175" y="280"/>
+              <mxPoint x="3075" y="280"/>
+            </Array>
+          </mxGeometry>
         </mxCell>
 
-        <!-- Resources to Allocations -->
-        <mxCell id="conn13" value="" style="edgeStyle=none;rounded=0;html=1;strokeColor=#000000;" edge="1" parent="1" source="resource_pk" target="alloc_fk4">
-          <mxGeometry relative="1" as="geometry"/>
+        <!-- AGENCIES -> RESOURCE_TYPES -->
+        <mxCell id="conn_agency_res" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=1;exitX=0.9;entryY=0;entryX=0.5;" edge="1" parent="1" source="agency_c1" target="res_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2235" y="280"/>
+              <mxPoint x="3975" y="280"/>
+            </Array>
+          </mxGeometry>
         </mxCell>
 
-        <!-- Beneficiaries to Direct Assistance -->
-        <mxCell id="conn14" value="" style="edgeStyle=none;rounded=0;html=1;strokeColor=#000000;" edge="1" parent="1" source="beneficiaries_pk" target="direct_fk1">
-          <mxGeometry relative="1" as="geometry"/>
+        <!-- LAYER 1 TO LAYER 2: Operational Data -->
+        <!-- BARANGAYS -> BENEFICIARIES -->
+        <mxCell id="conn_baran_benef" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=1;exitX=0.3;entryY=0;entryX=0.3;" edge="1" parent="1" source="baran_h" target="benef_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2130" y="750"/>
+              <mxPoint x="900" y="750"/>
+            </Array>
+          </mxGeometry>
         </mxCell>
 
-        <!-- Programs to Direct Assistance -->
-        <mxCell id="conn15" value="" style="edgeStyle=none;rounded=0;html=1;strokeColor=#000000;" edge="1" parent="1" source="program_pk" target="direct_fk2">
-          <mxGeometry relative="1" as="geometry"/>
+        <!-- BARANGAYS -> DISTRIBUTION_EVENTS -->
+        <mxCell id="conn_baran_dist" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=1;exitX=0.7;entryY=0;entryX=0.3;" edge="1" parent="1" source="baran_h" target="dist_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2220" y="750"/>
+              <mxPoint x="2070" y="750"/>
+            </Array>
+          </mxGeometry>
         </mxCell>
 
-        <!-- Resources to Direct Assistance -->
-        <mxCell id="conn16" value="" style="edgeStyle=none;rounded=0;html=1;strokeColor=#000000;" edge="1" parent="1" source="resource_pk" target="direct_fk3">
-          <mxGeometry relative="1" as="geometry"/>
+        <!-- PROGRAM_NAMES -> DISTRIBUTION_EVENTS -->
+        <mxCell id="conn_prog_dist" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=1;exitX=0.3;entryY=0;entryX=0.7;" edge="1" parent="1" source="prog_h" target="dist_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="3030" y="750"/>
+              <mxPoint x="2130" y="750"/>
+            </Array>
+          </mxGeometry>
         </mxCell>
 
-        <!-- Distribution Events to Direct Assistance -->
-        <mxCell id="conn17" value="" style="edgeStyle=none;rounded=0;html=1;strokeColor=#000000;" edge="1" parent="1" source="dist_pk" target="direct_fk4">
-          <mxGeometry relative="1" as="geometry"/>
+        <!-- PROGRAM_NAMES -> ALLOCATIONS -->
+        <mxCell id="conn_prog_alloc" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=1;exitX=0.5;entryY=0;entryX=0.2;" edge="1" parent="1" source="prog_h" target="alloc_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="3075" y="760"/>
+              <mxPoint x="3270" y="760"/>
+            </Array>
+          </mxGeometry>
         </mxCell>
 
-        <!-- Beneficiaries to SMS Logs -->
-        <mxCell id="conn18" value="" style="edgeStyle=none;rounded=0;html=1;strokeColor=#000000;" edge="1" parent="1" source="beneficiaries_pk" target="sms_fk">
-          <mxGeometry relative="1" as="geometry"/>
+        <!-- PROGRAM_NAMES -> DIRECT_ASSISTANCE -->
+        <mxCell id="conn_prog_direct" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=1;exitX=0.7;entryY=0;entryX=0.2;" edge="1" parent="1" source="prog_h" target="direct_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="3120" y="770"/>
+              <mxPoint x="4370" y="770"/>
+            </Array>
+          </mxGeometry>
         </mxCell>
 
-        <!-- Users to Audit Logs -->
-        <mxCell id="conn19" value="" style="edgeStyle=none;rounded=0;html=1;strokeColor=#000000;" edge="1" parent="1" source="users_pk" target="audit_fk">
-          <mxGeometry relative="1" as="geometry"/>
+        <!-- RESOURCE_TYPES -> DISTRIBUTION_EVENTS -->
+        <mxCell id="conn_res_dist" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=1;exitX=0.3;entryY=0;entryX=0.9;" edge="1" parent="1" source="res_h" target="dist_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="3915" y="750"/>
+              <mxPoint x="2170" y="750"/>
+            </Array>
+          </mxGeometry>
         </mxCell>
 
-        <!-- Beneficiaries to Beneficiary_Agencies -->
-        <mxCell id="conn20" value="" style="edgeStyle=none;rounded=0;html=1;strokeColor=#000000;" edge="1" parent="1" source="beneficiaries_pk" target="bena_pk">
-          <mxGeometry relative="1" as="geometry"/>
+        <!-- RESOURCE_TYPES -> ALLOCATIONS -->
+        <mxCell id="conn_res_alloc" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=1;exitX=0.5;entryY=0;entryX=0.8;" edge="1" parent="1" source="res_h" target="alloc_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="3975" y="765"/>
+              <mxPoint x="3340" y="765"/>
+            </Array>
+          </mxGeometry>
         </mxCell>
 
-        <!-- Agencies to Beneficiary_Agencies -->
-        <mxCell id="conn21" value="" style="edgeStyle=none;rounded=0;html=1;strokeColor=#000000;" edge="1" parent="1" source="agencies_pk" target="bena_pk">
-          <mxGeometry relative="1" as="geometry"/>
+        <!-- RESOURCE_TYPES -> DIRECT_ASSISTANCE -->
+        <mxCell id="conn_res_direct" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=1;exitX=0.7;entryY=0;entryX=0.8;" edge="1" parent="1" source="res_h" target="direct_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="4020" y="780"/>
+              <mxPoint x="4440" y="780"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- USERS -> DISTRIBUTION_EVENTS -->
+        <mxCell id="conn_users_dist" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=1;exitX=0.8;entryY=0;entryX=0.2;" edge="1" parent="1" source="users_h" target="dist_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1320" y="730"/>
+              <mxPoint x="2030" y="730"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- USERS -> DIRECT_ASSISTANCE -->
+        <mxCell id="conn_users_direct" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=1;exitX=1;entryY=0;entryX=0.1;" edge="1" parent="1" source="users_h" target="direct_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1350" y="740"/>
+              <mxPoint x="4320" y="740"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ASSISTANCE_PURPOSES -> DIRECT_ASSISTANCE -->
+        <mxCell id="conn_purpose_direct" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=1;exitX=0.8;entryY=0;entryX=0;" edge="1" parent="1" source="purpose_h" target="direct_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="730"/>
+              <mxPoint x="4300" y="730"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- DISTRIBUTION_EVENTS -> ALLOCATIONS -->
+        <mxCell id="conn_dist_alloc" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=0.5;exitX=1;entryY=0.5;entryX=0;" edge="1" parent="1" source="dist_h" target="alloc_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2170" y="860"/>
+              <mxPoint x="3200" y="860"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- BENEFICIARIES -> ALLOCATIONS -->
+        <mxCell id="conn_benef_alloc" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=0.5;exitX=1;entryY=0.3;entryX=0;" edge="1" parent="1" source="benef_h" target="alloc_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="970" y="850"/>
+              <mxPoint x="3200" y="850"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- BENEFICIARIES -> DIRECT_ASSISTANCE -->
+        <mxCell id="conn_benef_direct" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=0.5;exitX=1;entryY=0.3;entryX=0;" edge="1" parent="1" source="benef_h" target="direct_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="970" y="870"/>
+              <mxPoint x="4300" y="870"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- LAYER 2 TO LAYER 3: Supporting Data -->
+        <!-- USERS -> AUDIT_LOGS -->
+        <mxCell id="conn_users_audit" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=1;exitX=0.1;entryY=0;entryX=0.3;" edge="1" parent="1" source="users_h" target="audit_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1210" y="1180"/>
+              <mxPoint x="480" y="1180"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- BENEFICIARIES -> SMS_LOGS -->
+        <mxCell id="conn_benef_sms" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=1;exitX=0.6;entryY=0;entryX=0.3;" edge="1" parent="1" source="benef_h" target="sms_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="920" y="1180"/>
+              <mxPoint x="1230" y="1180"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- BENEFICIARIES -> BENEFICIARY_AGENCIES -->
+        <mxCell id="conn_benef_bena" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=1;exitX=0.9;entryY=0;entryX=0.1;" edge="1" parent="1" source="benef_h" target="bena_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="960" y="1200"/>
+              <mxPoint x="2070" y="1200"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- AGENCIES -> BENEFICIARY_AGENCIES -->
+        <mxCell id="conn_agency_bena" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=1;exitX=0.6;entryY=0;entryX=0.9;" edge="1" parent="1" source="agency_c1" target="bena_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2160" y="1170"/>
+              <mxPoint x="2210" y="1170"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- LAYER 3 TO LAYER 4: Attachments -->
+        <!-- BENEFICIARIES -> BENEFICIARY_ATTACHMENTS -->
+        <mxCell id="conn_benef_att" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=1;exitX=0.2;entryY=0;entryX=0.2;" edge="1" parent="1" source="benef_h" target="benef_att_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="840" y="1600"/>
+              <mxPoint x="520" y="1600"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- USERS -> BENEFICIARY_ATTACHMENTS -->
+        <mxCell id="conn_users_benef_att" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=1;exitX=0;entryY=0;entryX=0.5;" edge="1" parent="1" source="users_h" target="benef_att_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1200" y="1580"/>
+              <mxPoint x="500" y="1580"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- USERS -> RECORD_ATTACHMENTS -->
+        <mxCell id="conn_users_rec_att" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor:#000000;strokeWidth=1.5;endArrow=crow;endFill=0;startArrow=none;exitY=1;exitX=1;entryY=0;entryX=0.5;" edge="1" parent="1" source="users_h" target="rec_att_h">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1350" y="1600"/>
+              <mxPoint x="2250" y="1600"/>
+            </Array>
+          </mxGeometry>
         </mxCell>
 
       </root>

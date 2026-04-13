@@ -50,6 +50,10 @@ class DirectAssistanceController extends Controller
         ]);
 
         // Filters
+        if ($request->filled('barangay_id')) {
+            $query->whereHas('beneficiary', fn ($q) => $q->where('barangay_id', $request->barangay_id));
+        }
+
         if ($request->filled('agency_id')) {
             $query->whereHas('beneficiary', fn ($q) => $q->where('agency_id', $request->agency_id));
         }
@@ -63,7 +67,7 @@ class DirectAssistanceController extends Controller
             $allowedStatuses = ['planned', 'ready_for_release', 'released', 'not_received'];
 
             if (in_array($status, $allowedStatuses, true)) {
-                $query->where('status', $status);
+                $query->whereIn('status', DirectAssistance::statusesForFilter($status));
             }
         }
 
@@ -87,9 +91,9 @@ class DirectAssistanceController extends Controller
 
         // Summary stats
         $stats = [
-            'planned' => DirectAssistance::where('status', 'planned')->count(),
-            'ready_for_release' => DirectAssistance::where('status', 'ready_for_release')->count(),
-            'released_today' => DirectAssistance::where('status', 'released')
+            'planned' => DirectAssistance::whereStatusNormalized('planned')->count(),
+            'ready_for_release' => DirectAssistance::whereStatusNormalized('ready_for_release')->count(),
+            'released_today' => DirectAssistance::whereStatusNormalized('released')
                 ->whereDate('distributed_at', today())
                 ->count(),
             'this_month' => DirectAssistance::whereMonth('created_at', now()->month)
@@ -256,12 +260,14 @@ class DirectAssistanceController extends Controller
 
     public function markReadyForRelease(DirectAssistance $directAssistance): RedirectResponse
     {
-        if ($directAssistance->status === 'ready_for_release') {
+        $currentStatus = $directAssistance->normalized_status;
+
+        if ($currentStatus === 'ready_for_release') {
             return redirect()->back()
                 ->with('warning', 'This record is already marked as Ready for Release.');
         }
 
-        if ($directAssistance->status === 'released') {
+        if ($currentStatus === 'released') {
             return redirect()->back()
                 ->with('warning', 'Released records cannot be moved back to Ready for Release.');
         }
@@ -304,12 +310,14 @@ class DirectAssistanceController extends Controller
 
     public function markReleased(DirectAssistance $directAssistance): RedirectResponse
     {
-        if ($directAssistance->status === 'released') {
+        $currentStatus = $directAssistance->normalized_status;
+
+        if ($currentStatus === 'released') {
             return redirect()->back()
                 ->with('warning', 'This record is already marked as released.');
         }
 
-        if ($directAssistance->status !== 'ready_for_release') {
+        if ($currentStatus !== 'ready_for_release') {
             return redirect()->back()
                 ->with('warning', 'Set this record to Ready for Release before marking it as released.');
         }
@@ -333,17 +341,19 @@ class DirectAssistanceController extends Controller
 
     public function markNotReceived(DirectAssistance $directAssistance): RedirectResponse
     {
-        if ($directAssistance->status === 'not_received') {
+        $currentStatus = $directAssistance->normalized_status;
+
+        if ($currentStatus === 'not_received') {
             return redirect()->back()
                 ->with('warning', 'This record is already marked as Not Received.');
         }
 
-        if ($directAssistance->status === 'released') {
+        if ($currentStatus === 'released') {
             return redirect()->back()
                 ->with('warning', 'Released records cannot be marked as Not Received.');
         }
 
-        if ($directAssistance->status !== 'ready_for_release') {
+        if ($currentStatus !== 'ready_for_release') {
             return redirect()->back()
                 ->with('warning', 'Set this record to Ready for Release before marking it as Not Received.');
         }
@@ -397,12 +407,12 @@ class DirectAssistanceController extends Controller
             $analytics[] = [
                 'barangay' => $barangay,
                 'total' => (clone $barangayRecords)->count(),
-                'planned' => (clone $barangayRecords)->where('status', 'planned')->count(),
-                'ready_for_release' => (clone $barangayRecords)->where('status', 'ready_for_release')->count(),
-                'released' => (clone $barangayRecords)->where('status', 'released')->count(),
-                'not_received' => (clone $barangayRecords)->where('status', 'not_received')->count(),
+                'planned' => (clone $barangayRecords)->whereStatusNormalized('planned')->count(),
+                'ready_for_release' => (clone $barangayRecords)->whereStatusNormalized('ready_for_release')->count(),
+                'released' => (clone $barangayRecords)->whereStatusNormalized('released')->count(),
+                'not_received' => (clone $barangayRecords)->whereStatusNormalized('not_received')->count(),
                 'released_today' => (clone $barangayRecords)
-                    ->where('status', 'released')
+                    ->whereStatusNormalized('released')
                     ->whereDate('distributed_at', today())
                     ->count(),
             ];

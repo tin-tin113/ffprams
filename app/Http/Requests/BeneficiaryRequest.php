@@ -3,7 +3,9 @@
 namespace App\Http\Requests;
 
 use App\Models\Agency;
+use App\Models\Beneficiary;
 use App\Models\FormFieldOption;
+use App\Support\PhilippineMobileNumber;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -26,6 +28,8 @@ class BeneficiaryRequest extends FormRequest
         $middle = trim((string) $this->input('middle_name', ''));
         $last = trim((string) $this->input('last_name', ''));
         $suffix = trim((string) $this->input('name_suffix', ''));
+        $contactNumber = trim((string) $this->input('contact_number', ''));
+        $normalizedContactNumber = PhilippineMobileNumber::normalize($contactNumber);
 
         $fullName = trim(implode(' ', array_filter([$first, $middle, $last, $suffix])));
 
@@ -37,6 +41,7 @@ class BeneficiaryRequest extends FormRequest
             'last_name' => $last,
             'name_suffix' => $suffix,
             'full_name' => $fullName,
+            'contact_number' => $normalizedContactNumber ?? $contactNumber,
         ], $normalizedNativeFieldInputs));
     }
 
@@ -106,7 +111,15 @@ class BeneficiaryRequest extends FormRequest
             'date_of_birth'    => ['required', 'date', 'before:today'],
             'home_address'     => ['required', 'string', 'max:500'],
             'barangay_id'      => ['required', 'exists:barangays,id'],
-            'contact_number'   => ['required', 'string', 'regex:/^09\d{9}$/'],
+            'contact_number'   => [
+                'required',
+                'string',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (! PhilippineMobileNumber::isValid(is_string($value) ? $value : null)) {
+                        $fail('Contact number must be a valid Philippine mobile number (e.g., 09XXXXXXXXX, 9XXXXXXXXX, 639XXXXXXXXX, +639XXXXXXXXX).');
+                    }
+                },
+            ],
             'photo_path'       => ['nullable', 'string', 'max:255'],
             'civil_status'     => [$civilStatusRequired ? 'required' : 'nullable', Rule::in($civilStatusValues)],
             'highest_education'=> [$highestEducationRequired ? 'required' : 'nullable', Rule::in($highestEducationValues)],
@@ -291,7 +304,6 @@ class BeneficiaryRequest extends FormRequest
         return [
             'first_name.required'              => 'First name is required.',
             'last_name.required'               => 'Last name is required.',
-            'contact_number.regex'              => 'Contact number must be in 09XXXXXXXXX format.',
             'registered_at.before_or_equal'     => 'Registration date cannot be a future date.',
             'date_of_birth.before'              => 'Date of birth must be a past date.',
             'cloa_ep_number.required'           => 'CLOA/EP number is required for DAR beneficiaries.',

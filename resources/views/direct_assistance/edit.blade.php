@@ -40,7 +40,8 @@
 
                         <dt class="col-sm-6 text-muted small">Status</dt>
                         <dd class="col-sm-6">
-                            @switch($directAssistance->status)
+                            @php($normalizedStatus = $directAssistance->normalized_status)
+                            @switch($normalizedStatus)
                                 @case('planned')
                                     <span class="badge bg-warning text-dark">Planned</span>
                                     @break
@@ -54,7 +55,7 @@
                                     <span class="badge bg-danger">Not Received</span>
                                     @break
                                 @default
-                                    <span class="badge bg-secondary">{{ ucfirst(str_replace('_', ' ', $directAssistance->status)) }}</span>
+                                    <span class="badge bg-secondary">{{ $directAssistance->status_label }}</span>
                                     @break
                             @endswitch
                         </dd>
@@ -74,7 +75,7 @@
                 </div>
             </div>
 
-            @if($directAssistance->status !== 'released')
+            @if($normalizedStatus !== 'released')
                 <div class="card border-0 shadow-sm bg-light mt-3">
                     <div class="card-header bg-white fw-semibold text-danger">
                         Danger Zone

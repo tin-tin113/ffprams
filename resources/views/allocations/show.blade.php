@@ -11,18 +11,30 @@
 <div class="container-fluid">
     @php
         $event = $allocation->distributionEvent;
-        $isFinalOutcome = $allocation->distributed_at || $allocation->release_outcome === 'not_received';
-        $canMarkOutcome = ! $isFinalOutcome && (! $event || $event->status !== 'Pending');
+        $isDirect = $allocation->isDirect();
+        $releaseStatus = $allocation->release_status;
+        $isEventPending = (bool) ($event && $event->status === 'Pending');
+        $isFinalOutcome = in_array($releaseStatus, ['released', 'not_received'], true);
 
-        $statusBadge = match (true) {
-            (bool) $allocation->distributed_at => 'bg-success',
-            $allocation->release_outcome === 'not_received' => 'bg-danger',
+        $canSetReadyForRelease = $isDirect
+            && ! $isEventPending
+            && in_array($releaseStatus, ['planned', 'not_received'], true);
+
+        $canMarkOutcome = $isDirect
+            ? (! $isEventPending && $releaseStatus === 'ready_for_release')
+            : (! $isEventPending && ! $isFinalOutcome);
+
+        $statusBadge = match ($releaseStatus) {
+            'ready_for_release' => 'bg-primary',
+            'released' => 'bg-success',
+            'not_received' => 'bg-danger',
             default => 'bg-warning text-dark',
         };
 
-        $statusText = match (true) {
-            (bool) $allocation->distributed_at => 'Released',
-            $allocation->release_outcome === 'not_received' => 'Not Received',
+        $statusText = match ($releaseStatus) {
+            'ready_for_release' => 'Ready for Release',
+            'released' => 'Released',
+            'not_received' => 'Not Received',
             default => 'Planned',
         };
     @endphp
@@ -75,7 +87,7 @@
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="text-muted small">Released At</div>
-                    <div class="fw-semibold mt-1">{{ $allocation->distributed_at ? $allocation->distributed_at->format('M d, Y h:i A') : 'Not yet released' }}</div>
+                    <div class="fw-semibold mt-1">{{ $allocation->distributed_at ? $allocation->distributed_at->format('M d, Y h:i A') : ($releaseStatus === 'ready_for_release' ? 'Awaiting release confirmation' : 'Not yet released') }}</div>
                 </div>
             </div>
         </div>
@@ -154,6 +166,18 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white fw-semibold">Actions</div>
                 <div class="card-body d-grid gap-2">
+                    @if($canSetReadyForRelease)
+                        <form method="POST"
+                              action="{{ route('allocations.mark-ready-for-release', $allocation) }}"
+                              data-confirm-title="Set Ready for Release"
+                              data-confirm-message="Set this allocation to Ready for Release? If SMS automation is enabled, this will send an automatic SMS to the beneficiary.">
+                            @csrf
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-bell me-1"></i> Ready for Release
+                            </button>
+                        </form>
+                    @endif
+
                     @if($canMarkOutcome)
                         <form method="POST"
                               action="{{ route('allocations.markDistributed', $allocation) }}"
@@ -174,10 +198,12 @@
                                 <i class="bi bi-x-lg me-1"></i> Not Received
                             </button>
                         </form>
-                    @else
+                    @endif
+
+                    @if(! $canSetReadyForRelease && ! $canMarkOutcome)
                         <div class="alert alert-light border mb-0">
-                            <div class="fw-semibold mb-1">Finalized Outcome</div>
-                            <div class="text-muted small">This allocation already has a release result or cannot be updated while the event is Pending.</div>
+                            <div class="fw-semibold mb-1">No Available Actions</div>
+                            <div class="text-muted small">This allocation is finalized or cannot be updated while the event is Pending.</div>
                         </div>
                     @endif
                 </div>

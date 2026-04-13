@@ -172,8 +172,9 @@
                                 <td data-label="Program">{{ $assistance->programName->name ?? 'N/A' }}</td>
                                 <td data-label="Resource">{{ $assistance->resourceType->name ?? 'N/A' }}</td>
                                 <td data-label="Value">{{ $assistance->getDisplayValue() }}</td>
+                                @php($normalizedStatus = $assistance->normalized_status)
                                 <td data-label="Status">
-                                    @switch($assistance->status)
+                                    @switch($normalizedStatus)
                                         @case('planned')
                                             <span class="badge bg-warning text-dark">Planned</span>
                                             @break
@@ -187,7 +188,7 @@
                                             <span class="badge bg-danger">Not Received</span>
                                             @break
                                         @default
-                                            <span class="badge bg-secondary">{{ ucfirst(str_replace('_', ' ', $assistance->status)) }}</span>
+                                            <span class="badge bg-secondary">{{ $assistance->status_label }}</span>
                                             @break
                                     @endswitch
                                 </td>
@@ -202,13 +203,13 @@
                                     <a href="{{ route('direct-assistance.show', $assistance) }}" class="btn btn-sm btn-outline-info">
                                         <i class="bi bi-eye"></i> View
                                     </a>
-                                    @if($assistance->status !== 'released')
+                                    @if($normalizedStatus !== 'released')
                                         <a href="{{ route('direct-assistance.edit', $assistance) }}" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-pencil"></i> Edit
                                         </a>
                                     @endif
 
-                                    @if(in_array($assistance->status, ['planned', 'not_received'], true))
+                                    @if(in_array($normalizedStatus, ['planned', 'not_received'], true))
                                         <form method="POST"
                                               action="{{ route('direct-assistance.mark-ready-for-release', $assistance) }}"
                                                 class="direct-assistance-action-form"
@@ -221,7 +222,7 @@
                                         </form>
                                     @endif
 
-                                    @if($assistance->status === 'ready_for_release')
+                                    @if($normalizedStatus === 'ready_for_release')
                                         <form method="POST"
                                               action="{{ route('direct-assistance.mark-released', $assistance) }}"
                                               class="direct-assistance-action-form"

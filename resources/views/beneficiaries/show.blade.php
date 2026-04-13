@@ -421,15 +421,22 @@
                                 <td data-label="Value">{{ $assistance->getDisplayValue() }}</td>
                                 <td class="text-muted small" data-label="Distribution Date">{{ $assistance->created_at?->format('M d, Y') ?? '—' }}</td>
                                 <td data-label="Event Status">
-                                    @switch($assistance->status)
-                                        @case('recorded')
-                                            <span class="badge bg-warning text-dark">Recorded</span>
+                                    @php($normalizedStatus = $assistance->normalized_status)
+                                    @switch($normalizedStatus)
+                                        @case('planned')
+                                            <span class="badge bg-warning text-dark">Planned</span>
                                             @break
-                                        @case('distributed')
-                                            <span class="badge bg-success">Distributed</span>
+                                        @case('ready_for_release')
+                                            <span class="badge bg-primary">Ready for Release</span>
                                             @break
-                                        @case('completed')
-                                            <span class="badge bg-info">Completed</span>
+                                        @case('released')
+                                            <span class="badge bg-success">Released</span>
+                                            @break
+                                        @case('not_received')
+                                            <span class="badge bg-danger">Not Received</span>
+                                            @break
+                                        @default
+                                            <span class="badge bg-secondary">{{ $assistance->status_label }}</span>
                                             @break
                                     @endswitch
                                 </td>
