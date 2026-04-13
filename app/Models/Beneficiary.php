@@ -44,6 +44,12 @@ class Beneficiary extends Model
         'id_type',
         'association_member',
         'association_name',
+        'household_size',
+        'government_id',
+        'number_of_dependents',
+        'main_income_source',
+        'emergency_contact_name',
+        'emergency_contact_number',
 
         // DA/RSBSA fields
         'rsbsa_number',

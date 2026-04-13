@@ -294,6 +294,15 @@
                 <small class="text-muted">Accepted: 09XXXXXXXXX, 9XXXXXXXXX, 639XXXXXXXXX, +639XXXXXXXXX</small>
             </div>
 
+            {{-- Government ID Number --}}
+            <div class="col-12 col-md-3">
+                <label for="government_id" class="form-label">Government ID Number</label>
+                <input type="text" class="form-control @error('government_id') is-invalid @enderror"
+                       id="government_id" name="government_id"
+                       value="{{ old('government_id', $beneficiary->government_id ?? '') }}">
+                @error('government_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+
             {{-- Registration Date --}}
             <div class="col-12 col-md-3">
                 <label for="registered_at" class="form-label">Registration Date <span class="text-danger">*</span></label>
@@ -301,6 +310,33 @@
                        id="registered_at" name="registered_at"
                        value="{{ old('registered_at', isset($beneficiary) ? $beneficiary->registered_at->format('Y-m-d') : '') }}" required>
                 @error('registered_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+
+            {{-- Household Size --}}
+            <div class="col-12 col-md-3">
+                <label for="household_size" class="form-label">Household Size</label>
+                <input type="number" class="form-control @error('household_size') is-invalid @enderror"
+                       id="household_size" name="household_size" min="1"
+                       value="{{ old('household_size', $beneficiary->household_size ?? '') }}">
+                @error('household_size')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+
+            {{-- Number of Dependents --}}
+            <div class="col-12 col-md-3">
+                <label for="number_of_dependents" class="form-label">Number of Dependents</label>
+                <input type="number" class="form-control @error('number_of_dependents') is-invalid @enderror"
+                       id="number_of_dependents" name="number_of_dependents" min="0"
+                       value="{{ old('number_of_dependents', $beneficiary->number_of_dependents ?? '') }}">
+                @error('number_of_dependents')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+
+            {{-- Main Income Source --}}
+            <div class="col-12 col-md-3">
+                <label for="main_income_source" class="form-label">Main Income Source</label>
+                <input type="text" class="form-control @error('main_income_source') is-invalid @enderror"
+                       id="main_income_source" name="main_income_source" placeholder="e.g. Farming, Fishing, Trade"
+                       value="{{ old('main_income_source', $beneficiary->main_income_source ?? '') }}">
+                @error('main_income_source')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
 
             @foreach($customFieldGroups->get('personal_information', collect()) as $customField)
@@ -665,6 +701,30 @@
                 <input type="text" class="form-control @error('association_name') is-invalid @enderror"
                        id="association_name" name="association_name" value="{{ old('association_name', $beneficiary->association_name ?? '') }}">
                 @error('association_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- SECTION 9 — Emergency Contact Information --}}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-exclamation-circle me-1"></i> Emergency Contact Information</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                <label for="emergency_contact_name" class="form-label">Emergency Contact Name</label>
+                <input type="text" class="form-control @error('emergency_contact_name') is-invalid @enderror"
+                       id="emergency_contact_name" name="emergency_contact_name" placeholder="Name of emergency contact"
+                       value="{{ old('emergency_contact_name', $beneficiary->emergency_contact_name ?? '') }}">
+                @error('emergency_contact_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="emergency_contact_number" class="form-label">Emergency Contact Number</label>
+                <input type="text" class="form-control @error('emergency_contact_number') is-invalid @enderror"
+                       id="emergency_contact_number" name="emergency_contact_number" placeholder="09XXXXXXXXX or +639XXXXXXXXX"
+                       value="{{ old('emergency_contact_number', $beneficiary->emergency_contact_number ?? '') }}">
+                @error('emergency_contact_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                <small class="text-muted">Accepted: 09XXXXXXXXX, 9XXXXXXXXX, 639XXXXXXXXX, +639XXXXXXXXX</small>
             </div>
         </div>
     </div>

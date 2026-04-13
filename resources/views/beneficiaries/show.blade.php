@@ -66,6 +66,30 @@
         </div>
         <div class="card-body">
             <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="text-muted small">First Name</div>
+                    <div class="fw-semibold">{{ $beneficiary->first_name }}</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-muted small">Middle Name</div>
+                    <div class="fw-semibold">{{ $beneficiary->middle_name ?? '—' }}</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-muted small">Last Name</div>
+                    <div class="fw-semibold">{{ $beneficiary->last_name }}</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-muted small">Name Extension</div>
+                    <div class="fw-semibold">{{ $beneficiary->name_suffix ?? '—' }}</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-muted small">Sex</div>
+                    <div class="fw-semibold">{{ $beneficiary->sex }}</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-muted small">Date of Birth</div>
+                    <div class="fw-semibold">{{ $beneficiary->date_of_birth ? $beneficiary->date_of_birth->format('M d, Y') : '—' }}</div>
+                </div>
                 <div class="col-md-4">
                     <div class="text-muted small">Civil Status</div>
                     <div class="fw-semibold">{{ $beneficiary->civil_status }}</div>
@@ -138,6 +162,57 @@
             </div>
         </div>
 
+        {{-- Address Information --}}
+        <div class="card-header bg-white fw-semibold border-top">
+            <i class="bi bi-geo-alt-fill me-1"></i> Address Information
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <div class="text-muted small">Home Address</div>
+                    <div class="fw-semibold">{{ $beneficiary->home_address ?? '—' }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="card-header bg-white fw-semibold border-top">
+            <i class="bi bi-building me-1"></i> Registered Agencies
+        </div>
+        <div class="card-body">
+            @if($beneficiary->agencies->isNotEmpty())
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Agency</th>
+                                <th>Identifier</th>
+                                <th>Registration Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($beneficiary->agencies as $agency)
+                                <tr>
+                                    <td class="fw-semibold">{{ $agency->name }}</td>
+                                    <td>
+                                        @if($agency->pivot->identifier)
+                                            <code class="small">{{ $agency->pivot->identifier }}</code>
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-muted small">{{ $agency->pivot->registered_at }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <p class="text-muted mb-0">
+                    <i class="bi bi-inbox me-1"></i>
+                    No registered agencies.
+                </p>
+            @endif
+        </div>
+
         {{-- Farmer Details --}}
         @if($beneficiary->isFarmer())
             <div class="card-header bg-white fw-semibold border-top">
@@ -160,6 +235,10 @@
                     <div class="col-md-4">
                         <div class="text-muted small">Farm Type</div>
                         <div class="fw-semibold">{{ $beneficiary->farm_type ?? '—' }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">Organization / Cooperative Membership</div>
+                        <div class="fw-semibold">{{ $beneficiary->organization_membership ?? '—' }}</div>
                     </div>
                 </div>
             </div>
@@ -190,6 +269,20 @@
                             @endif
                         </div>
                     </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">Length of Residency (Months)</div>
+                        <div class="fw-semibold">{{ $beneficiary->length_of_residency_months ?? '—' }}</div>
+                    </div>
+                    @if($beneficiary->has_fishing_vessel)
+                        <div class="col-md-4">
+                            <div class="text-muted small">Fishing Vessel Type</div>
+                            <div class="fw-semibold">{{ $beneficiary->fishing_vessel_type ?? '—' }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-muted small">Fishing Vessel Tonnage</div>
+                            <div class="fw-semibold">{{ $beneficiary->fishing_vessel_tonnage ? $beneficiary->fishing_vessel_tonnage . ' tons' : '—' }}</div>
+                        </div>
+                    @endif
                 </div>
             </div>
         @endif
