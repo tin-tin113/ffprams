@@ -365,6 +365,7 @@ class SystemSettingsController extends Controller
             'agency_id' => ['required', 'exists:agencies,id'],
             'description' => ['nullable', 'string', 'max:500'],
             'is_active' => ['boolean'],
+            'classification' => ['required', Rule::in(['Farmer', 'Fisherfolk', 'Both'])],
         ]);
 
         // Ensure unique name per agency
@@ -385,6 +386,7 @@ class SystemSettingsController extends Controller
                 'agency_id' => $validated['agency_id'],
                 'description' => $validated['description'] ?? null,
                 'is_active' => $validated['is_active'] ?? true,
+                'classification' => $validated['classification'],
             ]);
 
             $this->audit->log(
@@ -405,6 +407,7 @@ class SystemSettingsController extends Controller
             'agency_id' => ['required', 'exists:agencies,id'],
             'description' => ['nullable', 'string', 'max:500'],
             'is_active' => ['boolean'],
+            'classification' => ['required', Rule::in(['Farmer', 'Fisherfolk', 'Both'])],
         ]);
 
         // Ensure unique name per agency (exclude self)
@@ -428,6 +431,7 @@ class SystemSettingsController extends Controller
                 'agency_id' => $validated['agency_id'],
                 'description' => $validated['description'] ?? null,
                 'is_active' => $validated['is_active'] ?? true,
+                'classification' => $validated['classification'],
             ]);
 
             $this->audit->log(

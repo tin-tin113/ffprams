@@ -192,9 +192,14 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="pnClassification" class="form-label">Classification</label>
-                        <input type="text" id="pnClassification" class="form-control form-control-sm">
-                        <small class="text-muted d-block mt-1">e.g., Emergency, Regular, Pilot</small>
+                        <label for="pnClassification" class="form-label">Classification <span class="text-danger">*</span></label>
+                        <select id="pnClassification" class="form-select form-select-sm" required>
+                            <option value="" disabled>Select classification...</option>
+                            <option value="Farmer">Farmer</option>
+                            <option value="Fisherfolk">Fisherfolk</option>
+                            <option value="Both">Both</option>
+                        </select>
+                        <small class="text-muted d-block mt-1">Determines which beneficiary types can receive this program</small>
                     </div>
 
                     <div class="form-check mb-3">
