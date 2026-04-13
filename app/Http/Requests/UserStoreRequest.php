@@ -16,7 +16,7 @@ class UserStoreRequest extends FormRequest
         return [
             'name'      => ['required', 'string', 'max:255'],
             'email'     => ['required', 'email', 'max:255', 'unique:users,email'],
-            'role'      => ['required', 'in:admin,staff'],
+            'role'      => ['required', 'in:admin,staff,viewer,partner'],
             'agency_id' => ['nullable', 'exists:agencies,id'],
             'password'  => ['required', 'string', 'min:8', 'confirmed'],
         ];

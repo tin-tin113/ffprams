@@ -56,7 +56,9 @@
                             id="role" name="role" required>
                         <option value="" disabled {{ old('role') ? '' : 'selected' }}>Select role...</option>
                         <option value="admin" {{ old('role') === 'admin' ? 'selected' : '' }}>LGU Administrator (Full Access)</option>
-                        <option value="staff" {{ old('role') === 'staff' ? 'selected' : '' }}>Staff</option>
+                        <option value="staff" {{ old('role') === 'staff' ? 'selected' : '' }}>Staff (Operations)</option>
+                        <option value="viewer" {{ old('role') === 'viewer' ? 'selected' : '' }}>Viewer (Read-Only)</option>
+                        <option value="partner" {{ old('role') === 'partner' ? 'selected' : '' }}>Partner Agency (E4)</option>
                     </select>
                     @error('role')
                         <div class="invalid-feedback">{{ $message }}</div>

@@ -19,7 +19,7 @@ class UserUpdateRequest extends FormRequest
         return [
             'name'      => ['required', 'string', 'max:255'],
             'email'     => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
-            'role'      => ['required', 'in:admin,staff'],
+            'role'      => ['required', 'in:admin,staff,viewer,partner'],
             'agency_id' => ['nullable', 'exists:agencies,id'],
             'password'  => ['nullable', 'string', 'min:8', 'confirmed'],
         ];

@@ -36,9 +36,23 @@
                                 <td class="fw-semibold" data-label="Name">{{ $user->name }}</td>
                                 <td data-label="Email">{{ $user->email }}</td>
                                 <td data-label="Role">
-                                    <span class="badge {{ $user->role === 'admin' ? 'bg-danger' : 'bg-primary' }}">
-                                        {{ ucfirst($user->role) }}
-                                    </span>
+                                    @php
+                                        $badgeClass = match($user->role) {
+                                            'admin' => 'bg-danger',
+                                            'staff' => 'bg-primary',
+                                            'viewer' => 'bg-info',
+                                            'partner' => 'bg-success',
+                                            default => 'bg-secondary'
+                                        };
+                                        $roleLabel = match($user->role) {
+                                            'admin' => 'Admin',
+                                            'staff' => 'Staff',
+                                            'viewer' => 'Viewer',
+                                            'partner' => 'Partner',
+                                            default => ucfirst($user->role)
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $badgeClass }}">{{ $roleLabel }}</span>
                                 </td>
                                 <td class="text-muted small" data-label="Created">{{ $user->created_at->format('M d, Y') }}</td>
                                 <td class="text-end" data-label="Actions">

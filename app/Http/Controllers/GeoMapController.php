@@ -4,11 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Agency;
 use App\Models\ProgramName;
-use App\Services\AuditLogService;
 use App\Support\GeoMapCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -16,17 +14,11 @@ use Illuminate\View\View;
 
 class GeoMapController extends Controller
 {
-    public function __construct(
-        private AuditLogService $audit,
-    ) {}
-
     /**
      * Display the geo-map Blade view.
      */
     public function index(): View
     {
-        $this->audit->log((int) Auth::id(), 'viewed', 'geo_map', null);
-
         $agencies = Agency::active()->orderBy('name')->get();
         $programs = ProgramName::active()
             ->select('id', 'agency_id', 'name')
@@ -49,11 +41,6 @@ class GeoMapController extends Controller
         $lineAgencyFilter = $validated['agency_id'] ?? null;
         $programFilter = $validated['program_name_id'] ?? null;
 
-        $this->audit->log((int) Auth::id(), 'viewed_map_data', 'geo_map', null, [
-            'agency_id' => $lineAgencyFilter,
-            'program_name_id' => $programFilter,
-        ]);
-
         $cacheKey = GeoMapCache::buildDataCacheKey($lineAgencyFilter, $programFilter);
 
         try {
@@ -65,7 +52,16 @@ class GeoMapController extends Controller
                             ->where('beneficiaries.status', '=', 'Active');
 
                         if ($lineAgencyFilter) {
-                            $join->where('beneficiaries.agency_id', '=', $lineAgencyFilter);
+                            // Check both primary agency AND beneficiary_agencies pivot for multi-agency support
+                            $join->where(function ($q) use ($lineAgencyFilter) {
+                                $q->where('beneficiaries.agency_id', '=', $lineAgencyFilter)
+                                    ->orWhereExists(function ($query) use ($lineAgencyFilter) {
+                                        $query->select(DB::raw(1))
+                                            ->from('beneficiary_agencies')
+                                            ->whereColumn('beneficiary_agencies.beneficiary_id', 'beneficiaries.id')
+                                            ->where('beneficiary_agencies.agency_id', '=', $lineAgencyFilter);
+                                    });
+                            });
                         }
                     })
                     ->leftJoin('distribution_events', function ($join) use ($lineAgencyFilter, $programFilter) {
@@ -123,7 +119,15 @@ class GeoMapController extends Controller
                     ->whereNull('allocations.deleted_at')
                     ->whereNull('beneficiaries.deleted_at')
                     ->when($lineAgencyFilter, function ($query) use ($lineAgencyFilter) {
-                        $query->where('beneficiaries.agency_id', '=', $lineAgencyFilter);
+                        $query->where(function ($q) use ($lineAgencyFilter) {
+                            $q->where('beneficiaries.agency_id', '=', $lineAgencyFilter)
+                                ->orWhereExists(function ($subQuery) use ($lineAgencyFilter) {
+                                    $subQuery->select(DB::raw(1))
+                                        ->from('beneficiary_agencies')
+                                        ->whereColumn('beneficiary_agencies.beneficiary_id', 'beneficiaries.id')
+                                        ->where('beneficiary_agencies.agency_id', '=', $lineAgencyFilter);
+                                });
+                        });
                     })
                     ->when($programFilter, function ($query) use ($programFilter) {
                         $query->where('allocations.program_name_id', '=', $programFilter);
@@ -159,7 +163,15 @@ class GeoMapController extends Controller
                     ->whereNull('direct_assistance.deleted_at')
                     ->whereNull('beneficiaries.deleted_at')
                     ->when($lineAgencyFilter, function ($query) use ($lineAgencyFilter) {
-                        $query->where('beneficiaries.agency_id', '=', $lineAgencyFilter);
+                        $query->where(function ($q) use ($lineAgencyFilter) {
+                            $q->where('beneficiaries.agency_id', '=', $lineAgencyFilter)
+                                ->orWhereExists(function ($subQuery) use ($lineAgencyFilter) {
+                                    $subQuery->select(DB::raw(1))
+                                        ->from('beneficiary_agencies')
+                                        ->whereColumn('beneficiary_agencies.beneficiary_id', 'beneficiaries.id')
+                                        ->where('beneficiary_agencies.agency_id', '=', $lineAgencyFilter);
+                                });
+                        });
                     })
                     ->when($programFilter, function ($query) use ($programFilter) {
                         $query->where('direct_assistance.program_name_id', '=', $programFilter);
