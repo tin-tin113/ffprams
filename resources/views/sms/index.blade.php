@@ -326,28 +326,28 @@
             <h5 class="mb-3"><i class="bi bi-clock-history me-2"></i>SMS History</h5>
 
             {{-- Filter Bar --}}
-            <form method="GET" action="{{ route('sms.index') }}" class="row g-2 mb-3" id="historyFilterForm">
+            <div class="row g-2 mb-3">
                 <div class="col-md-3">
-                    <input type="text" class="form-control form-control-sm" name="search" placeholder="Search..." value="{{ request('search') }}">
+                    <input type="text" class="form-control form-control-sm" id="historySearch" placeholder="Search..." value="{{ request('search') }}">
                 </div>
                 <div class="col-md-2">
-                    <select class="form-select form-select-sm" name="status">
+                    <select class="form-select form-select-sm" id="historyStatus">
                         <option value="">All Status</option>
                         <option value="sent" {{ request('status') === 'sent' ? 'selected' : '' }}>Sent</option>
                         <option value="failed" {{ request('status') === 'failed' ? 'selected' : '' }}>Failed</option>
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <input type="date" class="form-control form-control-sm" name="date_from" value="{{ request('date_from') }}">
+                    <input type="date" class="form-control form-control-sm" id="historyDateFrom" value="{{ request('date_from') }}">
                 </div>
                 <div class="col-md-2">
-                    <input type="date" class="form-control form-control-sm" name="date_to" value="{{ request('date_to') }}">
+                    <input type="date" class="form-control form-control-sm" id="historyDateTo" value="{{ request('date_to') }}">
                 </div>
                 <div class="col-md-3">
-                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-search me-1"></i>Filter</button>
-                    <a href="{{ route('sms.index') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                    <button type="button" class="btn btn-sm btn-primary" id="historyFilterBtn"><i class="bi bi-search me-1"></i>Filter</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="historyClearBtn">Reset</button>
                 </div>
-            </form>
+            </div>
 
             {{-- SMS Log Table --}}
             <div class="table-responsive">
@@ -864,6 +864,34 @@ document.addEventListener('DOMContentLoaded', function () {
         // TODO: Send to backend to save template
         alert('Template feature coming soon! Template "' + name + '" can be saved.');
         bootstrap.Modal.getInstance(document.getElementById('templateModal')).hide();
+    });
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // SMS HISTORY FILTER
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    document.getElementById('historyFilterBtn')?.addEventListener('click', function () {
+        const search = document.getElementById('historySearch').value;
+        const status = document.getElementById('historyStatus').value;
+        const dateFrom = document.getElementById('historyDateFrom').value;
+        const dateTo = document.getElementById('historyDateTo').value;
+
+        const params = new URLSearchParams();
+        if (search) params.append('search', search);
+        if (status) params.append('status', status);
+        if (dateFrom) params.append('date_from', dateFrom);
+        if (dateTo) params.append('date_to', dateTo);
+
+        window.location.href = `{{ route('sms.index') }}?${params.toString()}`;
+    });
+
+    document.getElementById('historyClearBtn')?.addEventListener('click', function () {
+        document.getElementById('historySearch').value = '';
+        document.getElementById('historyStatus').value = '';
+        document.getElementById('historyDateFrom').value = '';
+        document.getElementById('historyDateTo').value = '';
+
+        window.location.href = '{{ route("sms.index") }}';
     });
 });
 </script>
