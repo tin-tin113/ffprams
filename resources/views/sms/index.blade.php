@@ -31,6 +31,34 @@
         width: 140px;
     }
 
+    /* Recipient Card Styling */
+    .recipient-card {
+        cursor: pointer;
+        border: 2px solid #e9ecef;
+        transition: all 0.2s ease;
+        border-radius: 10px;
+    }
+
+    .recipient-card:hover {
+        border-color: #1b2a4a;
+        background-color: #f8f9fa;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(27, 42, 74, 0.15);
+    }
+
+    .recipient-card:focus {
+        outline: none;
+        border-color: #1b2a4a;
+        background-color: #f0f3f8;
+        box-shadow: 0 0 0 2px rgba(27, 42, 74, 0.2);
+    }
+
+    .recipient-card.border-primary {
+        border-color: #1b2a4a !important;
+        background-color: #f0f3f8 !important;
+        box-shadow: 0 4px 12px rgba(27, 42, 74, 0.15);
+    }
+
     @media (max-width: 575.98px) {
         .sms-detail-label-col {
             width: 100px;
@@ -42,6 +70,10 @@
 
         .sms-preview-scroll {
             max-height: min(34vh, 200px);
+        }
+
+        .recipient-card i {
+            font-size: 1.5rem !important;
         }
     }
 </style>
@@ -64,50 +96,68 @@
         <div class="card-body">
 
             {{-- Step 1 — Select Recipients --}}
-            <label class="form-label fw-semibold mb-3">Send To</label>
-            <div class="row g-3 mb-3" id="recipientCards">
+            <label class="form-label fw-semibold mb-3">1. Select Recipients</label>
+            <div class="row g-3 mb-4" id="recipientCards">
                 {{-- By Program --}}
-                <div class="col-lg-3 col-md-4 col-6">
-                    <div class="card h-100 text-center recipient-card" data-type="by_program" role="button" tabindex="0">
+                <div class="col-lg-2 col-md-3 col-6">
+                    <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_program" role="button" tabindex="0">
                         <div class="card-body py-3">
-                            <i class="bi bi-diagram-3-fill fs-3 d-block mb-1"></i>
+                            <i class="bi bi-diagram-3-fill fs-4 d-block mb-2 text-primary"></i>
                             <div class="fw-semibold small">By Program</div>
                         </div>
                     </div>
                 </div>
                 {{-- By Distribution Event --}}
-                <div class="col-lg-3 col-md-4 col-6">
-                    <div class="card h-100 text-center recipient-card" data-type="by_event" role="button" tabindex="0">
+                <div class="col-lg-2 col-md-3 col-6">
+                    <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_event" role="button" tabindex="0">
                         <div class="card-body py-3">
-                            <i class="bi bi-calendar-event-fill fs-3 d-block mb-1"></i>
+                            <i class="bi bi-calendar-event-fill fs-4 d-block mb-2 text-info"></i>
                             <div class="fw-semibold small">By Event</div>
                         </div>
                     </div>
                 </div>
                 {{-- By Barangay --}}
-                <div class="col-lg-3 col-md-4 col-6">
-                    <div class="card h-100 text-center recipient-card" data-type="by_barangay" role="button" tabindex="0">
+                <div class="col-lg-2 col-md-3 col-6">
+                    <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_barangay" role="button" tabindex="0">
                         <div class="card-body py-3">
-                            <i class="bi bi-geo-alt-fill fs-3 d-block mb-1"></i>
+                            <i class="bi bi-geo-alt-fill fs-4 d-block mb-2 text-success"></i>
                             <div class="fw-semibold small">By Barangay</div>
                         </div>
                     </div>
                 </div>
-                {{-- By Classification --}}
-                <div class="col-lg-3 col-md-4 col-6">
-                    <div class="card h-100 text-center recipient-card" data-type="by_classification" role="button" tabindex="0">
+                {{-- By Resource Type --}}
+                <div class="col-lg-2 col-md-3 col-6">
+                    <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_resource_type" role="button" tabindex="0">
                         <div class="card-body py-3">
-                            <i class="bi bi-funnel-fill fs-3 d-block mb-1"></i>
-                            <div class="fw-semibold small">By Classification</div>
+                            <i class="bi bi-boxes fs-4 d-block mb-2 text-warning"></i>
+                            <div class="fw-semibold small">By Resource</div>
+                        </div>
+                    </div>
+                </div>
+                {{-- By Assistance Purpose --}}
+                <div class="col-lg-2 col-md-3 col-6">
+                    <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_assistance_purpose" role="button" tabindex="0">
+                        <div class="card-body py-3">
+                            <i class="bi bi-heart-fill fs-4 d-block mb-2 text-danger"></i>
+                            <div class="fw-semibold small">By Purpose</div>
+                        </div>
+                    </div>
+                </div>
+                {{-- By Commodity Type --}}
+                <div class="col-lg-2 col-md-3 col-6">
+                    <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_commodity_type" role="button" tabindex="0">
+                        <div class="card-body py-3">
+                            <i class="bi bi-leaf-fill fs-4 d-block mb-2 text-teal" style="color: #20c997;"></i>
+                            <div class="fw-semibold small">By Commodity</div>
                         </div>
                     </div>
                 </div>
                 {{-- Select Specific --}}
-                <div class="col-lg-3 col-md-4 col-6">
-                    <div class="card h-100 text-center recipient-card" data-type="selected" role="button" tabindex="0">
+                <div class="col-lg-2 col-md-3 col-6">
+                    <div class="card h-100 text-center recipient-card cursor-pointer" data-type="selected" role="button" tabindex="0">
                         <div class="card-body py-3">
-                            <i class="bi bi-person-check-fill fs-3 d-block mb-1"></i>
-                            <div class="fw-semibold small">Select Specific</div>
+                            <i class="bi bi-person-check-fill fs-4 d-block mb-2 text-secondary"></i>
+                            <div class="fw-semibold small">Select All</div>
                         </div>
                     </div>
                 </div>
@@ -148,14 +198,38 @@
                 </select>
             </div>
 
-            {{-- Classification Dropdown (hidden) --}}
-            <div id="classificationFilter" class="mb-3" style="display:none;">
-                <label for="classificationSelect" class="form-label">Select Classification</label>
-                <select class="form-select" id="classificationSelect">
-                    <option value="" disabled selected>Choose classification...</option>
-                    <option value="Farmer">Farmer</option>
-                    <option value="Fisherfolk">Fisherfolk</option>
-                    <option value="Both">Both</option>
+            {{-- Resource Type Dropdown (hidden) --}}
+            <div id="resourceTypeFilter" class="mb-3" style="display:none;">
+                <label for="resourceTypeSelect" class="form-label">Select Resource Type</label>
+                <select class="form-select" id="resourceTypeSelect">
+                    <option value="" disabled selected>Choose resource type...</option>
+                    @foreach($resourceTypes as $rt)
+                        <option value="{{ $rt->id }}">{{ $rt->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Assistance Purpose Dropdown (hidden) --}}
+            <div id="assistancePurposeFilter" class="mb-3" style="display:none;">
+                <label for="assistancePurposeSelect" class="form-label">Select Assistance Purpose</label>
+                <select class="form-select" id="assistancePurposeSelect">
+                    <option value="" disabled selected>Choose assistance purpose...</option>
+                    @foreach($assistancePurposes as $ap)
+                        <option value="{{ $ap->id }}" data-category="{{ $ap->category }}" data-type="{{ $ap->type ?? '' }}">
+                            {{ $ap->name }} <span class="text-muted">({{ ucfirst($ap->category) }})</span>
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Commodity Type Dropdown (hidden) --}}
+            <div id="commodityTypeFilter" class="mb-3" style="display:none;">
+                <label for="commodityTypeSelect" class="form-label">Select Commodity Type</label>
+                <select class="form-select" id="commodityTypeSelect">
+                    <option value="" disabled selected>Choose commodity type...</option>
+                    @foreach($commodityTypes as $commodity)
+                        <option value="{{ $commodity }}">{{ $commodity }}</option>
+                    @endforeach
                 </select>
             </div>
 
@@ -188,8 +262,8 @@
             </div>
 
             {{-- Step 3 — Message --}}
-            <div class="mb-3">
-                <label for="smsTemplate" class="form-label fw-semibold">Template (optional)</label>
+            <div class="mt-4 pt-3 border-top">
+                <label for="smsTemplate" class="form-label fw-semibold">2. Message Template (Optional)</label>
                 <select class="form-select form-select-sm mb-2" id="smsTemplate">
                     <option value="">Select a template...</option>
                     <option value="Assistance approved — please coordinate with the MAO office.">Assistance approved</option>
@@ -198,19 +272,22 @@
                     <option value="Reminder: Please update your beneficiary information at the MAO office.">Update information</option>
                 </select>
 
-                <label for="smsMessage" class="form-label fw-semibold">Message</label>
+                <label for="smsMessage" class="form-label fw-semibold">3. Compose Message</label>
                 <textarea class="form-control" id="smsMessage" rows="3" maxlength="160" placeholder="Type your message here..."></textarea>
-                <div class="d-flex justify-content-end mt-1">
-                    <span class="small" id="charCounter">
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <small class="text-muted">SMS messages are limited to 160 characters</small>
+                    <span class="small badge bg-light text-dark" id="charCounter">
                         <span id="charCount">0</span> / 160 characters
                     </span>
                 </div>
             </div>
 
             {{-- Send Button --}}
-            <button type="button" class="btn btn-primary w-100" id="sendBtn" disabled>
-                <i class="bi bi-send-fill me-1"></i> Send Message
-            </button>
+            <div class="mt-4 d-grid gap-2">
+                <button type="button" class="btn btn-primary btn-lg" id="sendBtn" disabled>
+                    <i class="bi bi-send-fill me-2"></i> Send Message
+                </button>
+            </div>
         </div>
     </div>
 
@@ -409,12 +486,16 @@ document.addEventListener('DOMContentLoaded', function () {
     var programFilter      = document.getElementById('programFilter');
     var eventFilter        = document.getElementById('eventFilter');
     var barangayFilter     = document.getElementById('barangayFilter');
-    var classificationFilter = document.getElementById('classificationFilter');
+    var resourceTypeFilter = document.getElementById('resourceTypeFilter');
+    var assistancePurposeFilter = document.getElementById('assistancePurposeFilter');
+    var commodityTypeFilter = document.getElementById('commodityTypeFilter');
     var specificSelector   = document.getElementById('specificSelector');
     var programSelect      = document.getElementById('programSelect');
     var eventSelect        = document.getElementById('eventSelect');
     var barangaySelect     = document.getElementById('barangaySelect');
-    var classificationSelect = document.getElementById('classificationSelect');
+    var resourceTypeSelect = document.getElementById('resourceTypeSelect');
+    var assistancePurposeSelect = document.getElementById('assistancePurposeSelect');
+    var commodityTypeSelect = document.getElementById('commodityTypeSelect');
     var previewCard        = document.getElementById('previewCard');
     var previewBody        = document.getElementById('previewBody');
     var smsMessage         = document.getElementById('smsMessage');
@@ -447,11 +528,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
             recipientType = card.dataset.type;
 
-            programFilter.style.display      = recipientType === 'by_program' ? '' : 'none';
-            eventFilter.style.display        = recipientType === 'by_event' ? '' : 'none';
-            barangayFilter.style.display     = recipientType === 'by_barangay' ? '' : 'none';
-            classificationFilter.style.display = recipientType === 'by_classification' ? '' : 'none';
-            specificSelector.style.display   = recipientType === 'selected' ? '' : 'none';
+            programFilter.style.display         = recipientType === 'by_program' ? '' : 'none';
+            eventFilter.style.display           = recipientType === 'by_event' ? '' : 'none';
+            barangayFilter.style.display        = recipientType === 'by_barangay' ? '' : 'none';
+            resourceTypeFilter.style.display    = recipientType === 'by_resource_type' ? '' : 'none';
+            assistancePurposeFilter.style.display = recipientType === 'by_assistance_purpose' ? '' : 'none';
+            commodityTypeFilter.style.display   = recipientType === 'by_commodity_type' ? '' : 'none';
+            specificSelector.style.display      = recipientType === 'selected' ? '' : 'none';
 
             if (recipientType === 'selected') {
                 loadAllBeneficiaries();
@@ -469,7 +552,9 @@ document.addEventListener('DOMContentLoaded', function () {
     programSelect.addEventListener('change', function () { fetchPreview(); });
     eventSelect.addEventListener('change', function () { fetchPreview(); });
     barangaySelect.addEventListener('change', function () { fetchPreview(); });
-    classificationSelect.addEventListener('change', function () { fetchPreview(); });
+    resourceTypeSelect.addEventListener('change', function () { fetchPreview(); });
+    assistancePurposeSelect.addEventListener('change', function () { fetchPreview(); });
+    commodityTypeSelect.addEventListener('change', function () { fetchPreview(); });
 
     // ── Fetch Preview (debounced) ───────────────
     function fetchPreview() {
@@ -479,13 +564,17 @@ document.addEventListener('DOMContentLoaded', function () {
             if (recipientType === 'by_program') body.program_name_id = programSelect.value;
             if (recipientType === 'by_event') body.distribution_event_id = eventSelect.value;
             if (recipientType === 'by_barangay') body.barangay_id = barangaySelect.value;
-            if (recipientType === 'by_classification') body.classification = classificationSelect.value;
+            if (recipientType === 'by_resource_type') body.resource_type_id = resourceTypeSelect.value;
+            if (recipientType === 'by_assistance_purpose') body.assistance_purpose_id = assistancePurposeSelect.value;
+            if (recipientType === 'by_commodity_type') body.commodity_type = commodityTypeSelect.value;
             if (recipientType === 'selected') body.beneficiary_ids = getSelectedIds();
 
             if (recipientType === 'by_program' && !body.program_name_id) return;
             if (recipientType === 'by_event' && !body.distribution_event_id) return;
             if (recipientType === 'by_barangay' && !body.barangay_id) return;
-            if (recipientType === 'by_classification' && !body.classification) return;
+            if (recipientType === 'by_resource_type' && !body.resource_type_id) return;
+            if (recipientType === 'by_assistance_purpose' && !body.assistance_purpose_id) return;
+            if (recipientType === 'by_commodity_type' && !body.commodity_type) return;
 
             previewBody.innerHTML = '<div class="text-muted small"><span class="spinner-border spinner-border-sm me-1"></span> Loading preview...</div>';
             previewCard.style.display = '';
@@ -659,7 +748,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (recipientType === 'by_program') body.program_name_id = programSelect.value;
         if (recipientType === 'by_event') body.distribution_event_id = eventSelect.value;
         if (recipientType === 'by_barangay') body.barangay_id = barangaySelect.value;
-        if (recipientType === 'by_classification') body.classification = classificationSelect.value;
+        if (recipientType === 'by_resource_type') body.resource_type_id = resourceTypeSelect.value;
+        if (recipientType === 'by_assistance_purpose') body.assistance_purpose_id = assistancePurposeSelect.value;
+        if (recipientType === 'by_commodity_type') body.commodity_type = commodityTypeSelect.value;
         if (recipientType === 'selected') body.beneficiary_ids = getSelectedIds();
 
         fetch('{{ route("sms.send") }}', {
