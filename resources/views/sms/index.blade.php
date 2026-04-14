@@ -505,10 +505,21 @@
 document.addEventListener('DOMContentLoaded', function () {
     console.log('SMS Script Initialized');
 
-    // Prevent any accidental form submissions
+    // CRITICAL: Prevent the global confirmForm from being submitted on SMS page
+    const globalConfirmForm = document.getElementById('confirmForm');
+    if (globalConfirmForm) {
+        globalConfirmForm.addEventListener('submit', function(e) {
+            console.warn('Global confirmForm submit blocked on SMS page');
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return false;
+        }, true); // Use capture phase to intercept before other listeners
+    }
+
+    // Prevent any accidental form submissions (except template form)
     document.addEventListener('submit', function(e) {
         if (e.target && e.target.id !== 'templateForm') {
-            console.warn('Prevented form submission:', e.target);
+            console.warn('Prevented form submission:', e.target.id);
             e.preventDefault();
         }
     });
@@ -520,6 +531,8 @@ document.addEventListener('DOMContentLoaded', function () {
     let debounceTimer = null;
 
     console.log('CSRF Token:', csrfToken ? 'Present' : 'Missing');
+    console.log('SMS Confirm Modal exists:', !!document.getElementById('smsConfirmModal'));
+    console.log('Send button found:', !!document.getElementById('sendBtn'));
 
     // ══════════════════════════════════════════════════════════════════════════════
     // RECIPIENT CARD SELECTION
@@ -768,10 +781,40 @@ document.addEventListener('DOMContentLoaded', function () {
     // SEND MESSAGE
     // ══════════════════════════════════════════════════════════════════════════════
 
-    sendBtn?.addEventListener('click', () => {
+    // ══════════════════════════════════════════════════════════════════════════════
+    // SEND MESSAGE
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    sendBtn?.addEventListener('click', function(e) {
+        console.log('🔴 SEND BUTTON CLICKED');
+        console.log('Send button element:', this);
+        console.log('Event:', e);
+
+        if (!previewData.count) {
+            console.log('No recipients selected, button should be disabled');
+            return;
+        }
+
+        const smsConfirmModalEl = document.getElementById('smsConfirmModal');
+        console.log('SMS Confirm Modal element found:', !!smsConfirmModalEl);
+
+        if (!smsConfirmModalEl) {
+            console.error('CRITICAL: smsConfirmModal element not found!');
+            alert('Error: Confirmation modal not found. Please reload the page.');
+            return;
+        }
+
         document.getElementById('confirmCount').textContent = previewData.count;
         document.getElementById('confirmMessage').textContent = smsMessage.value;
-        new bootstrap.Modal(document.getElementById('smsConfirmModal')).show();
+
+        try {
+            const modalInstance = new bootstrap.Modal(smsConfirmModalEl);
+            console.log('Modal instance created:', modalInstance);
+            modalInstance.show();
+            console.log('Modal show() called successfully');
+        } catch (error) {
+            console.error('Error showing modal:', error);
+        }
     });
 
     document.getElementById('confirmSendBtn')?.addEventListener('click', async function (e) {
