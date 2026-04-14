@@ -192,12 +192,9 @@
                                     <label class="form-label fw-semibold">Category</label>
                                     <select id="purposeCategoryFilter" class="form-select form-select-sm">
                                         <option value="">All Categories</option>
-                                        <option value="agricultural">Agricultural</option>
-                                        <option value="fishery">Fishery</option>
+                                        <option value="production">Production</option>
                                         <option value="livelihood">Livelihood</option>
-                                        <option value="medical">Medical</option>
                                         <option value="emergency">Emergency</option>
-                                        <option value="other">Other</option>
                                     </select>
                                 </div>
                                 <div class="col-12 col-md-4">
@@ -228,8 +225,8 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th>Category</th>
+                                        <th>Type</th>
                                         <th>Name</th>
-                                        <th>Description</th>
                                         <th>Status</th>
                                         <th class="text-center">Actions</th>
                                     </tr>
@@ -238,12 +235,12 @@
                                     @forelse($purposes as $purpose)
                                     <tr data-purpose-id="{{ $purpose->id }}">
                                         <td data-label="Category">
-                                            <span class="badge bg-info">{{ $purpose->category }}</span>
+                                            <span class="badge bg-info">{{ ucfirst($purpose->category) }}</span>
+                                        </td>
+                                        <td data-label="Type">
+                                            <small>{{ $purpose->type ?? 'N/A' }}</small>
                                         </td>
                                         <td data-label="Name"><strong>{{ $purpose->name }}</strong></td>
-                                        <td data-label="Description">
-                                            <small class="text-muted">{{ Str::limit($purpose->description, 50) }}</small>
-                                        </td>
                                         <td data-label="Status">
                                             <span class="badge {{ $purpose->is_active ? 'bg-success' : 'bg-secondary' }}">
                                                 {{ $purpose->is_active ? 'Active' : 'Inactive' }}
@@ -255,7 +252,7 @@
                                                         data-id="{{ $purpose->id }}"
                                                         data-name="{{ $purpose->name }}"
                                                         data-category="{{ $purpose->category }}"
-                                                        data-description="{{ $purpose->description }}"
+                                                        data-type="{{ $purpose->type }}"
                                                         data-active="{{ $purpose->is_active }}"
                                                         data-bs-toggle="modal"
                                                         data-bs-target="#purposeModal"
@@ -387,18 +384,25 @@
 
                     <div class="mb-3">
                         <label for="purposeCategory" class="form-label">Category <span class="text-danger">*</span></label>
-                        <input type="text" id="purposeCategory" class="form-control form-control-sm" required>
-                        <small class="text-muted d-block mt-1">e.g., Production, Livelihood, Emergency</small>
+                        <select id="purposeCategory" class="form-select form-select-sm" required>
+                            <option value="">-- Select Category --</option>
+                            <option value="production">Production</option>
+                            <option value="livelihood">Livelihood</option>
+                            <option value="emergency">Emergency</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="purposeType" class="form-label">Type <span class="text-danger">*</span></label>
+                        <select id="purposeType" class="form-select form-select-sm" required disabled>
+                            <option value="">-- Select Type --</option>
+                        </select>
+                        <small class="text-muted d-block mt-1">Select a category first</small>
                     </div>
 
                     <div class="mb-3">
                         <label for="purposeName" class="form-label">Name <span class="text-danger">*</span></label>
-                        <input type="text" id="purposeName" class="form-control form-control-sm" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="purposeDescription" class="form-label">Description</label>
-                        <textarea id="purposeDescription" class="form-control form-control-sm" rows="3"></textarea>
+                        <input type="text" id="purposeName" class="form-control form-control-sm" required placeholder="e.g., Rice Seed Production Support">
                     </div>
 
                     <div class="form-check mb-3">
@@ -650,14 +654,77 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('purposeStatusFilter').addEventListener('change', applyPurposeFilters);
     document.getElementById('purposeSearch').addEventListener('input', applyPurposeFilters);
 
+    // ========== ASSISTANCE PURPOSES FUNCTIONS ==========
+
+    // Category Types Mapping
+    const categoryTypes = {
+        production: [
+            'Seeds & Seedlings',
+            'Fertilizers & Soil Amendments',
+            'Farm Equipment & Tools',
+            'Pesticides & Farm Inputs',
+            'Irrigation System',
+            'Livestock Assistance',
+            'Fishery/Aquaculture',
+            'Production Infrastructure',
+        ],
+        livelihood: [
+            'Skills Training',
+            'Alternative Income Program',
+            'Business Capital',
+            'Market Access Support',
+            'Post-Harvest Processing',
+            'Cooperative Development',
+            'Value-Chain Development',
+        ],
+        emergency: [
+            'Disaster Relief',
+            'Emergency Food Assistance',
+            'Medical/Health Assistance',
+            'Livelihood Recovery',
+            'Infrastructure Rehabilitation',
+        ]
+    };
+
+    // Populate type dropdown based on category
+    function updateTypeDropdown(category) {
+        const typeSelect = document.getElementById('purposeType');
+        const types = categoryTypes[category] || [];
+
+        typeSelect.innerHTML = '<option value="">-- Select Type --</option>';
+        types.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type;
+            option.textContent = type;
+            typeSelect.appendChild(option);
+        });
+
+        if (types.length > 0) {
+            typeSelect.disabled = false;
+            document.querySelector('label[for="purposeType"] + select + small').textContent = '';
+        } else {
+            typeSelect.disabled = true;
+            document.querySelector('label[for="purposeType"] + select + small').textContent = 'Select a category first';
+        }
+    }
+
+    // Category dropdown change event
+    document.getElementById('purposeCategory').addEventListener('change', function() {
+        updateTypeDropdown(this.value);
+    });
+
     // Edit purpose
     document.querySelectorAll('.edit-purpose').forEach(btn => {
         btn.addEventListener('click', function() {
             document.getElementById('purposeId').value = this.dataset.id;
             document.getElementById('purposeName').value = this.dataset.name;
             document.getElementById('purposeCategory').value = this.dataset.category;
-            document.getElementById('purposeDescription').value = this.dataset.description;
             document.getElementById('purposeIsActive').checked = this.dataset.active === '1';
+
+            // Populate type dropdown and set value
+            updateTypeDropdown(this.dataset.category);
+            document.getElementById('purposeType').value = this.dataset.type || '';
+
             document.getElementById('purposeModalTitle').textContent = 'Edit Assistance Purpose';
         });
     });
@@ -667,6 +734,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!e.relatedTarget || !e.relatedTarget.classList.contains('edit-purpose')) {
             document.getElementById('purposeForm').reset();
             document.getElementById('purposeId').value = '';
+            document.getElementById('purposeType').disabled = true;
+            document.getElementById('purposeType').innerHTML = '<option value="">-- Select Type --</option>';
+            document.querySelector('label[for="purposeType"] + select + small').textContent = 'Select a category first';
             document.getElementById('purposeModalTitle').textContent = 'Add Assistance Purpose';
         }
     });
@@ -691,8 +761,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({
                     category: document.getElementById('purposeCategory').value,
+                    type: document.getElementById('purposeType').value,
                     name: document.getElementById('purposeName').value,
-                    description: document.getElementById('purposeDescription').value,
                     is_active: document.getElementById('purposeIsActive').checked
                 })
             });

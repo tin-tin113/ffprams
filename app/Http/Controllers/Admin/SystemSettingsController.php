@@ -215,7 +215,8 @@ class SystemSettingsController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:assistance_purposes,name'],
-            'category' => ['required', Rule::in(['agricultural', 'fishery', 'livelihood', 'medical', 'emergency', 'other'])],
+            'category' => ['required', Rule::in(['production', 'livelihood', 'emergency'])],
+            'type' => ['required', 'string', 'max:255'],
             'is_active' => ['boolean'],
         ]);
 
@@ -223,6 +224,7 @@ class SystemSettingsController extends Controller
             $purpose = AssistancePurpose::create([
                 'name' => $validated['name'],
                 'category' => $validated['category'],
+                'type' => $validated['type'],
                 'is_active' => $validated['is_active'] ?? true,
             ]);
 
@@ -241,7 +243,8 @@ class SystemSettingsController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('assistance_purposes', 'name')->ignore($purpose->id)],
-            'category' => ['required', Rule::in(['agricultural', 'fishery', 'livelihood', 'medical', 'emergency', 'other'])],
+            'category' => ['required', Rule::in(['production', 'livelihood', 'emergency'])],
+            'type' => ['required', 'string', 'max:255'],
             'is_active' => ['boolean'],
         ]);
 
@@ -251,6 +254,7 @@ class SystemSettingsController extends Controller
             $purpose->update([
                 'name' => $validated['name'],
                 'category' => $validated['category'],
+                'type' => $validated['type'],
                 'is_active' => $validated['is_active'] ?? true,
             ]);
 
