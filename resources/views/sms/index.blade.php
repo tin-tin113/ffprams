@@ -326,7 +326,7 @@
             <h5 class="mb-3"><i class="bi bi-clock-history me-2"></i>SMS History</h5>
 
             {{-- Filter Bar --}}
-            <form method="GET" class="row g-2 mb-3" id="historyFilterForm">
+            <form method="GET" action="{{ route('sms.index') }}" class="row g-2 mb-3" id="historyFilterForm">
                 <div class="col-md-3">
                     <input type="text" class="form-control form-control-sm" name="search" placeholder="Search..." value="{{ request('search') }}">
                 </div>
@@ -847,8 +847,24 @@ document.addEventListener('DOMContentLoaded', function () {
     window.deleteTemplate = function (name) {
         if (confirm(`Delete template "${name}"?`)) {
             console.log('Delete:', name);
+            // TODO: Implement delete template backend
         }
     };
+
+    document.getElementById('saveTemplateBtn')?.addEventListener('click', function (e) {
+        e.preventDefault();
+        const name = document.getElementById('templateName').value;
+        const content = document.getElementById('templateContent').value;
+
+        if (!name || !content) {
+            alert('Please fill in all fields');
+            return;
+        }
+
+        // TODO: Send to backend to save template
+        alert('Template feature coming soon! Template "' + name + '" can be saved.');
+        bootstrap.Modal.getInstance(document.getElementById('templateModal')).hide();
+    });
 });
 </script>
 @endpush
