@@ -40,6 +40,14 @@ class SmsController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'category']);
 
+        // Default templates
+        $templates = [
+            ['name' => 'Assistance Approved', 'content' => 'Assistance approved — please coordinate with the MAO office.'],
+            ['name' => 'Distribution Reminder', 'content' => 'Your scheduled distribution is on [date]. Please bring a valid ID.'],
+            ['name' => 'Visit MAO', 'content' => 'Please visit the Municipal Agriculture Office for your assistance claims.'],
+            ['name' => 'Update Info', 'content' => 'Reminder: Please update your beneficiary information at the MAO office.'],
+        ];
+
         $smsLogs = SmsLog::with('beneficiary.barangay')
             ->when($request->filled('search'), function ($q) use ($request) {
                 $q->whereHas('beneficiary', fn ($b) => $b->where('full_name', 'like', "%{$request->search}%"));
@@ -57,6 +65,7 @@ class SmsController extends Controller
             'events',
             'resourceTypes',
             'assistancePurposes',
+            'templates',
             'smsLogs',
         ));
     }
@@ -80,11 +89,19 @@ class SmsController extends Controller
             'barangay_id' => ['required_if:recipient_type,by_barangay', 'nullable', 'exists:barangays,id'],
             'resource_type_id' => ['required_if:recipient_type,by_resource_type', 'nullable', 'exists:resource_types,id'],
             'assistance_purpose_id' => ['required_if:recipient_type,by_assistance_purpose', 'nullable', 'exists:assistance_purposes,id'],
-            'beneficiary_ids' => ['required_if:recipient_type,selected', 'nullable', 'array', 'min:1'],
+            'beneficiary_ids' => ['nullable', 'array'],
             'beneficiary_ids.*' => ['integer', 'exists:beneficiaries,id'],
         ]);
 
-        $recipients = $this->resolveRecipients($request);
+        $query = $this->resolveRecipients($request);
+
+        // If specific beneficiary IDs are provided (refined selection), further filter
+        if ($request->filled('beneficiary_ids')) {
+            $refinedIds = $request->beneficiary_ids;
+            $query->whereIn('id', $refinedIds);
+        }
+
+        $recipients = $query->get();
 
         return response()->json([
             'count' => $recipients->count(),
@@ -137,11 +154,19 @@ class SmsController extends Controller
             'barangay_id' => ['required_if:recipient_type,by_barangay', 'nullable', 'exists:barangays,id'],
             'resource_type_id' => ['required_if:recipient_type,by_resource_type', 'nullable', 'exists:resource_types,id'],
             'assistance_purpose_id' => ['required_if:recipient_type,by_assistance_purpose', 'nullable', 'exists:assistance_purposes,id'],
-            'beneficiary_ids' => ['required_if:recipient_type,selected', 'nullable', 'array', 'min:1'],
+            'beneficiary_ids' => ['nullable', 'array'],
             'beneficiary_ids.*' => ['integer', 'exists:beneficiaries,id'],
         ]);
 
-        $recipients = $this->resolveRecipients($request);
+        $query = $this->resolveRecipients($request);
+
+        // If specific beneficiary IDs are provided (refined selection), further filter
+        if ($request->filled('beneficiary_ids')) {
+            $refinedIds = $request->beneficiary_ids;
+            $query->whereIn('id', $refinedIds);
+        }
+
+        $recipients = $query->get();
 
         $sent = 0;
         $failed = 0;
@@ -149,7 +174,6 @@ class SmsController extends Controller
         foreach ($recipients as $beneficiary) {
             if (empty($beneficiary->contact_number)) {
                 $failed++;
-
                 continue;
             }
 
@@ -228,7 +252,7 @@ class SmsController extends Controller
                 break;
         }
 
-        return $query->orderBy('full_name')->get();
+        return $query->orderBy('full_name');
     }
 
     /**
