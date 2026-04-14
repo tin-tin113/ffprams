@@ -451,6 +451,32 @@ class SystemSettingsController extends Controller
         return response()->json(['success' => true, 'programName' => $programName->fresh()->load('agency')]);
     }
 
+    public function toggleProgramStatus(Request $request, ProgramName $programName): JsonResponse
+    {
+        $validated = $request->validate([
+            'is_active' => ['required', 'boolean'],
+        ]);
+
+        DB::transaction(function () use ($validated, $programName) {
+            $oldValues = $programName->toArray();
+
+            $programName->update([
+                'is_active' => $validated['is_active'],
+            ]);
+
+            $this->audit->log(
+                auth()->id(), 'updated', 'program_names', $programName->id,
+                $oldValues, $programName->fresh()->toArray(),
+            );
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => $validated['is_active'] ? 'Program reactivated successfully.' : 'Program deactivated successfully.',
+            'programName' => $programName->fresh()->load('agency'),
+        ]);
+    }
+
     public function destroyProgramName(ProgramName $programName): JsonResponse
     {
         if ($programName->distributionEvents()->exists()) {

@@ -9,11 +9,6 @@
                 <div class="container-fluid px-0">
                     <ul class="navbar-nav w-100">
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('admin.settings.program-names.index') }}">
-                                <i class="bi bi-list"></i> Programs
-                            </a>
-                        </li>
-                        <li class="nav-item">
                             <a class="nav-link active" href="{{ route('admin.settings.index') }}">
                                 <i class="bi bi-building"></i> Agencies
                             </a>

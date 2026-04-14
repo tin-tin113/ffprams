@@ -139,29 +139,29 @@
             flex-direction: column;
             transition: transform 0.3s ease;
             will-change: transform;
-            /* Prevent layout shift caused by scrollbar */
             backface-visibility: hidden;
             perspective: 1000px;
+            overflow: hidden;
         }
 
         .sidebar-header {
-            padding: 0.7rem 1rem 0.5rem;
+            padding: 0.6rem 1rem 0.4rem;
             text-align: center;
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
         .sidebar-logo {
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.15rem;
             border: 2px solid rgba(255,255,255,0.2);
             object-fit: cover;
         }
 
         .sidebar-title {
             color: #fff;
-            font-size: 0.65rem;
+            font-size: 0.62rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -170,24 +170,30 @@
 
         .sidebar-nav {
             flex: 1;
-            overflow-y: auto;
-            padding: 0.3rem 0;
-            /* Reserve scrollbar space in sidebar */
-            scrollbar-gutter: stable;
-            /* Prevent internal scrollbar from affecting layout */
-            max-height: calc(100vh - 160px);
+            overflow: hidden;
+            padding: 0.5rem 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-nav .nav {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
         }
 
         .sidebar .nav-link {
             display: flex;
             align-items: center;
             color: rgba(255,255,255,0.7);
-            padding: 0.625rem 1rem;
+            padding: 0.5rem 1rem;
             font-size: 0.8rem;
             font-weight: 500;
             transition: all 0.2s;
             border-left: 3px solid transparent;
-            min-height: 48px;
+            min-height: 44px;
+            margin: 0;
         }
 
         .sidebar .nav-link:hover {
@@ -225,19 +231,19 @@
             text-transform: uppercase;
             letter-spacing: 1.5px;
             color: rgba(255,255,255,0.4);
-            padding: 0.6rem 1rem 0.25rem;
+            padding: 0.5rem 1rem 0.15rem;
             font-weight: 600;
         }
 
         .sidebar-user {
-            padding: 0.65rem 1rem;
+            padding: 0.5rem 1rem;
             border-top: 1px solid rgba(255,255,255,0.1);
             background-color: rgba(0,0,0,0.2);
         }
 
         .sidebar-user-avatar {
-            width: 30px;
-            height: 30px;
+            width: 28px;
+            height: 28px;
             background-color: var(--accent-green);
             border-radius: 50%;
             display: flex;
@@ -245,7 +251,7 @@
             justify-content: center;
             color: #fff;
             font-weight: 600;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
         }
 
         .sidebar-user-info {
@@ -255,7 +261,7 @@
 
         .sidebar-user-name {
             color: #fff;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 500;
             white-space: nowrap;
             overflow: hidden;
@@ -263,7 +269,7 @@
         }
 
         .sidebar-user-role {
-            font-size: 0.6rem;
+            font-size: 0.55rem;
             color: rgba(255,255,255,0.5);
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -934,6 +940,11 @@
                     <i class="bi bi-people-fill"></i> Beneficiaries
                 </a>
 
+                <a class="nav-link {{ request()->routeIs('admin.settings.program-names.*') ? 'active' : '' }}"
+                   href="{{ route('admin.settings.program-names.index') }}">
+                    <i class="bi bi-list"></i> Programs
+                </a>
+
                 <a class="nav-link {{ request()->routeIs('allocations.*') ? 'active' : '' }}"
                    href="{{ route('allocations.index') }}">
                     <i class="bi bi-list-check"></i> Assistance Allocations
@@ -973,7 +984,7 @@
                         <i class="bi bi-journal-text"></i> Audit Log
                     </a>
 
-                    <a class="nav-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}"
+                    <a class="nav-link {{ request()->routeIs('admin.settings.*') && !request()->routeIs('admin.settings.program-names.*') ? 'active' : '' }}"
                        href="{{ route('admin.settings.index') }}">
                         <i class="bi bi-gear-fill"></i> System Settings
                     </a>
@@ -1086,35 +1097,46 @@
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Sidebar Active State & Scrollbar Fix -->
+    <!-- Sidebar Active State Management -->
     <script>
     (function () {
-        // Ensure System Settings link stays active on all settings pages
-        function highlightSettingsLink() {
+        // Clean sidebar active state based on actual route
+        function updateSidebarActiveState() {
             var currentPath = window.location.pathname;
-            var settingsLink = document.querySelector('a[href*="/admin/settings"]');
+            var programsLink = document.querySelector('a[href*="/admin/settings/program-names"]');
+            var settingsLink = document.querySelector('a[href="/admin/settings"]');
 
-            if (settingsLink && (currentPath.includes('/admin/settings') || currentPath.includes('admin.settings'))) {
-                settingsLink.classList.add('active');
-                settingsLink.style.backgroundColor = 'var(--sidebar-active)';
-                settingsLink.style.borderLeftColor = 'var(--accent-green)';
+            // On program-names pages: Programs active, System Settings inactive
+            if (currentPath.includes('/admin/settings/program-names')) {
+                if (programsLink) {
+                    programsLink.classList.add('active');
+                    programsLink.style.backgroundColor = 'var(--sidebar-active)';
+                    programsLink.style.borderLeftColor = 'var(--accent-green)';
+                }
+                if (settingsLink) {
+                    settingsLink.classList.remove('active');
+                    settingsLink.style.backgroundColor = '';
+                    settingsLink.style.borderLeftColor = '';
+                }
+            }
+            // On other settings pages: System Settings active, Programs inactive
+            else if (currentPath.includes('/admin/settings')) {
+                if (settingsLink) {
+                    settingsLink.classList.add('active');
+                    settingsLink.style.backgroundColor = 'var(--sidebar-active)';
+                    settingsLink.style.borderLeftColor = 'var(--accent-green)';
+                }
+                if (programsLink) {
+                    programsLink.classList.remove('active');
+                    programsLink.style.backgroundColor = '';
+                    programsLink.style.borderLeftColor = '';
+                }
             }
         }
 
         // Run on page load and after navigation
-        highlightSettingsLink();
-        window.addEventListener('load', highlightSettingsLink);
-
-        // Also ensure sidebar nav stays properly sized
-        function ensureSidebarHeight() {
-            var sidebarNav = document.querySelector('.sidebar-nav');
-            if (sidebarNav) {
-                sidebarNav.style.maxHeight = 'calc(100vh - 160px)';
-            }
-        }
-
-        ensureSidebarHeight();
-        window.addEventListener('resize', ensureSidebarHeight);
+        document.addEventListener('DOMContentLoaded', updateSidebarActiveState);
+        window.addEventListener('load', updateSidebarActiveState);
     })();
     </script>
 

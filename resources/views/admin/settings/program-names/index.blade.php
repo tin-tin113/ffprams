@@ -2,37 +2,6 @@
 
 @section('content')
 <div class="container-fluid py-4">
-    {{-- Navigation Tabs --}}
-    <div class="row mb-4">
-        <div class="col-12">
-            <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom settings-tabs-nav">
-                <div class="container-fluid px-0">
-                    <ul class="navbar-nav w-100">
-                        <li class="nav-item">
-                            <a class="nav-link active" href="{{ route('admin.settings.program-names.index') }}">
-                                <i class="bi bi-list"></i> Programs
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('admin.settings.index') }}">
-                                <i class="bi bi-building"></i> Agencies
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('admin.settings.resource-types.index') }}">
-                                <i class="bi bi-box"></i> Resource Types & Purposes
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('admin.settings.form-fields.index') }}">
-                                <i class="bi bi-file-form"></i> Form Fields
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
-        </div>
-    </div>
 
     <div class="row mb-4">
         <div class="col-12">
@@ -40,9 +9,11 @@
                 <h3 class="mb-0">
                     <i class="bi bi-list"></i> Programs
                 </h3>
+                @if(Auth::user()->isAdmin())
                 <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#pnModal">
                     <i class="bi bi-plus"></i> Add Program
                 </button>
+                @endif
             </div>
             <p class="text-muted small">Manage assistance programs by agency</p>
         </div>
@@ -122,6 +93,7 @@
                                        title="View program details">
                                         <i class="bi bi-eye"></i> View
                                     </a>
+                                    @if(Auth::user()->isAdmin())
                                     <button class="btn btn-sm btn-outline-primary edit-pn"
                                             data-id="{{ $program->id }}"
                                             data-name="{{ $program->name }}"
@@ -134,12 +106,17 @@
                                             title="Edit this program">
                                         <i class="bi bi-pencil"></i> Edit
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger delete-pn"
+                                    <button class="btn btn-sm {{ $program->is_active ? 'btn-outline-warning' : 'btn-outline-success' }} toggle-status-pn"
                                             data-id="{{ $program->id }}"
                                             data-name="{{ $program->name }}"
-                                            title="Delete this program">
-                                        <i class="bi bi-trash"></i> Delete
+                                            data-active="{{ $program->is_active }}"
+                                            title="{{ $program->is_active ? 'Deactivate this program' : 'Reactivate this program' }}">
+                                        <i class="bi bi-{{ $program->is_active ? 'x-circle' : 'check-circle' }}"></i>
+                                        {{ $program->is_active ? 'Deactivate' : 'Reactivate' }}
                                     </button>
+                                    @else
+                                    <span class="badge bg-info">Read-only</span>
+                                    @endif
                                 </td>
                             </tr>
                             @empty
@@ -568,28 +545,34 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Delete
-    document.querySelectorAll('.delete-pn').forEach(btn => {
+    // Toggle Status (Deactivate/Reactivate)
+    document.querySelectorAll('.toggle-status-pn').forEach(btn => {
         btn.addEventListener('click', function() {
+            const isActive = this.dataset.active === '1';
+            const actionText = isActive ? 'Deactivate' : 'Reactivate';
+            const message = `${actionText} "${this.dataset.name}"?`;
+
             confirmThenRun(
-                'Confirm Deletion',
-                `Delete "${this.dataset.name}"? This action cannot be undone.`,
+                `Confirm ${actionText}`,
+                message,
                 function () {
-                fetch(`/admin/settings/program-names/${this.dataset.id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': csrftoken,
-                        'Accept': 'application/json'
-                    }
-                })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert(data.message || 'Unable to delete program name.');
-                    }
-                });
+                    fetch(`/admin/settings/program-names/${this.dataset.id}/toggle-status`, {
+                        method: 'PATCH',
+                        headers: {
+                            'X-CSRF-TOKEN': csrftoken,
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ is_active: !isActive })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert(data.message || `Unable to ${isActive ? 'deactivate' : 'reactivate'} program.`);
+                        }
+                    });
                 }.bind(this)
             );
         });

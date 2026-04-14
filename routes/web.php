@@ -242,6 +242,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     // Settings — Program Names
     Route::post('settings/program-names', [SystemSettingsController::class, 'storeProgramName'])->name('settings.program-names.store');
     Route::put('settings/program-names/{programName}', [SystemSettingsController::class, 'updateProgramName'])->name('settings.program-names.update');
+    Route::patch('settings/program-names/{programName}/toggle-status', [SystemSettingsController::class, 'toggleProgramStatus'])->name('settings.program-names.toggle-status');
     Route::delete('settings/program-names/{programName}', [SystemSettingsController::class, 'destroyProgramName'])->name('settings.program-names.destroy');
 
     // Settings — Program Legal Requirements
