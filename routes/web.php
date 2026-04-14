@@ -254,6 +254,11 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     // Program Detail View
     Route::get('programs/{programName}', [SystemSettingsController::class, 'showProgramDetail'])->name('programs.detail');
 
+    // Program API Endpoints (for preview modal)
+    Route::get('programs/{programName}/legal-requirements-count', [SystemSettingsController::class, 'getProgramLegalRequirementsCount']);
+    Route::get('programs/{programName}/legal-requirements', [SystemSettingsController::class, 'getProgramLegalRequirements']);
+    Route::get('programs/{programName}/details', [SystemSettingsController::class, 'getProgramDetails']);
+
     // Settings — Form Fields
     Route::get('settings/form-fields/list', [SystemSettingsController::class, 'listFormFields'])->name('settings.form-fields.list');
     Route::post('settings/form-fields', [SystemSettingsController::class, 'storeFormField'])->name('settings.form-fields.store');

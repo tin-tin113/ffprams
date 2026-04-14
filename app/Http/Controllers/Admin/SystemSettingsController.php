@@ -70,7 +70,7 @@ class SystemSettingsController extends Controller
     public function indexProgramNames(): View
     {
         $agencies = Agency::where('is_active', true)->orderBy('name')->get();
-        $programNames = ProgramName::with('agency')->orderBy('name')->get();
+        $programNames = ProgramName::with(['agency', 'legalRequirements'])->orderBy('name')->get();
 
         return view('admin.settings.program-names.index', compact('agencies', 'programNames'));
     }
@@ -700,6 +700,79 @@ class SystemSettingsController extends Controller
             'totalAllocatedAmount',
             'totalBeneficiaries',
         ));
+    }
+
+    /**
+     * Get legal requirements count for a program (API)
+     */
+    public function getProgramLegalRequirementsCount(ProgramName $programName): JsonResponse
+    {
+        return response()->json([
+            'count' => $programName->legalRequirements()->count(),
+        ]);
+    }
+
+    /**
+     * Get legal requirements documents for a program (API)
+     */
+    public function getProgramLegalRequirements(ProgramName $programName): JsonResponse
+    {
+        $documents = $programName->legalRequirements()
+            ->get()
+            ->map(fn ($req) => [
+                'id' => $req->id,
+                'filename' => $req->filename,
+                'type' => $req->document_type,
+                'url' => route('admin.settings.program-names.legal-requirements.download', [$programName, $req]),
+            ]);
+
+        return response()->json([
+            'documents' => $documents,
+        ]);
+    }
+
+    /**
+     * Get program details with statistics (API)
+     */
+    public function getProgramDetails(ProgramName $programName): JsonResponse
+    {
+        $programName->load('agency');
+
+        // Get all distribution events for this program with allocations
+        $events = $programName->distributionEvents()
+            ->with(['allocations.beneficiary'])
+            ->get();
+
+        // Get allocations from those events
+        $allocations = $events->pluck('allocations')->flatten();
+
+        // Get direct assistance records
+        $directAssistanceRecords = DB::table('direct_assistance')
+            ->where('program_name_id', $programName->id)
+            ->get();
+
+        // Get unique beneficiary IDs
+        $beneficiaryIds = collect()
+            ->merge($allocations->pluck('beneficiary_id'))
+            ->merge($directAssistanceRecords->pluck('beneficiary_id'))
+            ->unique()
+            ->values();
+
+        return response()->json([
+            'program' => [
+                'id' => $programName->id,
+                'name' => $programName->name,
+                'description' => $programName->description,
+                'classification' => $programName->classification,
+                'is_active' => (bool) $programName->is_active,
+                'agency' => [
+                    'id' => $programName->agency->id,
+                    'name' => $programName->agency->name,
+                ],
+            ],
+            'allocation_count' => $allocations->count(),
+            'beneficiary_count' => $beneficiaryIds->count(),
+        ]);
     }
 
     // ── Form Fields ─────────────────────────────
