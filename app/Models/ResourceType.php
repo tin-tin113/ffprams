@@ -12,7 +12,6 @@ class ResourceType extends Model
         'name',
         'unit',
         'description',
-        'source_agency',
         'agency_id',
         'is_active',
     ];
@@ -22,20 +21,6 @@ class ResourceType extends Model
         return [
             'is_active' => 'boolean',
         ];
-    }
-
-    protected static function boot(): void
-    {
-        parent::boot();
-
-        static::saving(function (ResourceType $resourceType) {
-            if ($resourceType->agency_id) {
-                $agency = Agency::find($resourceType->agency_id);
-                if ($agency) {
-                    $resourceType->source_agency = $agency->name;
-                }
-            }
-        });
     }
 
     public function distributionEvents(): HasMany

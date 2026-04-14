@@ -54,61 +54,6 @@
         <p class="text-muted mb-0">Send messages directly to beneficiaries</p>
     </div>
 
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white fw-semibold">
-            <i class="bi bi-sliders me-1"></i> SMS Automation Settings
-        </div>
-        <div class="card-body">
-            <form method="POST" action="{{ route('sms.settings.automation') }}" class="d-flex flex-column gap-3">
-                @csrf
-
-                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
-                    <div>
-                        <div class="fw-semibold">Send SMS when a distribution event becomes Ongoing</div>
-                        <div class="text-muted small">When enabled, beneficiaries linked to the event will receive an automatic schedule notification.</div>
-                    </div>
-                    <div class="form-check form-switch m-0">
-                        <input
-                            class="form-check-input"
-                            type="checkbox"
-                            id="sendOnEventOngoing"
-                            name="send_on_event_ongoing"
-                            value="1"
-                            {{ $sendOnEventOngoing ? 'checked' : '' }}
-                        >
-                        <label class="form-check-label" for="sendOnEventOngoing">
-                            {{ $sendOnEventOngoing ? 'Enabled' : 'Disabled' }}
-                        </label>
-                    </div>
-                </div>
-
-                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
-                    <div>
-                        <div class="fw-semibold">Send SMS when direct assistance or direct allocation becomes Ready for Release</div>
-                        <div class="text-muted small">When enabled, beneficiaries are notified once their direct assistance record or direct allocation is set to Ready for Release.</div>
-                    </div>
-                    <div class="form-check form-switch m-0">
-                        <input
-                            class="form-check-input"
-                            type="checkbox"
-                            id="sendOnDirectAssistanceStatusChange"
-                            name="send_on_direct_assistance_status_change"
-                            value="1"
-                            {{ $sendOnDirectAssistanceStatusChange ? 'checked' : '' }}
-                        >
-                        <label class="form-check-label" for="sendOnDirectAssistanceStatusChange">
-                            {{ $sendOnDirectAssistanceStatusChange ? 'Enabled' : 'Disabled' }}
-                        </label>
-                    </div>
-                </div>
-
-                <div>
-                    <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     {{-- ══════════════════════════════════════════ --}}
     {{-- SECTION 1: COMPOSE MESSAGE                --}}
     {{-- ══════════════════════════════════════════ --}}

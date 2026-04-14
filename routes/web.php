@@ -154,8 +154,6 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
 
     // SMS Broadcast
     Route::get('sms', [SmsController::class, 'index'])->name('sms.index');
-    Route::post('sms/settings/automation', [SmsController::class, 'updateAutomationSettings'])
-        ->name('sms.settings.automation');
     Route::get('sms/beneficiaries', [SmsController::class, 'beneficiaries'])->name('sms.beneficiaries');
     Route::post('sms/preview', [SmsController::class, 'preview'])->name('sms.preview');
     Route::post('sms/send', [SmsController::class, 'send'])->name('sms.send');
@@ -244,6 +242,15 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('settings/program-names', [SystemSettingsController::class, 'storeProgramName'])->name('settings.program-names.store');
     Route::put('settings/program-names/{programName}', [SystemSettingsController::class, 'updateProgramName'])->name('settings.program-names.update');
     Route::delete('settings/program-names/{programName}', [SystemSettingsController::class, 'destroyProgramName'])->name('settings.program-names.destroy');
+
+    // Settings — Program Legal Requirements
+    Route::post('settings/program-names/{programName}/legal-requirements', [SystemSettingsController::class, 'uploadProgramLegalRequirement'])->name('settings.program-names.legal-requirements.upload');
+    Route::get('settings/program-names/{programName}/legal-requirements', [SystemSettingsController::class, 'listProgramLegalRequirements'])->name('settings.program-names.legal-requirements.list');
+    Route::get('settings/program-names/{programName}/legal-requirements/{requirement}/download', [SystemSettingsController::class, 'downloadProgramLegalRequirement'])->name('settings.program-names.legal-requirements.download');
+    Route::delete('settings/program-names/{programName}/legal-requirements/{requirement}', [SystemSettingsController::class, 'deleteProgramLegalRequirement'])->name('settings.program-names.legal-requirements.delete');
+
+    // Program Detail View
+    Route::get('programs/{programName}', [SystemSettingsController::class, 'showProgramDetail'])->name('programs.detail');
 
     // Settings — Form Fields
     Route::get('settings/form-fields/list', [SystemSettingsController::class, 'listFormFields'])->name('settings.form-fields.list');

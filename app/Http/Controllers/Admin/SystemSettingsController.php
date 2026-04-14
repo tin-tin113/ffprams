@@ -7,12 +7,15 @@ use App\Models\Agency;
 use App\Models\AssistancePurpose;
 use App\Models\FormFieldOption;
 use App\Models\ProgramName;
+use App\Models\ProgramLegalRequirement;
 use App\Models\ResourceType;
 use App\Services\AuditLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -462,6 +465,210 @@ class SystemSettingsController extends Controller
         });
 
         return response()->json(['success' => true, 'message' => 'Program name deleted successfully.']);
+    }
+
+    // ── Program Legal Requirements ─────────────────
+
+    public function uploadProgramLegalRequirement(Request $request, ProgramName $programName): JsonResponse
+    {
+        $request->validate([
+            'file' => ['required', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'document_type' => ['nullable', 'string', 'max:100'],
+            'remarks' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        if (! $request->hasFile('file')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No file provided.',
+            ], 422);
+        }
+
+        $file = $request->file('file');
+        $originalName = $file->getClientOriginalName();
+        $extension = $file->extension();
+        $mimeType = $file->getMimeType();
+
+        // Generate unique filename with timestamp
+        $uuid = Str::uuid();
+        $timestamp = now()->format('YmdHis');
+        $storedName = "{$uuid}_{$timestamp}.{$extension}";
+
+        // Store path with year/month structure
+        $yearMonth = now()->format('Y/m');
+        $path = "program-requirements/{$programName->id}/{$yearMonth}/{$storedName}";
+
+        try {
+            $fileContent = file_get_contents($file->getRealPath());
+            $sha256 = hash('sha256', $fileContent);
+
+            // Store the file
+            Storage::disk('program_documents')->put($path, $fileContent);
+
+            $requirement = DB::transaction(function () use ($programName, $file, $path, $storedName, $mimeType, $extension, $sha256, $originalName, $request) {
+                $requirement = ProgramLegalRequirement::create([
+                    'program_name_id' => $programName->id,
+                    'uploaded_by' => auth()->id(),
+                    'document_type' => $request->input('document_type'),
+                    'original_name' => $originalName,
+                    'stored_name' => $storedName,
+                    'path' => $path,
+                    'disk' => 'program_documents',
+                    'mime_type' => $mimeType,
+                    'extension' => $extension,
+                    'size_bytes' => $file->getSize(),
+                    'sha256' => $sha256,
+                    'remarks' => $request->input('remarks'),
+                ]);
+
+                $this->audit->log(
+                    auth()->id(), 'uploaded', 'program_legal_requirements', $requirement->id,
+                    [], $requirement->toArray(),
+                );
+
+                return $requirement;
+            });
+
+            return response()->json([
+                'success' => true,
+                'requirement' => $requirement->load('uploader'),
+                'message' => 'Legal requirement document uploaded successfully.',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to upload program legal requirement', [
+                'program_id' => $programName->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to upload document. Please try again.',
+            ], 500);
+        }
+    }
+
+    public function listProgramLegalRequirements(ProgramName $programName): JsonResponse
+    {
+        $requirements = $programName->legalRequirements()
+            ->with('uploader:id,name')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'requirements' => $requirements,
+        ]);
+    }
+
+    public function downloadProgramLegalRequirement(ProgramLegalRequirement $requirement): Response
+    {
+        if (! Storage::disk('program_documents')->exists($requirement->path)) {
+            abort(404, 'File not found');
+        }
+
+        $this->audit->log(
+            auth()->id(), 'downloaded', 'program_legal_requirements', $requirement->id,
+            [], $requirement->toArray(),
+        );
+
+        return Storage::disk('program_documents')->download(
+            $requirement->path,
+            $requirement->original_name,
+            [
+                'X-Content-Type-Options' => 'nosniff',
+            ]
+        );
+    }
+
+    public function deleteProgramLegalRequirement(ProgramLegalRequirement $requirement): JsonResponse
+    {
+        try {
+            DB::transaction(function () use ($requirement) {
+                $requirementData = $requirement->toArray();
+
+                // Delete from storage
+                if (Storage::disk('program_documents')->exists($requirement->path)) {
+                    Storage::disk('program_documents')->delete($requirement->path);
+                }
+
+                // Log the deletion
+                $this->audit->log(
+                    auth()->id(), 'deleted', 'program_legal_requirements', $requirement->id,
+                    $requirementData, [],
+                );
+
+                // Delete from database
+                $requirement->delete();
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Legal requirement document deleted successfully.',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to delete program legal requirement', [
+                'requirement_id' => $requirement->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete document. Please try again.',
+            ], 500);
+        }
+    }
+
+    // ── Program Detail View ─────────────────────────
+
+    public function showProgramDetail(ProgramName $programName): View
+    {
+        $programName->load([
+            'agency',
+            'legalRequirements.uploader',
+        ]);
+
+        // Get all distribution events for this program with allocations
+        $events = $programName->distributionEvents()
+            ->with(['allocations.beneficiary', 'allocations.resourceType', 'resourceType', 'barangay'])
+            ->get();
+
+        // Get allocations from those events
+        $allocations = $events->pluck('allocations')
+            ->flatten()
+            ->sortByDesc('created_at');
+
+        // Get direct assistance records
+        $directAssistanceRecords = DB::table('direct_assistance')
+            ->where('program_name_id', $programName->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Get unique beneficiary IDs from allocations and direct assistance
+        $beneficiaryIds = collect()
+            ->merge($allocations->pluck('beneficiary_id'))
+            ->merge($directAssistanceRecords->pluck('beneficiary_id'))
+            ->unique()
+            ->values();
+
+        // Load beneficiaries with their data
+        $beneficiaries = \App\Models\Beneficiary::whereIn('id', $beneficiaryIds)
+            ->get();
+
+        // Calculate summary counters
+        $totalEvents = $events->count();
+        $totalAllocatedAmount = $allocations->sum('amount');
+        $totalBeneficiaries = $beneficiaries->count();
+
+        return view('admin.settings.program-names.detail', compact(
+            'programName',
+            'events',
+            'allocations',
+            'directAssistanceRecords',
+            'beneficiaries',
+            'totalEvents',
+            'totalAllocatedAmount',
+            'totalBeneficiaries',
+        ));
     }
 
     // ── Form Fields ─────────────────────────────

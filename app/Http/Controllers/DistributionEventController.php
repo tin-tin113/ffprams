@@ -12,12 +12,10 @@ use App\Models\ProgramName;
 use App\Models\ResourceType;
 use App\Services\AuditLogService;
 use App\Services\ProgramEligibilityService;
-use App\Services\SemaphoreService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -26,7 +24,6 @@ class DistributionEventController extends Controller
 {
     public function __construct(
         private AuditLogService $audit,
-        private SemaphoreService $sms,
     ) {}
 
     public function index(Request $request): View
@@ -407,62 +404,10 @@ class DistributionEventController extends Controller
             );
         });
 
-        if ($newStatus === 'Ongoing') {
-            $this->sendEventOngoingSms($event->fresh());
-        }
-
         return redirect()->back()
             ->with('success', "Distribution event status updated to {$newStatus}.");
     }
 
-    private function sendEventOngoingSms(DistributionEvent $event): void
-    {
-        if (! $this->shouldSendEventOngoingSms()) {
-            return;
-        }
-
-        $event->loadMissing([
-            'barangay:id,name',
-            'programName:id,name',
-            'resourceType:id,name,unit',
-        ]);
-
-        $recipients = Beneficiary::query()
-            ->where('status', 'Active')
-            ->whereNotNull('contact_number')
-            ->where(function ($query) use ($event) {
-                $query->whereHas('allocations', fn ($allocationQuery) => $allocationQuery->where('distribution_event_id', $event->id))
-                    ->orWhereHas('directAssistance', fn ($directQuery) => $directQuery->where('distribution_event_id', $event->id));
-            })
-            ->orderBy('full_name')
-            ->get(['id', 'full_name', 'contact_number']);
-
-        if ($recipients->isEmpty()) {
-            return;
-        }
-
-        $programName = $event->programName?->name ?? 'your assistance program';
-        $barangayName = $event->barangay?->name ?? 'your barangay';
-        $dateLabel = $event->distribution_date?->format('M d, Y') ?? now()->format('M d, Y');
-
-        foreach ($recipients as $beneficiary) {
-            $message = "Hello {$beneficiary->full_name}, the {$programName} distribution event scheduled on {$dateLabel} at Barangay {$barangayName} is now Ongoing. Please coordinate with your barangay official for release details.";
-
-            $this->sms->sendSms(
-                $beneficiary->contact_number,
-                $message,
-                $beneficiary->id,
-            );
-        }
-    }
-
-    private function shouldSendEventOngoingSms(): bool
-    {
-        return (bool) Cache::get(
-            'sms.send_on_event_ongoing',
-            config('services.sms.send_on_event_ongoing')
-        );
-    }
 
     public function updateCompliance(Request $request, DistributionEvent $event): RedirectResponse
     {

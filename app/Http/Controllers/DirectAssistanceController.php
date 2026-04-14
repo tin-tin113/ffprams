@@ -14,10 +14,8 @@ use App\Models\ProgramName;
 use App\Services\AuditLogService;
 use App\Services\ProgramEligibilityService;
 use App\Services\ReleaseOutcomeService;
-use App\Services\SemaphoreService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
@@ -27,7 +25,6 @@ class DirectAssistanceController extends Controller
     public function __construct(
         private AuditLogService $audit,
         private ReleaseOutcomeService $releaseOutcome,
-        private SemaphoreService $sms,
     ) {}
 
     public function index(Request $request): View
@@ -286,19 +283,6 @@ class DirectAssistanceController extends Controller
             'direct_assistance',
         );
 
-        if ($this->shouldSendStatusChangeSms()) {
-            $beneficiary = $directAssistance->beneficiary;
-            if (! empty($beneficiary?->contact_number)) {
-                $programName = $directAssistance->programName?->name ?? 'your assistance program';
-                $message = "Hello {$beneficiary->full_name}, your direct assistance for {$programName} is now Ready for Release. Please coordinate with the office for claiming details.";
-                $this->sms->sendSms(
-                    $beneficiary->contact_number,
-                    $message,
-                    $beneficiary->id,
-                );
-            }
-        }
-
         return redirect()->back()
             ->with('success', 'Direct assistance marked as Ready for Release.');
     }
@@ -374,14 +358,6 @@ class DirectAssistanceController extends Controller
 
         return redirect()->back()
             ->with('success', 'Direct assistance marked as not received.');
-    }
-
-    private function shouldSendStatusChangeSms(): bool
-    {
-        return (bool) Cache::get(
-            'sms.send_on_direct_assistance_status_change',
-            config('services.sms.send_on_direct_assistance_status_change')
-        );
     }
 
     /**

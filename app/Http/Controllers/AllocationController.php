@@ -13,13 +13,11 @@ use App\Models\ResourceType;
 use App\Services\AuditLogService;
 use App\Services\ProgramEligibilityService;
 use App\Services\ReleaseOutcomeService;
-use App\Services\SemaphoreService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -33,7 +31,6 @@ class AllocationController extends Controller
     public function __construct(
         private AuditLogService $audit,
         private ReleaseOutcomeService $releaseOutcome,
-        private SemaphoreService $sms,
     ) {}
 
     public function index(Request $request): View
@@ -216,13 +213,7 @@ class AllocationController extends Controller
             $agencyName = strtoupper(trim((string) ($program->agency?->name ?? '')));
 
             $resourceTypes = ResourceType::query()
-                ->where(function ($query) use ($program, $agencyName) {
-                    $query->where('agency_id', $program->agency_id);
-
-                    if ($agencyName !== '') {
-                        $query->orWhereRaw('UPPER(COALESCE(source_agency, "")) = ?', [$agencyName]);
-                    }
-                })
+                ->where('agency_id', $program->agency_id)
                 ->orderBy('name')
                 ->get(['id', 'name', 'unit', 'agency_id'])
                 ->unique('id')
@@ -1022,22 +1013,6 @@ class AllocationController extends Controller
             'allocations',
         );
 
-        if ($this->shouldSendReadyForReleaseSms()) {
-            $allocation->loadMissing(['beneficiary', 'programName']);
-
-            $beneficiary = $allocation->beneficiary;
-            if (! empty($beneficiary?->contact_number)) {
-                $programName = $allocation->programName?->name ?? 'your assistance program';
-                $message = "Hello {$beneficiary->full_name}, your direct assistance allocation for {$programName} is now Ready for Release. Please coordinate with the office for claiming details.";
-
-                $this->sms->sendSms(
-                    $beneficiary->contact_number,
-                    $message,
-                    $beneficiary->id,
-                );
-            }
-        }
-
         return redirect()->back()
             ->with('success', 'Allocation marked as Ready for Release.');
     }
@@ -1169,14 +1144,6 @@ class AllocationController extends Controller
 
         return redirect()->back()
             ->with('success', "{$updated} allocation(s) {$label}. {$skipped} skipped.");
-    }
-
-    private function shouldSendReadyForReleaseSms(): bool
-    {
-        return (bool) Cache::get(
-            'sms.send_on_direct_assistance_status_change',
-            config('services.sms.send_on_direct_assistance_status_change')
-        );
     }
 
     private function assertFinancialBudgetAvailable(DistributionEvent $event, float $additionalAmount, ?int $excludeAllocationId = null): void

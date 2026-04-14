@@ -12,7 +12,6 @@ use App\Services\SemaphoreService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -44,48 +43,12 @@ class SmsController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $sendOnEventOngoing = Cache::get(
-            'sms.send_on_event_ongoing',
-            config('services.sms.send_on_event_ongoing')
-        );
-
-        $sendOnDirectAssistanceStatusChange = Cache::get(
-            'sms.send_on_direct_assistance_status_change',
-            config('services.sms.send_on_direct_assistance_status_change')
-        );
-
         return view('sms.index', compact(
             'barangays',
             'programs',
             'events',
             'smsLogs',
-            'sendOnEventOngoing',
-            'sendOnDirectAssistanceStatusChange',
         ));
-    }
-
-    public function updateAutomationSettings(Request $request): RedirectResponse
-    {
-        $sendOnEventOngoing = $request->boolean('send_on_event_ongoing');
-        $sendOnDirectAssistanceStatusChange = $request->boolean('send_on_direct_assistance_status_change');
-
-        Cache::forever('sms.send_on_event_ongoing', $sendOnEventOngoing);
-        Cache::forever('sms.send_on_direct_assistance_status_change', $sendOnDirectAssistanceStatusChange);
-
-        $this->audit->log(
-            auth()->id(),
-            'updated',
-            'sms_settings',
-            0,
-            [],
-            [
-                'send_on_event_ongoing' => $sendOnEventOngoing,
-                'send_on_direct_assistance_status_change' => $sendOnDirectAssistanceStatusChange,
-            ],
-        );
-
-        return redirect()->route('sms.index')
-            ->with('success', 'SMS automation settings updated successfully.');
     }
 
     public function preview(Request $request): JsonResponse

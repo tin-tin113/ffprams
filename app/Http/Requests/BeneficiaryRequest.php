@@ -124,12 +124,6 @@ class BeneficiaryRequest extends FormRequest
             'civil_status'     => [$civilStatusRequired ? 'required' : 'nullable', Rule::in($civilStatusValues)],
             'highest_education'=> [$highestEducationRequired ? 'required' : 'nullable', Rule::in($highestEducationValues)],
             'id_type'          => [$idTypeRequired ? 'required' : 'nullable', Rule::in($idTypeValues)],
-            'government_id'    => ['nullable', 'string', 'max:100'],
-            'household_size'   => ['nullable', 'integer', 'min:1'],
-            'number_of_dependents' => ['nullable', 'integer', 'min:0'],
-            'main_income_source' => ['nullable', 'string', 'max:255'],
-            'emergency_contact_name' => ['nullable', 'string', 'max:255'],
-            'emergency_contact_number' => ['nullable', 'string', 'max:20'],
             'status'           => ['required', Rule::in(['Active', 'Inactive'])],
             'registered_at'    => ['required', 'date', 'before_or_equal:today'],
             'classification'   => [

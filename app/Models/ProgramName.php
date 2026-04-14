@@ -37,6 +37,11 @@ class ProgramName extends Model
         return $this->hasMany(DistributionEvent::class);
     }
 
+    public function legalRequirements(): HasMany
+    {
+        return $this->hasMany(ProgramLegalRequirement::class, 'program_name_id');
+    }
+
     // ── Scopes ────────────────────────────────────
 
     public function scopeActive(Builder $query): Builder

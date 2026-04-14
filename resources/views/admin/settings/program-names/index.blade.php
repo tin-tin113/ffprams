@@ -122,6 +122,11 @@
                                     </span>
                                 </td>
                                 <td class="text-center" data-label="Actions">
+                                    <a href="{{ route('admin.programs.detail', $program->id) }}"
+                                       class="btn btn-sm btn-outline-info"
+                                       title="View program details">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
                                     <button class="btn btn-sm btn-outline-primary edit-pn"
                                             data-id="{{ $program->id }}"
                                             data-name="{{ $program->name }}"
@@ -209,6 +214,55 @@
                         </label>
                     </div>
 
+                    {{-- Legal Requirements Section --}}
+                    <hr class="my-3">
+                    <h6 class="mb-3">
+                        <i class="bi bi-file-earmark-pdf"></i> Program Requirements / Legal Basis <span class="text-danger">*</span>
+                    </h6>
+                    <small class="text-muted d-block mb-2">
+                        Upload at least one supporting legal/compliance document (PDF, JPG, PNG - max 5MB)
+                    </small>
+
+                    {{-- Uploaded Files List --}}
+                    <div id="pnUploadedFiles" class="mb-3" style="display: none;">
+                        <div class="alert alert-info p-2 mb-2">
+                            <small>Uploaded Documents:</small>
+                        </div>
+                        <div id="pnFilesList" class="list-group list-group-sm"></div>
+                    </div>
+
+                    {{-- File Upload Input --}}
+                    <div class="mb-3">
+                        <label for="pnFileInput" class="form-label">Select Document</label>
+                        <input type="file" id="pnFileInput" class="form-control form-control-sm"
+                               accept=".pdf,.jpg,.jpeg,.png" required>
+                        <small class="text-muted d-block mt-1">PDF, JPG, or PNG (max 5MB)</small>
+                    </div>
+
+                    {{-- Document Type & Remarks --}}
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label for="pnDocType" class="form-label">Document Type <small>(optional)</small></label>
+                            <input type="text" id="pnDocType" class="form-control form-control-sm"
+                                   placeholder="e.g., Executive Order">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="pnDocRemarks" class="form-label">Remarks <small>(optional)</small></label>
+                            <input type="text" id="pnDocRemarks" class="form-control form-control-sm"
+                                   placeholder="Additional notes...">
+                        </div>
+                    </div>
+
+                    {{-- Upload Button --}}
+                    <div class="d-grid gap-2 mb-3">
+                        <button type="button" id="pnUploadBtn" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-cloud-upload"></i> Add Document
+                        </button>
+                    </div>
+
+                    {{-- Upload Status --}}
+                    <div id="pnUploadStatus" class="alert d-none mb-3" role="alert"></div>
+
                     <div id="pnErrors" class="alert alert-danger d-none"></div>
                 </form>
             </div>
@@ -252,6 +306,10 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // State to track uploaded files for current program
+    let uploadedFilesMap = {};
+    const csrftoken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
     // Combined filter function
     function applyFilters() {
         const agencyFilter = document.getElementById('agencyFilter').value;
@@ -283,6 +341,56 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function showUploadStatus(message, type = 'info') {
+        const statusDiv = document.getElementById('pnUploadStatus');
+        statusDiv.textContent = message;
+        statusDiv.className = `alert alert-${type} mb-3`;
+        statusDiv.classList.remove('d-none');
+        setTimeout(() => statusDiv.classList.add('d-none'), 5000);
+    }
+
+    function updateFilesList() {
+        const filesList = document.getElementById('pnFilesList');
+        const filesContainer = document.getElementById('pnUploadedFiles');
+        const programId = document.getElementById('pnId').value;
+
+        if (!programId || !uploadedFilesMap[programId]) {
+            filesContainer.style.display = 'none';
+            return;
+        }
+
+        const files = uploadedFilesMap[programId] || [];
+        if (files.length === 0) {
+            filesContainer.style.display = 'none';
+            return;
+        }
+
+        filesContainer.style.display = 'block';
+        filesList.innerHTML = files.map((file, idx) => `
+            <div class="list-group-item d-flex align-items-center justify-content-between p-2">
+                <small>
+                    <i class="bi bi-file-earmark-pdf"></i>
+                    ${file.name}
+                    ${file.documentType ? `<span class="badge bg-light text-dark ms-2">${file.documentType}</span>` : ''}
+                </small>
+                <button type="button" class="btn btn-sm btn-outline-danger" data-file-idx="${idx}">
+                    Remove
+                </button>
+            </div>
+        `).join('');
+
+        // Handle remove buttons
+        filesList.querySelectorAll('[data-file-idx]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const idx = parseInt(this.dataset.fileIdx);
+                if (uploadedFilesMap[programId]) {
+                    uploadedFilesMap[programId].splice(idx, 1);
+                    updateFilesList();
+                }
+            });
+        });
+    }
+
     // Filter change events
     document.getElementById('agencyFilter').addEventListener('change', applyFilters);
     document.getElementById('statusFilter').addEventListener('change', applyFilters);
@@ -298,6 +406,9 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('pnClassification').value = this.dataset.classification;
             document.getElementById('pnIsActive').checked = this.dataset.active === '1';
             document.getElementById('pnModalTitle').textContent = 'Edit Program';
+
+            // Clear file upload for editing
+            updateFilesList();
         });
     });
 
@@ -307,15 +418,108 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('pnForm').reset();
             document.getElementById('pnId').value = '';
             document.getElementById('pnModalTitle').textContent = 'Add Program';
+            document.getElementById('pnUploadedFiles').style.display = 'none';
+            uploadedFilesMap = {};
         }
+    });
+
+    // File upload handler
+    document.getElementById('pnUploadBtn').addEventListener('click', async function() {
+        const fileInput = document.getElementById('pnFileInput');
+        const file = fileInput.files[0];
+
+        if (!file) {
+            showUploadStatus('Please select a file', 'warning');
+            return;
+        }
+
+        // Validate file type
+        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+        if (!allowedTypes.includes(file.type)) {
+            showUploadStatus('Only PDF, JPG, and PNG files are allowed', 'danger');
+            return;
+        }
+
+        // Validate file size (5MB = 5120000 bytes)
+        if (file.size > 5120000) {
+            showUploadStatus('File must not exceed 5MB', 'danger');
+            return;
+        }
+
+        const programId = document.getElementById('pnId').value;
+
+        // For new programs, store in memory
+        if (!programId) {
+            if (!uploadedFilesMap['new']) {
+                uploadedFilesMap['new'] = [];
+            }
+            uploadedFilesMap['new'].push({
+                name: file.name,
+                documentType: document.getElementById('pnDocType').value,
+                remarks: document.getElementById('pnDocRemarks').value,
+                file: file
+            });
+            uploadedFilesMap['new'].isPending = true;
+        } else {
+            // For existing programs, upload immediately
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('document_type', document.getElementById('pnDocType').value);
+            formData.append('remarks', document.getElementById('pnDocRemarks').value);
+
+            try {
+                const response = await fetch(`/admin/settings/program-names/${programId}/legal-requirements`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrftoken,
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    showUploadStatus('Document uploaded successfully', 'success');
+                    fileInput.value = '';
+                    document.getElementById('pnDocType').value = '';
+                    document.getElementById('pnDocRemarks').value = '';
+
+                    if (!uploadedFilesMap[programId]) {
+                        uploadedFilesMap[programId] = [];
+                    }
+                    uploadedFilesMap[programId].push(data.requirement);
+                    updateFilesList();
+                } else {
+                    showUploadStatus(data.message || 'Upload failed', 'danger');
+                }
+            } catch (error) {
+                showUploadStatus('An error occurred during upload', 'danger');
+            }
+        }
+
+        updateFilesList();
+        fileInput.value = '';
+        document.getElementById('pnDocType').value = '';
+        document.getElementById('pnDocRemarks').value = '';
+        showUploadStatus('Document added', 'success');
     });
 
     // Save
     document.getElementById('pnSaveBtn').addEventListener('click', async function() {
         const id = document.getElementById('pnId').value;
+
+        // Check for legal requirements
+        const hasFiles = (id && uploadedFilesMap[id] && uploadedFilesMap[id].length > 0) ||
+                        (uploadedFilesMap['new'] && uploadedFilesMap['new'].length > 0 && uploadedFilesMap['new'].isPending);
+
+        if (!id && !hasFiles) {
+            document.getElementById('pnErrors').textContent = 'You must upload at least one legal requirement document before creating a program.';
+            document.getElementById('pnErrors').classList.remove('d-none');
+            return;
+        }
+
         const method = id ? 'PUT' : 'POST';
         const url = id ? `/admin/settings/program-names/${id}` : '/admin/settings/program-names';
-        const csrftoken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
         try {
             const response = await fetch(url, {
@@ -336,6 +540,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const data = await response.json();
             if (response.ok) {
+                // If new program, upload pending files
+                if (!id && uploadedFilesMap['new']) {
+                    const newProgramId = data.programName.id;
+                    for (const fileObj of uploadedFilesMap['new']) {
+                        if (fileObj.file) {
+                            const formData = new FormData();
+                            formData.append('file', fileObj.file);
+                            formData.append('document_type', fileObj.documentType);
+                            formData.append('remarks', fileObj.remarks);
+
+                            await fetch(`/admin/settings/program-names/${newProgramId}/legal-requirements`, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': csrftoken,
+                                    'Accept': 'application/json'
+                                },
+                                body: formData
+                            });
+                        }
+                    }
+                }
                 location.reload();
             } else {
                 const errorsDiv = document.getElementById('pnErrors');
@@ -355,8 +580,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Confirm Deletion',
                 `Delete "${this.dataset.name}"? This action cannot be undone.`,
                 function () {
-                const csrftoken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
                 fetch(`/admin/settings/program-names/${this.dataset.id}`, {
                     method: 'DELETE',
                     headers: {

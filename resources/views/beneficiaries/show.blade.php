@@ -99,20 +99,8 @@
                     <div class="fw-semibold">{{ $beneficiary->highest_education }}</div>
                 </div>
                 <div class="col-md-4">
-                    <div class="text-muted small">Number of Dependents</div>
-                    <div class="fw-semibold">{{ $beneficiary->number_of_dependents }}</div>
-                </div>
-                <div class="col-md-4">
                     <div class="text-muted small">Contact Number</div>
                     <div class="fw-semibold">{{ $beneficiary->contact_number }}</div>
-                </div>
-                <div class="col-md-4">
-                    <div class="text-muted small">Main Source of Income</div>
-                    <div class="fw-semibold">{{ $beneficiary->main_income_source }}</div>
-                </div>
-                <div class="col-md-4">
-                    <div class="text-muted small">Household Size</div>
-                    <div class="fw-semibold">{{ $beneficiary->household_size }}</div>
                 </div>
             </div>
         </div>
@@ -131,10 +119,7 @@
                     <div class="text-muted small">Government ID Type</div>
                     <div class="fw-semibold">{{ $beneficiary->id_type }}</div>
                 </div>
-                <div class="col-md-4">
-                    <div class="text-muted small">Government ID Number</div>
-                    <div class="fw-semibold">{{ $beneficiary->government_id }}</div>
-                </div>
+
                 @if($beneficiary->isFarmer())
                     <div class="col-md-4">
                         <div class="text-muted small">RSBSA Number</div>
@@ -287,9 +272,9 @@
             </div>
         @endif
 
-        {{-- Association & Emergency Contact --}}
+        {{-- Association --}}
         <div class="card-header bg-white fw-semibold border-top">
-            <i class="bi bi-shield-check me-1"></i> Association &amp; Emergency Contact
+            <i class="bi bi-shield-check me-1"></i> Association Membership
         </div>
         <div class="card-body">
             <div class="row g-3">
@@ -309,14 +294,6 @@
                         <div class="fw-semibold">{{ $beneficiary->association_name }}</div>
                     </div>
                 @endif
-                <div class="col-md-4">
-                    <div class="text-muted small">Emergency Contact Name</div>
-                    <div class="fw-semibold">{{ $beneficiary->emergency_contact_name }}</div>
-                </div>
-                <div class="col-md-4">
-                    <div class="text-muted small">Emergency Contact Number</div>
-                    <div class="fw-semibold">{{ $beneficiary->emergency_contact_number }}</div>
-                </div>
             </div>
         </div>
 
