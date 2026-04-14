@@ -41,235 +41,263 @@
 
     <div class="row mb-4">
         <div class="col-12">
-            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-3">
-                <h3 class="mb-0">
-                    <i class="bi bi-box"></i> Resource Types
-                </h3>
-                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#rtModal">
-                    <i class="bi bi-plus"></i> Add Resource Type
-                </button>
-            </div>
-            <p class="text-muted small">Manage different types of resources that can be distributed</p>
+            {{-- Tab Navigation --}}
+            <ul class="nav nav-tabs border-bottom" id="rtTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="resourceTypesTab" data-bs-toggle="tab" data-bs-target="#resourceTypesContent" type="button" role="tab" aria-controls="resourceTypesContent" aria-selected="true">
+                        <i class="bi bi-box"></i> Resource Types
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="purposesTab" data-bs-toggle="tab" data-bs-target="#purposesContent" type="button" role="tab" aria-controls="purposesContent" aria-selected="false">
+                        <i class="bi bi-tasks"></i> Assistance Purposes
+                    </button>
+                </li>
+            </ul>
         </div>
     </div>
 
-    {{-- Filter Section --}}
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-3">
-                    <div class="row g-3">
-                        <div class="col-12 col-md-4">
-                            <label class="form-label fw-semibold">Status</label>
-                            <select id="statusFilter" class="form-select form-select-sm">
-                                <option value="">All Status</option>
-                                <option value="active">Active Only</option>
-                                <option value="inactive">Inactive Only</option>
-                            </select>
+    {{-- Tab Content --}}
+    <div class="tab-content" id="rtTabsContent">
+        {{-- Tab 1: Resource Types --}}
+        <div class="tab-pane fade show active" id="resourceTypesContent" role="tabpanel" aria-labelledby="resourceTypesTab">
+            <div class="row mb-4 mt-4">
+                <div class="col-12">
+                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-3">
+                        <h5 class="mb-0">
+                            <i class="bi bi-box"></i> Resource Types
+                        </h5>
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#rtModal">
+                            <i class="bi bi-plus"></i> Add Resource Type
+                        </button>
+                    </div>
+                    <p class="text-muted small">Manage different types of resources that can be distributed</p>
+                </div>
+            </div>
+
+            {{-- Filter Section --}}
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body p-3">
+                            <div class="row g-3">
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label fw-semibold">Status</label>
+                                    <select id="rtStatusFilter" class="form-select form-select-sm">
+                                        <option value="">All Status</option>
+                                        <option value="active">Active Only</option>
+                                        <option value="inactive">Inactive Only</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-8">
+                                    <label class="form-label fw-semibold">Search</label>
+                                    <input type="text" id="rtSearch" class="form-control form-control-sm"
+                                           placeholder="Search by name or description...">
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-12 col-md-8">
-                            <label class="form-label fw-semibold">Search</label>
-                            <input type="text" id="rtSearch" class="form-control form-control-sm"
-                                   placeholder="Search by name or description...">
+                    </div>
+                </div>
+            </div>
+
+            {{-- Resource Types Table --}}
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow-sm border-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm mb-0 table-responsive-cards">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Unit</th>
+                                        <th>Agency</th>
+                                        <th>Description</th>
+                                        <th>Status</th>
+                                        <th class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rtTableBody">
+                                    @forelse($resourceTypes as $resourceType)
+                                    <tr data-rt-id="{{ $resourceType->id }}">
+                                        <td data-label="Name"><strong>{{ $resourceType->name }}</strong></td>
+                                        <td data-label="Unit">
+                                            <span class="badge bg-light text-dark border">{{ $resourceType->unit }}</span>
+                                        </td>
+                                        <td data-label="Agency">
+                                            <span class="badge bg-secondary">{{ $resourceType->agency->name ?? 'N/A' }}</span>
+                                        </td>
+                                        <td data-label="Description">
+                                            <small class="text-muted">{{ Str::limit($resourceType->description, 50) }}</small>
+                                        </td>
+                                        <td data-label="Status">
+                                            @php $isActive = (bool) ($resourceType->is_active ?? true); @endphp
+                                            <span class="badge {{ $isActive ? 'bg-success' : 'bg-secondary' }}">
+                                                {{ $isActive ? 'Active' : 'Inactive' }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center" data-label="Actions">
+                                            <button class="btn btn-sm btn-outline-primary edit-rt"
+                                                    data-id="{{ $resourceType->id }}"
+                                                    data-name="{{ $resourceType->name }}"
+                                                    data-unit="{{ $resourceType->unit }}"
+                                                    data-agency-id="{{ $resourceType->agency_id }}"
+                                                    data-description="{{ $resourceType->description }}"
+                                                    data-active="{{ (int) ($resourceType->is_active ?? 1) }}"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#rtModal"
+                                                    title="Edit this resource type">
+                                                <i class="bi bi-pencil"></i> Edit
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger delete-rt"
+                                                    data-id="{{ $resourceType->id }}"
+                                                    data-name="{{ $resourceType->name }}"
+                                                    title="Delete this resource type">
+                                                <i class="bi bi-trash"></i> Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-4">
+                                            No resource types found
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    {{-- Resource Types Table --}}
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow-sm border-0">
-                <div class="table-responsive">
-                    <table class="table table-hover table-sm mb-0 table-responsive-cards">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Name</th>
-                                <th>Unit</th>
-                                <th>Agency</th>
-                                <th>Description</th>
-                                <th>Status</th>
-                                <th class="text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="rtTableBody">
-                            @forelse($resourceTypes as $resourceType)
-                            <tr data-rt-id="{{ $resourceType->id }}">
-                                <td data-label="Name"><strong>{{ $resourceType->name }}</strong></td>
-                                <td data-label="Unit">
-                                    <span class="badge bg-light text-dark border">{{ $resourceType->unit }}</span>
-                                </td>
-                                <td data-label="Agency">
-                                    <span class="badge bg-secondary">{{ $resourceType->agency->name ?? 'N/A' }}</span>
-                                </td>
-                                <td data-label="Description">
-                                    <small class="text-muted">{{ Str::limit($resourceType->description, 50) }}</small>
-                                </td>
-                                <td data-label="Status">
-                                    @php $isActive = (bool) ($resourceType->is_active ?? true); @endphp
-                                    <span class="badge {{ $isActive ? 'bg-success' : 'bg-secondary' }}">
-                                        {{ $isActive ? 'Active' : 'Inactive' }}
-                                    </span>
-                                </td>
-                                <td class="text-center" data-label="Actions">
-                                    <button class="btn btn-sm btn-outline-primary edit-rt"
-                                            data-id="{{ $resourceType->id }}"
-                                            data-name="{{ $resourceType->name }}"
-                                            data-unit="{{ $resourceType->unit }}"
-                                            data-agency-id="{{ $resourceType->agency_id }}"
-                                            data-description="{{ $resourceType->description }}"
-                                            data-active="{{ (int) ($resourceType->is_active ?? 1) }}"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#rtModal"
-                                            title="Edit this resource type">
-                                        <i class="bi bi-pencil"></i> Edit
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger delete-rt"
-                                            data-id="{{ $resourceType->id }}"
-                                            data-name="{{ $resourceType->name }}"
-                                            title="Delete this resource type">
-                                        <i class="bi bi-trash"></i> Delete
-                                    </button>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="6" class="text-center text-muted py-4">
-                                    No resource types found
-                                </td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+        {{-- Tab 2: Assistance Purposes --}}
+        <div class="tab-pane fade" id="purposesContent" role="tabpanel" aria-labelledby="purposesTab">
+            <div class="row mb-4 mt-4">
+                <div class="col-12">
+                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-3">
+                        <h5 class="mb-0">
+                            <i class="bi bi-tasks"></i> Assistance Purposes
+                        </h5>
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#purposeModal">
+                            <i class="bi bi-plus"></i> Add Purpose
+                        </button>
+                    </div>
+                    <p class="text-muted small">Manage assistance funding purposes and categories</p>
                 </div>
             </div>
-        </div>
-    </div>
 
-    {{-- Assistance Purposes Section --}}
-    <div class="row mb-4 mt-5">
-        <div class="col-12">
-            <hr class="my-4">
-            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-3">
-                <h3 class="mb-0">
-                    <i class="bi bi-tasks"></i> Assistance Purposes
-                </h3>
-                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#purposeModal">
-                    <i class="bi bi-plus"></i> Add Purpose
-                </button>
-            </div>
-            <p class="text-muted small">Manage assistance funding purposes and categories</p>
-        </div>
-    </div>
-
-    {{-- Filters Section for Purposes --}}
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-3">
-                    <div class="row g-3">
-                        <div class="col-12 col-md-4">
-                            <label class="form-label fw-semibold">Category</label>
-                            <select id="categoryFilter" class="form-select form-select-sm">
-                                <option value="">All Categories</option>
-                                <option value="production">Production</option>
-                                <option value="livelihood">Livelihood</option>
-                                <option value="emergency">Emergency</option>
-                            </select>
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <label class="form-label fw-semibold">Status</label>
-                            <select id="statusFilter" class="form-select form-select-sm">
-                                <option value="">All Status</option>
-                                <option value="active">Active Only</option>
-                                <option value="inactive">Inactive Only</option>
-                            </select>
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <label class="form-label fw-semibold">Search</label>
-                            <input type="text" id="purposeSearch" class="form-control form-control-sm"
-                                   placeholder="Search by name...">
+            {{-- Filters Section for Purposes --}}
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body p-3">
+                            <div class="row g-3">
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label fw-semibold">Category</label>
+                                    <select id="purposeCategoryFilter" class="form-select form-select-sm">
+                                        <option value="">All Categories</option>
+                                        <option value="agricultural">Agricultural</option>
+                                        <option value="fishery">Fishery</option>
+                                        <option value="livelihood">Livelihood</option>
+                                        <option value="medical">Medical</option>
+                                        <option value="emergency">Emergency</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label fw-semibold">Status</label>
+                                    <select id="purposeStatusFilter" class="form-select form-select-sm">
+                                        <option value="">All Status</option>
+                                        <option value="active">Active Only</option>
+                                        <option value="inactive">Inactive Only</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label fw-semibold">Search</label>
+                                    <input type="text" id="purposeSearch" class="form-control form-control-sm"
+                                           placeholder="Search by name...">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    {{-- Purposes Table --}}
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow-sm border-0">
-                <div class="table-responsive">
-                    <table class="table table-hover table-sm mb-0 table-responsive-cards">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Category</th>
-                                <th>Name</th>
-                                <th>Description</th>
-                                <th>Status</th>
-                                <th class="text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="purposesTableBody">
-                            @forelse($purposes as $purpose)
-                            <tr data-purpose-id="{{ $purpose->id }}">
-                                <td data-label="Category">
-                                    <span class="badge bg-info">{{ $purpose->category }}</span>
-                                </td>
-                                <td data-label="Name"><strong>{{ $purpose->name }}</strong></td>
-                                <td data-label="Description">
-                                    <small class="text-muted">{{ Str::limit($purpose->description, 50) }}</small>
-                                </td>
-                                <td data-label="Status">
-                                    <span class="badge {{ $purpose->is_active ? 'bg-success' : 'bg-secondary' }}">
-                                        {{ $purpose->is_active ? 'Active' : 'Inactive' }}
-                                    </span>
-                                </td>
-                                <td class="text-center text-nowrap" data-label="Actions">
-                                    <div class="purpose-actions">
-                                        <button class="btn btn-sm btn-outline-primary edit-purpose"
-                                                data-id="{{ $purpose->id }}"
-                                                data-name="{{ $purpose->name }}"
-                                                data-category="{{ $purpose->category }}"
-                                                data-description="{{ $purpose->description }}"
-                                                data-active="{{ $purpose->is_active }}"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#purposeModal"
-                                                title="Edit this purpose">
-                                            <i class="bi bi-pencil"></i> Edit
-                                        </button>
+            {{-- Purposes Table --}}
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow-sm border-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm mb-0 table-responsive-cards">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Name</th>
+                                        <th>Description</th>
+                                        <th>Status</th>
+                                        <th class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="purposesTableBody">
+                                    @forelse($purposes as $purpose)
+                                    <tr data-purpose-id="{{ $purpose->id }}">
+                                        <td data-label="Category">
+                                            <span class="badge bg-info">{{ $purpose->category }}</span>
+                                        </td>
+                                        <td data-label="Name"><strong>{{ $purpose->name }}</strong></td>
+                                        <td data-label="Description">
+                                            <small class="text-muted">{{ Str::limit($purpose->description, 50) }}</small>
+                                        </td>
+                                        <td data-label="Status">
+                                            <span class="badge {{ $purpose->is_active ? 'bg-success' : 'bg-secondary' }}">
+                                                {{ $purpose->is_active ? 'Active' : 'Inactive' }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center text-nowrap" data-label="Actions">
+                                            <div class="purpose-actions">
+                                                <button class="btn btn-sm btn-outline-primary edit-purpose"
+                                                        data-id="{{ $purpose->id }}"
+                                                        data-name="{{ $purpose->name }}"
+                                                        data-category="{{ $purpose->category }}"
+                                                        data-description="{{ $purpose->description }}"
+                                                        data-active="{{ $purpose->is_active }}"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#purposeModal"
+                                                        title="Edit this purpose">
+                                                    <i class="bi bi-pencil"></i> Edit
+                                                </button>
 
-                                        @if($purpose->is_active)
-                                            <button class="btn btn-sm btn-outline-danger deactivate-purpose"
-                                                    data-id="{{ $purpose->id }}"
-                                                    data-name="{{ $purpose->name }}"
-                                                    title="Deactivate this purpose">
-                                                <i class="bi bi-prohibition"></i> Deactivate
-                                            </button>
-                                        @else
-                                            <button class="btn btn-sm btn-outline-success activate-purpose"
-                                                    data-id="{{ $purpose->id }}"
-                                                    data-name="{{ $purpose->name }}"
-                                                    data-category="{{ $purpose->category }}"
-                                                    title="Activate this purpose">
-                                                <i class="bi bi-check-circle"></i> Activate
-                                            </button>
-                                        @endif
-                                    </div>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="5" class="text-center text-muted py-4">
-                                    No purposes found
-                                </td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                                                @if($purpose->is_active)
+                                                    <button class="btn btn-sm btn-outline-danger deactivate-purpose"
+                                                            data-id="{{ $purpose->id }}"
+                                                            data-name="{{ $purpose->name }}"
+                                                            title="Deactivate this purpose">
+                                                        <i class="bi bi-prohibition"></i> Deactivate
+                                                    </button>
+                                                @else
+                                                    <button class="btn btn-sm btn-outline-success activate-purpose"
+                                                            data-id="{{ $purpose->id }}"
+                                                            data-name="{{ $purpose->name }}"
+                                                            data-category="{{ $purpose->category }}"
+                                                            title="Activate this purpose">
+                                                        <i class="bi bi-check-circle"></i> Activate
+                                                    </button>
+                                                @endif
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-4">
+                                            No purposes found
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -470,7 +498,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Combined filter function
     function applyFilters() {
-        const statusFilter = document.getElementById('statusFilter').value;
+        const statusFilter = document.getElementById('rtStatusFilter').value;
         const searchQuery = document.getElementById('rtSearch').value.toLowerCase();
 
         document.querySelectorAll('#rtTableBody tr').forEach(row => {
@@ -494,7 +522,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Filter change events
-    document.getElementById('statusFilter').addEventListener('change', applyFilters);
+    document.getElementById('rtStatusFilter').addEventListener('change', applyFilters);
     document.getElementById('rtSearch').addEventListener('input', applyFilters);
 
     // Edit resource type
@@ -591,8 +619,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Combined filter function for purposes
     function applyPurposeFilters() {
-        const categoryFilter = document.getElementById('categoryFilter').value.toLowerCase();
-        const statusFilter = document.getElementById('statusFilter').value;
+        const categoryFilter = document.getElementById('purposeCategoryFilter').value.toLowerCase();
+        const statusFilter = document.getElementById('purposeStatusFilter').value;
         const searchQuery = document.getElementById('purposeSearch').value.toLowerCase();
 
         document.querySelectorAll('#purposesTableBody tr').forEach(row => {
@@ -623,8 +651,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Filter change events for purposes
-    document.getElementById('categoryFilter').addEventListener('change', applyPurposeFilters);
-    document.getElementById('statusFilter').addEventListener('change', applyPurposeFilters);
+    document.getElementById('purposeCategoryFilter').addEventListener('change', applyPurposeFilters);
+    document.getElementById('purposeStatusFilter').addEventListener('change', applyPurposeFilters);
     document.getElementById('purposeSearch').addEventListener('input', applyPurposeFilters);
 
     // Edit purpose
