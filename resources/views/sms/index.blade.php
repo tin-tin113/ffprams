@@ -132,188 +132,190 @@
         {{-- TAB 1: COMPOSE MESSAGE                                      --}}
         {{-- ════════════════════════════════════════════════════════════ --}}
         <div class="tab-pane fade show active" id="composePane" role="tabpanel">
-            <div class="row g-4">
-                {{-- Left Column: Recipient Selection --}}
-                <div class="col-lg-7">
-                    <h5 class="mb-3"><i class="bi bi-people me-2"></i>1. Select Recipients</h5>
+            <h5 class="mb-3"><i class="bi bi-people me-2"></i>1. Select Recipients</h5>
 
-                    {{-- Recipient Method Cards --}}
-                    <div class="row g-3 mb-4" id="recipientCards">
-                        <div class="col-md-6">
-                            <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_program" role="button" tabindex="0">
-                                <div class="card-body py-3">
-                                    <i class="bi bi-diagram-3 fs-5 d-block mb-2" style="color: #2563eb;"></i>
-                                    <div class="fw-semibold small">By Program</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_event" role="button" tabindex="0">
-                                <div class="card-body py-3">
-                                    <i class="bi bi-calendar-check fs-5 d-block mb-2" style="color: #0891b2;"></i>
-                                    <div class="fw-semibold small">By Event</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_barangay" role="button" tabindex="0">
-                                <div class="card-body py-3">
-                                    <i class="bi bi-geo-alt fs-5 d-block mb-2" style="color: #16a34a;"></i>
-                                    <div class="fw-semibold small">By Barangay</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_resource_type" role="button" tabindex="0">
-                                <div class="card-body py-3">
-                                    <i class="bi bi-stack fs-5 d-block mb-2" style="color: #9333ea;"></i>
-                                    <div class="fw-semibold small">By Resource</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_assistance_purpose" role="button" tabindex="0">
-                                <div class="card-body py-3">
-                                    <i class="bi bi-lightning-charge fs-5 d-block mb-2" style="color: #dc2626;"></i>
-                                    <div class="fw-semibold small">By Purpose</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card h-100 text-center recipient-card cursor-pointer" data-type="selected" role="button" tabindex="0">
-                                <div class="card-body py-3">
-                                    <i class="bi bi-hand-index fs-5 d-block mb-2" style="color: #64748b;"></i>
-                                    <div class="fw-semibold small">Select Specific</div>
-                                </div>
-                            </div>
+            {{-- Recipient Method Cards --}}
+            <div class="row g-3 mb-4" id="recipientCards">
+                <div class="col-lg-2 col-md-3 col-6">
+                    <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_program" role="button" tabindex="0">
+                        <div class="card-body py-3">
+                            <i class="bi bi-diagram-3 fs-5 d-block mb-2" style="color: #2563eb;"></i>
+                            <div class="fw-semibold small">By Program</div>
                         </div>
                     </div>
-
-                    {{-- Filter Dropdowns --}}
-                    <div id="programFilter" class="mb-3" style="display:none;">
-                        <label for="programSelect" class="form-label fw-semibold small">Select Program</label>
-                        <select class="form-select form-select-sm" id="programSelect">
-                            <option value="" disabled selected>Choose program...</option>
-                            @foreach($programs as $program)
-                                <option value="{{ $program->id }}">{{ $program->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div id="eventFilter" class="mb-3" style="display:none;">
-                        <label for="eventSelect" class="form-label fw-semibold small">Select Event</label>
-                        <select class="form-select form-select-sm" id="eventSelect">
-                            <option value="" disabled selected>Choose event...</option>
-                            @foreach($events as $event)
-                                <option value="{{ $event->id }}">
-                                    {{ $event->programName->name ?? 'Program N/A' }} - {{ $event->barangay->name ?? 'Barangay N/A' }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div id="barangayFilter" class="mb-3" style="display:none;">
-                        <label for="barangaySelect" class="form-label fw-semibold small">Select Barangay</label>
-                        <select class="form-select form-select-sm" id="barangaySelect">
-                            <option value="" disabled selected>Choose barangay...</option>
-                            @foreach($barangays as $b)
-                                <option value="{{ $b->id }}">{{ $b->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div id="resourceTypeFilter" class="mb-3" style="display:none;">
-                        <label for="resourceTypeSelect" class="form-label fw-semibold small">Select Resource Type</label>
-                        <select class="form-select form-select-sm" id="resourceTypeSelect">
-                            <option value="" disabled selected>Choose resource type...</option>
-                            @foreach($resourceTypes as $rt)
-                                <option value="{{ $rt->id }}">{{ $rt->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div id="assistancePurposeFilter" class="mb-3" style="display:none;">
-                        <label for="assistancePurposeSelect" class="form-label fw-semibold small">Select Assistance Purpose</label>
-                        <select class="form-select form-select-sm" id="assistancePurposeSelect">
-                            <option value="" disabled selected>Choose assistance purpose...</option>
-                            @foreach($assistancePurposes as $ap)
-                                <option value="{{ $ap->id }}">{{ $ap->name }} ({{ ucfirst($ap->category) }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    {{-- Secondary Beneficiary Selection --}}
-                    <div id="secondaryBeneficiaryFilter" class="mb-3" style="display:none;">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <label class="form-label fw-semibold small mb-0">Refine Selection</label>
-                            <small class="text-muted"><span id="refinedCount">0</span> selected</small>
-                        </div>
-                        <input type="text" class="form-control form-control-sm mb-2" id="beneficiaryFilterSearch" placeholder="Search...">
-                        <div class="border rounded sms-beneficiary-list" id="beneficiaryFilterList">
-                            <div class="text-center text-muted py-4">
-                                <span class="spinner-border spinner-border-sm me-1"></span> Loading...
-                            </div>
+                </div>
+                <div class="col-lg-2 col-md-3 col-6">
+                    <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_event" role="button" tabindex="0">
+                        <div class="card-body py-3">
+                            <i class="bi bi-calendar-check fs-5 d-block mb-2" style="color: #0891b2;"></i>
+                            <div class="fw-semibold small">By Event</div>
                         </div>
                     </div>
+                </div>
+                <div class="col-lg-2 col-md-3 col-6">
+                    <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_barangay" role="button" tabindex="0">
+                        <div class="card-body py-3">
+                            <i class="bi bi-geo-alt fs-5 d-block mb-2" style="color: #16a34a;"></i>
+                            <div class="fw-semibold small">By Barangay</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-3 col-6">
+                    <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_resource_type" role="button" tabindex="0">
+                        <div class="card-body py-3">
+                            <i class="bi bi-stack fs-5 d-block mb-2" style="color: #9333ea;"></i>
+                            <div class="fw-semibold small">By Resource</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-3 col-6">
+                    <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_assistance_purpose" role="button" tabindex="0">
+                        <div class="card-body py-3">
+                            <i class="bi bi-lightning-charge fs-5 d-block mb-2" style="color: #dc2626;"></i>
+                            <div class="fw-semibold small">By Purpose</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-3 col-6">
+                    <div class="card h-100 text-center recipient-card cursor-pointer" data-type="selected" role="button" tabindex="0">
+                        <div class="card-body py-3">
+                            <i class="bi bi-hand-index fs-5 d-block mb-2" style="color: #64748b;"></i>
+                            <div class="fw-semibold small">Select Specific</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                    {{-- Select Specific Beneficiary Selector --}}
-                    <div id="specificSelector" class="mb-3" style="display:none;">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <label class="form-label fw-semibold small mb-0">Select Beneficiaries</label>
-                            <div class="d-flex gap-1">
-                                <button type="button" class="btn btn-xs btn-outline-primary" id="selectAllVisible" style="font-size: 0.75rem;">All</button>
-                                <button type="button" class="btn btn-xs btn-outline-secondary" id="clearAllSelected" style="font-size: 0.75rem;">Clear</button>
-                            </div>
-                        </div>
-                        <input type="text" class="form-control form-control-sm mb-2" id="beneficiarySearch" placeholder="Search by name...">
-                        <div class="border rounded sms-beneficiary-list" id="beneficiaryList">
-                            <div class="text-center text-muted py-4">
-                                <span class="spinner-border spinner-border-sm me-1"></span> Loading...
-                            </div>
-                        </div>
-                        <div class="text-muted small mt-1"><span id="selectedCount">0</span> selected</div>
+            {{-- Filter Dropdowns --}}
+            <div id="programFilter" class="mb-3" style="display:none;">
+                <label for="programSelect" class="form-label fw-semibold small">Select Program</label>
+                <select class="form-select form-select-sm" id="programSelect">
+                    <option value="" disabled selected>Choose program...</option>
+                    @foreach($programs as $program)
+                        <option value="{{ $program->id }}">{{ $program->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div id="eventFilter" class="mb-3" style="display:none;">
+                <label for="eventSelect" class="form-label fw-semibold small">Select Event</label>
+                <select class="form-select form-select-sm" id="eventSelect">
+                    <option value="" disabled selected>Choose event...</option>
+                    @foreach($events as $event)
+                        <option value="{{ $event->id }}">
+                            {{ $event->programName->name ?? 'Program N/A' }} - {{ $event->barangay->name ?? 'Barangay N/A' }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div id="barangayFilter" class="mb-3" style="display:none;">
+                <label for="barangaySelect" class="form-label fw-semibold small">Select Barangay</label>
+                <select class="form-select form-select-sm" id="barangaySelect">
+                    <option value="" disabled selected>Choose barangay...</option>
+                    @foreach($barangays as $b)
+                        <option value="{{ $b->id }}">{{ $b->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div id="resourceTypeFilter" class="mb-3" style="display:none;">
+                <label for="resourceTypeSelect" class="form-label fw-semibold small">Select Resource Type</label>
+                <select class="form-select form-select-sm" id="resourceTypeSelect">
+                    <option value="" disabled selected>Choose resource type...</option>
+                    @foreach($resourceTypes as $rt)
+                        <option value="{{ $rt->id }}">{{ $rt->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div id="assistancePurposeFilter" class="mb-3" style="display:none;">
+                <label for="assistancePurposeSelect" class="form-label fw-semibold small">Select Assistance Purpose</label>
+                <select class="form-select form-select-sm" id="assistancePurposeSelect">
+                    <option value="" disabled selected>Choose assistance purpose...</option>
+                    @foreach($assistancePurposes as $ap)
+                        <option value="{{ $ap->id }}">{{ $ap->name }} ({{ ucfirst($ap->category) }})</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Secondary Beneficiary Refinement --}}
+            <div id="secondaryBeneficiaryFilter" class="mb-3" style="display:none;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label fw-semibold small mb-0">Refine Selection</label>
+                    <div class="d-flex gap-1">
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="selectAllRefined">
+                            <i class="bi bi-check-all me-1"></i>Select All
+                        </button>
+                        <small class="text-muted align-self-center"><span id="refinedCount">0</span> selected</small>
+                    </div>
+                </div>
+                <input type="text" class="form-control form-control-sm mb-2" id="beneficiaryFilterSearch" placeholder="Search...">
+                <div class="border rounded sms-beneficiary-list" id="beneficiaryFilterList">
+                    <div class="text-center text-muted py-4">
+                        <span class="spinner-border spinner-border-sm me-1"></span> Loading...
+                    </div>
+                </div>
+            </div>
+
+            {{-- Select Specific Beneficiary Selector --}}
+            <div id="specificSelector" class="mb-3" style="display:none;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label fw-semibold small mb-0">Select Beneficiaries</label>
+                    <div class="d-flex gap-1">
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="selectAllVisible">
+                            <i class="bi bi-check-all me-1"></i>Select All
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="clearAllSelected">Clear All</button>
+                        <small class="text-muted align-self-center"><span id="selectedCount">0</span> selected</small>
+                    </div>
+                </div>
+                <input type="text" class="form-control form-control-sm mb-2" id="beneficiarySearch" placeholder="Search by name...">
+                <div class="border rounded sms-beneficiary-list" id="beneficiaryList">
+                    <div class="text-center text-muted py-4">
+                        <span class="spinner-border spinner-border-sm me-1"></span> Loading...
+                    </div>
+                </div>
+            </div>
+
+            {{-- Recipients Preview --}}
+            <div class="alert alert-light border mb-3" id="previewCard" style="display:none;">
+                <div class="text-muted small"><i class="bi bi-info-circle me-1"></i> <strong id="previewCount">0</strong> beneficiaries selected</div>
+                <div id="previewBody" class="mt-2 sms-preview-scroll small"></div>
+            </div>
+
+            {{-- Message Section --}}
+            <div class="mt-4 pt-3 border-top">
+                <h5 class="mb-3"><i class="bi bi-chat-dots me-2"></i>2. Compose Message</h5>
+
+                {{-- Template Selection --}}
+                <div class="mb-3">
+                    <label for="smsTemplate" class="form-label fw-semibold small">Template</label>
+                    <select class="form-select form-select-sm" id="smsTemplate">
+                        <option value="">— No Template —</option>
+                        @foreach($templates as $template)
+                            <option value="{{ $template['content'] }}">{{ $template['name'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Message Textarea --}}
+                <div class="mb-3">
+                    <label for="smsMessage" class="form-label fw-semibold small">Message (160 characters max)</label>
+                    <textarea class="form-control" id="smsMessage" rows="4" maxlength="160" placeholder="Type your message..."></textarea>
+                    <div class="d-flex justify-content-between align-items-center mt-1">
+                        <small class="text-muted">SMS limited to 160 characters</small>
+                        <small class="badge bg-primary"><span id="charCount">0</span>/160</small>
                     </div>
                 </div>
 
-                {{-- Right Column: Message Composition --}}
-                <div class="col-lg-5">
-                    <h5 class="mb-3"><i class="bi bi-chat-dots me-2"></i>2. Compose Message</h5>
+                {{-- Send Button --}}
+                <button type="button" class="btn btn-primary w-100" id="sendBtn" disabled>
+                    <i class="bi bi-send-fill me-2"></i>Send Message
+                </button>
 
-                    {{-- Recipients Preview --}}
-                    <div class="alert alert-light border mb-3" id="previewCard" style="display:none;">
-                        <div class="text-muted small"><i class="bi bi-info-circle me-1"></i> <strong id="previewCount">0</strong> beneficiaries selected</div>
-                        <div id="previewBody" class="mt-2 sms-preview-scroll small"></div>
-                    </div>
-
-                    {{-- Template Selection --}}
-                    <div class="mb-3">
-                        <label for="smsTemplate" class="form-label fw-semibold small">Template</label>
-                        <select class="form-select form-select-sm" id="smsTemplate">
-                            <option value="">— No Template —</option>
-                            @foreach($templates as $template)
-                                <option value="{{ $template['content'] }}">{{ $template['name'] }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    {{-- Message Textarea --}}
-                    <div class="mb-3">
-                        <label for="smsMessage" class="form-label fw-semibold small">Message (160 characters max)</label>
-                        <textarea class="form-control" id="smsMessage" rows="5" maxlength="160" placeholder="Type your message..."></textarea>
-                        <div class="d-flex justify-content-between align-items-center mt-1">
-                            <small class="text-muted">SMS limited to 160 characters</small>
-                            <small class="badge bg-primary"><span id="charCount">0</span>/160</small>
-                        </div>
-                    </div>
-
-                    {{-- Send Button --}}
-                    <button type="button" class="btn btn-primary w-100" id="sendBtn" disabled>
-                        <i class="bi bi-send-fill me-2"></i>Send Message
-                    </button>
-
-                    {{-- Result Alert --}}
-                    <div id="resultAlert" class="alert d-none mt-3" role="alert"></div>
-                </div>
+                {{-- Result Alert --}}
+                <div id="resultAlert" class="alert d-none mt-3" role="alert"></div>
             </div>
         </div>
 
@@ -614,6 +616,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     document.getElementById('beneficiaryFilterSearch')?.addEventListener('input', renderSecondaryBeneficiaryList);
+
+    document.getElementById('selectAllRefined')?.addEventListener('click', () => {
+        document.querySelectorAll('.refined-checkbox').forEach(cb => cb.checked = true);
+        updateRefinedCount();
+    });
 
     // ══════════════════════════════════════════════════════════════════════════════
     // SELECT SPECIFIC BENEFICIARY SELECTION
