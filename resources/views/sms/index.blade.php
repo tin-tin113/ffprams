@@ -620,7 +620,7 @@ document.addEventListener('DOMContentLoaded', function () {
         list.innerHTML = filtered.map(b => `
             <div class="beneficiary-checkbox-item">
                 <div class="form-check">
-                    <input class="form-check-input refined-checkbox" type="checkbox" id="refined-${b.id}" value="${b.id}" data-name="${b.full_name}">
+                    <input class="form-check-input refined-checkbox" type="checkbox" id="refined-${b.id}" value="${b.id}" data-name="${b.full_name}" checked>
                     <label class="form-check-label" for="refined-${b.id}">
                         <div class="fw-semibold small">${b.full_name}</div>
                         <small class="text-muted">${b.barangay || '—'} • ${b.contact_number || 'No contact'}</small>
@@ -632,6 +632,9 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.refined-checkbox').forEach(cb => {
             cb.addEventListener('change', updateRefinedCount);
         });
+
+        // Update count immediately since all are checked by default
+        updateRefinedCount();
     }
 
     function updateRefinedCount() {
@@ -673,7 +676,7 @@ document.addEventListener('DOMContentLoaded', function () {
         list.innerHTML = filtered.map(b => `
             <div class="beneficiary-checkbox-item">
                 <div class="form-check">
-                    <input class="form-check-input specific-checkbox" type="checkbox" id="specific-${b.id}" value="${b.id}">
+                    <input class="form-check-input specific-checkbox" type="checkbox" id="specific-${b.id}" value="${b.id}" checked>
                     <label class="form-check-label" for="specific-${b.id}">
                         <div class="fw-semibold small">${b.full_name}</div>
                         <small class="text-muted">${b.barangay || '—'} • ${b.contact_number || 'No contact'}</small>
@@ -688,6 +691,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 updatePreview();
             });
         });
+
+        // Update count and preview immediately since all are checked by default
+        updateSelectedCount();
+        updatePreview();
     }
 
     function updateSelectedCount() {
