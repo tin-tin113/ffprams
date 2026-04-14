@@ -134,7 +134,7 @@
         </div>
     </div>
 
-    {{-- Distribution Events Table --}}
+    {{-- Distribution Events Accordion --}}
     <div class="row mb-4">
         <div class="col-12">
             <div class="card shadow-sm border-0">
@@ -145,98 +145,92 @@
                 </div>
                 <div class="card-body">
                     @if($events->count() > 0)
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Event Date</th>
-                                    <th>Barangay</th>
-                                    <th>Resource Type</th>
-                                    <th class="text-end">Quantity</th>
-                                    <th class="text-end">Allocations</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($events as $event)
-                                <tr>
-                                    <td>
-                                        <small>{{ $event->event_date->format('Y-m-d') }}</small>
-                                    </td>
-                                    <td>
-                                        <small>{{ $event->barangay?->name ?? 'N/A' }}</small>
-                                    </td>
-                                    <td>
-                                        <small>{{ $event->resourceType?->name ?? 'N/A' }}</small>
-                                    </td>
-                                    <td class="text-end">
-                                        <small>{{ $event->total_quantity ?? '-' }}</small>
-                                    </td>
-                                    <td class="text-end">
-                                        <small>{{ $event->allocations->count() }}</small>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                    <div class="accordion" id="eventsAccordion">
+                        @foreach($events as $index => $event)
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#event{{ $event->id }}" aria-expanded="false" aria-controls="event{{ $event->id }}">
+                                    <div class="d-flex align-items-center gap-3 flex-grow-1">
+                                        <span class="badge bg-secondary">{{ $event->event_date?->format('Y-m-d') ?? 'N/A' }}</span>
+                                        <span><strong>{{ $event->barangay?->name ?? 'N/A' }}</strong></span>
+                                        <span class="text-muted">{{ $event->resourceType?->name ?? 'N/A' }}</span>
+                                        <span class="ms-auto badge bg-light text-dark">{{ $event->allocations->count() }} allocations</span>
+                                    </div>
+                                </button>
+                            </h2>
+                            <div id="event{{ $event->id }}" class="accordion-collapse collapse" data-bs-parent="#eventsAccordion">
+                                <div class="accordion-body">
+                                    {{-- Event Metadata --}}
+                                    <div class="row mb-3">
+                                        <div class="col-md-3">
+                                            <small class="text-muted">Event Date</small>
+                                            <p class="mb-0"><strong>{{ $event->event_date?->format('Y-m-d') ?? 'N/A' }}</strong></p>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <small class="text-muted">Barangay</small>
+                                            <p class="mb-0"><strong>{{ $event->barangay?->name ?? 'N/A' }}</strong></p>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <small class="text-muted">Resource Type</small>
+                                            <p class="mb-0"><strong>{{ $event->resourceType?->name ?? 'N/A' }}</strong></p>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <small class="text-muted">Total Quantity</small>
+                                            <p class="mb-0"><strong>{{ $event->total_quantity ?? '-' }}</strong></p>
+                                        </div>
+                                    </div>
+
+                                    <hr class="my-3">
+
+                                    {{-- Associated Allocations --}}
+                                    @if($event->allocations->count() > 0)
+                                    <h6 class="mb-3">
+                                        <i class="bi bi-box-seam"></i> Associated Allocations ({{ $event->allocations->count() }})
+                                    </h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Beneficiary</th>
+                                                    <th>Resource Type</th>
+                                                    <th class="text-end">Quantity</th>
+                                                    <th class="text-end">Amount (₱)</th>
+                                                    <th>Date</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($event->allocations as $allocation)
+                                                <tr>
+                                                    <td>
+                                                        <small>{{ $allocation->beneficiary?->name ?? 'N/A' }}</small>
+                                                    </td>
+                                                    <td>
+                                                        <small>{{ $allocation->resourceType?->name ?? 'N/A' }}</small>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <small>{{ $allocation->quantity }}</small>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <small>{{ number_format($allocation->amount, 2) }}</small>
+                                                    </td>
+                                                    <td>
+                                                        <small>{{ $allocation->created_at?->format('Y-m-d') ?? 'N/A' }}</small>
+                                                    </td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    @else
+                                    <p class="text-muted mb-0">No allocations for this event.</p>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
                     </div>
                     @else
                     <p class="text-muted mb-0">No distribution events found.</p>
-                    @endif
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Allocations Table --}}
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-light">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-box-seam"></i> Allocations ({{ $allocations->count() }})
-                    </h5>
-                </div>
-                <div class="card-body">
-                    @if($allocations->count() > 0)
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Beneficiary</th>
-                                    <th>Resource Type</th>
-                                    <th class="text-end">Quantity</th>
-                                    <th class="text-end">Amount (₱)</th>
-                                    <th>Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($allocations->take(10) as $allocation)
-                                <tr>
-                                    <td>
-                                        <small>{{ $allocation->beneficiary?->name ?? 'N/A' }}</small>
-                                    </td>
-                                    <td>
-                                        <small>{{ $allocation->resourceType?->name ?? 'N/A' }}</small>
-                                    </td>
-                                    <td class="text-end">
-                                        <small>{{ $allocation->quantity }}</small>
-                                    </td>
-                                    <td class="text-end">
-                                        <small>{{ number_format($allocation->amount, 2) }}</small>
-                                    </td>
-                                    <td>
-                                        <small>{{ $allocation->created_at->format('Y-m-d') }}</small>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    @if($allocations->count() > 10)
-                    <small class="text-muted d-block mt-2">Showing 10 of {{ $allocations->count() }} allocations</small>
-                    @endif
-                    @else
-                    <p class="text-muted mb-0">No allocations found.</p>
                     @endif
                 </div>
             </div>
