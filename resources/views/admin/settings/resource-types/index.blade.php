@@ -20,7 +20,12 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link active" href="{{ route('admin.settings.resource-types.index') }}">
-                                <i class="bi bi-box"></i> Resource Types & Purposes
+                                <i class="bi bi-box"></i> Resource Types
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="{{ route('admin.settings.resource-types.index') }}#purposesTab">
+                                <i class="bi bi-tasks"></i> Assistance Purposes
                             </a>
                         </li>
                         <li class="nav-item">
@@ -849,6 +854,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 }.bind(this)
             );
         });
+    });
+
+    // Handle hash-based tab activation (when coming from Programs page with #purposesTab)
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.location.hash === '#purposesTab') {
+            const purposesTab = document.getElementById('purposesTab');
+            if (purposesTab) {
+                const tab = new bootstrap.Tab(purposesTab);
+                tab.show();
+            }
+        }
     });
 });
 </script>

@@ -24,6 +24,11 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="{{ route('admin.settings.resource-types.index') }}#purposesTab">
+                                <i class="bi bi-tasks"></i> Assistance Purposes
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link active" href="{{ route('admin.settings.form-fields.index') }}">
                                 <i class="bi bi-file-form"></i> Form Fields
                             </a>
