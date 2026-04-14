@@ -211,7 +211,6 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 
     // Settings — Separate Pages (Multi-page Interface)
     Route::get('settings/agencies', [SystemSettingsController::class, 'indexAgencies'])->name('settings.agencies.index');
-    Route::get('settings/purposes', [SystemSettingsController::class, 'indexPurposes'])->name('settings.purposes.index');
     Route::get('settings/resource-types', [SystemSettingsController::class, 'indexResourceTypes'])->name('settings.resource-types.index');
     Route::get('settings/program-names', [SystemSettingsController::class, 'indexProgramNames'])->name('settings.program-names.index');
     Route::get('settings/form-fields', [SystemSettingsController::class, 'indexFormFields'])->name('settings.form-fields.index');

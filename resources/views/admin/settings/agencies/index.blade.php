@@ -19,18 +19,13 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('admin.settings.purposes.index') }}">
-                                <i class="fas fa-tasks"></i> Assistance Purposes
-                            </a>
-                        </li>
-                        <li class="nav-item">
                             <a class="nav-link" href="{{ route('admin.settings.resource-types.index') }}">
-                                <i class="fas fa-boxes"></i> Resource Types
+                                <i class="bi bi-box"></i> Resource Types
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('admin.settings.form-fields.index') }}">
-                                <i class="fas fa-wpforms"></i> Form Fields
+                                <i class="bi bi-file-form"></i> Form Fields
                             </a>
                         </li>
                     </ul>
