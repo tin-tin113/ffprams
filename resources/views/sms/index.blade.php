@@ -301,11 +301,11 @@
 
                 {{-- Message Textarea --}}
                 <div class="mb-3">
-                    <label for="smsMessage" class="form-label fw-semibold small">Message (160 characters max)</label>
-                    <textarea class="form-control" id="smsMessage" rows="4" maxlength="160" placeholder="Type your message..."></textarea>
+                    <label for="smsMessage" class="form-label fw-semibold small">Message</label>
+                    <textarea class="form-control" id="smsMessage" rows="4" placeholder="Type your message..."></textarea>
                     <div class="d-flex justify-content-between align-items-center mt-1">
-                        <small class="text-muted">SMS limited to 160 characters</small>
-                        <small class="badge bg-primary"><span id="charCount">0</span>/160</small>
+                        <small class="text-muted">No character limit</small>
+                        <small class="badge bg-primary"><span id="charCount">0</span> characters</small>
                     </div>
                 </div>
 
@@ -437,8 +437,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>Send this message to <strong id="confirmCount">0</strong> beneficiaries?</p>
-                <blockquote class="blockquote border-start border-3 ps-3 small bg-light py-2 rounded-end" id="confirmMessage"></blockquote>
+                <p>Send this message to <strong id="smsConfirmCount">0</strong> beneficiaries?</p>
+                <blockquote class="blockquote border-start border-3 ps-3 small bg-light py-2 rounded-end" id="smsConfirmMessage"></blockquote>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -484,9 +484,9 @@
                         <input type="text" class="form-control" id="templateName" placeholder="e.g., Assistance Approved" required>
                     </div>
                     <div class="mb-3">
-                        <label for="templateContent" class="form-label">Message Content (160 chars max)</label>
-                        <textarea class="form-control" id="templateContent" rows="4" maxlength="160" placeholder="Type template message..." required></textarea>
-                        <small class="text-muted d-block mt-1"><span id="templateCharCount">0</span>/160</small>
+                        <label for="templateContent" class="form-label">Message Content</label>
+                        <textarea class="form-control" id="templateContent" rows="4" placeholder="Type template message..." required></textarea>
+                        <small class="text-muted d-block mt-1"><span id="templateCharCount">0</span> characters</small>
                     </div>
                 </form>
             </div>
@@ -811,8 +811,8 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        document.getElementById('confirmCount').textContent = previewData.count;
-        document.getElementById('confirmMessage').textContent = smsMessage.value;
+        document.getElementById('smsConfirmCount').textContent = previewData.count;
+        document.getElementById('smsConfirmMessage').textContent = smsMessage.value;
 
         try {
             const modalInstance = new bootstrap.Modal(smsConfirmModalEl);

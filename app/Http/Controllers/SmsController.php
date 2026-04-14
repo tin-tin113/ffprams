@@ -137,7 +137,7 @@ class SmsController extends Controller
     public function send(Request $request): JsonResponse
     {
         $request->validate([
-            'message' => ['required', 'string', 'min:5', 'max:160'],
+            'message' => ['required', 'string', 'min:5'],
             'recipient_type' => ['required', Rule::in(['by_program', 'by_event', 'by_barangay', 'by_resource_type', 'by_assistance_purpose', 'selected'])],
             'program_name_id' => [
                 'required_if:recipient_type,by_program',
