@@ -9,6 +9,8 @@ class Barangay extends Model
 {
     protected $fillable = [
         'name',
+        'municipality',
+        'province',
         'latitude',
         'longitude',
     ];
@@ -24,5 +26,15 @@ class Barangay extends Model
     public function beneficiaries(): HasMany
     {
         return $this->hasMany(Beneficiary::class);
+    }
+
+    /**
+     * Scope to filter barangays to E.B. Magalona only.
+     * This ensures the geo-map and beneficiary data are exclusive to this municipality.
+     */
+    public function scopeEbMagalona($query)
+    {
+        return $query->where('municipality', '=', 'E.B. Magalona')
+            ->where('province', '=', 'Negros Occidental');
     }
 }

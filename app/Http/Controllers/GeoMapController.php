@@ -45,7 +45,10 @@ class GeoMapController extends Controller
 
         try {
             $result = Cache::remember($cacheKey, now()->addSeconds(GeoMapCache::ttlSeconds()), function () use ($lineAgencyFilter, $programFilter) {
+                // Geo-Map scoped to E.B. Magalona, Negros Occidental
                 $barangays = DB::table('barangays')
+                    ->where('municipality', '=', 'E.B. Magalona')
+                    ->where('province', '=', 'Negros Occidental')
                     ->leftJoin('beneficiaries', function ($join) use ($lineAgencyFilter) {
                         $join->on('barangays.id', '=', 'beneficiaries.barangay_id')
                             ->whereNull('beneficiaries.deleted_at')
