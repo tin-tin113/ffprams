@@ -40,14 +40,6 @@ class SmsController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'category']);
 
-        // Get distinct commodity types from active beneficiaries
-        $commodityTypes = Beneficiary::where('status', 'Active')
-            ->whereNotNull('primary_commodity')
-            ->distinct()
-            ->pluck('primary_commodity')
-            ->sort()
-            ->values();
-
         $smsLogs = SmsLog::with('beneficiary.barangay')
             ->when($request->filled('search'), function ($q) use ($request) {
                 $q->whereHas('beneficiary', fn ($b) => $b->where('full_name', 'like', "%{$request->search}%"));
@@ -65,7 +57,6 @@ class SmsController extends Controller
             'events',
             'resourceTypes',
             'assistancePurposes',
-            'commodityTypes',
             'smsLogs',
         ));
     }
@@ -73,7 +64,7 @@ class SmsController extends Controller
     public function preview(Request $request): JsonResponse
     {
         $request->validate([
-            'recipient_type' => ['required', Rule::in(['by_program', 'by_event', 'by_barangay', 'by_resource_type', 'by_assistance_purpose', 'by_commodity_type', 'selected'])],
+            'recipient_type' => ['required', Rule::in(['by_program', 'by_event', 'by_barangay', 'by_resource_type', 'by_assistance_purpose', 'selected'])],
             'program_name_id' => [
                 'required_if:recipient_type,by_program',
                 'nullable',
@@ -89,7 +80,6 @@ class SmsController extends Controller
             'barangay_id' => ['required_if:recipient_type,by_barangay', 'nullable', 'exists:barangays,id'],
             'resource_type_id' => ['required_if:recipient_type,by_resource_type', 'nullable', 'exists:resource_types,id'],
             'assistance_purpose_id' => ['required_if:recipient_type,by_assistance_purpose', 'nullable', 'exists:assistance_purposes,id'],
-            'commodity_type' => ['required_if:recipient_type,by_commodity_type', 'nullable', 'string'],
             'beneficiary_ids' => ['required_if:recipient_type,selected', 'nullable', 'array', 'min:1'],
             'beneficiary_ids.*' => ['integer', 'exists:beneficiaries,id'],
         ]);
@@ -131,7 +121,7 @@ class SmsController extends Controller
     {
         $request->validate([
             'message' => ['required', 'string', 'min:5', 'max:160'],
-            'recipient_type' => ['required', Rule::in(['by_program', 'by_event', 'by_barangay', 'by_resource_type', 'by_assistance_purpose', 'by_commodity_type', 'selected'])],
+            'recipient_type' => ['required', Rule::in(['by_program', 'by_event', 'by_barangay', 'by_resource_type', 'by_assistance_purpose', 'selected'])],
             'program_name_id' => [
                 'required_if:recipient_type,by_program',
                 'nullable',
@@ -147,7 +137,6 @@ class SmsController extends Controller
             'barangay_id' => ['required_if:recipient_type,by_barangay', 'nullable', 'exists:barangays,id'],
             'resource_type_id' => ['required_if:recipient_type,by_resource_type', 'nullable', 'exists:resource_types,id'],
             'assistance_purpose_id' => ['required_if:recipient_type,by_assistance_purpose', 'nullable', 'exists:assistance_purposes,id'],
-            'commodity_type' => ['required_if:recipient_type,by_commodity_type', 'nullable', 'string'],
             'beneficiary_ids' => ['required_if:recipient_type,selected', 'nullable', 'array', 'min:1'],
             'beneficiary_ids.*' => ['integer', 'exists:beneficiaries,id'],
         ]);
@@ -188,7 +177,6 @@ class SmsController extends Controller
                 'barangay_id' => $request->barangay_id,
                 'resource_type_id' => $request->resource_type_id,
                 'assistance_purpose_id' => $request->assistance_purpose_id,
-                'commodity_type' => $request->commodity_type,
             ],
         );
 
@@ -230,9 +218,6 @@ class SmsController extends Controller
                     $q->whereHas('allocations', fn ($a) => $a->where('assistance_purpose_id', $request->assistance_purpose_id))
                         ->orWhereHas('directAssistance', fn ($d) => $d->where('assistance_purpose_id', $request->assistance_purpose_id));
                 });
-                break;
-            case 'by_commodity_type':
-                $query->where('primary_commodity', $request->commodity_type);
                 break;
             case 'selected':
                 $ids = $request->beneficiary_ids ?? [];

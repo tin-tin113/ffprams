@@ -99,65 +99,56 @@
             <label class="form-label fw-semibold mb-3">1. Select Recipients</label>
             <div class="row g-3 mb-4" id="recipientCards">
                 {{-- By Program --}}
-                <div class="col-lg-2 col-md-3 col-6">
+                <div class="col-lg-2 col-md-4 col-6">
                     <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_program" role="button" tabindex="0">
                         <div class="card-body py-3">
-                            <i class="bi bi-diagram-3-fill fs-4 d-block mb-2 text-primary"></i>
+                            <i class="bi bi-diagram-3 fs-4 d-block mb-2" style="color: #2563eb;"></i>
                             <div class="fw-semibold small">By Program</div>
                         </div>
                     </div>
                 </div>
                 {{-- By Distribution Event --}}
-                <div class="col-lg-2 col-md-3 col-6">
+                <div class="col-lg-2 col-md-4 col-6">
                     <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_event" role="button" tabindex="0">
                         <div class="card-body py-3">
-                            <i class="bi bi-calendar-event-fill fs-4 d-block mb-2 text-info"></i>
+                            <i class="bi bi-calendar-check fs-4 d-block mb-2" style="color: #0891b2;"></i>
                             <div class="fw-semibold small">By Event</div>
                         </div>
                     </div>
                 </div>
                 {{-- By Barangay --}}
-                <div class="col-lg-2 col-md-3 col-6">
+                <div class="col-lg-2 col-md-4 col-6">
                     <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_barangay" role="button" tabindex="0">
                         <div class="card-body py-3">
-                            <i class="bi bi-geo-alt-fill fs-4 d-block mb-2 text-success"></i>
+                            <i class="bi bi-geo-alt fs-4 d-block mb-2" style="color: #16a34a;"></i>
                             <div class="fw-semibold small">By Barangay</div>
                         </div>
                     </div>
                 </div>
                 {{-- By Resource Type --}}
-                <div class="col-lg-2 col-md-3 col-6">
+                <div class="col-lg-2 col-md-4 col-6">
                     <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_resource_type" role="button" tabindex="0">
                         <div class="card-body py-3">
-                            <i class="bi bi-boxes fs-4 d-block mb-2 text-warning"></i>
+                            <i class="bi bi-stack fs-4 d-block mb-2" style="color: #9333ea;"></i>
                             <div class="fw-semibold small">By Resource</div>
                         </div>
                     </div>
                 </div>
                 {{-- By Assistance Purpose --}}
-                <div class="col-lg-2 col-md-3 col-6">
+                <div class="col-lg-2 col-md-4 col-6">
                     <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_assistance_purpose" role="button" tabindex="0">
                         <div class="card-body py-3">
-                            <i class="bi bi-heart-fill fs-4 d-block mb-2 text-danger"></i>
+                            <i class="bi bi-lightning-charge fs-4 d-block mb-2" style="color: #dc2626;"></i>
                             <div class="fw-semibold small">By Purpose</div>
                         </div>
                     </div>
                 </div>
-                {{-- By Commodity Type --}}
-                <div class="col-lg-2 col-md-3 col-6">
-                    <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_commodity_type" role="button" tabindex="0">
-                        <div class="card-body py-3">
-                            <i class="bi bi-leaf-fill fs-4 d-block mb-2 text-teal" style="color: #20c997;"></i>
-                            <div class="fw-semibold small">By Commodity</div>
-                        </div>
-                    </div>
-                </div>
                 {{-- Select Specific --}}
-                <div class="col-lg-2 col-md-3 col-6">
+                <div class="col-lg-2 col-md-4 col-6">
                     <div class="card h-100 text-center recipient-card cursor-pointer" data-type="selected" role="button" tabindex="0">
                         <div class="card-body py-3">
-                            <i class="bi bi-person-check-fill fs-4 d-block mb-2 text-secondary"></i>
-                            <div class="fw-semibold small">Select All</div>
+                            <i class="bi bi-hand-index fs-4 d-block mb-2" style="color: #64748b;"></i>
+                            <div class="fw-semibold small">Select Specific</div>
                         </div>
                     </div>
                 </div>
@@ -218,17 +209,6 @@
                         <option value="{{ $ap->id }}">
                             {{ $ap->name }} <span class="text-muted">({{ ucfirst($ap->category) }})</span>
                         </option>
-                    @endforeach
-                </select>
-            </div>
-
-            {{-- Commodity Type Dropdown (hidden) --}}
-            <div id="commodityTypeFilter" class="mb-3" style="display:none;">
-                <label for="commodityTypeSelect" class="form-label">Select Commodity Type</label>
-                <select class="form-select" id="commodityTypeSelect">
-                    <option value="" disabled selected>Choose commodity type...</option>
-                    @foreach($commodityTypes as $commodity)
-                        <option value="{{ $commodity }}">{{ $commodity }}</option>
                     @endforeach
                 </select>
             </div>
@@ -488,14 +468,12 @@ document.addEventListener('DOMContentLoaded', function () {
     var barangayFilter     = document.getElementById('barangayFilter');
     var resourceTypeFilter = document.getElementById('resourceTypeFilter');
     var assistancePurposeFilter = document.getElementById('assistancePurposeFilter');
-    var commodityTypeFilter = document.getElementById('commodityTypeFilter');
     var specificSelector   = document.getElementById('specificSelector');
     var programSelect      = document.getElementById('programSelect');
     var eventSelect        = document.getElementById('eventSelect');
     var barangaySelect     = document.getElementById('barangaySelect');
     var resourceTypeSelect = document.getElementById('resourceTypeSelect');
     var assistancePurposeSelect = document.getElementById('assistancePurposeSelect');
-    var commodityTypeSelect = document.getElementById('commodityTypeSelect');
     var previewCard        = document.getElementById('previewCard');
     var previewBody        = document.getElementById('previewBody');
     var smsMessage         = document.getElementById('smsMessage');
@@ -533,7 +511,6 @@ document.addEventListener('DOMContentLoaded', function () {
             barangayFilter.style.display        = recipientType === 'by_barangay' ? '' : 'none';
             resourceTypeFilter.style.display    = recipientType === 'by_resource_type' ? '' : 'none';
             assistancePurposeFilter.style.display = recipientType === 'by_assistance_purpose' ? '' : 'none';
-            commodityTypeFilter.style.display   = recipientType === 'by_commodity_type' ? '' : 'none';
             specificSelector.style.display      = recipientType === 'selected' ? '' : 'none';
 
             if (recipientType === 'selected') {
@@ -554,7 +531,6 @@ document.addEventListener('DOMContentLoaded', function () {
     barangaySelect.addEventListener('change', function () { fetchPreview(); });
     resourceTypeSelect.addEventListener('change', function () { fetchPreview(); });
     assistancePurposeSelect.addEventListener('change', function () { fetchPreview(); });
-    commodityTypeSelect.addEventListener('change', function () { fetchPreview(); });
 
     // ── Fetch Preview (debounced) ───────────────
     function fetchPreview() {
@@ -566,7 +542,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (recipientType === 'by_barangay') body.barangay_id = barangaySelect.value;
             if (recipientType === 'by_resource_type') body.resource_type_id = resourceTypeSelect.value;
             if (recipientType === 'by_assistance_purpose') body.assistance_purpose_id = assistancePurposeSelect.value;
-            if (recipientType === 'by_commodity_type') body.commodity_type = commodityTypeSelect.value;
             if (recipientType === 'selected') body.beneficiary_ids = getSelectedIds();
 
             if (recipientType === 'by_program' && !body.program_name_id) return;
@@ -574,7 +549,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (recipientType === 'by_barangay' && !body.barangay_id) return;
             if (recipientType === 'by_resource_type' && !body.resource_type_id) return;
             if (recipientType === 'by_assistance_purpose' && !body.assistance_purpose_id) return;
-            if (recipientType === 'by_commodity_type' && !body.commodity_type) return;
 
             previewBody.innerHTML = '<div class="text-muted small"><span class="spinner-border spinner-border-sm me-1"></span> Loading preview...</div>';
             previewCard.style.display = '';
@@ -750,7 +724,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (recipientType === 'by_barangay') body.barangay_id = barangaySelect.value;
         if (recipientType === 'by_resource_type') body.resource_type_id = resourceTypeSelect.value;
         if (recipientType === 'by_assistance_purpose') body.assistance_purpose_id = assistancePurposeSelect.value;
-        if (recipientType === 'by_commodity_type') body.commodity_type = commodityTypeSelect.value;
         if (recipientType === 'selected') body.beneficiary_ids = getSelectedIds();
 
         fetch('{{ route("sms.send") }}', {
