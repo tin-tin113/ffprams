@@ -62,8 +62,9 @@ class SystemSettingsController extends Controller
     {
         $agencies = Agency::where('is_active', true)->orderBy('name')->get();
         $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
+        $purposes = AssistancePurpose::orderBy('category')->orderBy('name')->get();
 
-        return view('admin.settings.resource-types.index', compact('agencies', 'resourceTypes'));
+        return view('admin.settings.resource-types.index', compact('agencies', 'resourceTypes', 'purposes'));
     }
 
     public function indexProgramNames(): View
