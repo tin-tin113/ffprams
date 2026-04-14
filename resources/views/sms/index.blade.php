@@ -428,8 +428,8 @@
     </div>
 </div>
 
-{{-- Confirm Send Modal --}}
-<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+{{-- Confirm Send Modal (SMS-specific, avoid ID conflict with global confirmModal) --}}
+<div class="modal fade" id="smsConfirmModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -503,11 +503,23 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    console.log('SMS Script Initialized');
+
+    // Prevent any accidental form submissions
+    document.addEventListener('submit', function(e) {
+        if (e.target && e.target.id !== 'templateForm') {
+            console.warn('Prevented form submission:', e.target);
+            e.preventDefault();
+        }
+    });
+
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
     let recipientType = null;
     let previewData = { count: 0, recipients: [] };
     let filterBeneficiaries = [];
     let debounceTimer = null;
+
+    console.log('CSRF Token:', csrfToken ? 'Present' : 'Missing');
 
     // ══════════════════════════════════════════════════════════════════════════════
     // RECIPIENT CARD SELECTION
@@ -759,10 +771,13 @@ document.addEventListener('DOMContentLoaded', function () {
     sendBtn?.addEventListener('click', () => {
         document.getElementById('confirmCount').textContent = previewData.count;
         document.getElementById('confirmMessage').textContent = smsMessage.value;
-        new bootstrap.Modal(document.getElementById('confirmModal')).show();
+        new bootstrap.Modal(document.getElementById('smsConfirmModal')).show();
     });
 
-    document.getElementById('confirmSendBtn')?.addEventListener('click', async function () {
+    document.getElementById('confirmSendBtn')?.addEventListener('click', async function (e) {
+        e.preventDefault();
+        console.log('Confirm Send button clicked');
+
         this.disabled = true;
         this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Sending...';
 
@@ -775,13 +790,36 @@ document.addEventListener('DOMContentLoaded', function () {
         else if (recipientType === 'selected') body.beneficiary_ids = Array.from(document.querySelectorAll('.specific-checkbox:checked')).map(cb => cb.value);
         else if (recipientType !== 'selected') body.beneficiary_ids = Array.from(document.querySelectorAll('.refined-checkbox:checked')).map(cb => cb.value);
 
+        console.log('Sending SMS:', {
+            url: '{{ route("sms.send") }}',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+            bodyKeys: Object.keys(body),
+            recipientType: recipientType,
+            messageLength: body.message?.length
+        });
+
         try {
+            console.log('Initiating fetch to {{ route("sms.send") }}');
             const response = await fetch('{{ route("sms.send") }}', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
                 body: JSON.stringify(body)
             });
+
+            console.log('Fetch response status:', response.status);
+
+            if (!response.ok) {
+                console.error('Response not OK:', response.status, response.statusText);
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
+            console.log('Response data:', data);
 
             const resultAlert = document.getElementById('resultAlert');
             resultAlert.classList.remove('d-none', 'alert-success', 'alert-danger');
@@ -796,11 +834,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
             setTimeout(() => location.reload(), 2000);
         } catch (error) {
-            console.error('Send failed:', error);
+            console.error('Send failed with error:', error);
+            const resultAlert = document.getElementById('resultAlert');
+            resultAlert.classList.remove('d-none', 'alert-success');
+            resultAlert.classList.add('alert-danger');
+            resultAlert.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>Error: ' + error.message;
         } finally {
             this.disabled = false;
             this.innerHTML = '<i class="bi bi-send-fill me-1"></i>Confirm Send';
-            bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
+            try {
+                bootstrap.Modal.getInstance(document.getElementById('smsConfirmModal')).hide();
+            } catch (e) {
+                console.log('Modal close error:', e);
+            }
         }
     });
 
