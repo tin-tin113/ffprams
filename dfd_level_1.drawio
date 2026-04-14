@@ -1,0 +1,255 @@
+<mxfile version="14.6.13">
+  <diagram id="dfd-level-1-vertical" name="Level 1 DFD (Vertical &amp; DB Tables)">
+    <mxGraphModel dx="1600" dy="1800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="1800" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ================================================================ -->
+        <!--  EXTERNAL ENTITIES (Left Margin & Top) -->
+        <!-- ================================================================ -->
+        <mxCell id="E4" value="Beneficiary" style="shape=rectangle;whiteSpace=wrap;html=1;shadow=1;strokeWidth=2;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="375" y="20" width="100" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="E1" value="Admin" style="shape=rectangle;whiteSpace=wrap;html=1;shadow=1;strokeWidth=2;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="210" width="100" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="E2" value="Staff" style="shape=rectangle;whiteSpace=wrap;html=1;shadow=1;strokeWidth=2;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="460" width="100" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="E3" value="Partner&#xa;Agency" style="shape=rectangle;whiteSpace=wrap;html=1;shadow=1;strokeWidth=2;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="960" width="100" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="E5" value="SMS Gateway" style="shape=rectangle;whiteSpace=wrap;html=1;shadow=1;strokeWidth=2;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="1210" width="100" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- ================================================================ -->
+        <!--  PROCESSES (Single Vertical Column, Center) -->
+        <!-- ================================================================ -->
+        <mxCell id="P1" value="&lt;div style=&quot;border-bottom:1px solid #000; padding-bottom:2px;&quot;&gt;&lt;b&gt;1.0&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;padding:10px 0;&quot;&gt;&lt;b&gt;System&lt;br&gt;Configuration&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;border-top:1px solid #000; padding-top:2px; font-size:10px;&quot;&gt;FFPRAMS Core&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;strokeWidth=2;arcSize=10;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="350" y="200" width="150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="P2" value="&lt;div style=&quot;border-bottom:1px solid #000; padding-bottom:2px;&quot;&gt;&lt;b&gt;2.0&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;padding:10px 0;&quot;&gt;&lt;b&gt;Beneficiary&lt;br&gt;Registration&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;border-top:1px solid #000; padding-top:2px; font-size:10px;&quot;&gt;FFPRAMS Core&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;strokeWidth=2;arcSize=10;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="350" y="450" width="150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="P3" value="&lt;div style=&quot;border-bottom:1px solid #000; padding-bottom:2px;&quot;&gt;&lt;b&gt;3.0&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;padding:10px 0;&quot;&gt;&lt;b&gt;Program&lt;br&gt;Management&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;border-top:1px solid #000; padding-top:2px; font-size:10px;&quot;&gt;FFPRAMS Core&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;strokeWidth=2;arcSize=10;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="350" y="700" width="150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="P4" value="&lt;div style=&quot;border-bottom:1px solid #000; padding-bottom:2px;&quot;&gt;&lt;b&gt;4.0&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;padding:10px 0;&quot;&gt;&lt;b&gt;Reports &amp;amp;&lt;br&gt;Dashboard&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;border-top:1px solid #000; padding-top:2px; font-size:10px;&quot;&gt;FFPRAMS Core&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;strokeWidth=2;arcSize=10;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="350" y="950" width="150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="P5" value="&lt;div style=&quot;border-bottom:1px solid #000; padding-bottom:2px;&quot;&gt;&lt;b&gt;5.0&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;padding:10px 0;&quot;&gt;&lt;b&gt;SMS&lt;br&gt;Center&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;border-top:1px solid #000; padding-top:2px; font-size:10px;&quot;&gt;FFPRAMS Core&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;strokeWidth=2;arcSize=10;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="350" y="1200" width="150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="P6" value="&lt;div style=&quot;border-bottom:1px solid #000; padding-bottom:2px;&quot;&gt;&lt;b&gt;6.0&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;padding:10px 0;&quot;&gt;&lt;b&gt;Geo-Map&lt;br&gt;Monitoring&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;border-top:1px solid #000; padding-top:2px; font-size:10px;&quot;&gt;FFPRAMS Core&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;strokeWidth=2;arcSize=10;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="350" y="1450" width="150" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- ================================================================ -->
+        <!--  DATA STORES (Right Margin, Grouped with Related Process) -->
+        <!-- ================================================================ -->
+        <!-- Config Stores (with P1) -->
+        <mxCell id="D1" value="&lt;b&gt;D1&lt;/b&gt; users" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=1;strokeWidth=2;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="700" y="140" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="D1L" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="1"><mxGeometry x="730" y="140" width="5" height="40" as="geometry" /></mxCell>
+
+        <mxCell id="D2" value="&lt;b&gt;D2&lt;/b&gt; settings" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=1;strokeWidth=2;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="700" y="200" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="D2L" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="1"><mxGeometry x="730" y="200" width="5" height="40" as="geometry" /></mxCell>
+
+        <mxCell id="D3" value="&lt;b&gt;D3&lt;/b&gt; agencies" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=1;strokeWidth=2;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="700" y="260" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="D3L" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="1"><mxGeometry x="730" y="260" width="5" height="40" as="geometry" /></mxCell>
+
+        <mxCell id="D4" value="&lt;b&gt;D4&lt;/b&gt; resource_types" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=1;strokeWidth=2;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="700" y="320" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="D4L" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="1"><mxGeometry x="730" y="320" width="5" height="40" as="geometry" /></mxCell>
+
+        <!-- Reg Stores (with P2) -->
+        <mxCell id="D5" value="&lt;b&gt;D5&lt;/b&gt; beneficiaries" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=1;strokeWidth=2;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="700" y="430" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="D5L" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="1"><mxGeometry x="730" y="430" width="5" height="40" as="geometry" /></mxCell>
+
+        <mxCell id="D6" value="&lt;b&gt;D6&lt;/b&gt; attachments" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=1;strokeWidth=2;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="700" y="490" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="D6L" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="1"><mxGeometry x="730" y="490" width="5" height="40" as="geometry" /></mxCell>
+
+        <!-- Program Stores (with P3) -->
+        <mxCell id="D7" value="&lt;b&gt;D7&lt;/b&gt; programs" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=1;strokeWidth=2;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="700" y="620" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="D7L" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="1"><mxGeometry x="730" y="620" width="5" height="40" as="geometry" /></mxCell>
+
+        <mxCell id="D8" value="&lt;b&gt;D8&lt;/b&gt; allocations" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=1;strokeWidth=2;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="700" y="680" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="D8L" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="1"><mxGeometry x="730" y="680" width="5" height="40" as="geometry" /></mxCell>
+        
+        <mxCell id="D9" value="&lt;b&gt;D9&lt;/b&gt; distribution_events" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=1;strokeWidth=2;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="700" y="740" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="D9L" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="1"><mxGeometry x="730" y="740" width="5" height="40" as="geometry" /></mxCell>
+
+        <mxCell id="D10" value="&lt;b&gt;D10&lt;/b&gt; direct_assistances" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=1;strokeWidth=2;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="700" y="800" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="D10L" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="1"><mxGeometry x="730" y="800" width="5" height="40" as="geometry" /></mxCell>
+
+        <!-- SMS Store (with P5) -->
+        <mxCell id="D11" value="&lt;b&gt;D11&lt;/b&gt; sms_logs" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=1;strokeWidth=2;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="700" y="1230" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="D11L" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="1"><mxGeometry x="730" y="1230" width="5" height="40" as="geometry" /></mxCell>
+
+        <!-- Map Store (with P6) -->
+        <mxCell id="D12" value="&lt;b&gt;D12&lt;/b&gt; geo_cache" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=1;strokeWidth=2;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="700" y="1480" width="160" height="40" as="geometry" /></mxCell>
+        <mxCell id="D12L" value="" style="line;strokeWidth=2;html=1;" vertex="1" parent="1"><mxGeometry x="730" y="1480" width="5" height="40" as="geometry" /></mxCell>
+
+
+        <!-- ================================================================ -->
+        <!--  EXTERNAL -> PROCESS FLOWS (Straight Left-to-Right paths) -->
+        <!-- ================================================================ -->
+        <mxCell id="EF1" value="Settings Mgmt" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;fontSize=10;" edge="1" parent="1" source="E1" target="P1">
+          <mxGeometry y="-10" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="EF2" value="Registrations" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;fontSize=10;" edge="1" parent="1" source="E2" target="P2">
+          <mxGeometry y="-10" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="EF3" value="Program Updates" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;fontSize=10;" edge="1" parent="1" source="E1" target="P3">
+          <mxGeometry x="-0.8" y="-10" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="200" y="270" /><mxPoint x="200" y="730" /></Array><mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="EF4" value="Distributions" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;fontSize=10;" edge="1" parent="1" source="E2" target="P3">
+          <mxGeometry x="-0.5" y="-10" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="230" y="520" /><mxPoint x="230" y="770" /></Array><mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="EF5" value="Report Requests" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;fontSize=10;" edge="1" parent="1" source="E3" target="P4">
+          <mxGeometry y="-10" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="EF6" value="Identity Docs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;fontSize=10;" edge="1" parent="1" source="E4" target="P2">
+          <mxGeometry x="-0.8" y="10" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="425" y="150" /><mxPoint x="320" y="150" /><mxPoint x="320" y="500" /></Array><mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="EF7" value="Callback Status" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;fontSize=10;" edge="1" parent="1" source="E5" target="P5">
+          <mxGeometry y="-10" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="250" y="1250" /><mxPoint x="250" y="1270" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="EF8" value="Payload Auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;fontSize=10;" edge="1" parent="1" source="P5" target="E5">
+          <mxGeometry y="-10" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="270" y="1230" /><mxPoint x="270" y="1230" /></Array>
+          </mxGeometry>
+        </mxCell>
+
+
+        <!-- ================================================================ -->
+        <!--  PROCESS -> DB (WRITE/BI-DIRECTIONAL) (Right jumps) -->
+        <!-- ================================================================ -->
+        <mxCell id="W1" value="Account Sync" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=10;exitX=1;exitY=0.2" edge="1" parent="1" source="P1" target="D1">
+          <mxGeometry y="-10" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="W2" value="Sys Opts" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=10;exitX=1;exitY=0.5" edge="1" parent="1" source="P1" target="D2">
+          <mxGeometry y="-10" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="W3" value="Agency Defs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=10;exitX=1;exitY=0.7" edge="1" parent="1" source="P1" target="D3">
+          <mxGeometry y="-10" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="W4" value="Resource Regs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=10;exitX=1;exitY=0.9" edge="1" parent="1" source="P1" target="D4">
+          <mxGeometry y="-10" relative="1" as="geometry"><Array as="points"><mxPoint x="550" y="290" /><mxPoint x="550" y="340" /></Array></mxGeometry>
+        </mxCell>
+
+        <mxCell id="W5" value="Profile CRUD" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=10;exitX=1;exitY=0.3" edge="1" parent="1" source="P2" target="D5">
+          <mxGeometry y="-10" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="W6" value="Docs/Media" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=10;exitX=1;exitY=0.7" edge="1" parent="1" source="P2" target="D6">
+          <mxGeometry y="-10" relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="W7" value="Prog Rules" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=10;exitX=1;exitY=0.2" edge="1" parent="1" source="P3" target="D7">
+          <mxGeometry y="-10" relative="1" as="geometry"><Array as="points"><mxPoint x="550" y="720" /><mxPoint x="550" y="640" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="W8" value="Alloc Records" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=10;exitX=1;exitY=0.4" edge="1" parent="1" source="P3" target="D8">
+          <mxGeometry y="-10" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="W9" value="Event Logs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=10;exitX=1;exitY=0.6" edge="1" parent="1" source="P3" target="D9">
+          <mxGeometry y="-10" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="W10" value="Direct Aid Log" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=10;exitX=1;exitY=0.8" edge="1" parent="1" source="P3" target="D10">
+          <mxGeometry y="-10" relative="1" as="geometry"><Array as="points"><mxPoint x="550" y="780" /><mxPoint x="550" y="820" /></Array></mxGeometry>
+        </mxCell>
+
+        <mxCell id="W11" value="Transmit Logs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=10;exitX=1;exitY=0.5" edge="1" parent="1" source="P5" target="D11">
+          <mxGeometry y="-10" relative="1" as="geometry"><Array as="points"><mxPoint x="560" y="1250" /><mxPoint x="560" y="1250" /></Array></mxGeometry>
+        </mxCell>
+
+        <mxCell id="W12" value="Cache Updates" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=10;exitX=1;exitY=0.5" edge="1" parent="1" source="P6" target="D12">
+          <mxGeometry y="-10" relative="1" as="geometry"><Array as="points"><mxPoint x="560" y="1500" /><mxPoint x="560" y="1500" /></Array></mxGeometry>
+        </mxCell>
+
+        <!-- ================================================================ -->
+        <!--  CROSS-PROCESS READS (DB -> Process) Middle Lanes -->
+        <!-- ================================================================ -->
+        <!-- P3 Reads D4, D5 (Eligibility rules/Checks) -->
+        <mxCell id="R1" value="Rules/Eligibility Checks" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;fontSize=10;entryX=1;entryY=0.1" edge="1" parent="1" source="D5" target="P3">
+          <mxGeometry x="-0.8" y="-10" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="670" y="450" /><mxPoint x="670" y="710" /></Array><mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;fontSize=10;exitX=0;exitY=0.5;entryX=1;entryY=0.05" edge="1" parent="1" source="D4" target="P3">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="650" y="340" /><mxPoint x="650" y="705" /></Array></mxGeometry>
+        </mxCell>
+
+        <!-- P5 Reads D5 (Num search) -->
+        <mxCell id="R3" value="Phone Numbers" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;fontSize=10;entryX=1;entryY=0.2" edge="1" parent="1" source="D5" target="P5">
+          <mxGeometry x="-0.8" y="10" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="630" y="470" /><mxPoint x="630" y="1220" /></Array><mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- P6 Reads D5, D8 (Map stats) -->
+        <mxCell id="R4" value="Geo Stats &amp; Limits" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;fontSize=10;entryX=1;entryY=0.2" edge="1" parent="1" source="D8" target="P6">
+          <mxGeometry x="-0.8" y="10" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="650" y="700" /><mxPoint x="650" y="1470" /></Array><mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+
+        <!-- ================================================================ -->
+        <!--  P4 (REPORTS) BATCH READS - Route down Far Right Margin -->
+        <!-- ================================================================ -->
+        <mxCell id="RepLine" value="Reporting Telemetry Group" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;fontSize=10;exitX=1;exitY=0.5;entryX=1;entryY=0.5" edge="1" parent="1" source="D1" target="P4">
+          <mxGeometry x="0.1" y="-15" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="930" y="160" /><mxPoint x="930" y="1000" /></Array><mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="RL2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;endFill=0;fontSize=10;exitX=1;exitY=0.5" edge="1" parent="1" source="D5">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="930" y="450" /><mxPoint x="930" y="450" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="RL3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;endFill=0;fontSize=10;exitX=1;exitY=0.5" edge="1" parent="1" source="D8">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="930" y="700" /><mxPoint x="930" y="700" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="RL4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;endFill=0;fontSize=10;exitX=1;exitY=0.5" edge="1" parent="1" source="D11">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="930" y="1250" /><mxPoint x="930" y="1000" /></Array></mxGeometry>
+        </mxCell>
+
+        <!-- ================================================================ -->
+        <!--  PROCESS OUTFLOWS TO ENTITIES (Left returns) -->
+        <!-- ================================================================ -->
+        <mxCell id="O1" value="Dashboard Metrics" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;fontSize=10;exitX=0;exitY=0.2;entryX=0.5;entryY=1" edge="1" parent="1" source="P4" target="E1">
+          <mxGeometry x="-0.8" y="-10" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="100" y="970" /></Array><mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="O2" value="Team Analytics" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;fontSize=10;exitX=0;exitY=0.5;entryX=0.5;entryY=1" edge="1" parent="1" source="P4" target="E2">
+          <mxGeometry x="-0.8" y="10" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="290" y="1000" /><mxPoint x="290" y="610" /><mxPoint x="100" y="610" /></Array><mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="O3" value="Partner Digests" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;fontSize=10;exitX=0;exitY=0.8;entryX=1;entryY=0.5" edge="1" parent="1" source="P4" target="E3">
+          <mxGeometry y="-10" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="220" y="1030" /><mxPoint x="220" y="1000" /></Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="O4" value="Assistance Confirmed" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;fontSize=10;exitX=0.5;exitY=0;entryX=0.5;entryY=1" edge="1" parent="1" source="P3" target="E4">
+          <mxGeometry x="-0.8" y="-10" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+        
+        <mxCell id="O5" value="Map View" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;endFill=1;fontSize=10;exitX=0;exitY=0.5;entryX=0;entryY=0.5" edge="1" parent="1" source="P6" target="E1">
+          <mxGeometry x="-0.8" y="-10" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="20" y="1500" /><mxPoint x="20" y="250" /></Array><mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

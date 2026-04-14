@@ -198,6 +198,9 @@ class ReportsController extends Controller
             ->orderBy('full_name')
             ->get();
 
+        // Total beneficiaries count for charts
+        $totalBeneficiaries = Beneficiary::whereNull('deleted_at')->count();
+
         // REPORT 5 — Monthly Summary (Event vs Direct)
         $currentYear = now()->year;
 
@@ -453,6 +456,7 @@ class ReportsController extends Controller
             'resourceDistribution',
             'statusPerBarangay',
             'unreachedBeneficiaries',
+            'totalBeneficiaries',
             'monthlyDistribution',
             'currentYear',
             'financialSummary',

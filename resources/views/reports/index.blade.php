@@ -109,6 +109,13 @@
                 <i class="bi bi-printer me-1"></i> Print
             </button>
         </div>
+        @if($beneficiariesPerBarangay->count())
+            <div class="card-body border-bottom pb-3">
+                <div class="report-chart-wrap">
+                    <canvas id="barangayBeneficiariesChart"></canvas>
+                </div>
+            </div>
+        @endif
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 report-data-table">
@@ -167,6 +174,13 @@
                 <i class="bi bi-printer me-1"></i> Print
             </button>
         </div>
+        @if($resourceDistribution->count())
+            <div class="card-body border-bottom pb-3">
+                <div class="report-chart-wrap">
+                    <canvas id="resourceDistributionChart"></canvas>
+                </div>
+            </div>
+        @endif
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 report-data-table">
@@ -236,6 +250,13 @@
                 <i class="bi bi-printer me-1"></i> Print
             </button>
         </div>
+        @if($statusPerBarangay->count())
+            <div class="card-body border-bottom pb-3">
+                <div class="report-chart-wrap">
+                    <canvas id="statusPerBarangayChart"></canvas>
+                </div>
+            </div>
+        @endif
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 report-data-table">
@@ -299,6 +320,11 @@
             <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> Print
             </button>
+        </div>
+        <div class="card-body border-bottom pb-3">
+            <div class="report-chart-wrap" style="max-width: 300px; margin: 0 auto;">
+                <canvas id="unreachedBeneficiariesChart"></canvas>
+            </div>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -442,6 +468,13 @@
                 <i class="bi bi-printer me-1"></i> Print
             </button>
         </div>
+        @if($financialSummary->count())
+            <div class="card-body border-bottom pb-3">
+                <div class="report-chart-wrap">
+                    <canvas id="financialSummaryChart"></canvas>
+                </div>
+            </div>
+        @endif
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 report-data-table">
@@ -523,6 +556,13 @@
                 <i class="bi bi-printer me-1"></i> Print
             </button>
         </div>
+        @if($financialPerBarangay->count())
+            <div class="card-body border-bottom pb-3">
+                <div class="report-chart-wrap">
+                    <canvas id="financialPerBarangayChart"></canvas>
+                </div>
+            </div>
+        @endif
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 report-data-table">
@@ -589,6 +629,11 @@
             <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> Print
             </button>
+        </div>
+        <div class="card-body border-bottom pb-3">
+            <div class="report-chart-wrap" style="max-width: 350px; margin: 0 auto;">
+                <canvas id="assistanceByPurposeChart"></canvas>
+            </div>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -726,6 +771,241 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 });
+
+// ===== CHART 1: Beneficiaries per Barangay (Horizontal Bar) =====
+const barangayCtx = document.getElementById('barangayBeneficiariesChart');
+if (barangayCtx) {
+    const barangayData = @json($beneficiariesPerBarangay);
+    const barangayLabels = barangayData.map(d => d.barangay.name).slice(0, 10);
+    const barangayValues = barangayData.map(d => d.grand_total).slice(0, 10);
+
+    new Chart(barangayCtx, {
+        type: 'bar',
+        data: {
+            labels: barangayLabels,
+            datasets: [{
+                label: 'Total Beneficiaries',
+                data: barangayValues,
+                backgroundColor: 'rgba(13, 110, 253, 0.6)',
+                borderColor: 'rgba(13, 110, 253, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+}
+
+// ===== CHART 2: Resource Distribution (Grouped Bar) =====
+const resourceCtx = document.getElementById('resourceDistributionChart');
+if (resourceCtx) {
+    const resourceData = @json($resourceDistribution);
+    const resourceLabels = resourceData.map(d => d.name).slice(0, 10);
+    const eventQty = resourceData.map(d => d.event_quantity_distributed).slice(0, 10);
+    const directQty = resourceData.map(d => d.direct_quantity_distributed).slice(0, 10);
+
+    new Chart(resourceCtx, {
+        type: 'bar',
+        data: {
+            labels: resourceLabels,
+            datasets: [
+                {
+                    label: 'Event Qty',
+                    data: eventQty,
+                    backgroundColor: 'rgba(46, 125, 50, 0.6)',
+                    borderColor: 'rgba(46, 125, 50, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Direct Qty',
+                    data: directQty,
+                    backgroundColor: 'rgba(13, 110, 253, 0.6)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+}
+
+// ===== CHART 3: Distribution Status per Barangay (Stacked Bar) =====
+const statusCtx = document.getElementById('statusPerBarangayChart');
+if (statusCtx) {
+    const statusData = @json($statusPerBarangay);
+    const statusLabels = statusData.map(d => d.barangay.name).slice(0, 10);
+    const pending = statusData.map(d => d.pending_events).slice(0, 10);
+    const ongoing = statusData.map(d => d.ongoing_events).slice(0, 10);
+    const completed = statusData.map(d => d.completed_events).slice(0, 10);
+
+    new Chart(statusCtx, {
+        type: 'bar',
+        data: {
+            labels: statusLabels,
+            datasets: [
+                {
+                    label: 'Pending',
+                    data: pending,
+                    backgroundColor: 'rgba(13, 110, 253, 0.6)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Ongoing',
+                    data: ongoing,
+                    backgroundColor: 'rgba(255, 193, 7, 0.6)',
+                    borderColor: 'rgba(255, 193, 7, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Completed',
+                    data: completed,
+                    backgroundColor: 'rgba(46, 125, 50, 0.6)',
+                    borderColor: 'rgba(46, 125, 50, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+}
+
+// ===== CHART 4: Unreached Beneficiaries (Donut) =====
+const unreachedCtx = document.getElementById('unreachedBeneficiariesChart');
+if (unreachedCtx) {
+    const totalBeneficiaries = {{ $totalBeneficiaries ?? 0 }};
+    const unreachedCount = @json($unreachedBeneficiaries->count());
+    const reachedCount = totalBeneficiaries ? (totalBeneficiaries - unreachedCount) : 0;
+
+    new Chart(unreachedCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Reached', 'Unreached'],
+            datasets: [{
+                data: [reachedCount, unreachedCount],
+                backgroundColor: ['rgba(46, 125, 50, 0.6)', 'rgba(220, 53, 69, 0.6)'],
+                borderColor: ['rgba(46, 125, 50, 1)', 'rgba(220, 53, 69, 1)'],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+}
+
+// ===== CHART 6: Financial Assistance Summary (Horizontal Bar) =====
+const financialCtx = document.getElementById('financialSummaryChart');
+if (financialCtx) {
+    const financialData = @json($financialSummary);
+    const financialLabels = financialData.map(d => d.name).slice(0, 10);
+    const financialAmounts = financialData.map(d => d.total_amount_disbursed).slice(0, 10);
+
+    new Chart(financialCtx, {
+        type: 'bar',
+        data: {
+            labels: financialLabels,
+            datasets: [{
+                label: 'Total Amount (PHP)',
+                data: financialAmounts,
+                backgroundColor: 'rgba(13, 110, 253, 0.6)',
+                borderColor: 'rgba(13, 110, 253, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { beginAtZero: true } }
+        }
+    });
+}
+
+// ===== CHART 7: Financial per Barangay (Scatter/Bubble) =====
+const finBarangayCtx = document.getElementById('financialPerBarangayChart');
+if (finBarangayCtx) {
+    const finBarangayData = @json($financialPerBarangay);
+    const finBarangayLabels = finBarangayData.map(d => d.name);
+    const eventAmounts = finBarangayData.map(d => d.event_amount);
+    const directAmounts = finBarangayData.map(d => d.direct_amount);
+
+    new Chart(finBarangayCtx, {
+        type: 'bar',
+        data: {
+            labels: finBarangayLabels,
+            datasets: [
+                {
+                    label: 'Event Amount',
+                    data: eventAmounts,
+                    backgroundColor: 'rgba(46, 125, 50, 0.6)',
+                    borderColor: 'rgba(46, 125, 50, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Direct Amount',
+                    data: directAmounts,
+                    backgroundColor: 'rgba(13, 110, 253, 0.6)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            scales: { x: { beginAtZero: true } }
+        }
+    });
+}
+
+// ===== CHART 8: Assistance by Purpose (Donut) =====
+const purposeCtx = document.getElementById('assistanceByPurposeChart');
+if (purposeCtx) {
+    const purposeData = @json($assistanceByPurpose);
+    const purposeLabels = purposeData.map(d => d.name);
+    const purposeAmounts = purposeData.map(d => d.total_amount_disbursed);
+    const colors = ['rgba(13, 110, 253, 0.6)', 'rgba(46, 125, 50, 0.6)', 'rgba(220, 53, 69, 0.6)', 'rgba(255, 193, 7, 0.6)', 'rgba(111, 66, 193, 0.6)'];
+    const borderColors = ['rgba(13, 110, 253, 1)', 'rgba(46, 125, 50, 1)', 'rgba(220, 53, 69, 1)', 'rgba(255, 193, 7, 1)', 'rgba(111, 66, 193, 1)'];
+
+    new Chart(purposeCtx, {
+        type: 'doughnut',
+        data: {
+            labels: purposeLabels,
+            datasets: [{
+                data: purposeAmounts,
+                backgroundColor: colors.slice(0, purposeLabels.length),
+                borderColor: borderColors.slice(0, purposeLabels.length),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+}
 </script>
 @endif
 @endpush

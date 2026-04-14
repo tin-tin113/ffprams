@@ -38,7 +38,7 @@ class SmsController extends Controller
         $assistancePurposes = AssistancePurpose::active()
             ->orderBy('category')
             ->orderBy('name')
-            ->get(['id', 'name', 'category', 'type']);
+            ->get(['id', 'name', 'category']);
 
         // Get distinct commodity types from active beneficiaries
         $commodityTypes = Beneficiary::where('status', 'Active')

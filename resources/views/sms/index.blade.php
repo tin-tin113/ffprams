@@ -215,7 +215,7 @@
                 <select class="form-select" id="assistancePurposeSelect">
                     <option value="" disabled selected>Choose assistance purpose...</option>
                     @foreach($assistancePurposes as $ap)
-                        <option value="{{ $ap->id }}" data-category="{{ $ap->category }}" data-type="{{ $ap->type ?? '' }}">
+                        <option value="{{ $ap->id }}">
                             {{ $ap->name }} <span class="text-muted">({{ ucfirst($ap->category) }})</span>
                         </option>
                     @endforeach

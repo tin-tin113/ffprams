@@ -7,236 +7,992 @@
 @endsection
 
 @section('content')
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
-        <h1 class="h3 mb-0">Dashboard</h1>
-        <span class="text-muted small">{{ now()->format('F d, Y') }}</span>
+    <style>
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .dashboard-header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 0;
+            color: #1a1d29;
+        }
+
+        .dashboard-date {
+            font-size: 13px;
+            color: #6c757d;
+            font-weight: 500;
+            background: #f8f9fa;
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin: 32px 0 20px 0;
+            gap: 8px;
+        }
+
+        .section-header h6 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6c757d;
+        }
+
+        .section-header i {
+            color: #0d6efd;
+            font-size: 16px;
+        }
+
+        /* Main KPI Cards */
+        .kpi-master {
+            background: white;
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-master::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient, linear-gradient(90deg, #0d6efd, #0a58ca));
+        }
+
+        .kpi-master:hover {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .kpi-content {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .kpi-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            background: var(--icon-bg, rgba(13, 110, 253, 0.1));
+            color: var(--icon-color, #0d6efd);
+            flex-shrink: 0;
+        }
+
+        .kpi-text h3 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1d29;
+            line-height: 1;
+        }
+
+        .kpi-text p {
+            margin: 6px 0 0 0;
+            font-size: 13px;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        /* Progress Bar Cards */
+        .progress-card {
+            background: white;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
+        }
+
+        .progress-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .progress-card-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .progress-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--color, #0d6efd);
+        }
+
+        .progress-bar-custom {
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--color, #0d6efd);
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .progress-sub {
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        /* Chart Cards */
+        .chart-card {
+            background: white;
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
+        }
+
+        .chart-card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1d29;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Mini Cards */
+        .mini-stat {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
+            text-align: center;
+        }
+
+        .mini-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1d29;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .mini-stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        /* Alert Cards */
+        .alert-card {
+            background: linear-gradient(135deg, var(--bg-from), var(--bg-to));
+            border-radius: 14px;
+            padding: 20px;
+            color: white;
+            border: none;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .alert-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .alert-content h5 {
+            margin: 0 0 6px 0;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .alert-content p {
+            margin: 0;
+            font-size: 13px;
+            opacity: 0.95;
+            line-height: 1.4;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .kpi-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .section-header {
+                margin-top: 24px;
+            }
+        }
+    </style>
+
+    {{-- HEADER --}}
+    <div class="dashboard-header">
+        <h1>Dashboard</h1>
+        <span class="dashboard-date">📅 {{ now()->format('F d, Y • l') }}</span>
     </div>
 
-    {{-- ROW 1 — Beneficiaries --}}
-    <h6 class="text-muted text-uppercase fw-semibold small mb-3">
-        <i class="bi bi-people me-1"></i> Beneficiaries
-    </h6>
+    {{-- SECTION 1: CRITICAL METRICS --}}
+    <div class="section-header">
+        <i class="bi bi-speedometer2"></i>
+        <h6>Critical Metrics</h6>
+    </div>
     <div class="row g-3 mb-4">
-        <!-- Total Beneficiaries -->
-        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-people-fill text-primary fs-4"></i>
+        {{-- Completion Rate --}}
+        <div class="col-lg-3 col-md-6">
+            <div class="kpi-master" style="--gradient: linear-gradient(135deg, #198754, #146c43); --icon-bg: rgba(25, 135, 84, 0.1); --icon-color: #198754;">
+                <div class="kpi-content">
+                    <div class="kpi-icon">
+                        <i class="bi bi-check-circle-fill"></i>
                     </div>
-                    <div>
-                        <div class="text-muted small">Total Beneficiaries</div>
-                        <div class="fs-4 fw-bold">{{ number_format($totalBeneficiaries) }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Total Farmers -->
-        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-tree-fill text-success fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Total Farmers</div>
-                        <div class="fs-4 fw-bold">{{ number_format($totalFarmers) }}</div>
+                    <div class="kpi-text">
+                        <h3>{{ number_format($completionRate, 1) }}%</h3>
+                        <p>Completion Rate</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Total Fisherfolk -->
-        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-circle p-3 me-3" style="background-color: rgba(13, 202, 240, 0.1);">
-                        <i class="bi bi-water fs-4" style="color: var(--color-cyan);"></i>
+        {{-- Coverage Reached --}}
+        <div class="col-lg-3 col-md-6">
+            <div class="kpi-master" style="--gradient: linear-gradient(135deg, #0dcaf0, #0aa2c0); --icon-bg: rgba(13, 202, 240, 0.1); --icon-color: #0dcaf0;">
+                <div class="kpi-content">
+                    <div class="kpi-icon">
+                        <i class="bi bi-people-check"></i>
                     </div>
-                    <div>
-                        <div class="text-muted small">Total Fisherfolk</div>
-                        <div class="fs-4 fw-bold">{{ number_format($totalFisherfolk) }}</div>
+                    <div class="kpi-text">
+                        <h3>{{ number_format($reachedBeneficiaries) }}</h3>
+                        <p>Beneficiaries Reached</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Total Both -->
-        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-circle p-3 me-3" style="background-color: rgba(111, 66, 193, 0.1);">
-                        <i class="bi bi-intersect fs-4" style="color: var(--color-purple);"></i>
+        {{-- Total Disbursed --}}
+        <div class="col-lg-3 col-md-6">
+            <div class="kpi-master" style="--gradient: linear-gradient(135deg, #0d6efd, #0a58ca); --icon-bg: rgba(13, 110, 253, 0.1); --icon-color: #0d6efd;">
+                <div class="kpi-content">
+                    <div class="kpi-icon">
+                        <i class="bi bi-cash-stack"></i>
                     </div>
-                    <div>
-                        <div class="text-muted small">Total Both Classification</div>
-                        <div class="fs-4 fw-bold">{{ number_format($totalBoth) }}</div>
+                    <div class="kpi-text">
+                        <h3>₱{{ number_format($totalFinancialDisbursed / 1000, 0) }}K</h3>
+                        <p>Total Disbursed</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Events Completed --}}
+        <div class="col-lg-3 col-md-6">
+            <div class="kpi-master" style="--gradient: linear-gradient(135deg, #fd7e14, #dc6b13); --icon-bg: rgba(253, 126, 20, 0.1); --icon-color: #fd7e14;">
+                <div class="kpi-content">
+                    <div class="kpi-icon">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <div class="kpi-text">
+                        <h3>{{ $completedEvents }}/{{ $totalDistributionEvents }}</h3>
+                        <p>Events Completed</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- ROW 2 — Assistance Operations (Event vs Direct) --}}
-    <h6 class="text-muted text-uppercase fw-semibold small mb-3">
-        <i class="bi bi-box-seam me-1"></i> Assistance Operations
-    </h6>
-    <div class="row g-3">
-        <!-- Total Distribution Events -->
-        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-circle bg-secondary bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-calendar-event-fill text-secondary fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Total Distribution Events</div>
-                        <div class="fs-4 fw-bold">{{ number_format($totalDistributionEvents) }}</div>
-                    </div>
+    {{-- SECTION 2: KEY PERFORMANCE INDICATORS WITH PROGRESS --}}
+    <div class="section-header">
+        <i class="bi bi-graph-up"></i>
+        <h6>Performance Overview</h6>
+    </div>
+    <div class="row g-3 mb-4">
+        {{-- Financial Utilization --}}
+        <div class="col-lg-4">
+            <div class="progress-card">
+                <div class="progress-card-header">
+                    <span class="progress-card-label">💰 Financial Utilization</span>
+                    <span class="progress-value" style="--color: #0d6efd;">{{ number_format($financialUtilizationRate, 1) }}%</span>
+                </div>
+                <div class="progress-bar-custom">
+                    <div class="progress-bar-fill" style="width: {{ min($financialUtilizationRate, 100) }}%; --color: #0d6efd;"></div>
+                </div>
+                <div class="progress-sub">Budget Efficiency</div>
+            </div>
+        </div>
+
+        {{-- Coverage Gap --}}
+        <div class="col-lg-4">
+            <div class="progress-card">
+                <div class="progress-card-header">
+                    <span class="progress-card-label">📍 Coverage Gap</span>
+                    <span class="progress-value" style="--color: #dc3545;">{{ number_format($coverageGap['percentage'], 1) }}%</span>
+                </div>
+                <div class="progress-bar-custom">
+                    <div class="progress-bar-fill" style="width: {{ min($coverageGap['percentage'], 100) }}%; background: #dc3545;"></div>
+                </div>
+                <div class="progress-sub">{{ number_format($coverageGap['unreached_count']) }} unreached beneficiaries</div>
+            </div>
+        </div>
+
+        {{-- Event Status --}}
+        <div class="col-lg-4">
+            <div class="progress-card">
+                <div class="progress-card-header">
+                    <span class="progress-card-label">📋 Allocation Rate</span>
+                    <span class="progress-value" style="--color: #198754;">{{ number_format(($totalEventAllocations + $totalDirectAllocations) > 0 ? (($eventDistributed + $directReleased) / ($totalEventAllocations + $totalDirectAllocations)) * 100 : 0, 1) }}%</span>
+                </div>
+                <div class="progress-bar-custom">
+                    <div class="progress-bar-fill" style="width: {{ number_format(($totalEventAllocations + $totalDirectAllocations) > 0 ? (($eventDistributed + $directReleased) / ($totalEventAllocations + $totalDirectAllocations)) * 100 : 0, 1) }}%; background: #198754;"></div>
+                </div>
+                <div class="progress-sub">{{ number_format($eventDistributed + $directReleased) }} of {{ number_format($totalEventAllocations + $totalDirectAllocations) }} allocations</div>
+            </div>
+        </div>
+    </div>
+
+    {{-- SECTION 3: VISUAL CHARTS ROW 1 --}}
+    <div class="section-header">
+        <i class="bi bi-pie-chart"></i>
+        <h6>Distribution Breakdown</h6>
+    </div>
+    <div class="row g-3 mb-4">
+        {{-- Beneficiary Breakdown --}}
+        <div class="col-lg-4 col-md-6">
+            <div class="chart-card">
+                <div class="chart-card-title">👥 Beneficiary Classification</div>
+                <div style="position: relative; height: 200px;">
+                    <canvas id="beneficiaryChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- Completed Distribution Events -->
-        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-check-circle-fill text-success fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Completed Distribution Events</div>
-                        <div class="fs-4 fw-bold">{{ number_format($completedEvents) }}</div>
-                    </div>
+        {{-- Allocation Method --}}
+        <div class="col-lg-4 col-md-6">
+            <div class="chart-card">
+                <div class="chart-card-title">📊 Allocation Method</div>
+                <div style="position: relative; height: 200px;">
+                    <canvas id="allocationMethodChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- Event-based Allocations -->
-        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-list-check text-primary fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Event-Based Allocations</div>
-                        <div class="fs-4 fw-bold">{{ number_format($totalEventAllocations) }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Direct Allocations -->
-        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-circle bg-info bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-person-check-fill text-info fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Direct Allocations</div>
-                        <div class="fs-4 fw-bold">{{ number_format($totalDirectAllocations) }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Event Distributed/Claimed -->
-        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-check2-all text-success fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Event Distributed/Claimed</div>
-                        <div class="fs-4 fw-bold">{{ number_format($eventDistributed) }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Direct Released -->
-        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-circle bg-warning bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-send-check text-warning fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Direct Released</div>
-                        <div class="fs-4 fw-bold">{{ number_format($directReleased) }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Beneficiaries Not Yet Reached -->
-        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-circle bg-danger bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-person-x-fill text-danger fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Beneficiaries Not Yet Reached</div>
-                        <div class="fs-4 fw-bold">{{ number_format($beneficiariesNotYetReached) }}</div>
-                    </div>
+        {{-- Event Status --}}
+        <div class="col-lg-4 col-md-6">
+            <div class="chart-card">
+                <div class="chart-card-title">📅 Event Status</div>
+                <div style="position: relative; height: 200px;">
+                    <canvas id="eventStatusChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- ROW 3 — Financial Summary (Event vs Direct) --}}
-    <h6 class="text-muted text-uppercase fw-semibold small mb-3 mt-4">
-        <i class="bi bi-cash-coin me-1"></i> Financial Summary (Event vs Direct)
-    </h6>
-    <div class="row g-3">
-        <!-- Event Cash Disbursed -->
-        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-circle p-3 me-3" style="background-color: rgba(27, 42, 74, 0.1);">
-                        <i class="bi bi-cash-coin fs-4" style="color: #1b2a4a;"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Event Cash Disbursed</div>
-                        <div class="fs-4 fw-bold">&#8369;{{ number_format($eventFinancialDisbursed, 2) }}</div>
-                    </div>
+    {{-- SECTION 4: QUICK STATS --}}
+    <div class="section-header">
+        <i class="bi bi-info-circle"></i>
+        <h6>System Overview</h6>
+    </div>
+    <div class="row g-3 mb-4">
+        <div class="col-lg-3 col-md-6 col-sm-6">
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ number_format($totalBeneficiaries) }}</div>
+                <div class="mini-stat-label">Total Beneficiaries</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-6">
+            <div class="mini-stat">
+                <div class="mini-stat-value">₱{{ number_format($averageAllocationPerBeneficiary, 0) }}</div>
+                <div class="mini-stat-label">Avg. per Beneficiary</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-6">
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ $totalDistributionEvents }}</div>
+                <div class="mini-stat-label">Distribution Events</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-6">
+            <div class="mini-stat">
+                <div class="mini-stat-value">{{ number_format($totalEventAllocations + $totalDirectAllocations) }}</div>
+                <div class="mini-stat-label">Total Allocations</div>
+            </div>
+        </div>
+    </div>
+
+    {{-- SECTION 5: RESOURCE DISTRIBUTION & ASSISTANCE PURPOSES --}}
+    <div class="section-header">
+        <i class="bi bi-layers"></i>
+        <h6>Distribution Insights</h6>
+    </div>
+    <div class="row g-3 mb-4">
+        {{-- Resource Type Distribution --}}
+        <div class="col-lg-6">
+            <div class="chart-card">
+                <div class="chart-card-title">🏭 Resource Type Distribution</div>
+                <div style="position: relative; height: 280px;">
+                    <canvas id="resourceTypeChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- Direct Cash Disbursed -->
-        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-circle bg-info bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-wallet2 text-info fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Direct Cash Disbursed</div>
-                        <div class="fs-4 fw-bold">&#8369;{{ number_format($directFinancialDisbursed, 2) }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Total Cash Disbursed -->
-        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-cash-stack text-success fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Total Cash Disbursed</div>
-                        <div class="fs-4 fw-bold">&#8369;{{ number_format($totalFinancialDisbursed, 2) }}</div>
-                    </div>
+        {{-- Assistance Purpose Distribution --}}
+        <div class="col-lg-6">
+            <div class="chart-card">
+                <div class="chart-card-title">🎯 Assistance Purpose</div>
+                <div style="position: relative; height: 280px;">
+                    <canvas id="assistancePurposeChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
+
+    {{-- SECTION 5B: GEOGRAPHIC & TEMPORAL INSIGHTS --}}
+    <div class="row g-3 mb-4">
+        {{-- Geographic Coverage --}}
+        <div class="col-lg-6">
+            <div class="chart-card">
+                <div class="chart-card-title">📍 Coverage by Barangay</div>
+                <div style="position: relative; height: 280px;">
+                    <canvas id="barangayChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        {{-- Monthly Trend --}}
+        <div class="col-lg-6">
+            <div class="chart-card">
+                <div class="chart-card-title">📈 Distribution Trend (Last 6 Months)</div>
+                <div style="position: relative; height: 280px;">
+                    <canvas id="monthlyTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- SECTION 6: TOP PROGRAMS CHART --}}
+    <div class="section-header">
+        <i class="bi bi-bar-chart-line"></i>
+        <h6>Top Programs by Reach</h6>
+    </div>
+    <div class="chart-card">
+        <div style="position: relative; height: 360px;">
+            <canvas id="topProgramsChart"></canvas>
+        </div>
+    </div>
+
 @endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+const chartDefaults = {
+    font: { family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }
+};
+
+Chart.defaults.font = chartDefaults.font;
+
+// Global Tooltip Styling
+const tooltipConfig = {
+    enabled: true,
+    mode: 'index',
+    intersect: false,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    titleColor: '#ffffff',
+    bodyColor: '#ffffff',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderWidth: 1.5,
+    cornerRadius: 10,
+    padding: 14,
+    displayColors: true,
+    titleFont: { size: 13, weight: '700' },
+    bodyFont: { size: 12, weight: '500' },
+    boxPadding: 8,
+    usePointStyle: true,
+    titleMarginBottom: 8,
+    bodySpacing: 6,
+    caretPadding: 10
+};
+
+// 1. BENEFICIARY BREAKDOWN PIE CHART
+document.addEventListener('DOMContentLoaded', function () {
+    const beneficiaryData = @json($beneficiaryBreakdown);
+    if (beneficiaryData.data && beneficiaryData.data.length > 0) {
+        new Chart(document.getElementById('beneficiaryChart'), {
+            type: 'doughnut',
+            data: {
+                labels: beneficiaryData.labels,
+                datasets: [{
+                    data: beneficiaryData.data,
+                    backgroundColor: ['#198754', '#0dcaf0', '#6f42c1'],
+                    borderColor: 'white',
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { size: 11, weight: '500' }, padding: 15, color: '#6c757d' }
+                    },
+                    tooltip: {
+                        ...tooltipConfig,
+                        callbacks: {
+                            title: function(context) {
+                                return context[0].label || 'Category';
+                            },
+                            label: function(context) {
+                                const total = beneficiaryData.data.reduce((a, b) => a + b, 0);
+                                const value = context.parsed;
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return [
+                                    'Count: ' + value.toLocaleString(),
+                                    'Percentage: ' + percentage + '%'
+                                ];
+                            },
+                            afterLabel: function(context) {
+                                const total = beneficiaryData.data.reduce((a, b) => a + b, 0);
+                                const value = context.parsed;
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return 'Share: ' + percentage + '% of ' + total.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+
+// 2. ALLOCATION METHOD PIE CHART
+document.addEventListener('DOMContentLoaded', function () {
+    const allocationData = @json($allocationMethodChart);
+    if (allocationData.data && allocationData.data.length > 0) {
+        new Chart(document.getElementById('allocationMethodChart'), {
+            type: 'doughnut',
+            data: {
+                labels: allocationData.labels,
+                datasets: [{
+                    data: allocationData.data,
+                    backgroundColor: ['#0d6efd', '#198754'],
+                    borderColor: 'white',
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { size: 11, weight: '500' }, padding: 15, color: '#6c757d' }
+                    },
+                    tooltip: {
+                        ...tooltipConfig,
+                        callbacks: {
+                            title: function(context) {
+                                return context[0].label || 'Method';
+                            },
+                            label: function(context) {
+                                const total = allocationData.data.reduce((a, b) => a + b, 0);
+                                const value = context.parsed;
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return [
+                                    'Count: ' + value.toLocaleString(),
+                                    'Percentage: ' + percentage + '%'
+                                ];
+                            },
+                            afterLabel: function(context) {
+                                const total = allocationData.data.reduce((a, b) => a + b, 0);
+                                const value = context.parsed;
+                                return 'Of Total ' + total.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+
+// 3. EVENT STATUS PIE CHART
+document.addEventListener('DOMContentLoaded', function () {
+    const eventData = @json($eventStatusChart);
+    if (eventData.data && eventData.data.length > 0) {
+        new Chart(document.getElementById('eventStatusChart'), {
+            type: 'doughnut',
+            data: {
+                labels: eventData.labels,
+                datasets: [{
+                    data: eventData.data,
+                    backgroundColor: ['#ffc107', '#fd7e14', '#198754'],
+                    borderColor: 'white',
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { size: 11, weight: '500' }, padding: 15, color: '#6c757d' }
+                    },
+                    tooltip: {
+                        ...tooltipConfig,
+                        callbacks: {
+                            title: function(context) {
+                                return context[0].label || 'Status';
+                            },
+                            label: function(context) {
+                                const total = eventData.data.reduce((a, b) => a + b, 0);
+                                const value = context.parsed;
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return [
+                                    'Events: ' + value.toLocaleString(),
+                                    'Percentage: ' + percentage + '%'
+                                ];
+                            },
+                            afterLabel: function(context) {
+                                const total = eventData.data.reduce((a, b) => a + b, 0);
+                                return 'Total Events: ' + total.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+
+// 4. TOP PROGRAMS BAR CHART
+document.addEventListener('DOMContentLoaded', function () {
+    const chartData = @json($topProgramsChart);
+    if (chartData.labels && chartData.labels.length > 0) {
+        const ctx = document.getElementById('topProgramsChart');
+        const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(13, 110, 253, 0.8)');
+        gradient.addColorStop(1, 'rgba(13, 110, 253, 0.2)');
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    label: 'Beneficiaries Reached',
+                    data: chartData.data,
+                    backgroundColor: gradient,
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom',
+                        labels: { font: { size: 12, weight: '500' }, padding: 20, color: '#6c757d' }
+                    },
+                    tooltip: {
+                        ...tooltipConfig,
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            title: function(context) {
+                                return '📊 ' + (context[0]?.label || 'Program');
+                            },
+                            label: function(context) {
+                                const value = context.parsed.x;
+                                const total = chartData.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return [
+                                    'Beneficiaries: ' + value.toLocaleString(),
+                                    'Share: ' + percentage + '% of total'
+                                ];
+                            },
+                            afterLabel: function(context) {
+                                const total = chartData.data.reduce((a, b) => a + b, 0);
+                                return 'Total: ' + total.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: { font: { size: 12 }, color: '#6c757d', callback: function(value) { return value.toLocaleString(); } },
+                        grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false }
+                    },
+                    y: {
+                        ticks: { font: { size: 12, weight: '500' }, color: '#1a1d29' },
+                        grid: { display: false, drawBorder: false }
+                    }
+                }
+            }
+        });
+    }
+});
+
+// 5. RESOURCE TYPE DISTRIBUTION
+document.addEventListener('DOMContentLoaded', function () {
+    const resourceData = @json($resourceTypeDistribution ?? ['labels' => [], 'data' => []]);
+    if (resourceData.data && resourceData.data.length > 0) {
+        const colors = ['#0d6efd', '#198754', '#fd7e14', '#20c997', '#6f42c1', '#dc3545', '#00bcd4', '#e91e63'];
+        new Chart(document.getElementById('resourceTypeChart'), {
+            type: 'bar',
+            data: {
+                labels: resourceData.labels,
+                datasets: [{
+                    label: 'Distribution Count',
+                    data: resourceData.data,
+                    backgroundColor: colors.slice(0, resourceData.data.length),
+                    borderRadius: 8,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                indexAxis: 'x',
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        ...tooltipConfig,
+                        callbacks: {
+                            title: function(context) {
+                                return context[0]?.label || 'Resource Type';
+                            },
+                            label: function(context) {
+                                const value = context.parsed.y;
+                                const total = resourceData.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return ['Count: ' + value.toLocaleString(), 'Share: ' + percentage + '%'];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { font: { size: 11 }, color: '#6c757d', callback: function(value) { return value.toLocaleString(); } },
+                        grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false }
+                    },
+                    x: {
+                        ticks: { font: { size: 11, weight: '500' }, color: '#1a1d29' },
+                        grid: { display: false, drawBorder: false }
+                    }
+                }
+            }
+        });
+    }
+});
+
+// 6. ASSISTANCE PURPOSE DISTRIBUTION
+document.addEventListener('DOMContentLoaded', function () {
+    const purposeData = @json($assistancePurposeDistribution ?? ['labels' => [], 'data' => []]);
+    if (purposeData.data && purposeData.data.length > 0) {
+        new Chart(document.getElementById('assistancePurposeChart'), {
+            type: 'doughnut',
+            data: {
+                labels: purposeData.labels,
+                datasets: [{
+                    data: purposeData.data,
+                    backgroundColor: ['#6f42c1', '#20c997', '#fd7e14'],
+                    borderColor: 'white',
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { size: 11, weight: '500' }, padding: 15, color: '#6c757d' }
+                    },
+                    tooltip: {
+                        ...tooltipConfig,
+                        callbacks: {
+                            title: function(context) {
+                                return context[0]?.label || 'Purpose';
+                            },
+                            label: function(context) {
+                                const total = purposeData.data.reduce((a, b) => a + b, 0);
+                                const value = context.parsed;
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return ['Count: ' + value.toLocaleString(), 'Percentage: ' + percentage + '%'];
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+
+// 7. GEOGRAPHIC COVERAGE BY BARANGAY
+document.addEventListener('DOMContentLoaded', function () {
+    const barangayData = @json($barangayDistribution ?? ['labels' => [], 'data' => []]);
+    if (barangayData.data && barangayData.data.length > 0) {
+        const ctx = document.getElementById('barangayChart');
+        const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, 'rgba(32, 201, 151, 0.8)');
+        gradient.addColorStop(1, 'rgba(32, 201, 151, 0.2)');
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: barangayData.labels,
+                datasets: [{
+                    label: 'Beneficiaries',
+                    data: barangayData.data,
+                    backgroundColor: gradient,
+                    borderColor: 'rgba(32, 201, 151, 1)',
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        ...tooltipConfig,
+                        callbacks: {
+                            title: function(context) {
+                                return '📍 ' + (context[0]?.label || 'Barangay');
+                            },
+                            label: function(context) {
+                                const value = context.parsed.x;
+                                const total = barangayData.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return ['Beneficiaries: ' + value.toLocaleString(), 'Coverage: ' + percentage + '%'];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: { font: { size: 11 }, color: '#6c757d', callback: function(value) { return value.toLocaleString(); } },
+                        grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false }
+                    },
+                    y: {
+                        ticks: { font: { size: 11, weight: '500' }, color: '#1a1d29' },
+                        grid: { display: false, drawBorder: false }
+                    }
+                }
+            }
+        });
+    }
+});
+
+// 8. MONTHLY TREND
+document.addEventListener('DOMContentLoaded', function () {
+    const trendData = @json($monthlyTrendData ?? ['labels' => [], 'data' => []]);
+    if (trendData.data && trendData.data.length > 0) {
+        const ctx = document.getElementById('monthlyTrendChart');
+        const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, 'rgba(255, 99, 132, 0.8)');
+        gradient.addColorStop(1, 'rgba(255, 99, 132, 0.2)');
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: trendData.labels,
+                datasets: [{
+                    label: 'Allocations',
+                    data: trendData.data,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: gradient,
+                    borderWidth: 3,
+                    borderRadius: 8,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 5,
+                    pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                    pointBorderColor: 'white',
+                    pointBorderWidth: 2,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        ...tooltipConfig,
+                        callbacks: {
+                            title: function(context) {
+                                return '📅 ' + (context[0]?.label || 'Month');
+                            },
+                            label: function(context) {
+                                const value = context.parsed.y;
+                                return 'Allocations: ' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { font: { size: 11 }, color: '#6c757d', callback: function(value) { return value.toLocaleString(); } },
+                        grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false }
+                    },
+                    x: {
+                        ticks: { font: { size: 11, weight: '500' }, color: '#1a1d29' },
+                        grid: { display: false, drawBorder: false }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+@endpush

@@ -1,0 +1,235 @@
+<mxfile version="14.6.13">
+  <diagram id="ffprams-use-case" name="UML Use Case Diagram">
+    <mxGraphModel dx="1400" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1600" pageHeight="2000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- SYSTEM BOUNDARY -->
+        <mxCell id="SysBoundary" value="FFPRAMS (Farmer-Fisherfolk Resource Allocation and Management System)" style="shape=umlFrame;whiteSpace=wrap;html=1;width=480;height=28;fillColor=none;strokeColor=#000000;fontStyle=1;fontSize=13;rounded=0;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="180" y="20" width="940" height="1480" as="geometry" />
+        </mxCell>
+
+        <!-- ========== ACTORS ========== -->
+        <mxCell id="ActorAdmin" value="Admin" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontStyle=1;fontSize=12;strokeColor=#000000;fillColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="40" y="440" width="30" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ActorStaff" value="Staff" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontStyle=1;fontSize=12;strokeColor=#000000;fillColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="40" y="860" width="30" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ActorPartner" value="Partner Agency" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontStyle=1;fontSize=12;strokeColor=#000000;fillColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="200" width="30" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ActorSmsGw" value="SMS Gateway" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontStyle=1;fontSize=12;strokeColor=#000000;fillColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="1080" width="30" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ========== AUTHENTICATION ========== -->
+        <mxCell id="UCLogin" value="Login" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="300" y="60" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCLogout" value="Logout" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="480" y="60" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCProfile" value="Manage Profile" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="660" y="60" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCDashboard" value="View Dashboard" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="840" y="60" width="130" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- ========== BENEFICIARY MANAGEMENT ========== -->
+        <mxCell id="UCRegBene" value="Register Beneficiary" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="240" y="170" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCEditBene" value="Edit Beneficiary" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="420" y="170" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCViewBene" value="View Beneficiary" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="600" y="170" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCBulkStatus" value="Bulk Update Status" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="780" y="170" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCUploadAttach" value="Upload Attachments" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="240" y="240" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCSendSmsBene" value="Send SMS to Beneficiary" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="420" y="240" width="130" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- ========== DISTRIBUTION EVENTS ========== -->
+        <mxCell id="UCCreateEvent" value="Create Distribution Event" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="240" y="350" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="UCEditEvent" value="Edit Distribution Event" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="420" y="350" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="UCViewEvent" value="View Distribution Event" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="600" y="350" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="UCApproveList" value="Approve Beneficiary List" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="780" y="350" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="UCExportList" value="Export Distribution List" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="240" y="420" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="UCUpdateCompliance" value="Update Compliance" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="420" y="420" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ========== RESOURCE ALLOCATION ========== -->
+        <mxCell id="UCCreateAlloc" value="Create Allocation" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="240" y="540" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCBulkAlloc" value="Bulk Create Allocations" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="420" y="540" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCImportCSV" value="Import Allocations via CSV" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="600" y="540" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCMarkReady" value="Mark Ready for Release" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="240" y="610" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCMarkDist" value="Mark Distributed" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="420" y="610" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCMarkNotRcvd" value="Mark Not Received" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="600" y="610" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCDeleteAlloc" value="Delete Allocation" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="780" y="540" width="130" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- ========== DIRECT ASSISTANCE ========== -->
+        <mxCell id="UCCreateDA" value="Create Direct Assistance" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="240" y="730" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="UCEditDA" value="Edit Direct Assistance" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="420" y="730" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="UCViewDA" value="View Direct Assistance" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="600" y="730" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="UCReleaseDA" value="Mark Released / Not Received" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="780" y="730" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ========== SMS & NOTIFICATIONS ========== -->
+        <mxCell id="UCSmsDash" value="View SMS Dashboard" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="240" y="850" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCPreviewSms" value="Preview SMS Broadcast" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="420" y="850" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCSendBroadcast" value="Send SMS Broadcast" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="600" y="850" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCDeliveryCallback" value="Receive Delivery Callback" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="780" y="850" width="130" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- ========== REPORTS & ANALYTICS ========== -->
+        <mxCell id="UCViewReports" value="View Reports" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="240" y="960" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCGeoMap" value="View Geo Map" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="420" y="960" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCBarangayAnalytics" value="View Barangay Analytics" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="600" y="960" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCViewResTypes" value="View Resource Types" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="780" y="960" width="130" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- ========== ADMINISTRATION (Admin Only) ========== -->
+        <mxCell id="UCManageUsers" value="Manage Users" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="240" y="1070" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCAuditLogs" value="View Audit Logs" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="420" y="1070" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCManageAgencies" value="Manage Agencies" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="600" y="1070" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCManageResTypes" value="Manage Resource Types" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="780" y="1070" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCManagePrograms" value="Manage Program Names" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="240" y="1140" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCManageFormFields" value="Manage Form Fields" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="420" y="1140" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCManagePurposes" value="Manage Assistance Purposes" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="600" y="1140" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCManageLegalReqs" value="Manage Legal Requirements" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="780" y="1140" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="UCSystemSettings" value="View System Settings" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="240" y="1210" width="130" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- ========== ASSOCIATIONS — Admin ========== -->
+        <mxCell id="A01" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorAdmin" target="UCLogin"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="A02" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorAdmin" target="UCDashboard"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="A03" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorAdmin" target="UCRegBene"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="A04" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorAdmin" target="UCViewBene"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="A05" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorAdmin" target="UCCreateEvent"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="A06" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorAdmin" target="UCViewEvent"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="A07" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorAdmin" target="UCCreateAlloc"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="A08" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorAdmin" target="UCDeleteAlloc"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="A09" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorAdmin" target="UCCreateDA"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="A10" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorAdmin" target="UCSmsDash"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="A11" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorAdmin" target="UCViewReports"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="A12" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorAdmin" target="UCGeoMap"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="A13" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorAdmin" target="UCManageUsers"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="A14" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorAdmin" target="UCAuditLogs"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="A15" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorAdmin" target="UCManageAgencies"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="A16" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorAdmin" target="UCManagePrograms"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="A17" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorAdmin" target="UCSystemSettings"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- ========== ASSOCIATIONS — Staff ========== -->
+        <mxCell id="S01" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorStaff" target="UCLogin"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="S02" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorStaff" target="UCDashboard"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="S03" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorStaff" target="UCEditBene"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="S04" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorStaff" target="UCBulkStatus"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="S05" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorStaff" target="UCUploadAttach"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="S06" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorStaff" target="UCEditEvent"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="S07" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorStaff" target="UCApproveList"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="S08" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorStaff" target="UCExportList"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="S09" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorStaff" target="UCBulkAlloc"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="S10" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorStaff" target="UCImportCSV"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="S11" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorStaff" target="UCMarkReady"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="S12" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorStaff" target="UCMarkDist"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="S13" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorStaff" target="UCEditDA"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="S14" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorStaff" target="UCViewDA"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="S15" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorStaff" target="UCReleaseDA"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="S16" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorStaff" target="UCSendBroadcast"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="S17" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorStaff" target="UCSendSmsBene"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="S18" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorStaff" target="UCBarangayAnalytics"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="S19" style="endArrow=none;html=1;strokeColor=#000000;" edge="1" parent="1" source="ActorStaff" target="UCViewResTypes"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- ========== ASSOCIATIONS — Partner Agency ========== -->
+        <mxCell id="P01" style="endArrow=none;html=1;strokeColor=#000000;dashed=1;" edge="1" parent="1" source="ActorPartner" target="UCLogin"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="P02" style="endArrow=none;html=1;strokeColor=#000000;dashed=1;" edge="1" parent="1" source="ActorPartner" target="UCDashboard"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="P03" style="endArrow=none;html=1;strokeColor=#000000;dashed=1;" edge="1" parent="1" source="ActorPartner" target="UCViewReports"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- ========== ASSOCIATIONS — SMS Gateway ========== -->
+        <mxCell id="G01" style="endArrow=none;html=1;strokeColor=#000000;dashed=1;" edge="1" parent="1" source="ActorSmsGw" target="UCDeliveryCallback"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="G02" style="endArrow=none;html=1;strokeColor=#000000;dashed=1;" edge="1" parent="1" source="ActorSmsGw" target="UCSendBroadcast"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- ========== INCLUDE / EXTEND RELATIONSHIPS ========== -->
+        <mxCell id="Inc1" value="&lt;&lt;include&gt;&gt;" style="endArrow=open;endSize=12;dashed=1;html=1;strokeColor=#000000;fontSize=9;fontStyle=2;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="UCSendBroadcast" target="UCPreviewSms"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="Ext1" value="&lt;&lt;extend&gt;&gt;" style="endArrow=open;endSize=12;dashed=1;html=1;strokeColor=#000000;fontSize=9;fontStyle=2;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="UCBulkAlloc" target="UCCreateAlloc"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="Ext2" value="&lt;&lt;extend&gt;&gt;" style="endArrow=open;endSize=12;dashed=1;html=1;strokeColor=#000000;fontSize=9;fontStyle=2;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="UCImportCSV" target="UCCreateAlloc"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="Ext3" value="&lt;&lt;extend&gt;&gt;" style="endArrow=open;endSize=12;dashed=1;html=1;strokeColor=#000000;fontSize=9;fontStyle=2;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="UCManageLegalReqs" target="UCManagePrograms"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="Ext4" value="&lt;&lt;extend&gt;&gt;" style="endArrow=open;endSize=12;dashed=1;html=1;strokeColor=#000000;fontSize=9;fontStyle=2;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="UCManageResTypes" target="UCManageAgencies"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="Ext5" value="&lt;&lt;extend&gt;&gt;" style="endArrow=open;endSize=12;dashed=1;html=1;strokeColor=#000000;fontSize=9;fontStyle=2;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="UCManageFormFields" target="UCManageResTypes"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
