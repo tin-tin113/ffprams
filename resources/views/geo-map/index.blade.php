@@ -8,6 +8,7 @@
 
 @push('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-layers-tree/L.Control.Layers.Tree.css" />
 <style>
     .geom-container { display: flex; flex-direction: column; gap: 1rem; }
     #map { height: 600px; width: 100%; border-radius: 0.5rem; z-index: 1; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -30,11 +31,11 @@
     .stat-card { background: #fff; border-radius: 0.4rem; padding: 0.8rem; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #e9ecef; }
     .stat-card .stat-value { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.3rem; }
     .stat-card .stat-label { font-size: 0.75rem; color: #6c757d; font-weight: 500; }
-    .barangay-info-modal .modal-dialog { max-width: 550px; }
+    .barangay-info-modal .modal-dialog { max-width: 700px; }
     .barangay-info-modal .modal-header { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none; padding: 1rem; }
     .barangay-info-modal .modal-title { font-size: 1.1rem; font-weight: 600; }
     .barangay-info-modal .btn-close { filter: brightness(0) invert(1); }
-    .barangay-info-modal .modal-body { max-height: 70vh; overflow-y: auto; padding: 1.2rem; }
+    .barangay-info-modal .modal-body { max-height: 75vh; overflow-y: auto; padding: 1.2rem; }
     .info-section { margin-bottom: 1.2rem; }
     .info-section:last-child { margin-bottom: 0; }
     .info-section-title { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #28a745; margin-bottom: 0.7rem; display: flex; align-items: center; gap: 0.4rem; }
@@ -51,8 +52,14 @@
     .badge-info.ongoing { background: #fff3cd; color: #856404; }
     .badge-info.pending { background: #d1ecf1; color: #0c5460; }
     .badge-info.none { background: #f8d7da; color: #721c24; }
+    .beneficiary-list { margin-top: 0.8rem; }
+    .beneficiary-item { background: #f8f9fa; border-left: 3px solid #28a745; padding: 0.6rem; margin-bottom: 0.5rem; border-radius: 0.25rem; font-size: 0.85rem; }
+    .beneficiary-item .name { font-weight: 600; color: #333; }
+    .beneficiary-item .details { color: #6c757d; font-size: 0.8rem; margin-top: 0.2rem; }
+    .beneficiary-badge { display: inline-block; background: #e7f5e9; color: #2e7d32; padding: 0.2rem 0.4rem; border-radius: 0.2rem; font-size: 0.7rem; font-weight: 600; margin-top: 0.3rem; }
+    .no-data { text-align: center; padding: 1rem; color: #999; font-style: italic; }
     @media (max-width: 991.98px) { #map { height: 50vh; min-height: 400px; } .filters-bar { padding: 0.8rem; } .stat-card { padding: 0.6rem; } }
-    @media (max-width: 575.98px) { #map { height: 45vh; min-height: 350px; } .filters-bar { padding: 0.6rem; } .summary-stats { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 575.98px) { #map { height: 45vh; min-height: 350px; } .filters-bar { padding: 0.6rem; } .summary-stats { grid-template-columns: repeat(2, 1fr); } .barangay-info-modal .modal-dialog { max-width: calc(100vw - 1rem); } }
 </style>
 @endpush
 
@@ -163,6 +170,10 @@
                     <div class="info-row"><span class="label">Fund Allocated</span><span class="value text-success" id="modal-fund-allocated">₱0</span></div>
                     <div class="info-row"><span class="label">Cash Disbursed</span><span class="value text-success" id="modal-cash-disbursed">₱0</span></div>
                 </div>
+                <div class="info-section">
+                    <div class="info-section-title"><i class="bi bi-people-fill"></i>Registered Beneficiaries<span class="badge bg-success ms-2" id="beneficiary-count">0</span></div>
+                    <div id="beneficiary-list-container" class="beneficiary-list"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -186,11 +197,31 @@ document.addEventListener('DOMContentLoaded', function () {
         maxZoom: 16
     });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // Street Map Layer
+    const streetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
-        maxZoom: 16
-    }).addTo(map);
+        maxZoom: 16,
+        name: 'Street Map'
+    });
 
+    // Satellite Map Layer
+    const satelliteMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '&copy; Esri',
+        maxZoom: 16,
+        name: 'Satellite'
+    });
+
+    // Add Street Map by default
+    streetMap.addTo(map);
+
+    // Layer control for street/satellite toggle
+    const baseLayers = {
+        'Street Map': streetMap,
+        'Satellite': satelliteMap
+    };
+    L.control.layers(baseLayers, null, { position: 'topleft', collapsed: true }).addTo(map);
+
+    // Legend
     const legend = L.control({ position: 'bottomright' });
     legend.onAdd = function() {
         const div = L.DomUtil.create('div', 'map-legend');
@@ -200,6 +231,8 @@ document.addEventListener('DOMContentLoaded', function () {
     legend.addTo(map);
 
     let markers = {};
+    let barangayDataMap = {};
+
     async function loadMapData() {
         const params = new URLSearchParams();
         if (document.getElementById('agencyFilter').value) params.append('agency_id', document.getElementById('agencyFilter').value);
@@ -212,8 +245,10 @@ document.addEventListener('DOMContentLoaded', function () {
             const result = await response.json();
             Object.values(markers).forEach(m => map.removeLayer(m));
             markers = {};
+            barangayDataMap = {};
 
             result.data.forEach(barangay => {
+                barangayDataMap[barangay.id] = barangay;
                 const color = barangay.pin_color;
                 const svg = `<svg viewBox="0 0 24 32" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C7.03 0 3 4.03 3 9c0 5.25 9 23 9 23s9-17.75 9-23c0-4.97-4.03-9-9-9z" fill="${color}" stroke="white" stroke-width="2"/></svg>`;
                 const html = `<div class="pin-marker">${svg}<div class="pin-count">${barangay.total_beneficiaries}</div></div>`;
@@ -266,7 +301,55 @@ document.addEventListener('DOMContentLoaded', function () {
         const cd = Number(barangay.total_cash_disbursed || 0);
         document.getElementById('modal-fund-allocated').textContent = '₱' + fa.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         document.getElementById('modal-cash-disbursed').textContent = '₱' + cd.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+        // Load beneficiaries for this barangay
+        loadBeneficiaries(barangay.id);
+
         modal.show();
+    }
+
+    function loadBeneficiaries(barangayId) {
+        const container = document.getElementById('beneficiary-list-container');
+        const countBadge = document.getElementById('beneficiary-count');
+
+        // Show loading state
+        container.innerHTML = '<div class="no-data">Loading beneficiaries...</div>';
+
+        fetch(`/api/barangay/${barangayId}/beneficiaries`, {
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to load beneficiaries');
+            return response.json();
+        })
+        .then(data => {
+            countBadge.textContent = data.beneficiaries.length;
+
+            if (data.beneficiaries.length === 0) {
+                container.innerHTML = '<div class="no-data">No beneficiaries registered in this barangay</div>';
+                return;
+            }
+
+            let html = '';
+            data.beneficiaries.forEach(benef => {
+                const classification = benef.classification || 'Unknown';
+                const classColor = classification === 'Farmer' ? 'success' : classification === 'Fisherfolk' ? 'info' : 'warning';
+                html += `
+                    <div class="beneficiary-item">
+                        <div class="name">${benef.full_name || benef.name || 'N/A'}</div>
+                        <div class="details">
+                            <span class="badge bg-${classColor}" style="font-size: 0.7rem;">${classification}</span>
+                            ${benef.contact_number ? '<span class="ms-2 text-secondary">' + benef.contact_number + '</span>' : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error loading beneficiaries:', error);
+            container.innerHTML = '<div class="no-data">Error loading beneficiaries</div>';
+        });
     }
 
     document.getElementById('agencyFilter').addEventListener('change', loadMapData);

@@ -176,6 +176,8 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
     Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
     Route::get('geo-map', [GeoMapController::class, 'index'])->name('geo-map.index');
     Route::get('geo-map/data', [GeoMapController::class, 'mapData'])->name('geo-map.data');
+    Route::get('api/barangay/{barangay}/beneficiaries', [GeoMapController::class, 'getBeneficiariesByBarangay'])
+        ->name('api.barangay.beneficiaries');
 });
 
 /*

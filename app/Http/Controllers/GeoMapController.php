@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Agency;
+use App\Models\Beneficiary;
 use App\Models\ProgramName;
 use App\Support\GeoMapCache;
 use Illuminate\Http\JsonResponse;
@@ -325,6 +326,43 @@ class GeoMapController extends Controller
             ]);
 
             return response()->json(['error' => 'Failed to load geo-map data.'], 500);
+        }
+    }
+
+    /**
+     * Fetch all beneficiaries for a specific barangay
+     */
+    public function getBeneficiariesByBarangay($barangayId): JsonResponse
+    {
+        try {
+            $beneficiaries = Beneficiary::where('barangay_id', $barangayId)
+                ->where('status', 'Active')
+                ->whereNull('deleted_at')
+                ->select('id', 'full_name', 'classification', 'contact_number', 'agency_id')
+                ->orderBy('full_name')
+                ->get()
+                ->map(function ($benef) {
+                    return [
+                        'id' => $benef->id,
+                        'name' => $benef->full_name,
+                        'full_name' => $benef->full_name,
+                        'classification' => $benef->classification,
+                        'contact_number' => $benef->contact_number,
+                        'agency_id' => $benef->agency_id,
+                    ];
+                });
+
+            return response()->json([
+                'beneficiaries' => $beneficiaries,
+                'count' => $beneficiaries->count(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('GeoMapController::getBeneficiariesByBarangay error', [
+                'error' => $e->getMessage(),
+                'barangay_id' => $barangayId,
+            ]);
+
+            return response()->json(['error' => 'Failed to load beneficiaries.'], 500);
         }
     }
 }

@@ -20,12 +20,7 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('admin.settings.resource-types.index') }}">
-                                <i class="bi bi-box"></i> Resource Types
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('admin.settings.resource-types.index') }}#purposesTab">
-                                <i class="bi bi-tasks"></i> Assistance Purposes
+                                <i class="bi bi-box"></i> Resource Types & Purposes
                             </a>
                         </li>
                         <li class="nav-item">
