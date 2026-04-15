@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-04-15T00:00:00.000Z" agent="6.0" version="20.0.0">
+  <diagram id="UML_Module3_Actual" name="Module3_UseCase_UML_Actual">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="800" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title -->
+        <mxCell id="title" value="GEO-MAPPING &amp; BENEFICIARY VISUALIZATION - USE CASE DIAGRAM" style="text;html=1;align=center;verticalAlign=middle;fontSize=18;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="50" y="10" width="1100" height="35" as="geometry" />
+        </mxCell>
+
+        <!-- System Boundary -->
+        <mxCell id="system_boundary" value="Geo-Mapping &amp; Visualization System" style="rectangle;rounded=0;strokeWidth=3;fill=none;dashed=0" vertex="1" parent="1">
+          <mxGeometry x="200" y="80" width="800" height="650" as="geometry" />
+        </mxCell>
+
+        <!-- Actors -->
+        <!-- Admin/User Actor -->
+        <mxCell id="actor_user" value="User/Admin" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;outlineConnect=0;fontSize=12" vertex="1" parent="1">
+          <mxGeometry x="60" y="300" width="60" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- System/Database Actor -->
+        <mxCell id="actor_db" value="Database" style="shape=cylinder;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="450" width="100" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- PRIMARY USE CASES -->
+
+        <!-- UC1: Display Interactive Map -->
+        <mxCell id="uc1" value="UC1: Display Interactive&#10;Map" style="ellipse;whiteSpace=wrap;html=1;fontSize=11;align=center" vertex="1" parent="1">
+          <mxGeometry x="250" y="120" width="140" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- UC2: Filter Data -->
+        <mxCell id="uc2" value="UC2: Filter &amp; Aggregate&#10;Data by Criteria" style="ellipse;whiteSpace=wrap;html=1;fontSize=11;align=center" vertex="1" parent="1">
+          <mxGeometry x="420" y="120" width="140" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- UC3: View Barangay Details -->
+        <mxCell id="uc3" value="UC3: View Barangay&#10;Details &amp; Statistics" style="ellipse;whiteSpace=wrap;html=1;fontSize=11;align=center" vertex="1" parent="1">
+          <mxGeometry x="590" y="120" width="140" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- UC4: View Beneficiary List -->
+        <mxCell id="uc4" value="UC4: List Beneficiaries&#10;by Barangay" style="ellipse;whiteSpace=wrap;html=1;fontSize=11;align=center" vertex="1" parent="1">
+          <mxGeometry x="750" y="120" width="140" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- UC5: Toggle Map Layers -->
+        <mxCell id="uc5" value="UC5: Toggle Map&#10;Layers (Street/Satellite)" style="ellipse;whiteSpace=wrap;html=1;fontSize=11;align=center" vertex="1" parent="1">
+          <mxGeometry x="420" y="260" width="140" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- SHARED/INCLUDED USE CASES -->
+
+        <!-- Query Barangay Data -->
+        <mxCell id="uc_query_barangay" value="Query Barangay Data" style="ellipse;whiteSpace=wrap;html=1;fontSize=10;align=center;dashed=1;dashPattern=3,3" vertex="1" parent="1">
+          <mxGeometry x="310" y="390" width="120" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Aggregate Metrics -->
+        <mxCell id="uc_aggregate" value="Aggregate Beneficiary &amp;&#10;Event Metrics" style="ellipse;whiteSpace=wrap;html=1;fontSize=10;align=center;dashed=1;dashPattern=3,3" vertex="1" parent="1">
+          <mxGeometry x="490" y="390" width="120" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Format Response -->
+        <mxCell id="uc_format" value="Format &amp; Render&#10;Response" style="ellipse;whiteSpace=wrap;html=1;fontSize=10;align=center;dashed=1;dashPattern=3,3" vertex="1" parent="1">
+          <mxGeometry x="670" y="390" width="120" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- ASSOCIATIONS (from Actor to Use Cases) -->
+
+        <!-- User to UC1 -->
+        <mxCell id="assoc_user_uc1" edge="1" parent="1" source="actor_user" target="uc1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- User to UC2 -->
+        <mxCell id="assoc_user_uc2" edge="1" parent="1" source="actor_user" target="uc2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- User to UC3 -->
+        <mxCell id="assoc_user_uc3" edge="1" parent="1" source="actor_user" target="uc3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- User to UC4 -->
+        <mxCell id="assoc_user_uc4" edge="1" parent="1" source="actor_user" target="uc4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- User to UC5 -->
+        <mxCell id="assoc_user_uc5" edge="1" parent="1" source="actor_user" target="uc5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- UC1 uses Query Barangay -->
+        <mxCell id="uses_uc1_query" value="uses" edge="1" parent="1" source="uc1" target="uc_query_barangay">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="sourcePoint" x="310" y="210" />
+            <mxPoint as="targetPoint" x="350" y="390" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- UC2 uses Query Barangay -->
+        <mxCell id="uses_uc2_query" value="uses" edge="1" parent="1" source="uc2" target="uc_query_barangay">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="sourcePoint" x="460" y="210" />
+            <mxPoint as="targetPoint" x="370" y="390" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- UC2 uses Aggregate -->
+        <mxCell id="uses_uc2_agg" value="uses" edge="1" parent="1" source="uc2" target="uc_aggregate">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="sourcePoint" x="490" y="210" />
+            <mxPoint as="targetPoint" x="540" y="390" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- UC3 uses Aggregate -->
+        <mxCell id="uses_uc3_agg" value="uses" edge="1" parent="1" source="uc3" target="uc_aggregate">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="sourcePoint" x="650" y="210" />
+            <mxPoint as="targetPoint" x="560" y="390" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- UC3 uses Format -->
+        <mxCell id="uses_uc3_fmt" value="uses" edge="1" parent="1" source="uc3" target="uc_format">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="sourcePoint" x="660" y="210" />
+            <mxPoint as="targetPoint" x="710" y="390" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- UC4 uses Query Barangay -->
+        <mxCell id="uses_uc4_query" value="uses" edge="1" parent="1" source="uc4" target="uc_query_barangay">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="sourcePoint" x="800" y="210" />
+            <mxPoint as="targetPoint" x="400" y="390" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- UC4 uses Format -->
+        <mxCell id="uses_uc4_fmt" value="uses" edge="1" parent="1" source="uc4" target="uc_format">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="sourcePoint" x="820" y="210" />
+            <mxPoint as="targetPoint" x="750" y="390" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- UC1 uses Format -->
+        <mxCell id="uses_uc1_fmt" value="uses" edge="1" parent="1" source="uc1" target="uc_format">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="sourcePoint" x="320" y="210" />
+            <mxPoint as="targetPoint" x="690" y="390" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- LEGEND -->
+        <mxCell id="legend_title" value="Legend:" style="text;html=1;align=left;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="250" y="530" width="400" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend_solid" value="Solid line = Association (User interacts)" style="text;html=1;align=left;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="250" y="550" width="400" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend_dashed" value="Dashed line = Uses relationship (included use case)" style="text;html=1;align=left;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="250" y="570" width="400" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend_include" value="Dashed ellipse = Supporting/Shared use case" style="text;html=1;align=left;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="250" y="590" width="400" height="20" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

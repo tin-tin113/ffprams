@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-04-15T00:00:00.000Z" agent="6.0" version="20.0.0">
+  <diagram id="ERD_GeoMapping_Actual" name="Module3_ERD_Diagram_Actual">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title -->
+        <mxCell id="title" value="GEO-MAPPING &amp; BENEFICIARY VISUALIZATION - ENTITY RELATIONSHIP DIAGRAM (ERD)" style="text;html=1;align=center;verticalAlign=middle;fontSize=18;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="50" y="10" width="1300" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ENTITY 1: BARANGAYS (Central/Core Entity) -->
+        <mxCell id="ent_barangays" value="BARANGAYS" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=#e1d5ff;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0" vertex="1" parent="1">
+          <mxGeometry x="500" y="80" width="200" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="bar_pk" value="PK  id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_barangays">
+          <mxGeometry y="26" width="200" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="bar_name" value="name" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_barangays">
+          <mxGeometry y="46" width="200" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="bar_municipality" value="municipality" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_barangays">
+          <mxGeometry y="66" width="200" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="bar_province" value="province" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_barangays">
+          <mxGeometry y="86" width="200" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="bar_lat" value="latitude (WGS84)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_barangays">
+          <mxGeometry y="106" width="200" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="bar_lon" value="longitude (WGS84)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_barangays">
+          <mxGeometry y="126" width="200" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- ENTITY 2: BENEFICIARIES -->
+        <mxCell id="ent_beneficiaries" value="BENEFICIARIES" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=#ffffcc;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0" vertex="1" parent="1">
+          <mxGeometry x="100" y="80" width="200" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="benef_pk" value="PK  id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_beneficiaries">
+          <mxGeometry y="26" width="200" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="benef_fk_barangay" value="FK  barangay_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11;fontStyle=1" vertex="1" parent="ent_beneficiaries">
+          <mxGeometry y="46" width="200" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="benef_fk_agency" value="FK  agency_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11;fontStyle=1" vertex="1" parent="ent_beneficiaries">
+          <mxGeometry y="66" width="200" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="benef_name" value="full_name" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_beneficiaries">
+          <mxGeometry y="86" width="200" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="benef_classification" value="classification (enum)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_beneficiaries">
+          <mxGeometry y="106" width="200" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="benef_status" value="status (Active/Inactive)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_beneficiaries">
+          <mxGeometry y="126" width="200" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- ENTITY 3: DISTRIBUTION_EVENTS -->
+        <mxCell id="ent_dist_events" value="DISTRIBUTION_EVENTS" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=#ccffcc;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0" vertex="1" parent="1">
+          <mxGeometry x="800" y="80" width="220" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="de_pk" value="PK  id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_dist_events">
+          <mxGeometry y="26" width="220" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="de_fk_barangay" value="FK  barangay_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11;fontStyle=1" vertex="1" parent="ent_dist_events">
+          <mxGeometry y="46" width="220" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="de_fk_program" value="FK  program_name_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11;fontStyle=1" vertex="1" parent="ent_dist_events">
+          <mxGeometry y="66" width="220" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="de_fk_resource" value="FK  resource_type_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11;fontStyle=1" vertex="1" parent="ent_dist_events">
+          <mxGeometry y="86" width="220" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="de_type" value="type (physical/financial)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_dist_events">
+          <mxGeometry y="106" width="220" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="de_status" value="status (Pending/Ongoing/Completed)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_dist_events">
+          <mxGeometry y="126" width="220" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="de_fund" value="total_fund_amount" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_dist_events">
+          <mxGeometry y="146" width="220" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="de_date" value="distribution_date" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_dist_events">
+          <mxGeometry y="166" width="220" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- ENTITY 4: ALLOCATIONS -->
+        <mxCell id="ent_allocations" value="ALLOCATIONS" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=#ffcccc;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0" vertex="1" parent="1">
+          <mxGeometry x="100" y="320" width="200" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="alloc_pk" value="PK  id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_allocations">
+          <mxGeometry y="26" width="200" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="alloc_fk_event" value="FK  distribution_event_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11;fontStyle=1" vertex="1" parent="ent_allocations">
+          <mxGeometry y="46" width="200" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="alloc_fk_benef" value="FK  beneficiary_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11;fontStyle=1" vertex="1" parent="ent_allocations">
+          <mxGeometry y="66" width="200" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="alloc_amount" value="amount" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_allocations">
+          <mxGeometry y="86" width="200" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="alloc_dist_at" value="distributed_at (nullable)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_allocations">
+          <mxGeometry y="106" width="200" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- ENTITY 5: DIRECT_ASSISTANCE -->
+        <mxCell id="ent_direct_assist" value="DIRECT_ASSISTANCE" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=#cce5ff;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0" vertex="1" parent="1">
+          <mxGeometry x="400" y="320" width="220" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="da_pk" value="PK  id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_direct_assist">
+          <mxGeometry y="26" width="220" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="da_fk_benef" value="FK  beneficiary_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11;fontStyle=1" vertex="1" parent="ent_direct_assist">
+          <mxGeometry y="46" width="220" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="da_fk_program" value="FK  program_name_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11;fontStyle=1" vertex="1" parent="ent_direct_assist">
+          <mxGeometry y="66" width="220" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="da_status" value="status (planned/ready/released/etc)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_direct_assist">
+          <mxGeometry y="86" width="220" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="da_amount" value="amount" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_direct_assist">
+          <mxGeometry y="106" width="220" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- ENTITY 6: AGENCIES -->
+        <mxCell id="ent_agencies" value="AGENCIES" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=#ffffcc;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0" vertex="1" parent="1">
+          <mxGeometry x="800" y="320" width="160" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="ag_pk" value="PK  id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_agencies">
+          <mxGeometry y="26" width="160" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="ag_name" value="name" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_agencies">
+          <mxGeometry y="46" width="160" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="ag_acronym" value="acronym" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_agencies">
+          <mxGeometry y="66" width="160" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- ENTITY 7: PROGRAM_NAMES -->
+        <mxCell id="ent_programs" value="PROGRAM_NAMES" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=#e6ccff;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0" vertex="1" parent="1">
+          <mxGeometry x="1050" y="320" width="160" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="prog_pk" value="PK  id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_programs">
+          <mxGeometry y="26" width="160" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="prog_fk_agency" value="FK  agency_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11;fontStyle=1" vertex="1" parent="ent_programs">
+          <mxGeometry y="46" width="160" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="prog_name" value="name" style="text;strokeColor=none;fillColor=none;align=left;fontSize=11" vertex="1" parent="ent_programs">
+          <mxGeometry y="66" width="160" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- RELATIONSHIPS -->
+
+        <!-- Beneficiaries -> Barangays (M:1) -->
+        <mxCell id="rel_benef_bar" edge="1" parent="1" source="ent_beneficiaries" target="ent_barangays">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="sourcePoint" x="300" y="160" />
+            <mxPoint as="targetPoint" x="500" y="160" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Distribution Events -> Barangays (M:1) -->
+        <mxCell id="rel_de_bar" edge="1" parent="1" source="ent_dist_events" target="ent_barangays">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="sourcePoint" x="800" y="160" />
+            <mxPoint as="targetPoint" x="700" y="160" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Allocations -> Distribution Events (M:1) -->
+        <mxCell id="rel_alloc_de" edge="1" parent="1" source="ent_allocations" target="ent_dist_events">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="sourcePoint" x="300" y="380" />
+            <mxPoint as="targetPoint" x="800" y="260" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Allocations -> Beneficiaries (M:1) -->
+        <mxCell id="rel_alloc_benef" edge="1" parent="1" source="ent_allocations" target="ent_beneficiaries">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="sourcePoint" x="150" y="320" />
+            <mxPoint as="targetPoint" x="150" y="240" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Direct Assistance -> Beneficiaries (M:1) -->
+        <mxCell id="rel_da_benef" edge="1" parent="1" source="ent_direct_assist" target="ent_beneficiaries">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="sourcePoint" x="450" y="320" />
+            <mxPoint as="targetPoint" x="200" y="240" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Distribution Events -> Program Names (M:1) -->
+        <mxCell id="rel_de_prog" edge="1" parent="1" source="ent_dist_events" target="ent_programs">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="sourcePoint" x="1000" y="260" />
+            <mxPoint as="targetPoint" x="1100" y="320" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Direct Assistance -> Program Names (M:1) -->
+        <mxCell id="rel_da_prog" edge="1" parent="1" source="ent_direct_assist" target="ent_programs">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="sourcePoint" x="620" y="380" />
+            <mxPoint as="targetPoint" x="1050" y="370" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Beneficiaries -> Agencies (M:1) -->
+        <mxCell id="rel_benef_ag" edge="1" parent="1" source="ent_beneficiaries" target="ent_agencies">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="sourcePoint" x="300" y="150" />
+            <mxPoint as="targetPoint" x="800" y="360" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Program Names -> Agencies (M:1) -->
+        <mxCell id="rel_prog_ag" edge="1" parent="1" source="ent_programs" target="ent_agencies">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="sourcePoint" x="1050" y="370" />
+            <mxPoint as="targetPoint" x="960" y="370" />
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
