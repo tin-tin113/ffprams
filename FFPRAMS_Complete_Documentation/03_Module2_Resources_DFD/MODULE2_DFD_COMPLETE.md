@@ -1,537 +1,193 @@
-# MODULE 2: RESOURCE ALLOCATION & DISTRIBUTION
-## Complete Project Management Deliverables
+# MODULE 2: RESOURCE ALLOCATION & DISTRIBUTION - DATA FLOW DIAGRAM
 
-**Course**: Project Management
-**Assignment**: Module Analysis with ERD, DFD (Level 0-4), and Use Case UML
-**Deadline**: April 14, 2026, 12:00 NN
-**Module**: Resource Allocation & Distribution
-**Date Created**: 2026-04-15
+**Document**: DFD Specifications (Revised - Core Elements Only)
+**Module**: Resource Allocation & Distribution System
+**Date**: 2026-04-15
 
 ---
 
-## 1. ENTITY-RELATIONSHIP DIAGRAM (ERD)
+## DFD LEVEL 0 - SYSTEM CONTEXT
 
-### ERD Narrative
+### External Entities
+- **E1**: Program Manager/Supervisor (user)
+- **E2**: File Storage (photos, documents)
+- **E3**: Database System
 
-**Primary Entity**: Resource Allocation
-- Tracks distribution of resources to beneficiaries
-- Links: Events → Allocations → Beneficiaries
-- Secondary: Resource Types, Distribution Events, Locations
+### System Boundary: FFPRAMS Resource Allocation & Distribution
 
-**Core Entities**:
-- **Resources**: Types of items to distribute (seeds, fertilizer, tools, cash)
-- **Distribution Events**: Organized distribution schedules
-- **Allocations**: Individual resource allocations to beneficiaries
-- **Locations**: Distribution points/venues
-- **ResourceLog**: Transaction history for each allocation
+**Main Functions:**
+- P0: Plan distribution events
+- Allocate resources to beneficiaries
+- Execute and verify distribution
+- Generate reports and audit records
 
-### ERD Diagram (Crow's Foot Notation)
+### Level 0 Data Flows
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│              RESOURCE ALLOCATION & DISTRIBUTION ERD             │
-└────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────┐
-│  RESOURCE TYPES             │
-├─────────────────────────────┤
-│ PK  id                      │
-│     name                    │
-│     category (Seeds,        │
-│     Fertilizer, Tools, etc) │
-│     unit_of_measure         │
-│     description             │
-│     active                  │
-│     created_at              │
-└──────────┬──────────────────┘
-          │  (1:M)
-          │  has
-          │
-┌─────────v─────────────────────────────┐
-│  DISTRIBUTION EVENTS                  │
-├───────────────────────────────────────┤
-│ PK  id                                │
-│     name / title                      │
-│     description                       │
-│ FK  program_id                        │
-│ FK  barangay_id                       │
-│     scheduled_date                    │
-│     venue / distribution_point         │
-│     total_budget / amount              │
-│     status (Planned/Ongoing/Complete) │
-│     created_by_user                   │
-│     created_at                        │
-└─────────┬───────────────────────────┬─┘
-          │ (1:M)                    │
-          │                          │
-    ┌─────v──────────────────────────┴────────┐
-    │  ALLOCATIONS (Core Entity)              │
-    │                                         │
-    ├─────────────────────────────────────────┤
-    │ PK  id                                  │
-    │ FK  event_id                            │
-    │ FK  beneficiary_id                      │
-    │ FK  resource_id                         │
-    │     quantity_allocated                  │
-    │     unit_price / cost_per_unit          │
-    │     total_cost                          │
-    │     allocation_date                     │
-    │     actual_distribution_date            │
-    │     received_quantity                   │
-    │     status (Allocated/Distributed/")   │
-    │     notes / remarks                     │
-    │     created_at, updated_at              │
-    └─────────┬───────────────────────────────┘
-              │ (M:1)
-              │ receives
-              │
-        ┌─────v────────────────────────┐
-        │  BENEFICIARIES               │
-        │  (Link to Module 1)          │
-        ├───────────────────────────────┤
-        │ PK  id                        │
-        │     full_name                 │
-        │     barangay_id               │
-        │     contact_number            │
-        │     classification            │
-        │     status                    │
-        └───────────────────────────────┘
-
-┌─────────────────────────────────────────┐
-│  DISTRIBUTION LOCATIONS                 │
-├─────────────────────────────────────────┤
-│ PK  id                                  │
-│     name / venue_name                   │
-│ FK  barangay_id                         │
-│     address                             │
-│     latitude / longitude                │
-│     capacity (people/items)             │
-│     contact_person / phone              │
-│     active                              │
-│     created_at                          │
-└──────────────────────────────┬──────────┘
-                               │  (FK)
-                               │  FK: event_id
-                               │
-
-┌─────────────────────────────────────────┐
-│  RESOURCE LOGS (Transaction History)    │
-├─────────────────────────────────────────┤
-│ PK  id                                  │
-│ FK  allocation_id                       │
-│ FK  beneficiary_id                      │
-│     action (Allocated/Distributed/")   │
-│     quantity                            │
-│     previous_quantity                   │
-│     performed_by (user_id)              │
-│     action_date / timestamp             │
-│     notes                               │
-│     created_at                          │
-└─────────────────────────────────────────┘
-
-┌─────────────────────────────────────────┐
-│  DISTRIBUTION PHOTOS                    │
-├─────────────────────────────────────────┤
-│ PK  id                                  │
-│ FK  event_id                            │
-│     photo_path / file_name              │
-│     uploaded_by (user_id)               │
-│     uploaded_at                         │
-│     description / caption               │
-└─────────────────────────────────────────┘
-```
+| Flow | From | To | Data |
+|------|------|-----|------|
+| 1 | User | System | Event creation, allocation data, distribution instructions |
+| 2 | System | User | Results, confirmations, reports |
+| 3 | System | File Storage | Save distribution photos and documents |
+| 4 | File Storage | System | File metadata and paths |
+| 5 | System | Database | INSERT/UPDATE/SELECT/DELETE operations |
+| 6 | Database | System | Query results, event and allocation records |
 
 ---
 
-## 2. DATA FLOW DIAGRAM (DFD) - ALL LEVELS
+## DFD LEVEL 1 - MAIN PROCESSES
 
-### DFD LEVEL 0 - SYSTEM CONTEXT
+Six main processes:
 
-```
-┌────────────────────────────────────────────────────────┐
-│         SYSTEM BOUNDARY: FFPRAMS                       │
-│                                                         │
-│   RESOURCE ALLOCATION & DISTRIBUTION MODULE            │
-│                                                         │
-└────────────────────────────────────────────────────────┘
-        ▲                                    ▲
-        │                                    │
-   User Input                         File/Photo Storage
-        │                                    │
-┌─────────────────────────────────────────────────────────┐
-│                                                         │
-│  • Plan Distribution Events                            │
-│  • Allocate Resources                                  │
-│  • Track Distribution                                  │
-│  • Record Receipt                                      │
-│  • Generate Reports                                    │
-│                                                         │
-└─────────────────┬──────────────────────┬───────────────┘
-                  │                      │
-    DATABASE      │                      │
-    OPERATIONS    │                      │
-                  ▼                      ▼
-        ┌──────────────────────────────────┐
-        │  POSTGRESQL DB TABLES:           │
-        │  • resources                     │
-        │  • distribution_events           │
-        │  • allocations                   │
-        │  • allocation_beneficiaries      │
-        │  • distribution_locations        │
-        │  • resource_logs                 │
-        │  • distribution_photos           │
-        │  • allocation_verification       │
-        └──────────────────────────────────┘
-```
+| Process | Name | Function |
+|---------|------|----------|
+| **P1** | Plan Distribution Event | Create distribution event with budget and resource planning |
+| **P2** | Allocate Resources | Assign resources to beneficiaries and calculate costs |
+| **P3** | Distribute Resources | Execute distribution and track actual receipt |
+| **P4** | Record Distribution | Document distribution with photos and transaction logs |
+| **P5** | Verify Receipt | Confirm beneficiary receipt and reconcile quantities |
+| **P6** | Generate Reports | Create distribution and budget reports |
 
-### DFD LEVEL 1 - MAIN PROCESSES
+### Process Specifications - Level 1
 
-```
-MAIN PROCESSES:
-┌────────────────┐  ┌────────────────┐  ┌────────────────┐
-│      P2.1      │  │      P2.2      │  │      P2.3      │
-│    PLAN EVENT  │  │  ALLOCATE      │  │  DISTRIBUTE    │
-│                │  │  RESOURCES     │  │  RESOURCES    │
-└────────────────┘  └────────────────┘  └────────────────┘
+#### **P1: PLAN DISTRIBUTION EVENT**
+- **Input**: Event details (name, date, location, program, barangay, budget)
+- **Processing**: Validate event data → Reserve location → Approve budget → Create event record
+- **Output**: event_id, confirmation
+- **Data Stores**: D20 (events), D23 (locations), D24 (programs)
 
-┌────────────────┐  ┌────────────────┐  ┌────────────────┐
-│      P2.4      │  │      P2.5      │  │      P2.6      │
-│  RECORD        │  │  VERIFY        │  │  GENERATE      │
-│  DISTRIBUTION  │  │  RECEIPT       │  │  REPORTS       │
-└────────────────┘  └────────────────┘  └────────────────┘
-```
+#### **P2: ALLOCATE RESOURCES**
+- **Input**: event_id, resource selections with quantities and beneficiary list
+- **Processing**: Validate resources → Calculate costs → Match to beneficiaries → Validate budget
+- **Output**: allocation_ids, allocation summary
+- **Data Stores**: D22 (allocations), D26 (direct_assistance), D19 (resources), D1 (beneficiaries)
 
-**P2.1: PLAN DISTRIBUTION EVENT**
-- Input: Event details (name, date, location, program, barangay)
-- Processing: Validate event data, reserve location, budget approval
-- Output: event_id, confirmation
-- Data Stores: distribution_events, distribution_locations, programs
+#### **P3: DISTRIBUTE RESOURCES**
+- **Input**: allocation_ids to mark as distributed
+- **Processing**: Generate distribution lists → Record distribution → Update allocation status
+- **Output**: distribution confirmation, receipt records
+- **Data Stores**: D22 (allocations), D25 (resource_logs)
 
-**P2.2: ALLOCATE RESOURCES**
-- Input: event_id, resource selections with quantities
-- Processing: Link resources to beneficiaries, compute costs, validate stock
-- Output: allocation_ids, allocation summary
-- Data Stores: allocations, resources, beneficiaries, allocation_logs
+#### **P4: RECORD DISTRIBUTION**
+- **Input**: Distribution evidence (photos, signatures, notes)
+- **Processing**: Validate and store photos → Link to event → Create transaction logs
+- **Output**: photo_id, log_id
+- **Data Stores**: D27 (photos), D25 (resource_logs)
 
-**P2.3: DISTRIBUTE RESOURCES**
-- Input: allocation_ids to distribute
-- Processing: Generate distribution lists, track actual distribution
-- Output: distribution_date, received_quantity updates
-- Data Stores: allocations, resource_logs
+#### **P5: VERIFY RECEIPT**
+- **Input**: Beneficiary confirmation of resource receipt
+- **Processing**: Verify expected vs actual quantities → Reconcile → Update allocation status
+- **Output**: verification_id, status update
+- **Data Stores**: D28 (verification), D22 (allocations)
 
-**P2.4: RECORD DISTRIBUTION**
-- Input: Distribution evidence (photos, signatures, notes)
-- Processing: Validate photos, link to event, create transaction logs
-- Output: distribution_photo_id, log_id
-- Data Stores: distribution_photos, resource_logs
-
-**P2.5: VERIFY RECEIPT**
-- Input: Beneficiary confirmation of receipt
-- Processing: Match expected vs actual quantities
-- Output: verification_id, status update
-- Data Stores: allocation_verification
-
-**P2.6: GENERATE REPORTS**
-- Input: Date range, resource type, barangay filters
-- Processing: Query allocations, sum distributions, compute statistics
-- Output: PDF/Excel report
-- Data Stores: allocations, resources, beneficiaries (read-only)
+#### **P6: GENERATE REPORTS**
+- **Input**: Report filters (date range, program, barangay, resource type)
+- **Processing**: Query allocations → Sum distributions → Calculate statistics → Format output
+- **Output**: PDF/Excel report with summary and details
+- **Data Stores**: D22, D20, D19, D1 (read-only)
 
 ---
 
-### DFD LEVEL 2 - ALLOCATE RESOURCES (P2.2) DECOMPOSITION
+## DFD LEVEL 2 - ALLOCATE RESOURCES (P2) DECOMPOSITION
+
+### Sub-processes of P2
 
 ```
-P2.2 DECOMPOSITION: ALLOCATE RESOURCES
-
-Input: event_id, resource selections with quantities
-       │
-       ▼
-┌────────────────────────────────┐
-│ P2.2.1: Validate Event Exists  │
-│ Query distribution_events (D20)│
-│ IF not found → Error           │
-└────────┬───────────────────────┘
-         │
-         ▼
-┌────────────────────────────────┐
-│ P2.2.2: Retrieve Event Details │
-│ Get event: program, location,  │
-│ current budget, beneficiaries  │
-└────────┬───────────────────────┘
-         │
-         ▼
-┌────────────────────────────────┐
-│ P2.2.3: Validate Resources     │
-│ FOR each resource selected:    │
-│   • Resource exists (D19)      │
-│   • Sufficient stock available │
-│   • Unit price defined         │
-│   • Valid quantity             │
-│ IF any invalid → Error         │
-└────────┬───────────────────────┘
-         │
-         ▼
-┌────────────────────────────────┐
-│ P2.2.4: Calculate Allocation   │
-│ Costs                          │
-│                                │
-│ FOR each allocation:           │
-│   total_cost =                 │
-│     quantity * unit_price      │
-│                                │
-│   program_cost += total_cost   │
-└────────┬───────────────────────┘
-         │
-         ▼
-┌────────────────────────────────┐
-│ P2.2.5: Validate Budget        │
-│                                │
-│ IF program_cost > event_budget:│
-│   Error: "Exceeds budget"      │
-│ ELSE:                          │
-│   Continue                     │
-└────────┬───────────────────────┘
-         │
-         ▼
-┌────────────────────────────────┐
-│ P2.2.6: Select Beneficiaries   │
-│                                │
-│ Query beneficiaries (D1):      │
-│   WHERE barangay_id =          │
-│     event.barangay_id          │
-│   AND status = 'active'        │
-│   AND NOT in allocation pool   │
-│                                │
-│ FOR each resource:             │
-│   Select N beneficiaries       │
-│   Create allocation records    │
-└────────┬───────────────────────┘
-         │
-         ▼
-┌────────────────────────────────┐
-│ P2.2.7: Insert Allocations     │
-│ (D17: allocations)             │
-│                                │
-│ INSERT INTO allocations:       │
-│   event_id, beneficiary_id,    │
-│   resource_id, quantity,       │
-│   cost, status='Allocated'     │
-│ RETURN: allocation_id          │
-└────────┬───────────────────────┘
-         │
-         ▼
-┌────────────────────────────────┐
-│ P2.2.8: Update Resource Stock  │
-│ (D19: resources)               │
-│                                │
-│ FOR each resource:             │
-│   UPDATE resources             │
-│   SET total_allocated +=       │
-│     sum(quantities)            │
-│   SET available_stock -=       │
-│     sum(quantities)            │
-└────────┬───────────────────────┘
-         │
-         ▼
-┌────────────────────────────────┐
-│ P2.2.9: Create Audit Entries   │
-│ (D6: audit_logs)               │
-│                                │
-│ Log: "Allocations_created"     │
-│ Quantity: N beneficiaries      │
-│ Total cost: program_cost       │
-└────────┬───────────────────────┘
-         │
-         ▼
-    RETURN SUCCESS
-    allocation_ids[]
-    allocation_count
-    total_cost
+P2.1 → Validate Event Exists (query D20)
+P2.2 → Retrieve Event Details (event metadata, program, budget)
+P2.3 → Validate Resources (existence, stock, pricing)
+P2.4 → Calculate Allocation Costs (quantity × unit_price)
+P2.5 → Validate Budget (verify cost ≤ event budget)
+P2.6 → Select Beneficiaries (filter eligible beneficiaries)
+P2.7 → Create Allocations (insert to D22)
+P2.8 → Create Direct Assistance (if applicable - insert to D26)
+P2.9 → Create Audit Log (insert to D21)
 ```
+
+### Level 2 Data Flows
+
+| Process | Reads | Writes | Data |
+|---------|-------|--------|------|
+| P2.1 | D20 | - | Event lookup |
+| P2.3 | D19 | - | Resource validation |
+| P2.4 | - | - | Cost calculation (in-memory) |
+| P2.5 | - | - | Budget comparison |
+| P2.6 | D1 | - | Beneficiary query |
+| P2.7 | - | D22 | INSERT allocations |
+| P2.8 | - | D26 | INSERT direct_assistance records |
+| P2.9 | - | D21 | INSERT audit log |
 
 ---
 
-### DFD LEVEL 3 - VALIDATE BUDGET (P2.2.5) DECOMPOSITION
+## DFD LEVEL 3 - VALIDATE BUDGET (P2.5) & CALCULATE COST (P2.4)
 
-```
-P2.2.5 DECOMP: VALIDATE BUDGET
+### P2.4: CALCULATE TOTAL COST (Terminal Process)
 
-Inputs: event_id, computed_program_cost
+**Input**:
+- allocations array with {quantity, unit_price} for each
+- event_budget (available budget)
 
-Step 1: Retrieve Event Budget
-────────────────────────────
-Query distribution_events (D20):
-  SELECT total_budget
-  WHERE id = event_id
+**Algorithm**:
+1. Initialize total_cost = 0
+2. FOR each allocation:
+   - allocation_cost = quantity × unit_price
+   - total_cost += allocation_cost
+3. FOR each direct_assistance (if any):
+   - da_cost = amount
+   - total_cost += da_cost
+4. Return total_cost
 
-Step 2: Retrieve Current Spending
-──────────────────────────────────
-Query allocations (D17):
-  SELECT SUM(total_cost) as spent
-  WHERE event_id = event_id
-  AND status IN ('Allocated', 'Distributed')
+**Output**: {total_cost: decimal, allocation_count: integer, status: "CALCULATED"}
 
-Step 3: Calculate Remaining Budget
-───────────────────────────────────
-remaining_budget = total_budget - spent
+### P2.5: VALIDATE BUDGET (Terminal Process)
 
-Step 4: Compare Costs
-─────────────────────
-IF computed_program_cost > remaining_budget:
-  RETURN: {status: FAIL, budget_exceeded: true}
-  ERROR: Amount exceeds remaining budget
-ELSE:
-  RETURN: {status: PASS, remaining: remaining_budget}
+**Input**:
+- total_cost (calculated)
+- event_budget (available)
 
-OUTPUT:
-  • Validation result (PASS/FAIL)
-  • Remaining budget amount
-  • Overage amount (if failed)
-```
+**Validation Logic**:
+1. IF total_cost > event_budget:
+   - Return ERROR: "Total cost ($X) exceeds budget ($Y)"
+2. ELSE:
+   - remaining_budget = event_budget - total_cost
+   - Return SUCCESS with remaining_budget
+
+**Output**: {status: SUCCESS|FAIL, remaining_budget: decimal, error_message: string}
 
 ---
 
-### DFD LEVEL 4 - CALCULATE TOTAL COST (Terminal Process)
+## DATA STORES DICTIONARY
 
-```
-P2.2.4.1: CALCULATE ALLOCATION COST (Terminal)
+| ID | Name | Database Table | Purpose |
+|----|------|---------|---------|
+| **D1** | Beneficiaries | beneficiaries | Link to Module 1 (beneficiary records) |
+| **D19** | Resource Types | resource_types | Resource catalog (seeds, fertilizer, tools, cash) |
+| **D20** | Distribution Events | distribution_events | Main distribution event records |
+| **D21** | Audit Logs | audit_logs | System activity and transaction history |
+| **D22** | Allocations | allocations | Core allocation records (event → beneficiary → resource) |
+| **D23** | Locations | distribution_locations | Distribution venue data (coordinates, capacity, contact) |
+| **D24** | Programs | program_names | Program information (name, agency, description) |
+| **D25** | Resource Logs | resource_logs | Transaction log (who, what, when, quantity changes) |
+| **D26** | Direct Assistance | direct_assistance | Direct cash/assistance distribution records |
+| **D27** | Photos | distribution_photos | Distribution event photos (metadata and file paths) |
+| **D28** | Verification | allocation_verification | Receipt verification records |
 
-INPUTS:
-  quantity (integer)
-  unit_price (decimal)
-  tax_rate (percentage, optional)
+### Key Tables
 
-ALGORITHM:
-──────────
+**D22: allocations**
+- Attributes: id (PK), event_id (FK), beneficiary_id (FK), resource_id (FK), quantity, unit_price, total_cost, status, distributed_at
 
-Step 1: Validate Inputs
-  IF quantity <= 0: return ERROR
-  IF unit_price < 0: return ERROR
-
-Step 2: Calculate Base Cost
-  base_cost = quantity * unit_price
-
-Step 3: Apply Tax (if applicable)
-  IF tax_rate > 0:
-    tax_amount = base_cost * (tax_rate / 100)
-    total_cost = base_cost + tax_amount
-  ELSE:
-    total_cost = base_cost
-
-Step 4: Round to 2 Decimals
-  total_cost = ROUND(total_cost, 2)
-
-Step 5: Return Result
-  RETURN: {
-    quantity: quantity,
-    unit_price: unit_price,
-    base_cost: base_cost,
-    tax_amount: tax_amount (if applicable),
-    total_cost: total_cost,
-    currency: 'PHP'
-  }
-
-EXAMPLE:
-──────
-quantity = 100
-unit_price = 250.00
-tax_rate = 5
-
-base_cost = 100 * 250.00 = 25,000.00
-tax_amount = 25,000.00 * (5/100) = 1,250.00
-total_cost = 25,000.00 + 1,250.00 = 26,250.00
-```
+**D26: direct_assistance**
+- Attributes: id (PK), beneficiary_id (FK), program_id (FK), amount, status (planned/ready/released/completed/not_received), created_at
 
 ---
 
-## 3. USE CASE DIAGRAM (UML)
+## SUMMARY
 
-### Use Case Specifications
+**Total Levels**: 3 (Level 0-3)
+**Main Processes (Level 1)**: 6
+**Sub-processes (Level 2)**: 9 (P2 decomposition)
+**Terminal Processes (Level 3)**: 2 (Calculate Cost, Validate Budget)
+**Data Stores**: 11
+**External Entities**: 3
 
-**UC1: Plan Distribution Event**
-```
-Actors: Program Manager, Admin
-Precondition: User authenticated, program exists
-Main Flow:
-  1. User enters event details
-  2. System validates barangay, program, date
-  3. User selects distribution location
-  4. System reserves location, budget
-  5. Event confirmed → event_id assigned
-Postcondition: Event created, ready for allocations
-```
-
-**UC2: Allocate Resources to Beneficiaries**
-```
-Actors: Program Manager
-Precondition: Event exists and approved
-Main Flow:
-  1. User selects event
-  2. System shows resources available
-  3. User selects resource types + quantities
-  4. System auto-selects beneficiaries
-  5. System validates budget
-  6. Allocations created and confirmed
-Postcondition: Allocations stored, ready to distribute
-```
-
-**UC3: Execute Distribution**
-```
-Actors: Enumerator, Staff
-Precondition: Allocations exist for event
-Main Flow:
-  1. Staff receives distribution list
-  2. Staff distributes resources to beneficiaries
-  3. Staff records received quantity
-  4. Staff takes distribution photos
-  5. Staff gets beneficiary signature/acknowledgment
-Postcondition: Distribution marked complete, photos logged
-```
-
-**UC4: Verify Receipt & Generate Report**
-```
-Actors: Supervisor, Manager
-Precondition: Distribution complete
-Main Flow:
-  1. User reviews allocation vs actual receipt
-  2. System flags discrepancies
-  3. Supervisor approves or flags for correction
-  4. Generate distribution report
-Postcondition: Report generated, discrepancies logged
-```
-
----
-
-## 4. DATA STORES SUMMARY
-
-| ID | Name | Purpose | Est. Records |
-|----|------|---------|--------------|
-| D19 | Resource Types | Catalog of resources | 50+ |
-| D20 | Distribution Events | Event management | 1,000+/year |
-| D17 | Allocations | Resource assignments | 50,000+ |
-| D21 | Distribution Locations | Venues | 100+ |
-| D22 | Resource Logs | Transaction history | 100,000+/year |
-| D23 | Distribution Photos | Event documentation | 10,000+/year |
-| D24 | Verification Records | Receipt confirmation | 50,000+ |
-
----
-
-## 5. BUSINESS RULES
-
-1. **Budget Control**: Total allocations cannot exceed event budget
-2. **Stock Management**: Allocated quantity cannot exceed available inventory
-3. **Beneficiary Limits**: One beneficiary per resource type per event
-4. **Distribution Timeline**: Must complete within 30 days of event date
-5. **Photo Documentation**: At least 1 photo per distribution location
-6. **Verification**: All distributions must have receipt verification
-
----
-
-## DOCUMENT METADATA
-
-- **Version**: 1.0
-- **Status**: COMPLETE
-- **Pages**: 10+ deliverable pages
-- **Date**: 2026-04-15
-- **For**: Project Management Assignment
+All processes align with actual system implementation in DistributionEventController, AllocationController, and DirectAssistanceController.

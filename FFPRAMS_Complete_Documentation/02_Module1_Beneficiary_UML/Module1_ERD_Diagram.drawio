@@ -90,7 +90,7 @@
         </mxCell>
 
         <!-- FK and Location -->
-        <mxCell id="benef_section2" value="LOCATION & AGENCY:" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1;background=#f0f0f0" vertex="1" parent="beneficiaries_table">
+        <mxCell id="benef_section2" value="LOCATION &amp; AGENCY:" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1;background=#f0f0f0" vertex="1" parent="beneficiaries_table">
           <mxGeometry y="206" width="280" height="18" as="geometry" />
         </mxCell>
         <mxCell id="benef_fk_barangay" value="FK  barangay_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" vertex="1" parent="beneficiaries_table">
@@ -107,7 +107,7 @@
         </mxCell>
 
         <!-- Contact -->
-        <mxCell id="benef_section3" value="CONTACT & CLASSIFICATION:" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1;background=#f0f0f0" vertex="1" parent="beneficiaries_table">
+        <mxCell id="benef_section3" value="CONTACT &amp; CLASSIFICATION:" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1;background=#f0f0f0" vertex="1" parent="beneficiaries_table">
           <mxGeometry y="296" width="280" height="18" as="geometry" />
         </mxCell>
         <mxCell id="benef_contact" value="contact_number (unique, PH fmt)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" vertex="1" parent="beneficiaries_table">
@@ -132,7 +132,7 @@
         </mxCell>
 
         <!-- Status -->
-        <mxCell id="benef_section5" value="STATUS & TIMESTAMPS:" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1;background=#f0f0f0" vertex="1" parent="beneficiaries_table">
+        <mxCell id="benef_section5" value="STATUS &amp; TIMESTAMPS:" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1;background=#f0f0f0" vertex="1" parent="beneficiaries_table">
           <mxGeometry y="422" width="280" height="18" as="geometry" />
         </mxCell>
         <mxCell id="benef_status" value="status (active/inactive)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="beneficiaries_table">

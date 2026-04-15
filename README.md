@@ -13,39 +13,46 @@ A web-based management system built for the **Municipal Agriculture Office of En
 
 ## Features
 
-### Beneficiary Management
+### Module 1: Beneficiary Management
 - Registration of farmers, fisherfolk, or dual-classified beneficiaries
 - Agency-based field sets: DA/RSBSA, BFAR/FishR, DAR/CARP
 - Comprehensive profiles with agency-specific fields (farm details, fishing operations, land awards)
 - CLOA/EP number required for DAR beneficiaries before saving
 - Automatic duplicate detection blocks registration if matching records found
 - Filter and search by barangay, agency, classification, status, or name/ID
+- Bulk status updates & SMS sending capabilities
+- 8 documented use cases with complete UML diagrams
 
-### Distribution Events
-- Two types: **Physical** (resource quantities) and **Financial** (monetary amounts)
+### Module 2: Resource Allocation & Distribution
+- Two types of events: **Physical** (resource quantities) and **Financial** (monetary amounts)
 - Status workflow: Pending &rarr; Ongoing &rarr; Completed
-- Linked to a specific barangay and resource type
-- Total fund tracking for financial events
-
-### Resource Allocation
 - Single and bulk allocation of resources or funds to beneficiaries
 - Barangay matching validation (beneficiary must belong to the event's barangay)
 - Duplicate prevention with soft-delete awareness
 - Mark individual allocations as distributed with timestamp tracking
+- CSV import for bulk resource allocations
+- Cost calculation algorithms with budget tracking
+- 11 documented use cases covering resource flows and compliance
 
-### SMS Notifications
-- Individual and broadcast messaging to beneficiaries
-- Target by: all active, by barangay, by classification, or selected individuals
-- Preview recipients before sending
-- Automatic notifications on: registration and allocation
-- Full SMS log with delivery status tracking
-
-### Geographic Map (GeoMap)
+### Module 3: Geographic Mapping & Data Visualization
 - Interactive Leaflet.js map of all 23 barangays of E.B. Magalona
 - Color-coded pins by distribution status (Completed, Ongoing, Pending, No Distribution)
 - Detailed per-barangay panel: beneficiary breakdown, household data, event counts, allocation stats, coverage rate, financial totals, resource types distributed, and timeline
+- Spatial data visualization with kernel density estimation
+- 5 documented use cases for map interactions and reporting
 
-### Reports
+### SMS Notifications & Broadcasting
+- **Tab-based interface** with Compose, History, and Templates sections
+- **6 recipient targeting methods**: All Active, By Barangay, By Classification, By Program/Event, By Resource, or Manual Selection
+- **Refined beneficiary selection** with "Select All" button for quick bulk operations
+- **Search & filter** within selected beneficiaries
+- SMS template management with defaults and custom templates
+- Character count tracking (no length limits)
+- Preview recipients count before sending
+- Automatic notifications on: registration and allocation
+- Full SMS log with delivery status tracking and history filtering
+
+### Comprehensive Reporting
 1. Beneficiaries per Barangay (with farmer/fisherfolk/both breakdown)
 2. Resource Distribution Summary
 3. Distribution Status per Barangay
@@ -63,6 +70,7 @@ A web-based management system built for the **Municipal Agriculture Office of En
 
 ### Audit Logging
 - All CRUD operations logged with user, action, table, old/new values (JSON)
+- Complete audit trail for compliance and accountability
 
 ### User Management
 - Role-based access: **Admin** (user management, system settings, and admin controls) and **Staff** (operational modules)

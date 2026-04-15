@@ -182,16 +182,6 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Partner Agency Routes (E4 - Read-Only Access)
-|--------------------------------------------------------------------------
-*/
-Route::middleware(['auth', 'verified', 'role:partner'])->group(function () {
-    // Read-only reports for national partner agencies
-    // TODO: Add partner-specific filtering when partner role is fully implemented
-});
-
-/*
-|--------------------------------------------------------------------------
 | Admin-Only Routes
 |--------------------------------------------------------------------------
 */
