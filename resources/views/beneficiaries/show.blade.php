@@ -426,9 +426,50 @@
 
     {{-- Distribution History --}}
     <div id="distribution-history" class="card border-0 shadow-sm mb-4" style="scroll-margin-top: 90px;">
-        <div class="card-header bg-white fw-semibold">
-            <i class="bi bi-box-seam me-1"></i> Distribution History (Event-Based & Direct Assistance)
+        @php
+            // Merge and sort allocations and direct assistance by most recent date first
+            $allDistributions = collect();
+
+            // Add allocations with method type indicator
+            foreach($beneficiary->allocations as $allocation) {
+                $allDistributions->push((object)[
+                    'type' => 'allocation',
+                    'method' => $allocation->isDirect() ? 'Direct' : 'Event-Based',
+                    'methodBadge' => $allocation->isDirect() ? 'Direct' : 'Event-Based',
+                    'badgeClass' => $allocation->isDirect() ? 'bg-info text-dark' : 'bg-secondary',
+                    'data' => $allocation,
+                    'sortDate' => $allocation->distributionEvent?->distribution_date ?? $allocation->created_at,
+                ]);
+            }
+
+            // Add direct assistance with method type indicator
+            foreach($beneficiary->directAssistance as $assistance) {
+                $allDistributions->push((object)[
+                    'type' => 'directAssistance',
+                    'method' => 'Direct Assistance',
+                    'methodBadge' => 'Direct Assistance',
+                    'badgeClass' => 'bg-warning text-dark',
+                    'data' => $assistance,
+                    'sortDate' => $assistance->distributed_at ?? $assistance->created_at,
+                ]);
+            }
+
+            // Sort by most recent date first (descending)
+            $allDistributions = $allDistributions->sortByDesc('sortDate')->values();
+        @endphp
+
+        <div class="card-header bg-white">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="fw-semibold">
+                    <i class="bi bi-box-seam me-1"></i> Distribution History
+                    @if($allDistributions->isNotEmpty())
+                        <span class="badge bg-light text-dark ms-2">{{ $allDistributions->count() }} Record{{ $allDistributions->count() !== 1 ? 's' : '' }}</span>
+                    @endif
+                </div>
+                <small class="text-muted">Showing all allocations, events, and direct assistance</small>
+            </div>
         </div>
+
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 table-responsive-cards">
@@ -440,96 +481,85 @@
                             <th>Source Agency</th>
                             <th>Value</th>
                             <th>Distribution Date</th>
-                            <th>Event Status</th>
+                            <th>Status</th>
                             <th>Distributed At</th>
                             <th>Remarks</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($beneficiary->allocations as $allocation)
+                        @forelse($allDistributions as $distribution)
                             <tr>
                                 <td data-label="Method">
-                                    @if($allocation->isDirect())
-                                        <span class="badge bg-info text-dark">Direct</span>
-                                    @else
-                                        <span class="badge bg-secondary">Event</span>
-                                    @endif
+                                    <span class="badge {{ $distribution->badgeClass }}">{{ $distribution->methodBadge }}</span>
                                 </td>
-                                <td class="fw-semibold" data-label="Program">{{ $allocation->programName->name ?? $allocation->distributionEvent->programName->name ?? '—' }}</td>
-                                <td data-label="Resource Type">{{ $allocation->resourceType->name ?? $allocation->distributionEvent->resourceType->name ?? '—' }}</td>
-                                <td data-label="Source Agency">{{ $allocation->resourceType->agency->name ?? $allocation->distributionEvent->resourceType->agency->name ?? '—' }}</td>
-                                <td data-label="Value">{{ $allocation->getDisplayValue() }}</td>
-                                <td class="text-muted small" data-label="Distribution Date">{{ $allocation->distributionEvent?->distribution_date?->format('M d, Y') ?? $allocation->created_at?->format('M d, Y') ?? '—' }}</td>
-                                <td data-label="Event Status">
-                                    @php
-                                        $eventStatus = $allocation->distributionEvent?->status ?? ($allocation->distributed_at ? 'Released' : 'Planned');
-                                        $statusBadge = match($eventStatus) {
-                                            'Pending'   => 'bg-primary',
-                                            'Ongoing'   => 'bg-warning text-dark',
-                                            'Completed' => 'bg-success',
-                                            'Released'  => 'bg-success',
-                                            'Planned'   => 'bg-secondary',
-                                            default     => 'bg-secondary',
-                                        };
-                                    @endphp
-                                    <span class="badge {{ $statusBadge }}">{{ $eventStatus ?: '—' }}</span>
-                                </td>
-                                <td class="text-muted small" data-label="Distributed At">{{ $allocation->distributed_at?->format('M d, Y h:i A') ?? '—' }}</td>
-                                <td data-label="Remarks">{{ $allocation->remarks ?? '—' }}</td>
-                            </tr>
-                        @endforeach
 
-                        {{-- Direct Assistance Records --}}
-                        @forelse($beneficiary->directAssistance as $assistance)
-                            <tr>
-                                <td data-label="Method">
-                                    <span class="badge bg-warning text-dark">Direct Assistance</span>
-                                </td>
-                                <td class="fw-semibold" data-label="Program">{{ $assistance->programName->name ?? '—' }}</td>
-                                <td data-label="Resource Type">{{ $assistance->resourceType->name ?? '—' }}</td>
-                                <td data-label="Source Agency">{{ $assistance->programName->agency->name ?? '—' }}</td>
-                                <td data-label="Value">{{ $assistance->getDisplayValue() }}</td>
-                                <td class="text-muted small" data-label="Distribution Date">{{ $assistance->created_at?->format('M d, Y') ?? '—' }}</td>
-                                <td data-label="Event Status">
-                                    @php($normalizedStatus = $assistance->normalized_status)
-                                    @switch($normalizedStatus)
-                                        @case('planned')
-                                            <span class="badge bg-warning text-dark">Planned</span>
-                                            @break
-                                        @case('ready_for_release')
-                                            <span class="badge bg-primary">Ready for Release</span>
-                                            @break
-                                        @case('released')
-                                            <span class="badge bg-success">Released</span>
-                                            @break
-                                        @case('not_received')
-                                            <span class="badge bg-danger">Not Received</span>
-                                            @break
-                                        @default
-                                            <span class="badge bg-secondary">{{ $assistance->status_label }}</span>
-                                            @break
-                                    @endswitch
-                                </td>
-                                <td class="text-muted small" data-label="Distributed At">{{ $assistance->distributed_at?->format('M d, Y h:i A') ?? '—' }}</td>
-                                <td data-label="Remarks">
-                                    {{ $assistance->remarks ?? '—' }}
-                                    @if($assistance->distributionEvent)
-                                        <br><small class="text-muted">Linked to event</small>
-                                    @endif
-                                </td>
+                                @if($distribution->type === 'allocation')
+                                    @php($allocation = $distribution->data)
+                                    <td class="fw-semibold" data-label="Program">{{ $allocation->programName->name ?? $allocation->distributionEvent->programName->name ?? '—' }}</td>
+                                    <td data-label="Resource Type">{{ $allocation->resourceType->name ?? $allocation->distributionEvent->resourceType->name ?? '—' }}</td>
+                                    <td data-label="Source Agency">{{ $allocation->resourceType->agency->name ?? $allocation->distributionEvent->resourceType->agency->name ?? '—' }}</td>
+                                    <td data-label="Value">{{ $allocation->getDisplayValue() }}</td>
+                                    <td class="text-muted small" data-label="Distribution Date">{{ $allocation->distributionEvent?->distribution_date?->format('M d, Y') ?? $allocation->created_at?->format('M d, Y') ?? '—' }}</td>
+                                    <td data-label="Status">
+                                        @php
+                                            $eventStatus = $allocation->distributionEvent?->status ?? ($allocation->distributed_at ? 'Released' : 'Planned');
+                                            $statusBadge = match($eventStatus) {
+                                                'Pending'   => 'bg-primary',
+                                                'Ongoing'   => 'bg-warning text-dark',
+                                                'Completed' => 'bg-success',
+                                                'Released'  => 'bg-success',
+                                                'Planned'   => 'bg-secondary',
+                                                default     => 'bg-secondary',
+                                            };
+                                        @endphp
+                                        <span class="badge {{ $statusBadge }}">{{ $eventStatus ?: '—' }}</span>
+                                    </td>
+                                    <td class="text-muted small" data-label="Distributed At">{{ $allocation->distributed_at?->format('M d, Y h:i A') ?? '—' }}</td>
+                                    <td data-label="Remarks">{{ $allocation->remarks ?? '—' }}</td>
+                                @else
+                                    @php($assistance = $distribution->data)
+                                    <td class="fw-semibold" data-label="Program">{{ $assistance->programName->name ?? '—' }}</td>
+                                    <td data-label="Resource Type">{{ $assistance->resourceType->name ?? '—' }}</td>
+                                    <td data-label="Source Agency">{{ $assistance->programName->agency->name ?? '—' }}</td>
+                                    <td data-label="Value">{{ $assistance->getDisplayValue() }}</td>
+                                    <td class="text-muted small" data-label="Distribution Date">{{ $assistance->created_at?->format('M d, Y') ?? '—' }}</td>
+                                    <td data-label="Status">
+                                        @php($normalizedStatus = $assistance->normalized_status)
+                                        @switch($normalizedStatus)
+                                            @case('planned')
+                                                <span class="badge bg-warning text-dark">Planned</span>
+                                                @break
+                                            @case('ready_for_release')
+                                                <span class="badge bg-primary">Ready for Release</span>
+                                                @break
+                                            @case('released')
+                                                <span class="badge bg-success">Released</span>
+                                                @break
+                                            @case('not_received')
+                                                <span class="badge bg-danger">Not Received</span>
+                                                @break
+                                            @default
+                                                <span class="badge bg-secondary">{{ $assistance->status_label }}</span>
+                                                @break
+                                        @endswitch
+                                    </td>
+                                    <td class="text-muted small" data-label="Distributed At">{{ $assistance->distributed_at?->format('M d, Y h:i A') ?? '—' }}</td>
+                                    <td data-label="Remarks">
+                                        {{ $assistance->remarks ?? '—' }}
+                                        @if($assistance->distributionEvent)
+                                            <br><small class="text-muted">Linked to event</small>
+                                        @endif
+                                    </td>
+                                @endif
                             </tr>
                         @empty
-                        @endforelse
-
-                        {{-- Empty State --}}
-                        @if($beneficiary->allocations->isEmpty() && $beneficiary->directAssistance->isEmpty())
                             <tr>
                                 <td colspan="9" class="text-center text-muted py-4">
                                     <i class="bi bi-inbox fs-3 d-block mb-2"></i>
                                     No distributions recorded yet.
                                 </td>
                             </tr>
-                        @endif
+                        @endforelse
                     </tbody>
                 </table>
             </div>
