@@ -191,45 +191,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
         ->name('allocations.destroy');
 });
 
-Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
-    // User Management
-    Route::resource('users', UserController::class)->except(['show']);
-
-    // Audit Logs
-    Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
-
-    // System Settings
-    Route::get('settings', [SystemSettingsController::class, 'index'])->name('settings.index');
-
-    // Settings — Separate Pages (Multi-page Interface)
-    Route::get('settings/agencies', [SystemSettingsController::class, 'indexAgencies'])->name('settings.agencies.index');
-    Route::get('settings/resource-types', [SystemSettingsController::class, 'indexResourceTypes'])->name('settings.resource-types.index');
-    Route::get('settings/program-names', [SystemSettingsController::class, 'indexProgramNames'])->name('settings.program-names.index');
-    Route::get('settings/form-fields', [SystemSettingsController::class, 'indexFormFields'])->name('settings.form-fields.index');
-
-    // Settings — API List Endpoints
-    Route::get('settings/agencies/list', [SystemSettingsController::class, 'listAgencies'])->name('settings.agencies.list');
-    Route::get('settings/agencies/active', [SystemSettingsController::class, 'getActiveAgencies'])->name('settings.agencies.active');
-    Route::get('settings/purposes/list', [SystemSettingsController::class, 'listPurposes'])->name('settings.purposes.list');
-    Route::get('settings/resource-types/list', [SystemSettingsController::class, 'listResourceTypes'])->name('settings.resource-types.list');
-    Route::get('settings/program-names/list', [SystemSettingsController::class, 'listProgramNames'])->name('settings.program-names.list');
-
-    // Settings — Agencies
-    Route::post('settings/agencies', [SystemSettingsController::class, 'storeAgency'])->name('settings.agencies.store');
-    Route::put('settings/agencies/{agency}', [SystemSettingsController::class, 'updateAgency'])->name('settings.agencies.update');
-    Route::delete('settings/agencies/{agency}', [SystemSettingsController::class, 'destroyAgency'])->name('settings.agencies.destroy');
-
-    // Settings — Assistance Purposes
-    Route::post('settings/purposes', [SystemSettingsController::class, 'storePurpose'])->name('settings.purposes.store');
-    Route::put('settings/purposes/{purpose}', [SystemSettingsController::class, 'updatePurpose'])->name('settings.purposes.update');
-    Route::delete('settings/purposes/{purpose}', [SystemSettingsController::class, 'destroyPurpose'])->name('settings.purposes.destroy');
-
-    // Settings — Resource Types
-    Route::post('settings/resource-types', [SystemSettingsController::class, 'storeResourceType'])->name('settings.resource-types.store');
-    Route::put('settings/resource-types/{resourceType}', [SystemSettingsController::class, 'updateResourceType'])->name('settings.resource-types.update');
-    Route::delete('settings/resource-types/{resourceType}', [SystemSettingsController::class, 'destroyResourceType'])->name('settings.resource-types.destroy');
-
+Route::middleware(['auth', 'verified', 'role:admin,staff'])->prefix('admin')->name('admin.')->group(function () {
     // Settings — Program Names
+    Route::get('settings/program-names', [SystemSettingsController::class, 'indexProgramNames'])->name('settings.program-names.index');
+    Route::get('settings/program-names/list', [SystemSettingsController::class, 'listProgramNames'])->name('settings.program-names.list');
     Route::post('settings/program-names', [SystemSettingsController::class, 'storeProgramName'])->name('settings.program-names.store');
     Route::put('settings/program-names/{programName}', [SystemSettingsController::class, 'updateProgramName'])->name('settings.program-names.update');
     Route::patch('settings/program-names/{programName}/toggle-status', [SystemSettingsController::class, 'toggleProgramStatus'])->name('settings.program-names.toggle-status');
@@ -248,6 +213,43 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('programs/{programName}/legal-requirements-count', [SystemSettingsController::class, 'getProgramLegalRequirementsCount']);
     Route::get('programs/{programName}/legal-requirements', [SystemSettingsController::class, 'getProgramLegalRequirements']);
     Route::get('programs/{programName}/details', [SystemSettingsController::class, 'getProgramDetails']);
+});
+
+Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    // User Management
+    Route::resource('users', UserController::class)->except(['show']);
+
+    // Audit Logs
+    Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+
+    // System Settings
+    Route::get('settings', [SystemSettingsController::class, 'index'])->name('settings.index');
+
+    // Settings — Separate Pages (Multi-page Interface)
+    Route::get('settings/agencies', [SystemSettingsController::class, 'indexAgencies'])->name('settings.agencies.index');
+    Route::get('settings/resource-types', [SystemSettingsController::class, 'indexResourceTypes'])->name('settings.resource-types.index');
+    Route::get('settings/form-fields', [SystemSettingsController::class, 'indexFormFields'])->name('settings.form-fields.index');
+
+    // Settings — API List Endpoints
+    Route::get('settings/agencies/list', [SystemSettingsController::class, 'listAgencies'])->name('settings.agencies.list');
+    Route::get('settings/agencies/active', [SystemSettingsController::class, 'getActiveAgencies'])->name('settings.agencies.active');
+    Route::get('settings/purposes/list', [SystemSettingsController::class, 'listPurposes'])->name('settings.purposes.list');
+    Route::get('settings/resource-types/list', [SystemSettingsController::class, 'listResourceTypes'])->name('settings.resource-types.list');
+
+    // Settings — Agencies
+    Route::post('settings/agencies', [SystemSettingsController::class, 'storeAgency'])->name('settings.agencies.store');
+    Route::put('settings/agencies/{agency}', [SystemSettingsController::class, 'updateAgency'])->name('settings.agencies.update');
+    Route::delete('settings/agencies/{agency}', [SystemSettingsController::class, 'destroyAgency'])->name('settings.agencies.destroy');
+
+    // Settings — Assistance Purposes
+    Route::post('settings/purposes', [SystemSettingsController::class, 'storePurpose'])->name('settings.purposes.store');
+    Route::put('settings/purposes/{purpose}', [SystemSettingsController::class, 'updatePurpose'])->name('settings.purposes.update');
+    Route::delete('settings/purposes/{purpose}', [SystemSettingsController::class, 'destroyPurpose'])->name('settings.purposes.destroy');
+
+    // Settings — Resource Types
+    Route::post('settings/resource-types', [SystemSettingsController::class, 'storeResourceType'])->name('settings.resource-types.store');
+    Route::put('settings/resource-types/{resourceType}', [SystemSettingsController::class, 'updateResourceType'])->name('settings.resource-types.update');
+    Route::delete('settings/resource-types/{resourceType}', [SystemSettingsController::class, 'destroyResourceType'])->name('settings.resource-types.destroy');
 
     // Settings — Form Fields
     Route::get('settings/form-fields/list', [SystemSettingsController::class, 'listFormFields'])->name('settings.form-fields.list');
