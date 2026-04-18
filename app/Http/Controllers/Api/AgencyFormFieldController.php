@@ -2,12 +2,34 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Models\Agency;
-use App\Models\Classification;
 use Illuminate\Http\Request;
 
-class AgencyFormFieldController
+class AgencyFormFieldController extends Controller
 {
+    /**
+     * Fetch agencies by classification
+     * GET /api/agencies/by-classification?classification=Farmer
+     */
+    public function getByClassification(Request $request)
+    {
+        $classification = $request->query('classification');
+
+        if (blank($classification)) {
+            return response()->json([]);
+        }
+
+        $agencies = Agency::whereHas('classifications', fn ($q) =>
+            $q->where('name', $classification)
+        )
+        ->where('is_active', true)
+        ->select('id', 'name', 'full_name')
+        ->get();
+
+        return response()->json($agencies);
+    }
+
     /**
      * Fetch form fields for given agencies
      * GET /api/agencies/form-fields?agencies=1,2,3
@@ -50,7 +72,8 @@ class AgencyFormFieldController
                         'label' => $opt->label,
                     ])->values()->toArray(),
                 ])->values()->toArray(),
-            ]);
+            ])
+            ->toArray();
 
         return response()->json($agencies);
     }

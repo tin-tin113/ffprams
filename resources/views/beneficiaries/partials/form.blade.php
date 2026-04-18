@@ -700,7 +700,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
 
-            if (!response.ok) throw new Error('Failed to fetch form fields');
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error(`API Error (${response.status}):`, errorText);
+                throw new Error(`API returned ${response.status}: ${errorText}`);
+            }
 
             const agenciesData = await response.json();
             let html = '';
@@ -749,7 +753,10 @@ document.addEventListener('DOMContentLoaded', function () {
             attachFieldAvailabilityListeners();
         } catch (error) {
             console.error('Error rendering dynamic fields:', error);
-            container.innerHTML = '<div class="alert alert-warning">Unable to load agency form fields</div>';
+            container.innerHTML = `<div class="alert alert-warning">
+                <strong>Unable to load agency form fields:</strong><br>
+                ${error.message || error}
+            </div>`;
         }
     }
 
