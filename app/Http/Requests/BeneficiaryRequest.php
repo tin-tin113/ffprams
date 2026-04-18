@@ -99,13 +99,14 @@ class BeneficiaryRequest extends FormRequest
                     // Dynamic agency-classification validation using new system
                     $classificationModel = \App\Models\Classification::where('name', $classification)->first();
                     if ($classificationModel) {
-                        $validAgencyIds = $classificationModel->agencies()
+                        $agenciesQuery = $classificationModel->agencies()
                             ->where('is_active', true)
-                            ->pluck('agencies.id')
-                            ->toArray();
+                            ->pluck('agencies.id');
+
+                        $validAgencyIds = $agenciesQuery ? $agenciesQuery->toArray() : [];
 
                         foreach ($agencyIds as $agencyId) {
-                            if (! in_array($agencyId, $validAgencyIds)) {
+                            if (is_array($validAgencyIds) && !in_array($agencyId, $validAgencyIds, true)) {
                                 $agency = Agency::find($agencyId);
                                 $fail("Agency '{$agency->name}' is not applicable to '{$classification}' classification.");
                             }
@@ -113,17 +114,20 @@ class BeneficiaryRequest extends FormRequest
                     }
 
                     // Legacy hardcoded validation for backward compatibility
-                    $selectedAgencies = Agency::whereIn('id', $agencyIds)
+                    $agenciesQuery = Agency::whereIn('id', $agencyIds)
                         ->pluck('name')
-                        ->map(fn($n) => strtoupper($n))
-                        ->toArray();
+                        ->map(fn($n) => strtoupper($n));
 
-                    if ($classification === 'Farmer' && in_array('BFAR', $selectedAgencies)) {
-                        $fail('BFAR (Bureau of Fisheries) cannot be selected for Farmer classification.');
-                    }
+                    $selectedAgencies = $agenciesQuery ? $agenciesQuery->toArray() : [];
 
-                    if ($classification === 'Fisherfolk' && in_array('DAR', $selectedAgencies)) {
-                        $fail('DAR (Department of Agrarian Reform) cannot be selected for Fisherfolk classification.');
+                    if (is_array($selectedAgencies)) {
+                        if ($classification === 'Farmer' && in_array('BFAR', $selectedAgencies, true)) {
+                            $fail('BFAR (Bureau of Fisheries) cannot be selected for Farmer classification.');
+                        }
+
+                        if ($classification === 'Fisherfolk' && in_array('DAR', $selectedAgencies, true)) {
+                            $fail('DAR (Department of Agrarian Reform) cannot be selected for Fisherfolk classification.');
+                        }
                     }
                 }
             ],
@@ -342,10 +346,14 @@ class BeneficiaryRequest extends FormRequest
             ->all();
 
         // Build agency-classification context for custom field visibility
-        $selectedAgencyNames = $selectedAgencies ? $selectedAgencies->pluck('name')->map(fn($n) => strtoupper($n))->toArray() : [];
-        $hasDa = in_array('DA', $selectedAgencyNames ?? [], true);
-        $hasBfar = in_array('BFAR', $selectedAgencyNames ?? [], true);
-        $hasDar = in_array('DAR', $selectedAgencyNames ?? [], true);
+        $agencyNamesCollection = $selectedAgencies ? $selectedAgencies->pluck('name') : collect([]);
+        $selectedAgencyNames = $agencyNamesCollection
+            ? $agencyNamesCollection->map(fn($n) => strtoupper((string) $n))->toArray()
+            : [];
+
+        $hasDa = is_array($selectedAgencyNames) && in_array('DA', $selectedAgencyNames, true);
+        $hasBfar = is_array($selectedAgencyNames) && in_array('BFAR', $selectedAgencyNames, true);
+        $hasDar = is_array($selectedAgencyNames) && in_array('DAR', $selectedAgencyNames, true);
         $isFarmer = $classification === 'Farmer';
         $isFisherfolk = $classification === 'Fisherfolk';
 
