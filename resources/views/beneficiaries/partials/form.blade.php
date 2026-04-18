@@ -694,19 +694,26 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const agencyIds = Array.from(checkedAgencies).map(cb => cb.value);
+        const url = `/api/agencies/form-fields?agencies=${agencyIds.join(',')}`;
+
+        console.log('Fetching agency form fields from:', url);
 
         try {
-            const response = await fetch(`/api/agencies/form-fields?agencies=${agencyIds.join(',')}`, {
+            const response = await fetch(url, {
+                method: 'GET',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
+
+            console.log('API Response Status:', response.status);
 
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error(`API Error (${response.status}):`, errorText);
-                throw new Error(`API returned ${response.status}: ${errorText}`);
+                throw new Error(`API returned ${response.status}: ${errorText.substring(0, 100)}`);
             }
 
             const agenciesData = await response.json();
+            console.log('API Response Data:', agenciesData);
             let html = '';
 
             // Group fields by agency
@@ -753,9 +760,11 @@ document.addEventListener('DOMContentLoaded', function () {
             attachFieldAvailabilityListeners();
         } catch (error) {
             console.error('Error rendering dynamic fields:', error);
+            const errorMsg = error.message || error.toString();
             container.innerHTML = `<div class="alert alert-warning">
                 <strong>Unable to load agency form fields:</strong><br>
-                ${error.message || error}
+                <small>${errorMsg}</small><br>
+                <small class="text-muted">Check browser console (F12) for more details</small>
             </div>`;
         }
     }

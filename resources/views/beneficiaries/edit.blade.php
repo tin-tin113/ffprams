@@ -34,6 +34,7 @@
 @endsection
 
 @push('scripts')
+<script src="{{ asset('js/beneficiary-dynamic-agencies.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     var form = document.getElementById('beneficiaryEditForm');

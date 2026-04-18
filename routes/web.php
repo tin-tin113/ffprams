@@ -156,6 +156,8 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
     // API endpoint for dynamic agency form fields (beneficiary registration)
     Route::get('api/agencies/form-fields', [\App\Http\Controllers\Api\AgencyFormFieldController::class, 'getFormFields'])
         ->name('api.agencies.form-fields');
+    Route::get('api/agencies/by-classification', [\App\Http\Controllers\Api\AgencyFormFieldController::class, 'getByClassification'])
+        ->name('api.agencies.by-classification');
 
     // SMS Broadcast
     Route::get('sms', [SmsController::class, 'index'])->name('sms.index');
