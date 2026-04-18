@@ -55,7 +55,9 @@ class BeneficiaryRequest extends FormRequest
         $nativeFallbackValues = $this->nativeFieldFallbackValues();
 
         $beneficiaryId = $this->route('beneficiary')?->id;
-        $agencyIds = (array) $this->input('agencies', []);
+        $agencyData = (array) $this->input('agencies', []);
+        // Extract agency IDs from nested array structure (agencies[id][fieldName])
+        $agencyIds = is_array($agencyData) ? array_keys($agencyData) : [];
         $selectedAgencies = Agency::whereIn('id', $agencyIds)->get();
         $fieldGroupSettings = $this->fieldGroupSettings();
         $classification = $this->input('classification');
@@ -79,13 +81,20 @@ class BeneficiaryRequest extends FormRequest
         $ownershipSchemeRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'ownership_scheme', true);
 
         $rules = [
-            // Multiple agencies (multi-select)
+            // Multiple agencies (multi-select) - handles both flat array [1,2,3] and nested array {1: {...}, 2: {...}}
             'agencies'         => [
                 'required', 'array', 'min:1',
                 function ($attribute, $value, $fail) use ($classification) {
                     if (! $classification) {
                         return; // Will fail on classification required rule first
                     }
+
+                    // Extract agency IDs - handle both flat and nested array formats
+                    $agencyIds = is_array($value) ? (
+                        isset($value[0]) && !is_array($value[0])
+                            ? $value // flat array [1, 2, 3]
+                            : array_keys($value) // nested array {1: {...}, 2: {...}}
+                    ) : [];
 
                     // Dynamic agency-classification validation using new system
                     $classificationModel = \App\Models\Classification::where('name', $classification)->first();
@@ -95,7 +104,7 @@ class BeneficiaryRequest extends FormRequest
                             ->pluck('agencies.id')
                             ->toArray();
 
-                        foreach ($value as $agencyId) {
+                        foreach ($agencyIds as $agencyId) {
                             if (! in_array($agencyId, $validAgencyIds)) {
                                 $agency = Agency::find($agencyId);
                                 $fail("Agency '{$agency->name}' is not applicable to '{$classification}' classification.");
@@ -104,7 +113,7 @@ class BeneficiaryRequest extends FormRequest
                     }
 
                     // Legacy hardcoded validation for backward compatibility
-                    $selectedAgencies = Agency::whereIn('id', $value)
+                    $selectedAgencies = Agency::whereIn('id', $agencyIds)
                         ->pluck('name')
                         ->map(fn($n) => strtoupper($n))
                         ->toArray();
@@ -118,7 +127,8 @@ class BeneficiaryRequest extends FormRequest
                     }
                 }
             ],
-            'agencies.*'       => ['required', 'integer', 'exists:agencies,id'],
+            // agencies.* validation is not needed - nested array structure validates agency IDs via the key extraction above
+            // Each nested agency object with its form fields is validated in the dynamic fields section below
 
             // Common fields per reference document
             'first_name'       => ['required', 'string', 'max:100'],
@@ -295,9 +305,10 @@ class BeneficiaryRequest extends FormRequest
                     // Required field: must have value OR unavailability reason
                     $rules[$inputKey] = ['nullable', $this->getFieldTypeValidation($field)];
                     $rules[$reasonKey] = ['nullable', 'string', 'max:500'];
-                    $rules[$hasValueKey] = ['required_if:' . str_replace('.', '_', $inputKey) . ',*', 'in:yes,no'];
+                    // Toggle field is always required for required fields - must be "yes" or "no"
+                    $rules[$hasValueKey] = ['required', 'in:yes,no'];
 
-                    // Will be validated in withValidator() or messages()
+                    // Will be validated in withValidator() hook
                 } else {
                     // Optional field: just validate the field type if provided
                     $rules[$inputKey] = ['nullable', $this->getFieldTypeValidation($field)];
@@ -331,10 +342,10 @@ class BeneficiaryRequest extends FormRequest
             ->all();
 
         // Build agency-classification context for custom field visibility
-        $selectedAgencyNames = $selectedAgencies->pluck('name')->map(fn($n) => strtoupper($n))->toArray();
-        $hasDa = in_array('DA', $selectedAgencyNames, true);
-        $hasBfar = in_array('BFAR', $selectedAgencyNames, true);
-        $hasDar = in_array('DAR', $selectedAgencyNames, true);
+        $selectedAgencyNames = $selectedAgencies ? $selectedAgencies->pluck('name')->map(fn($n) => strtoupper($n))->toArray() : [];
+        $hasDa = in_array('DA', $selectedAgencyNames ?? [], true);
+        $hasBfar = in_array('BFAR', $selectedAgencyNames ?? [], true);
+        $hasDar = in_array('DAR', $selectedAgencyNames ?? [], true);
         $isFarmer = $classification === 'Farmer';
         $isFisherfolk = $classification === 'Fisherfolk';
 
@@ -583,7 +594,9 @@ class BeneficiaryRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            $selectedAgencyIds = (array) $this->input('agencies', []);
+            $agencyData = (array) $this->input('agencies', []);
+            // Extract agency IDs from nested array structure (agencies[id][fieldName])
+            $selectedAgencyIds = is_array($agencyData) ? array_keys($agencyData) : [];
             $selectedAgencies = \App\Models\Agency::whereIn('id', $selectedAgencyIds)->get();
 
             foreach ($selectedAgencies as $agency) {
