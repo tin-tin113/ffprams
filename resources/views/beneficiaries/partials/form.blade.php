@@ -366,7 +366,254 @@
     </div>
 </div>
 
-{{-- SECTION 3 — Dynamic Agency Form Fields --}}
+{{-- SECTION 3 — Farmer Information (DA/RSBSA) --}}
+<div class="card border-0 shadow-sm mb-4" id="farmer-info-section" style="display: none;">
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-leaf me-1"></i> DA/RSBSA Information (Farmer)</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                <label for="rsbsa_number" class="form-label">RSBSA Number</label>
+                <input type="text" class="form-control @error('rsbsa_number') is-invalid @enderror"
+                       id="rsbsa_number" name="rsbsa_number" maxlength="50"
+                       value="{{ old('rsbsa_number', $beneficiary->rsbsa_number ?? '') }}">
+                @error('rsbsa_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="farm_ownership" class="form-label">Farm Ownership</label>
+                <select class="form-select @error('farm_ownership') is-invalid @enderror" id="farm_ownership" name="farm_ownership">
+                    <option value="">Select...</option>
+                    @foreach($fieldOptions['farm_ownership'] ?? ['Registered Owner', 'Tenant', 'Lessee', 'Owner', 'Share Tenant'] as $option)
+                        @php
+                            if (is_object($option)) {
+                                $label = (string) ($option->label ?? $option->value ?? '');
+                                $value = (string) ($option->value ?? $option->label ?? '');
+                            } elseif (is_array($option)) {
+                                $label = (string) ($option['label'] ?? $option['value'] ?? '');
+                                $value = (string) ($option['value'] ?? $option['label'] ?? '');
+                            } else {
+                                $label = (string) $option;
+                                $value = (string) $option;
+                            }
+                        @endphp
+                        <option value="{{ $value }}" {{ old('farm_ownership', $beneficiary->farm_ownership ?? '') === $value ? 'selected' : '' }}>
+                            {{ $label }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('farm_ownership')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="farm_size_hectares" class="form-label">Farm Size (Hectares)</label>
+                <input type="number" class="form-control @error('farm_size_hectares') is-invalid @enderror"
+                       id="farm_size_hectares" name="farm_size_hectares" step="0.01" min="0"
+                       value="{{ old('farm_size_hectares', $beneficiary->farm_size_hectares ?? '') }}">
+                @error('farm_size_hectares')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="primary_commodity" class="form-label">Primary Commodity</label>
+                <input type="text" class="form-control @error('primary_commodity') is-invalid @enderror"
+                       id="primary_commodity" name="primary_commodity" maxlength="255"
+                       value="{{ old('primary_commodity', $beneficiary->primary_commodity ?? '') }}">
+                @error('primary_commodity')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="farm_type" class="form-label">Farm Type</label>
+                <select class="form-select @error('farm_type') is-invalid @enderror" id="farm_type" name="farm_type">
+                    <option value="">Select...</option>
+                    @foreach($fieldOptions['farm_type'] ?? ['Irrigated', 'Rainfed Upland', 'Rainfed Lowland', 'Upland'] as $option)
+                        @php
+                            if (is_object($option)) {
+                                $label = (string) ($option->label ?? $option->value ?? '');
+                                $value = (string) ($option->value ?? $option->label ?? '');
+                            } elseif (is_array($option)) {
+                                $label = (string) ($option['label'] ?? $option['value'] ?? '');
+                                $value = (string) ($option['value'] ?? $option['label'] ?? '');
+                            } else {
+                                $label = (string) $option;
+                                $value = (string) $option;
+                            }
+                        @endphp
+                        <option value="{{ $value }}" {{ old('farm_type', $beneficiary->farm_type ?? '') === $value ? 'selected' : '' }}>
+                            {{ $label }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('farm_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="organization_membership" class="form-label">Organization Membership</label>
+                <input type="text" class="form-control @error('organization_membership') is-invalid @enderror"
+                       id="organization_membership" name="organization_membership" maxlength="255"
+                       value="{{ old('organization_membership', $beneficiary->organization_membership ?? '') }}">
+                @error('organization_membership')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- SECTION 4 — Fisherfolk Information --}}
+<div class="card border-0 shadow-sm mb-4" id="fisherfolk-info-section" style="display: none;">
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-water me-1"></i> Fisherfolk Information</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                <label for="fishr_number" class="form-label">FishR Number</label>
+                <input type="text" class="form-control @error('fishr_number') is-invalid @enderror"
+                       id="fishr_number" name="fishr_number" maxlength="50"
+                       value="{{ old('fishr_number', $beneficiary->fishr_number ?? '') }}">
+                @error('fishr_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="fisherfolk_type" class="form-label">Fisherfolk Type</label>
+                <select class="form-select @error('fisherfolk_type') is-invalid @enderror" id="fisherfolk_type" name="fisherfolk_type">
+                    <option value="">Select...</option>
+                    @foreach($fieldOptions['fisherfolk_type'] ?? ['Capture Fishing', 'Aquaculture', 'Post-Harvest', 'Fish Farming', 'Fish Vendor', 'Fish Worker'] as $option)
+                        @php
+                            if (is_object($option)) {
+                                $label = (string) ($option->label ?? $option->value ?? '');
+                                $value = (string) ($option->value ?? $option->label ?? '');
+                            } elseif (is_array($option)) {
+                                $label = (string) ($option['label'] ?? $option['value'] ?? '');
+                                $value = (string) ($option['value'] ?? $option['label'] ?? '');
+                            } else {
+                                $label = (string) $option;
+                                $value = (string) $option;
+                            }
+                        @endphp
+                        <option value="{{ $value }}" {{ old('fisherfolk_type', $beneficiary->fisherfolk_type ?? '') === $value ? 'selected' : '' }}>
+                            {{ $label }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('fisherfolk_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="main_fishing_gear" class="form-label">Main Fishing Gear</label>
+                <input type="text" class="form-control @error('main_fishing_gear') is-invalid @enderror"
+                       id="main_fishing_gear" name="main_fishing_gear" maxlength="255"
+                       value="{{ old('main_fishing_gear', $beneficiary->main_fishing_gear ?? '') }}">
+                @error('main_fishing_gear')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="length_of_residency_months" class="form-label">Length of Residency (Months) <span class="text-danger">*</span></label>
+                <input type="number" class="form-control @error('length_of_residency_months') is-invalid @enderror"
+                       id="length_of_residency_months" name="length_of_residency_months" min="0"
+                       value="{{ old('length_of_residency_months', $beneficiary->length_of_residency_months ?? '') }}">
+                <small class="text-muted">At least 6 months per RA 8550</small>
+                @error('length_of_residency_months')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-12">
+                <div class="form-check form-switch">
+                    <input type="hidden" name="has_fishing_vessel" value="0">
+                    <input type="checkbox" class="form-check-input" id="has_fishing_vessel" name="has_fishing_vessel" value="1"
+                           {{ old('has_fishing_vessel', $beneficiary->has_fishing_vessel ?? false) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="has_fishing_vessel">Has Fishing Vessel</label>
+                </div>
+            </div>
+            <div class="col-12 col-md-6" id="vessel-type-wrapper" style="display: none;">
+                <label for="fishing_vessel_type" class="form-label">Fishing Vessel Type</label>
+                <input type="text" class="form-control @error('fishing_vessel_type') is-invalid @enderror"
+                       id="fishing_vessel_type" name="fishing_vessel_type" maxlength="255"
+                       value="{{ old('fishing_vessel_type', $beneficiary->fishing_vessel_type ?? '') }}">
+                @error('fishing_vessel_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-12 col-md-6" id="vessel-tonnage-wrapper" style="display: none;">
+                <label for="fishing_vessel_tonnage" class="form-label">Fishing Vessel Tonnage</label>
+                <input type="number" class="form-control @error('fishing_vessel_tonnage') is-invalid @enderror"
+                       id="fishing_vessel_tonnage" name="fishing_vessel_tonnage" step="0.01" min="0"
+                       value="{{ old('fishing_vessel_tonnage', $beneficiary->fishing_vessel_tonnage ?? '') }}">
+                @error('fishing_vessel_tonnage')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- SECTION 5 — DAR Information --}}
+<div class="card border-0 shadow-sm mb-4" id="dar-info-section" style="display: none;">
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-file-earmark-text me-1"></i> DAR/ARB Information</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                <label for="cloa_ep_number" class="form-label">CLOA/EP Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control @error('cloa_ep_number') is-invalid @enderror"
+                       id="cloa_ep_number" name="cloa_ep_number" maxlength="100"
+                       value="{{ old('cloa_ep_number', $beneficiary->cloa_ep_number ?? '') }}">
+                @error('cloa_ep_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="arb_classification" class="form-label">ARB Classification</label>
+                <select class="form-select @error('arb_classification') is-invalid @enderror" id="arb_classification" name="arb_classification">
+                    <option value="">Select...</option>
+                    @foreach($fieldOptions['arb_classification'] ?? ['Agricultural Lessee', 'Regular Farmworker', 'Seasonal Farmworker', 'Other Farmworker', 'Actual Tiller', 'Collective/Cooperative', 'Others'] as $option)
+                        @php
+                            if (is_object($option)) {
+                                $label = (string) ($option->label ?? $option->value ?? '');
+                                $value = (string) ($option->value ?? $option->label ?? '');
+                            } elseif (is_array($option)) {
+                                $label = (string) ($option['label'] ?? $option['value'] ?? '');
+                                $value = (string) ($option['value'] ?? $option['label'] ?? '');
+                            } else {
+                                $label = (string) $option;
+                                $value = (string) $option;
+                            }
+                        @endphp
+                        <option value="{{ $value }}" {{ old('arb_classification', $beneficiary->arb_classification ?? '') === $value ? 'selected' : '' }}>
+                            {{ $label }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('arb_classification')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-12">
+                <label for="landholding_description" class="form-label">Landholding Description <span class="text-danger">*</span></label>
+                <textarea class="form-control @error('landholding_description') is-invalid @enderror"
+                          id="landholding_description" name="landholding_description" rows="3" maxlength="1000"
+                          placeholder="Describe the landholding...">{{ old('landholding_description', $beneficiary->landholding_description ?? '') }}</textarea>
+                @error('landholding_description')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="land_area_awarded_hectares" class="form-label">Land Area Awarded (Hectares) <span class="text-danger">*</span></label>
+                <input type="number" class="form-control @error('land_area_awarded_hectares') is-invalid @enderror"
+                       id="land_area_awarded_hectares" name="land_area_awarded_hectares" step="0.01" min="0"
+                       value="{{ old('land_area_awarded_hectares', $beneficiary->land_area_awarded_hectares ?? '') }}">
+                @error('land_area_awarded_hectares')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="ownership_scheme" class="form-label">Ownership Scheme</label>
+                <select class="form-select @error('ownership_scheme') is-invalid @enderror" id="ownership_scheme" name="ownership_scheme">
+                    <option value="">Select...</option>
+                    @foreach($fieldOptions['ownership_scheme'] ?? ['Individual', 'Collective', 'Cooperative'] as $option)
+                        @php
+                            if (is_object($option)) {
+                                $label = (string) ($option->label ?? $option->value ?? '');
+                                $value = (string) ($option->value ?? $option->label ?? '');
+                            } elseif (is_array($option)) {
+                                $label = (string) ($option['label'] ?? $option['value'] ?? '');
+                                $value = (string) ($option['value'] ?? $option['label'] ?? '');
+                            } else {
+                                $label = (string) $option;
+                                $value = (string) $option;
+                            }
+                        @endphp
+                        <option value="{{ $value }}" {{ old('ownership_scheme', $beneficiary->ownership_scheme ?? '') === $value ? 'selected' : '' }}>
+                            {{ $label }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('ownership_scheme')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="barc_membership_status" class="form-label">BARC Membership Status</label>
+                <input type="text" class="form-control @error('barc_membership_status') is-invalid @enderror"
+                       id="barc_membership_status" name="barc_membership_status" maxlength="100"
+                       value="{{ old('barc_membership_status', $beneficiary->barc_membership_status ?? '') }}">
+                @error('barc_membership_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- SECTION 6 — Dynamic Agency Form Fields --}}
 <div id="dynamic-agencies-container">
     {{-- Will be populated by JavaScript based on selected agencies --}}
 </div>
@@ -403,512 +650,87 @@
     </button>
     <a href="{{ route('beneficiaries.index') }}" class="btn btn-outline-secondary">Cancel</a>
 </div>
-
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const agencyCheckboxesContainer = document.getElementById('agency-checkboxes');
-    const classification = document.getElementById('classification');
-    const daFarmerSection = document.getElementById('da-farmer-section');
-    const daFisherfolkSection = document.getElementById('da-fisherfolk-section');
-    const bfarSection = document.getElementById('bfar-section');
-    const darSection = document.getElementById('dar-section');
+    const classificationSelect = document.getElementById('classification');
+    const agencyCheckboxes = document.getElementById('agency-checkboxes');
+    const farmerSection = document.getElementById('farmer-info-section');
+    const fisherfolkSection = document.getElementById('fisherfolk-info-section');
+    const darSection = document.getElementById('dar-info-section');
     const associationCheckbox = document.getElementById('association_member');
     const associationWrapper = document.getElementById('association-name-wrapper');
     const hasVesselCheckbox = document.getElementById('has_fishing_vessel');
     const vesselTypeWrapper = document.getElementById('vessel-type-wrapper');
     const vesselTonnageWrapper = document.getElementById('vessel-tonnage-wrapper');
 
-    // Beneficiary data for edit mode
-    @php
-        $selectedAgencyIds = [];
-        if ($editing && $beneficiary->id) {
-            $selectedAgencyIds = $beneficiary->agencies()->pluck('agencies.id')->toArray();
-            if (empty($selectedAgencyIds) && $beneficiary->agency_id) {
-                $selectedAgencyIds = [$beneficiary->agency_id];
+    function updateSections() {
+        const classification = classificationSelect.value;
+        const selectedAgencies = Array.from(document.querySelectorAll('#agency-checkboxes .agency-checkbox:checked'))
+            .map(cb => cb.dataset.agencyName.toUpperCase());
+
+        // Hide all sections first
+        farmerSection.style.display = 'none';
+        fisherfolkSection.style.display = 'none';
+        darSection.style.display = 'none';
+
+        // Show sections based on classification and selected agencies
+        if (classification === 'Farmer') {
+            if (selectedAgencies.includes('DA')) {
+                farmerSection.style.display = 'block';
+            }
+            if (selectedAgencies.includes('DAR')) {
+                darSection.style.display = 'block';
+            }
+        } else if (classification === 'Fisherfolk') {
+            if (selectedAgencies.includes('DA') || selectedAgencies.includes('BFAR')) {
+                fisherfolkSection.style.display = 'block';
             }
         }
 
-        $agencyLookup = [];
-        foreach (($agencies ?? collect()) as $agency) {
-            $name = strtoupper((string) $agency->name);
-            if ($name === '') {
-                continue;
-            }
-
-            $agencyLookup[$name] = [
-                'id' => (int) $agency->id,
-                'name' => $name,
-                'full_name' => (string) $agency->full_name,
-            ];
-        }
-    @endphp
-    const selectedAgencyIds = {{ json_encode($selectedAgencyIds) }};
-    const agencyLookup = @json($agencyLookup);
-
-    const conditionalRequirements = {
-        farmOwnership: @json($farmOwnershipRequired),
-        farmType: @json($farmTypeRequired),
-        fisherfolkType: @json($fisherfolkTypeRequired),
-        arbClassification: @json($arbClassificationRequired),
-        ownershipScheme: @json($ownershipSchemeRequired)
-    };
-
-    let selectedAgencyIdSet = new Set((selectedAgencyIds || []).map(function (id) {
-        return Number(id);
-    }).filter(function (id) {
-        return Number.isFinite(id);
-    }));
-
-    function formatAgencyLabel(agencyName, fullName) {
-        if (agencyName === 'DA') {
-            return 'DA (Department of Agriculture - RSBSA)';
-        }
-
-        if (agencyName === 'BFAR') {
-            return 'BFAR (Bureau of Fisheries & Aquatic Resources)';
-        }
-
-        if (agencyName === 'DAR') {
-            return 'DAR (Department of Agrarian Reform)';
-        }
-
-        return agencyName + ' (' + (fullName || agencyName) + ')';
-    }
-
-    function resolveAgencyConfig(agencyName) {
-        const agency = agencyLookup[agencyName];
-        if (!agency) {
-            return null;
-        }
-
-        return {
-            id: Number(agency.id),
-            name: agency.name,
-            label: formatAgencyLabel(agency.name, agency.full_name)
-        };
-    }
-
-    // Agency mapping based on classification
-    const agencyMap = {
-        'Farmer': ['DA', 'DAR'].map(resolveAgencyConfig).filter(Boolean),
-        'Fisherfolk': ['DA', 'BFAR'].map(resolveAgencyConfig).filter(Boolean)
-    };
-
-    function syncSelectedAgencyIdsFromDom() {
-        const existingCheckboxes = document.querySelectorAll('input[name="agencies[]"]');
-        if (!existingCheckboxes.length) {
-            return;
-        }
-
-        selectedAgencyIdSet = new Set(Array.from(existingCheckboxes)
-            .filter(function (checkbox) {
-                return checkbox.checked;
-            })
-            .map(function (checkbox) {
-                return Number(checkbox.value);
-            })
-            .filter(function (id) {
-                return Number.isFinite(id);
-            }));
-    }
-
-    function updateAgencySelectionValidity() {
-        const agencyCheckboxes = document.querySelectorAll('input[name="agencies[]"]');
-        if (!agencyCheckboxes.length) {
-            return;
-        }
-
-        const hasSelection = Array.from(agencyCheckboxes).some(function (checkbox) {
-            return checkbox.checked;
-        });
-
-        agencyCheckboxes.forEach(function (checkbox) {
-            checkbox.setCustomValidity(hasSelection ? '' : 'Select at least one source agency.');
-        });
-    }
-
-    function setFieldRequired(fieldName, shouldRequire) {
-        document.querySelectorAll('[name="' + fieldName + '"]').forEach(function (field) {
-            if (field.type === 'hidden') {
-                return;
-            }
-
-            field.required = shouldRequire;
-            if (!shouldRequire) {
-                field.setCustomValidity('');
-            }
-        });
-    }
-
-    // Populate agency checkboxes based on classification
-    function updateAgencyCheckboxes() {
-        syncSelectedAgencyIdsFromDom();
-
-        const classVal = classification.value;
-        agencyCheckboxesContainer.innerHTML = '';
-
-        const agencies = agencyMap[classVal] || [];
-
-        if (!agencies.length) {
-            toggleSections();
-            return;
-        }
-
-        agencies.forEach(agency => {
-            const checkbox = document.createElement('div');
-            checkbox.className = 'form-check mb-2';
-            const isChecked = selectedAgencyIdSet.has(agency.id);
-            checkbox.innerHTML = `
-                <input class="form-check-input agency-checkbox"
-                       type="checkbox"
-                       id="agency_${agency.id}"
-                       name="agencies[]"
-                       value="${agency.id}"
-                       data-agency-name="${agency.name}"
-                       ${isChecked ? 'checked' : ''}>
-                <label class="form-check-label" for="agency_${agency.id}">
-                    ${agency.label}
-                </label>
-            `;
-            agencyCheckboxesContainer.appendChild(checkbox);
-
-            // Add event listener to checkboxes
-            checkbox.querySelector('.agency-checkbox').addEventListener('change', function (event) {
-                const agencyId = Number(event.target.value);
-                if (event.target.checked) {
-                    selectedAgencyIdSet.add(agencyId);
-                } else {
-                    selectedAgencyIdSet.delete(agencyId);
-                }
-
-                toggleSections();
-                renderDynamicAgencyFields();
-            });
-        });
-
-        toggleSections();
-        renderDynamicAgencyFields();
-    }
-
-    // Show/hide sections based on selected agencies and classification
-    function toggleSections() {
-        const agencyCheckboxes = document.querySelectorAll('input[name="agencies[]"]:checked');
-        const selectedAgencies = Array.from(agencyCheckboxes).map(cb => cb.dataset.agencyName.toUpperCase());
-        const classVal = classification.value;
-        const hasDa = selectedAgencies.includes('DA');
-        const hasBfar = selectedAgencies.includes('BFAR');
-        const hasDar = selectedAgencies.includes('DAR');
-        const isFarmer = classVal === 'Farmer';
-        const isFisherfolk = classVal === 'Fisherfolk';
-
-        // Show DA Farmer section for DA farmers and DAR farmers to keep custom field visibility aligned.
-        if (daFarmerSection) {
-            daFarmerSection.style.display = (isFarmer && (hasDa || hasDar)) ? '' : 'none';
-        }
-
-        // Show shared Fisherfolk section if: Fisherfolk classification AND (DA OR BFAR checked)
-        const sharedFisherfolkSection = document.getElementById('shared-fisherfolk-section');
-        if (sharedFisherfolkSection) {
-            const showShared = isFisherfolk && (hasDa || hasBfar);
-            sharedFisherfolkSection.style.display = showShared ? '' : 'none';
-        }
-
-        // Show DA Fisherfolk section if: Fisherfolk classification AND DA checked (RSBSA number only)
-        if (daFisherfolkSection) {
-            daFisherfolkSection.style.display = (isFisherfolk && hasDa) ? '' : 'none';
-        }
-
-        // Show BFAR section if: Fisherfolk classification AND BFAR checked (FishR number only)
-        if (bfarSection) {
-            bfarSection.style.display = (isFisherfolk && hasBfar) ? '' : 'none';
-        }
-
-        // Show DAR section if: DAR checked (independent of classification)
-        if (darSection) {
-            darSection.style.display = hasDar ? '' : 'none';
-        }
-
-        updateAgencySelectionValidity();
-
-        // Update required attributes to match server-side validation.
-        updateRequiredFields(selectedAgencies, classVal);
-    }
-
-    // Update required attributes based on visible sections
-    function updateRequiredFields(selectedAgencies, classVal) {
-        const hasDa = selectedAgencies.includes('DA');
-        const hasBfar = selectedAgencies.includes('BFAR');
-        const hasDar = selectedAgencies.includes('DAR');
-        const isFarmer = classVal === 'Farmer';
-        const isFisherfolk = classVal === 'Fisherfolk';
-        const showSharedFisherfolk = isFisherfolk && (hasDa || hasBfar);
-
-        setFieldRequired('farm_ownership', conditionalRequirements.farmOwnership && hasDa && isFarmer);
-        setFieldRequired('farm_size_hectares', hasDa && isFarmer);
-        setFieldRequired('primary_commodity', hasDa && isFarmer);
-        setFieldRequired('farm_type', conditionalRequirements.farmType && hasDa && isFarmer);
-
-        setFieldRequired('fisherfolk_type', conditionalRequirements.fisherfolkType && showSharedFisherfolk);
-        setFieldRequired('length_of_residency_months', showSharedFisherfolk);
-
-        setFieldRequired('cloa_ep_number', hasDar);
-        setFieldRequired('arb_classification', conditionalRequirements.arbClassification && hasDar);
-        setFieldRequired('landholding_description', hasDar);
-        setFieldRequired('land_area_awarded_hectares', hasDar);
-        setFieldRequired('ownership_scheme', conditionalRequirements.ownershipScheme && hasDar);
-
-        document.querySelectorAll('[data-custom-placement]').forEach((field) => {
-            const configuredRequired = field.dataset.customRequired === '1';
-            const placement = field.dataset.customPlacement;
-
-            let shouldRequire = false;
-
-            if (configuredRequired) {
-                if (placement === 'farmer_information') {
-                    shouldRequire = (hasDa && isFarmer) || hasDar;
-                } else if (placement === 'fisherfolk_information') {
-                    shouldRequire = (hasDa && isFisherfolk) || hasBfar;
-                } else if (placement === 'dar_information') {
-                    shouldRequire = hasDar;
-                } else {
-                    shouldRequire = true;
-                }
-            }
-
-            field.required = shouldRequire;
-            if (!shouldRequire) {
-                field.setCustomValidity('');
-            }
-        });
-    }
-
-    // Fetch and render dynamic agency form fields
-    async function renderDynamicAgencyFields() {
-        const checkedAgencies = document.querySelectorAll('input[name="agencies[]"]:checked');
-        const container = document.getElementById('dynamic-agencies-container');
-
-        if (!checkedAgencies.length) {
-            container.innerHTML = '';
-            return;
-        }
-
-        const agencyIds = Array.from(checkedAgencies).map(cb => cb.value);
-        const url = `/api/agencies/form-fields?agencies=${agencyIds.join(',')}`;
-
-        console.log('Fetching agency form fields from:', url);
-
-        try {
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-
-            console.log('API Response Status:', response.status);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error(`API Error (${response.status}):`, errorText);
-                throw new Error(`API returned ${response.status}: ${errorText.substring(0, 100)}`);
-            }
-
-            const agenciesData = await response.json();
-            console.log('API Response Data:', agenciesData);
-            let html = '';
-
-            // Group fields by agency
-            for (const agency of agenciesData) {
-                if (!agency.form_fields || agency.form_fields.length === 0) continue;
-
-                // Group fields by form_section
-                const fieldsBySection = {};
-                agency.form_fields.forEach(field => {
-                    const section = field.form_section || 'general_information';
-                    if (!fieldsBySection[section]) fieldsBySection[section] = [];
-                    fieldsBySection[section].push(field);
-                });
-
-                // Render agency card with sections
-                html += `<div class="card border-0 shadow-sm mb-4">
-                    <div class="card-header bg-white fw-semibold">
-                        <i class="bi bi-building me-1"></i> ${agency.full_name || agency.name}
-                    </div>
-                    <div class="card-body">`;
-
-                // Render each section
-                for (const [section, fields] of Object.entries(fieldsBySection)) {
-                    html += `<div class="mb-4">
-                        <h6 class="text-muted text-uppercase small mb-3">
-                            ${section.replace(/_/g, ' ')}
-                        </h6>
-                        <div class="row g-3">`;
-
-                    // Render each field - simplified inline
-                    fields.forEach(field => {
-                        html += renderDynamicField(agency.id, field);
-                    });
-
-                    html += `</div></div>`;
-                }
-
-                html += `</div></div>`;
-            }
-
-            container.innerHTML = html;
-
-            // Attach event listeners to "I have it / I don't have it" radios
-            attachFieldAvailabilityListeners();
-        } catch (error) {
-            console.error('Error rendering dynamic fields:', error);
-            const errorMsg = error.message || error.toString();
-            container.innerHTML = `<div class="alert alert-warning">
-                <strong>Unable to load agency form fields:</strong><br>
-                <small>${errorMsg}</small><br>
-                <small class="text-muted">Check browser console (F12) for more details</small>
-            </div>`;
-        }
-    }
-
-    function renderDynamicField(agencyId, field) {
-        const fieldName = field.field_name;
-        const displayLabel = field.display_label;
-        const fieldType = field.field_type;
-        const isRequired = field.is_required;
-        const helpText = field.help_text || '';
-
-        const inputName = `agencies[${agencyId}][${fieldName}]`;
-        const reasonName = `agencies[${agencyId}][${fieldName}_unavailability_reason]`;
-        const hasValueName = `agencies[${agencyId}][${fieldName}_has_value]`;
-
-        let fieldHtml = `<div class="col-12 col-md-4">`;
-
-        if (isRequired) {
-            fieldHtml += `<div class="form-group mb-3">
-                <label class="form-label">
-                    ${displayLabel} <span class="text-danger">*</span>
-                </label>
-                ${helpText ? `<small class="d-block text-muted mb-2">${helpText}</small>` : ''}
-                <div class="btn-group d-block mb-3" role="group">
-                    <div class="form-check form-check-inline">
-                        <input type="radio" class="form-check-input field-availability-radio"
-                               id="field_${agencyId}_${fieldName}_yes"
-                               name="${hasValueName}" value="yes"
-                               data-field-id="${agencyId}-${fieldName}">
-                        <label class="form-check-label" for="field_${agencyId}_${fieldName}_yes">
-                            I have it
-                        </label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input type="radio" class="form-check-input field-availability-radio"
-                               id="field_${agencyId}_${fieldName}_no"
-                               name="${hasValueName}" value="no"
-                               data-field-id="${agencyId}-${fieldName}">
-                        <label class="form-check-label" for="field_${agencyId}_${fieldName}_no">
-                            I don't have it
-                        </label>
-                    </div>
-                </div>
-
-                <div id="field-input-${agencyId}-${fieldName}" class="field-input-container" style="display: none;">
-                    ${renderFieldInput(fieldName, fieldType, inputName, field.options || [])}
-                </div>
-
-                <div id="field-reason-${agencyId}-${fieldName}" class="field-reason-container" style="display: none;">
-                    <textarea class="form-control" name="${reasonName}" rows="2"
-                              placeholder="Please provide reason for unavailability..."></textarea>
-                </div>
-            </div>`;
-        } else {
-            fieldHtml += `<div class="form-group mb-3">
-                <label class="form-label">${displayLabel}</label>
-                ${helpText ? `<small class="d-block text-muted mb-2">${helpText}</small>` : ''}
-                ${renderFieldInput(fieldName, fieldType, inputName, field.options || [])}
-            </div>`;
-        }
-
-        fieldHtml += `</div>`;
-        return fieldHtml;
-    }
-
-    function renderFieldInput(fieldName, fieldType, inputName, options) {
-        let input = '';
-
-        if (fieldType === 'text') {
-            input = `<input type="text" class="form-control" name="${inputName}">`;
-        } else if (fieldType === 'textarea') {
-            input = `<textarea class="form-control" name="${inputName}" rows="3"></textarea>`;
-        } else if (fieldType === 'number') {
-            input = `<input type="number" class="form-control" name="${inputName}">`;
-        } else if (fieldType === 'decimal') {
-            input = `<input type="number" step="0.01" class="form-control" name="${inputName}">`;
-        } else if (fieldType === 'date') {
-            input = `<input type="date" class="form-control" name="${inputName}">`;
-        } else if (fieldType === 'datetime') {
-            input = `<input type="datetime-local" class="form-control" name="${inputName}">`;
-        } else if (fieldType === 'dropdown') {
-            input = `<select class="form-select" name="${inputName}">
-                <option value="">Select...</option>
-                ${options.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('')}
-            </select>`;
-        } else if (fieldType === 'checkbox') {
-            input = `<div class="checkbox-group">
-                ${options.map((opt, idx) => `<div class="form-check">
-                    <input type="checkbox" class="form-check-input" id="${inputName}_${idx}"
-                           name="${inputName}[]" value="${opt.value}">
-                    <label class="form-check-label" for="${inputName}_${idx}">
-                        ${opt.label}
-                    </label>
-                </div>`).join('')}
-            </div>`;
-        }
-
-        return input;
-    }
-
-    function attachFieldAvailabilityListeners() {
-        document.querySelectorAll('.field-availability-radio').forEach(radio => {
-            radio.addEventListener('change', function() {
-                const fieldId = this.dataset.fieldId;
-                const inputContainer = document.getElementById(`field-input-${fieldId}`);
-                const reasonContainer = document.getElementById(`field-reason-${fieldId}`);
-
-                if (this.value === 'yes') {
-                    inputContainer.style.display = 'block';
-                    reasonContainer.style.display = 'none';
-                } else {
-                    inputContainer.style.display = 'none';
-                    reasonContainer.style.display = 'block';
-                }
-            });
-        });
+        console.log('Updated sections - Classification:', classification, 'Agencies:', selectedAgencies);
     }
 
     function toggleAssociation() {
-        associationWrapper.style.display = associationCheckbox.checked ? '' : 'none';
-
-        const associationNameField = document.getElementById('association_name');
-        if (associationNameField) {
-            associationNameField.required = associationCheckbox.checked;
-            if (!associationCheckbox.checked) {
-                associationNameField.setCustomValidity('');
+        if (associationWrapper) {
+            associationWrapper.style.display = associationCheckbox.checked ? '' : 'none';
+            const associationNameField = document.getElementById('association_name');
+            if (associationNameField) {
+                associationNameField.required = associationCheckbox.checked;
+                if (!associationCheckbox.checked) {
+                    associationNameField.setCustomValidity('');
+                }
             }
         }
     }
 
     function toggleVesselFields() {
-        const show = hasVesselCheckbox.checked;
-        vesselTypeWrapper.style.display = show ? '' : 'none';
-        vesselTonnageWrapper.style.display = show ? '' : 'none';
+        if (hasVesselCheckbox && vesselTypeWrapper && vesselTonnageWrapper) {
+            const show = hasVesselCheckbox.checked;
+            vesselTypeWrapper.style.display = show ? '' : 'none';
+            vesselTonnageWrapper.style.display = show ? '' : 'none';
+        }
     }
 
-    classification.addEventListener('change', updateAgencyCheckboxes);
-    associationCheckbox.addEventListener('change', toggleAssociation);
+    // Event listeners
+    if (classificationSelect) {
+        classificationSelect.addEventListener('change', updateSections);
+    }
+
+    if (agencyCheckboxes) {
+        agencyCheckboxes.addEventListener('change', updateSections);
+    }
+
+    if (associationCheckbox) {
+        associationCheckbox.addEventListener('change', toggleAssociation);
+    }
+
     if (hasVesselCheckbox) {
         hasVesselCheckbox.addEventListener('change', toggleVesselFields);
     }
 
     // Initial setup
-    updateAgencyCheckboxes();
+    updateSections();
     toggleAssociation();
     toggleVesselFields();
 });
