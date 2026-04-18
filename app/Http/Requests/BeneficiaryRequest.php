@@ -82,14 +82,33 @@ class BeneficiaryRequest extends FormRequest
             // Multiple agencies (multi-select)
             'agencies'         => [
                 'required', 'array', 'min:1',
-                function ($attribute, $value, $fail) {
-                    $classification = $this->input('classification');
+                function ($attribute, $value, $fail) use ($classification) {
+                    if (! $classification) {
+                        return; // Will fail on classification required rule first
+                    }
+
+                    // Dynamic agency-classification validation using new system
+                    $classificationModel = \App\Models\Classification::where('name', $classification)->first();
+                    if ($classificationModel) {
+                        $validAgencyIds = $classificationModel->agencies()
+                            ->where('is_active', true)
+                            ->pluck('agencies.id')
+                            ->toArray();
+
+                        foreach ($value as $agencyId) {
+                            if (! in_array($agencyId, $validAgencyIds)) {
+                                $agency = Agency::find($agencyId);
+                                $fail("Agency '{$agency->name}' is not applicable to '{$classification}' classification.");
+                            }
+                        }
+                    }
+
+                    // Legacy hardcoded validation for backward compatibility
                     $selectedAgencies = Agency::whereIn('id', $value)
                         ->pluck('name')
                         ->map(fn($n) => strtoupper($n))
                         ->toArray();
 
-                    // Validate agency-classification compatibility
                     if ($classification === 'Farmer' && in_array('BFAR', $selectedAgencies)) {
                         $fail('BFAR (Bureau of Fisheries) cannot be selected for Farmer classification.');
                     }
@@ -256,6 +275,54 @@ class BeneficiaryRequest extends FormRequest
         }
         if (!isset($rules['barc_membership_status'])) {
             $rules['barc_membership_status'] = ['nullable', 'string', 'max:100'];
+        }
+
+        // ===== DYNAMIC AGENCY FORM FIELDS VALIDATION =====
+        // Validate custom fields defined by each selected agency
+        foreach ($selectedAgencies as $agency) {
+            $agencyFormFields = $agency->formFields()->where('is_active', true)->get();
+
+            foreach ($agencyFormFields as $field) {
+                $fieldName = $field->field_name;
+                $agencyId = $agency->id;
+
+                // Fields from the form are in format: agencies[{agencyId}][{fieldName}]
+                $inputKey = "agencies.{$agencyId}.{$fieldName}";
+                $hasValueKey = "agencies.{$agencyId}.{$fieldName}_has_value";
+                $reasonKey = "agencies.{$agencyId}.{$fieldName}_unavailability_reason";
+
+                if ($field->is_required) {
+                    // Required field: must have value OR unavailability reason
+                    $rules[$inputKey] = ['nullable', $this->getFieldTypeValidation($field)];
+                    $rules[$reasonKey] = ['nullable', 'string', 'max:500'];
+                    $rules[$hasValueKey] = ['required_if:' . str_replace('.', '_', $inputKey) . ',*', 'in:yes,no'];
+
+                    // Will be validated in withValidator() or messages()
+                } else {
+                    // Optional field: just validate the field type if provided
+                    $rules[$inputKey] = ['nullable', $this->getFieldTypeValidation($field)];
+                }
+
+                // For dropdown/checkbox types, validate against options
+                if (in_array($field->field_type, ['dropdown', 'checkbox'])) {
+                    $optionValues = $field->options()
+                        ->where('is_active', true)
+                        ->pluck('value')
+                        ->toArray();
+
+                    if (! empty($optionValues)) {
+                        if ($field->field_type === 'checkbox') {
+                            // For checkbox: each item must be in options
+                            unset($rules[$inputKey]); // Remove generic rule
+                            $rules[$inputKey] = ['nullable', 'array'];
+                            $rules[$inputKey . '.*'] = ['in:' . implode(',', $optionValues)];
+                        } else {
+                            // For dropdown: single value must be in options
+                            $rules[$inputKey] = ['nullable', 'in:' . implode(',', $optionValues)];
+                        }
+                    }
+                }
+            }
         }
 
         // Custom field validation
@@ -492,6 +559,67 @@ class BeneficiaryRequest extends FormRequest
         }
 
         return (bool) ($settings[$fieldGroup]['is_required'] ?? $fallback);
+    }
+
+    /**
+     * Get validation rule for a dynamic form field based on its type
+     */
+    private function getFieldTypeValidation(\App\Models\AgencyFormField $field): string
+    {
+        return match ($field->field_type) {
+            'number' => 'integer',
+            'decimal' => 'numeric',
+            'date' => 'date',
+            'datetime' => 'date_time',
+            'dropdown' => 'string',
+            'checkbox' => 'array',
+            default => 'string',
+        };
+    }
+
+    /**
+     * Validate required dynamic fields with unavailability reason alternative
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $selectedAgencyIds = (array) $this->input('agencies', []);
+            $selectedAgencies = \App\Models\Agency::whereIn('id', $selectedAgencyIds)->get();
+
+            foreach ($selectedAgencies as $agency) {
+                $agencyFormFields = $agency->formFields()
+                    ->where('is_active', true)
+                    ->where('is_required', true)
+                    ->get();
+
+                foreach ($agencyFormFields as $field) {
+                    $fieldName = $field->field_name;
+                    $agencyId = $agency->id;
+
+                    $fieldValue = $this->input("agencies.{$agencyId}.{$fieldName}");
+                    $reasonValue = $this->input("agencies.{$agencyId}.{$fieldName}_unavailability_reason");
+                    $hasValue = $this->input("agencies.{$agencyId}.{$fieldName}_has_value");
+
+                    // Required field must have: value OR reason
+                    if ($hasValue !== 'yes' && $hasValue !== 'no') {
+                        $validator->errors()->add(
+                            "agencies.{$agencyId}.{$fieldName}_has_value",
+                            "Please specify whether you have {$field->display_label}."
+                        );
+                    } elseif ($hasValue === 'yes' && empty($fieldValue)) {
+                        $validator->errors()->add(
+                            "agencies.{$agencyId}.{$fieldName}",
+                            "{$field->display_label} is required when you selected 'I have it'."
+                        );
+                    } elseif ($hasValue === 'no' && empty($reasonValue)) {
+                        $validator->errors()->add(
+                            "agencies.{$agencyId}.{$fieldName}_unavailability_reason",
+                            "Please provide a reason for not having {$field->display_label}."
+                        );
+                    }
+                }
+            }
+        });
     }
 
 }

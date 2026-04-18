@@ -9,20 +9,23 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Update existing categories to match new simplified structure
+        // First modify the category column to allow string/text, then update values
+        Schema::table('assistance_purposes', function (Blueprint $table) {
+            $table->string('category')->change(); // Convert enum to string for flexibility
+        });
+
+        // Now update existing categories to match new simplified structure
         DB::table('assistance_purposes')->where('category', 'agricultural')->update(['category' => 'production']);
         DB::table('assistance_purposes')->where('category', 'fishery')->update(['category' => 'production']);
         DB::table('assistance_purposes')->whereIn('category', ['livelihood', 'medical'])->where('category', '!=', 'emergency')->update(['category' => 'livelihood']);
         DB::table('assistance_purposes')->where('category', 'other')->update(['category' => 'emergency']);
 
-        // Modify the category enum column
+        // Add type/subcategory column
         Schema::table('assistance_purposes', function (Blueprint $table) {
-            $table->string('category')->change(); // Convert enum to string for flexibility
-            $table->string('type')->nullable()->after('category'); // Add type/subcategory column
+            if (!Schema::hasColumn('assistance_purposes', 'type')) {
+                $table->string('type')->nullable()->after('category');
+            }
         });
-
-        // Re-add the enum constraint if you prefer - but string is more flexible
-        // Alternatively, you can keep it as string or change to enum('production', 'livelihood', 'emergency')
     }
 
     public function down(): void

@@ -52,6 +52,7 @@ class Beneficiary extends Model
         'primary_commodity',
         'farm_type',
         'organization_membership',
+        'rsbsa_unavailability_reason',
 
         // BFAR/FishR fields
         'fishr_number',
@@ -61,6 +62,7 @@ class Beneficiary extends Model
         'fishing_vessel_type',
         'fishing_vessel_tonnage',
         'length_of_residency_months',
+        'fishr_unavailability_reason',
 
         // DAR/ARB fields
         'cloa_ep_number',
@@ -69,21 +71,26 @@ class Beneficiary extends Model
         'land_area_awarded_hectares',
         'ownership_scheme',
         'barc_membership_status',
+        'cloa_ep_unavailability_reason',
+
+        // Custom fields
         'custom_fields',
+        'custom_field_unavailability_reasons',
     ];
 
     protected function casts(): array
     {
         return [
-            'registered_at'              => 'date',
-            'date_of_birth'              => 'date',
-            'has_fishing_vessel'         => 'boolean',
-            'association_member'         => 'boolean',
-            'farm_size_hectares'         => 'decimal:2',
-            'fishing_vessel_tonnage'     => 'decimal:2',
-            'land_area_awarded_hectares' => 'decimal:2',
-            'length_of_residency_months' => 'integer',
-            'custom_fields'              => 'array',
+            'registered_at'                      => 'date',
+            'date_of_birth'                      => 'date',
+            'has_fishing_vessel'                 => 'boolean',
+            'association_member'                 => 'boolean',
+            'farm_size_hectares'                 => 'decimal:2',
+            'fishing_vessel_tonnage'             => 'decimal:2',
+            'land_area_awarded_hectares'         => 'decimal:2',
+            'length_of_residency_months'         => 'integer',
+            'custom_fields'                      => 'array',
+            'custom_field_unavailability_reasons' => 'array',
         ];
     }
 

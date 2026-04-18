@@ -159,7 +159,44 @@ class BeneficiaryController extends Controller
             // Extract agency IDs and set primary agency (first selected)
             $agencyIds = (array) $validated['agencies'] ?? [];
             $validated['agency_id'] = $agencyIds[0] ?? null;
+
+            // Extract dynamic agency field data for later storage
+            $agencyFieldsData = [];
+            foreach ($agencyIds as $agencyId) {
+                if (isset($validated["agencies.{$agencyId}"])) {
+                    $agencyFieldsData[$agencyId] = $validated["agencies.{$agencyId}"];
+                    unset($validated["agencies.{$agencyId}"]);
+                }
+            }
+
             unset($validated['agencies']);
+
+            // Store unavailability reasons from dynamic fields
+            $customFieldReasons = [];
+            foreach ($agencyFieldsData as $agencyId => $fieldData) {
+                foreach ($fieldData as $key => $value) {
+                    if (strpos($key, '_unavailability_reason') !== false) {
+                        $fieldName = str_replace('_unavailability_reason', '', $key);
+                        $customFieldReasons[$fieldName] = $value;
+                        unset($agencyFieldsData[$agencyId][$key]);
+                    }
+                }
+            }
+
+            if (! empty($customFieldReasons)) {
+                $validated['custom_field_unavailability_reasons'] = $customFieldReasons;
+            }
+
+            // Store dynamic field values directly in beneficiary record
+            foreach ($agencyFieldsData as $agencyId => $fieldData) {
+                foreach ($fieldData as $key => $value) {
+                    if ($key !== 'has_value' && strpos($key, '_has_value') === false) {
+                        if (property_exists(Beneficiary::class, $key) || in_array($key, (new Beneficiary())->fillable)) {
+                            $validated[$key] = $value;
+                        }
+                    }
+                }
+            }
 
             $beneficiary = Beneficiary::create(array_merge($validated, ['status' => 'Active']));
 
@@ -169,7 +206,7 @@ class BeneficiaryController extends Controller
                 $agencyName = strtoupper($agency->name);
                 $identifier = null;
 
-                // Extract the correct identifier for this agency
+                // Extract the correct identifier for this agency from beneficiary data
                 if ($agencyName === 'DA') {
                     $identifier = $beneficiary->rsbsa_number ?? null;
                 } elseif ($agencyName === 'BFAR') {
@@ -290,7 +327,44 @@ class BeneficiaryController extends Controller
             // Extract agency IDs and set primary agency (first selected)
             $agencyIds = (array) $validated['agencies'] ?? [];
             $validated['agency_id'] = $agencyIds[0] ?? null;
+
+            // Extract dynamic agency field data for later storage
+            $agencyFieldsData = [];
+            foreach ($agencyIds as $agencyId) {
+                if (isset($validated["agencies.{$agencyId}"])) {
+                    $agencyFieldsData[$agencyId] = $validated["agencies.{$agencyId}"];
+                    unset($validated["agencies.{$agencyId}"]);
+                }
+            }
+
             unset($validated['agencies']);
+
+            // Store unavailability reasons from dynamic fields
+            $customFieldReasons = [];
+            foreach ($agencyFieldsData as $agencyId => $fieldData) {
+                foreach ($fieldData as $key => $value) {
+                    if (strpos($key, '_unavailability_reason') !== false) {
+                        $fieldName = str_replace('_unavailability_reason', '', $key);
+                        $customFieldReasons[$fieldName] = $value;
+                        unset($agencyFieldsData[$agencyId][$key]);
+                    }
+                }
+            }
+
+            if (! empty($customFieldReasons)) {
+                $validated['custom_field_unavailability_reasons'] = $customFieldReasons;
+            }
+
+            // Store dynamic field values directly in beneficiary record
+            foreach ($agencyFieldsData as $agencyId => $fieldData) {
+                foreach ($fieldData as $key => $value) {
+                    if ($key !== 'has_value' && strpos($key, '_has_value') === false) {
+                        if (property_exists(Beneficiary::class, $key) || in_array($key, (new Beneficiary())->fillable)) {
+                            $validated[$key] = $value;
+                        }
+                    }
+                }
+            }
 
             $beneficiary->update($validated);
 

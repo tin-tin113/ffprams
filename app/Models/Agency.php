@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Agency extends Model
 {
@@ -42,6 +43,22 @@ class Agency extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    /**
+     * Get all classifications this agency applies to
+     */
+    public function classifications(): BelongsToMany
+    {
+        return $this->belongsToMany(Classification::class, 'agency_classifications');
+    }
+
+    /**
+     * Get all form fields defined for this agency
+     */
+    public function formFields(): HasMany
+    {
+        return $this->hasMany(AgencyFormField::class);
     }
 
     // ── Scopes ────────────────────────────────────

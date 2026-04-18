@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\SystemSettingsController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\AgencyController;
 use App\Http\Controllers\BeneficiaryAttachmentController;
 use App\Http\Controllers\BeneficiaryController;
 use App\Http\Controllers\DashboardController;
@@ -152,6 +153,10 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
     Route::get('api/programs/{program}/resource-types', [AllocationController::class, 'getResourceTypesByAgency'])
         ->name('api.programs.resource-types');
 
+    // API endpoint for dynamic agency form fields (beneficiary registration)
+    Route::get('api/agencies/form-fields', [\App\Http\Controllers\Api\AgencyFormFieldController::class, 'getFormFields'])
+        ->name('api.agencies.form-fields');
+
     // SMS Broadcast
     Route::get('sms', [SmsController::class, 'index'])->name('sms.index');
     Route::get('sms/beneficiaries', [SmsController::class, 'beneficiaries'])->name('sms.beneficiaries');
@@ -257,6 +262,15 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::put('settings/form-fields/{formFieldOption}', [SystemSettingsController::class, 'updateFormField'])->name('settings.form-fields.update');
     Route::delete('settings/form-fields/{formFieldOption}', [SystemSettingsController::class, 'destroyFormField'])->name('settings.form-fields.destroy');
     Route::post('settings/form-fields/reorder', [SystemSettingsController::class, 'reorderFormFields'])->name('settings.form-fields.reorder');
+
+    // Dynamic Agency Management (Module 4 - Admin Setup)
+    Route::resource('agencies', AgencyController::class)->except('show');
+    Route::get('agencies/{agency}', [AgencyController::class, 'show'])->name('agencies.show');
+    Route::post('agencies/{agency}/form-fields', [AgencyController::class, 'addFormField'])->name('agencies.form-fields.store');
+    Route::put('agencies/{agency}/form-fields/{field}', [AgencyController::class, 'updateFormField'])->name('agencies.form-fields.update');
+    Route::delete('agencies/{agency}/form-fields/{field}', [AgencyController::class, 'deleteFormField'])->name('agencies.form-fields.destroy');
+    Route::post('agencies/{agency}/form-fields/{field}/options', [AgencyController::class, 'addFieldOption'])->name('agencies.form-fields.options.store');
+    Route::delete('agencies/{agency}/form-fields/{field}/options/{option}', [AgencyController::class, 'deleteFieldOption'])->name('agencies.form-fields.options.destroy');
 });
 
 require __DIR__.'/auth.php';

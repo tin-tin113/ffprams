@@ -16,7 +16,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('resource_types', function (Blueprint $table) {
-            $table->dropColumn('source_agency');
+            if (Schema::hasColumn('resource_types', 'source_agency')) {
+                $table->dropColumn('source_agency');
+            }
         });
     }
 
