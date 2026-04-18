@@ -64,7 +64,6 @@ class BeneficiaryRequest extends FormRequest
 
         $civilStatusValues = $this->allowedFieldValues('civil_status', $nativeFallbackValues['civil_status']);
         $highestEducationValues = $this->allowedFieldValues('highest_education', $nativeFallbackValues['highest_education']);
-        $idTypeValues = $this->allowedFieldValues('id_type', $nativeFallbackValues['id_type']);
         $farmOwnershipValues = $this->allowedFieldValues('farm_ownership', $nativeFallbackValues['farm_ownership']);
         $farmTypeValues = $this->allowedFieldValues('farm_type', $nativeFallbackValues['farm_type']);
         $fisherfolkTypeValues = $this->allowedFieldValues('fisherfolk_type', $nativeFallbackValues['fisherfolk_type']);
@@ -73,7 +72,6 @@ class BeneficiaryRequest extends FormRequest
 
         $civilStatusRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'civil_status', true);
         $highestEducationRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'highest_education', false);
-        $idTypeRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'id_type', false);
         $farmOwnershipRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'farm_ownership', true);
         $farmTypeRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'farm_type', true);
         $fisherfolkTypeRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'fisherfolk_type', true);
@@ -156,7 +154,7 @@ class BeneficiaryRequest extends FormRequest
             'photo_path'       => ['nullable', 'string', 'max:255'],
             'civil_status'     => [$civilStatusRequired ? 'required' : 'nullable', Rule::in($civilStatusValues)],
             'highest_education'=> [$highestEducationRequired ? 'required' : 'nullable', Rule::in($highestEducationValues)],
-            'id_type'          => [$idTypeRequired ? 'required' : 'nullable', Rule::in($idTypeValues)],
+            'id_type'          => ['nullable', 'string', 'max:100'],
             'status'           => ['required', Rule::in(['Active', 'Inactive'])],
             'registered_at'    => ['required', 'date', 'before_or_equal:today'],
             'classification'   => [

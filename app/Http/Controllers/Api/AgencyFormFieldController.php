@@ -77,4 +77,17 @@ class AgencyFormFieldController extends Controller
 
         return response()->json($agencies);
     }
+
+    /**
+     * Fetch all classifications
+     * GET /api/classifications
+     */
+    public function getClassifications()
+    {
+        $classifications = \App\Models\Classification::select('id', 'name', 'description')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json($classifications);
+    }
 }

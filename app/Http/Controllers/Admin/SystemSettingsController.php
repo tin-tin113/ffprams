@@ -32,13 +32,32 @@ class SystemSettingsController extends Controller
     // ── Index ────────────────────────────────────
 
     /**
-     * Show agencies page (main settings landing page)
+     * Show admin settings dashboard with all settings in tabs
      */
     public function index(): View
     {
-        $agencies = Agency::orderBy('name')->get();
+        // Agencies data
+        $agencies = Agency::with('classifications')->orderBy('name')->get();
 
-        return view('admin.settings.agencies.index', compact('agencies'));
+        // Resource Types data
+        $activeAgencies = Agency::where('is_active', true)->orderBy('name')->get();
+        $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
+        $purposes = AssistancePurpose::orderBy('category')->orderBy('name')->get();
+
+        // Form Fields data
+        $this->validateFormFieldOptions();
+        $formFields = FormFieldOption::orderBy('field_group')->orderBy('sort_order')->orderBy('label')->get()->groupBy('field_group');
+
+        $fieldGroupMeta = $formFields->map(function ($options) {
+            $group = $options->first();
+            return [
+                'group' => $group->field_group,
+                'placement' => $group->form_field_placement ?? 'personal_information',
+                'required' => $group->is_required ?? false,
+            ];
+        })->unique('group');
+
+        return view('admin.settings.index', compact('agencies', 'activeAgencies', 'resourceTypes', 'purposes', 'formFields', 'fieldGroupMeta'));
     }
 
     /**
@@ -127,6 +146,27 @@ class SystemSettingsController extends Controller
             ->get(['id', 'name', 'full_name', 'is_active']);
 
         return response()->json($agencies);
+    }
+
+    /**
+     * Get a single agency with classifications
+     * GET /settings/agencies/{agency}
+     */
+    public function getAgency(Request $request, Agency $agency): JsonResponse
+    {
+        try {
+            return response()->json([
+                'id' => $agency->id,
+                'name' => $agency->name,
+                'full_name' => $agency->full_name,
+                'description' => $agency->description,
+                'is_active' => $agency->is_active,
+                'classification_ids' => $agency->classifications()->pluck('classifications.id')->toArray(),
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error fetching agency', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to load agency'], 500);
+        }
     }
 
     // ── Agencies ─────────────────────────────────
@@ -1147,6 +1187,219 @@ class SystemSettingsController extends Controller
                     'timestamp' => now(),
                 ]);
             }
+        }
+    }
+
+    /**
+     * Get form fields for a specific agency
+     * GET /settings/agencies/{agency}/form-fields
+     */
+    public function getAgencyFormFields(Request $request, Agency $agency): JsonResponse
+    {
+        try {
+            $fields = $agency->formFields()
+                ->where('is_active', true)
+                ->with('options')
+                ->orderBy('sort_order')
+                ->get()
+                ->map(fn ($field) => [
+                    'id' => $field->id,
+                    'field_name' => $field->field_name,
+                    'display_label' => $field->display_label,
+                    'field_type' => $field->field_type,
+                    'is_required' => $field->is_required,
+                    'help_text' => $field->help_text,
+                    'form_section' => $field->form_section,
+                    'sort_order' => $field->sort_order,
+                    'options' => $field->options->map(fn ($opt) => [
+                        'id' => $opt->id,
+                        'value' => $opt->value,
+                        'label' => $opt->label,
+                    ])->values(),
+                ])
+                ->values();
+
+            return response()->json($fields);
+        } catch (\Throwable $e) {
+            \Log::error('Error fetching agency form fields', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to load form fields'], 500);
+        }
+    }
+
+    /**
+     * Get single form field for an agency
+     * GET /settings/agencies/{agency}/form-fields/{field}
+     */
+    public function getFormField(Request $request, Agency $agency, $fieldId): JsonResponse
+    {
+        try {
+            $field = $agency->formFields()
+                ->where('id', $fieldId)
+                ->with('options')
+                ->firstOrFail();
+
+            return response()->json([
+                'id' => $field->id,
+                'field_name' => $field->field_name,
+                'display_label' => $field->display_label,
+                'field_type' => $field->field_type,
+                'is_required' => $field->is_required,
+                'help_text' => $field->help_text,
+                'form_section' => $field->form_section,
+                'sort_order' => $field->sort_order,
+                'options' => $field->options->map(fn ($opt) => [
+                    'id' => $opt->id,
+                    'value' => $opt->value,
+                    'label' => $opt->label,
+                ])->values(),
+            ]);
+        } catch (\ModelNotFoundException $e) {
+            return response()->json(['error' => 'Form field not found'], 404);
+        } catch (\Throwable $e) {
+            \Log::error('Error fetching form field', ['error' => $e->getMessage()]);
+            return response()->json(['error'=>'Failed to load form field'], 500);
+        }
+    }
+
+    /**
+     * Add form field to agency
+     * POST /settings/agencies/{agency}/form-fields
+     */
+    public function addFormField(Request $request, Agency $agency): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'field_name' => ['required', 'string', 'lowercase', 'regex:/^[a-z0-9_]+$/', 'max:255'],
+                'display_label' => ['required', 'string', 'max:255'],
+                'field_type' => ['required', 'in:text,textarea,number,decimal,date,datetime,dropdown,checkbox'],
+                'is_required' => ['nullable', 'boolean'],
+                'help_text' => ['nullable', 'string'],
+                'form_section' => ['nullable', 'string'],
+                'sort_order' => ['nullable', 'integer', 'min:0'],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 422);
+        }
+
+        try {
+            // Check if field_name already exists for this agency
+            if ($agency->formFields()->where('field_name', $validated['field_name'])->exists()) {
+                return response()->json([
+                    'error' => 'Field name already exists for this agency'
+                ], 422);
+            }
+
+            $field = DB::transaction(function () use ($validated, $agency) {
+                return $agency->formFields()->create([
+                    'field_name' => $validated['field_name'],
+                    'display_label' => $validated['display_label'],
+                    'field_type' => $validated['field_type'],
+                    'is_required' => $validated['is_required'] ?? false,
+                    'is_active' => true,
+                    'help_text' => $validated['help_text'],
+                    'form_section' => $validated['form_section'] ?? 'general_information',
+                    'sort_order' => $validated['sort_order'] ?? 0,
+                ]);
+            });
+
+            return response()->json([
+                'success' => true,
+                'field' => [
+                    'id' => $field->id,
+                    'field_name' => $field->field_name,
+                    'display_label' => $field->display_label,
+                    'field_type' => $field->field_type,
+                    'is_required' => $field->is_required,
+                    'help_text' => $field->help_text,
+                    'form_section' => $field->form_section,
+                    'sort_order' => $field->sort_order,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error adding form field', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to add form field'], 500);
+        }
+    }
+
+    /**
+     * Update agency form field
+     * PUT /settings/agencies/{agency}/form-fields/{field}
+     */
+    public function updateAgencyFormField(Request $request, Agency $agency, $fieldId): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'field_name' => ['sometimes', 'string', 'lowercase', 'regex:/^[a-z0-9_]+$/', 'max:255'],
+                'display_label' => ['sometimes', 'string', 'max:255'],
+                'field_type' => ['sometimes', 'in:text,textarea,number,decimal,date,datetime,dropdown,checkbox'],
+                'is_required' => ['nullable', 'boolean'],
+                'help_text' => ['nullable', 'string'],
+                'form_section' => ['nullable', 'string'],
+                'sort_order' => ['nullable', 'integer', 'min:0'],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 422);
+        }
+
+        try {
+            $field = $agency->formFields()->findOrFail($fieldId);
+
+            // Check if new field_name already exists (if changing)
+            if (isset($validated['field_name']) && $validated['field_name'] !== $field->field_name) {
+                if ($agency->formFields()->where('field_name', $validated['field_name'])->exists()) {
+                    return response()->json([
+                        'error' => 'Field name already exists for this agency'
+                    ], 422);
+                }
+            }
+
+            DB::transaction(function () use ($validated, $field) {
+                $field->update($validated);
+            });
+
+            return response()->json([
+                'success' => true,
+                'field' => [
+                    'id' => $field->id,
+                    'field_name' => $field->field_name,
+                    'display_label' => $field->display_label,
+                    'field_type' => $field->field_type,
+                    'is_required' => $field->is_required,
+                    'help_text' => $field->help_text,
+                    'form_section' => $field->form_section,
+                    'sort_order' => $field->sort_order,
+                ],
+            ]);
+        } catch (\ModelNotFoundException $e) {
+            return response()->json(['error' => 'Form field not found'], 404);
+        } catch (\Throwable $e) {
+            \Log::error('Error updating form field', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to update form field'], 500);
+        }
+    }
+
+    /**
+     * Delete form field
+     * DELETE /settings/agencies/{agency}/form-fields/{field}
+     */
+    public function deleteFormField(Request $request, Agency $agency, $fieldId): JsonResponse
+    {
+        try {
+            $field = $agency->formFields()->findOrFail($fieldId);
+
+            DB::transaction(function () use ($field) {
+                // Delete associated options first
+                $field->options()->delete();
+                // Delete the field
+                $field->delete();
+            });
+
+            return response()->json(['success' => true]);
+        } catch (\ModelNotFoundException $e) {
+            return response()->json(['error' => 'Form field not found'], 404);
+        } catch (\Throwable $e) {
+            \Log::error('Error deleting form field', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to delete form field'], 500);
         }
     }
 }

@@ -1119,7 +1119,7 @@
                     settingsLink.style.borderLeftColor = '';
                 }
             }
-            // On other settings pages: System Settings active, Programs inactive
+            // On settings, resource-types, form-fields: System Settings active, Programs inactive
             else if (currentPath.includes('/admin/settings')) {
                 if (settingsLink) {
                     settingsLink.classList.add('active');

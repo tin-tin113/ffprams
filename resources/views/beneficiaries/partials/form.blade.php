@@ -40,11 +40,21 @@
             return collect($fallback)->map(fn ($value) => (object) ['value' => $value, 'label' => $value]);
         }
 
-        return collect($items)->map(function ($item) {
-            $value = is_object($item) ? ($item->value ?? $item->label ?? '') : ($item['value'] ?? $item['label'] ?? '');
-            $label = is_object($item) ? ($item->label ?? $item->value ?? '') : ($item['label'] ?? $item['value'] ?? '');
-            return (object) ['value' => $value, 'label' => $label];
-        });
+        return collect($items)
+            ->map(function ($item) {
+                $value = is_object($item) ? ($item->value ?? $item->label ?? '') : ($item['value'] ?? $item['label'] ?? '');
+                $label = is_object($item) ? ($item->label ?? $item->value ?? '') : ($item['label'] ?? $item['value'] ?? '');
+
+                return (object) ['value' => $value, 'label' => $label];
+            })
+            ->filter(fn ($item) => trim((string) $item->value) !== '' || trim((string) $item->label) !== '')
+            ->unique(function ($item) {
+                $normalizedLabel = strtolower(preg_replace('/\s+/', ' ', trim((string) $item->label)));
+                $normalizedValue = strtolower(preg_replace('/\s+/', ' ', trim((string) $item->value)));
+
+                return $normalizedLabel !== '' ? $normalizedLabel : $normalizedValue;
+            })
+            ->values();
     };
 
     $customFieldGroups = collect($fo)
@@ -72,7 +82,6 @@
 
     $civilStatusRequired = $isGroupRequired('civil_status', true);
     $highestEducationRequired = $isGroupRequired('highest_education', false);
-    $idTypeRequired = $isGroupRequired('id_type', false);
     $farmOwnershipRequired = $isGroupRequired('farm_ownership', true);
     $farmTypeRequired = $isGroupRequired('farm_type', true);
     $fisherfolkTypeRequired = $isGroupRequired('fisherfolk_type', true);
@@ -87,16 +96,6 @@
         'Vocational',
         'College',
         'Post Graduate',
-    ]);
-    $idTypeOptions = $normalizeFieldOptions($fo['id_type'] ?? [], [
-        'PhilSys ID',
-        "Voter's ID",
-        "Driver's License",
-        'Passport',
-        'Senior Citizen ID',
-        'PWD ID',
-        'Postal ID',
-        'TIN ID',
     ]);
     $farmOwnershipOptions = $normalizeFieldOptions($fo['farm_ownership'] ?? [], ['Registered Owner', 'Tenant', 'Lessee']);
     $farmTypeOptions = $normalizeFieldOptions($fo['farm_type'] ?? [], ['Irrigated', 'Rainfed Upland', 'Rainfed Lowland']);
@@ -270,18 +269,6 @@
                     @endforeach
                 </select>
                 @error('highest_education')<div class="invalid-feedback">{{ $message }}</div>@enderror
-            </div>
-
-            {{-- Government ID Type --}}
-            <div class="col-12 col-md-3">
-                <label for="id_type" class="form-label">Government ID Type {!! $idTypeRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
-                <select class="form-select @error('id_type') is-invalid @enderror" id="id_type" name="id_type" {{ $idTypeRequired ? 'required' : '' }}>
-                    <option value="" {{ old('id_type', $beneficiary->id_type ?? '') === '' ? 'selected' : '' }}>Select...</option>
-                    @foreach($idTypeOptions as $opt)
-                        <option value="{{ $opt->value }}" {{ old('id_type', $beneficiary->id_type ?? '') === $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
-                    @endforeach
-                </select>
-                @error('id_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
 
             {{-- Contact Number --}}

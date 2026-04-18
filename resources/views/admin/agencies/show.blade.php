@@ -239,7 +239,8 @@
                                                         <input type="text" class="form-control" name="form_section" value="{{ $field->form_section }}" placeholder="farmer_information">
                                                     </div>
                                                     <div class="form-check">
-                                                        <input type="checkbox" class="form-check-input" name="is_required" id="editRequired{{ $field->id }}"
+                                                        <input type="hidden" name="is_required" value="0">
+                                                        <input type="checkbox" class="form-check-input" name="is_required" id="editRequired{{ $field->id }}" value="1"
                                                             @if ($field->is_required) checked @endif>
                                                         <label class="form-check-label" for="editRequired{{ $field->id }}">
                                                             Required
@@ -328,7 +329,8 @@
                             <textarea class="form-control" name="help_text" rows="2" placeholder="Optional guidance for users"></textarea>
                         </div>
                         <div class="form-check mb-3">
-                            <input type="checkbox" class="form-check-input" name="is_required" id="requireField">
+                            <input type="hidden" name="is_required" value="0">
+                            <input type="checkbox" class="form-check-input" name="is_required" id="requireField" value="1">
                             <label class="form-check-label" for="requireField">
                                 Required (User must provide value or reason for unavailability)
                             </label>

@@ -156,18 +156,13 @@ class BeneficiaryController extends Controller
 
         // No duplicates - proceed with registration
         $beneficiary = DB::transaction(function () use ($validated) {
-            // Extract agency IDs and set primary agency (first selected)
-            $agencyIds = (array) $validated['agencies'] ?? [];
+            // Extract agency IDs from nested structure (agencies[id][fieldName])
+            $agenciesData = (array) $validated['agencies'] ?? [];
+            $agencyIds = array_keys($agenciesData); // Get IDs from nested array keys
             $validated['agency_id'] = $agencyIds[0] ?? null;
 
             // Extract dynamic agency field data for later storage
-            $agencyFieldsData = [];
-            foreach ($agencyIds as $agencyId) {
-                if (isset($validated["agencies.{$agencyId}"])) {
-                    $agencyFieldsData[$agencyId] = $validated["agencies.{$agencyId}"];
-                    unset($validated["agencies.{$agencyId}"]);
-                }
-            }
+            $agencyFieldsData = $agenciesData; // Already extracted as nested array
 
             unset($validated['agencies']);
 
@@ -191,7 +186,7 @@ class BeneficiaryController extends Controller
             foreach ($agencyFieldsData as $agencyId => $fieldData) {
                 foreach ($fieldData as $key => $value) {
                     if ($key !== 'has_value' && strpos($key, '_has_value') === false) {
-                        if (property_exists(Beneficiary::class, $key) || in_array($key, (new Beneficiary())->fillable)) {
+                        if (property_exists(Beneficiary::class, $key) || in_array($key, (new Beneficiary())->getFillable(), true)) {
                             $validated[$key] = $value;
                         }
                     }
@@ -324,18 +319,13 @@ class BeneficiaryController extends Controller
         DB::transaction(function () use ($beneficiary, $validated) {
             $oldValues = $beneficiary->toArray();
 
-            // Extract agency IDs and set primary agency (first selected)
-            $agencyIds = (array) $validated['agencies'] ?? [];
+            // Extract agency IDs from nested structure (agencies[id][fieldName])
+            $agenciesData = (array) $validated['agencies'] ?? [];
+            $agencyIds = array_keys($agenciesData); // Get IDs from nested array keys
             $validated['agency_id'] = $agencyIds[0] ?? null;
 
             // Extract dynamic agency field data for later storage
-            $agencyFieldsData = [];
-            foreach ($agencyIds as $agencyId) {
-                if (isset($validated["agencies.{$agencyId}"])) {
-                    $agencyFieldsData[$agencyId] = $validated["agencies.{$agencyId}"];
-                    unset($validated["agencies.{$agencyId}"]);
-                }
-            }
+            $agencyFieldsData = $agenciesData; // Already extracted as nested array
 
             unset($validated['agencies']);
 
@@ -359,7 +349,7 @@ class BeneficiaryController extends Controller
             foreach ($agencyFieldsData as $agencyId => $fieldData) {
                 foreach ($fieldData as $key => $value) {
                     if ($key !== 'has_value' && strpos($key, '_has_value') === false) {
-                        if (property_exists(Beneficiary::class, $key) || in_array($key, (new Beneficiary())->fillable)) {
+                        if (property_exists(Beneficiary::class, $key) || in_array($key, (new Beneficiary())->getFillable(), true)) {
                             $validated[$key] = $value;
                         }
                     }

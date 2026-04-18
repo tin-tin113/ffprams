@@ -8,13 +8,30 @@ use App\Models\Barangay;
 use App\Models\Beneficiary;
 use App\Models\DistributionEvent;
 use App\Models\ResourceType;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class ReportsController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $currentCalendarYear = now()->year;
+        $selectedYear = (int) $request->query('year', $currentCalendarYear);
+
+        if ($selectedYear < 2000 || $selectedYear > ($currentCalendarYear + 1)) {
+            $selectedYear = $currentCalendarYear;
+        }
+
+        $availableYears = collect(range($currentCalendarYear, $currentCalendarYear - 4));
+
+        if (! $availableYears->contains($selectedYear)) {
+            $availableYears = $availableYears
+                ->push($selectedYear)
+                ->sortDesc()
+                ->values();
+        }
+
         // COMPLIANCE SNAPSHOT — Legal basis, liquidation, and FARMC checks
         $financialEvents = DistributionEvent::query()
             ->where('type', 'financial')
@@ -202,7 +219,7 @@ class ReportsController extends Controller
         $totalBeneficiaries = Beneficiary::whereNull('deleted_at')->count();
 
         // REPORT 5 — Monthly Summary (Event vs Direct)
-        $currentYear = now()->year;
+        $currentYear = $selectedYear;
 
         $eventMonthly = DistributionEvent::select(DB::raw('MONTH(distribution_date) as month_number'))
             ->selectRaw('COUNT(DISTINCT distribution_events.id) as total_events')
@@ -459,6 +476,7 @@ class ReportsController extends Controller
             'totalBeneficiaries',
             'monthlyDistribution',
             'currentYear',
+            'availableYears',
             'financialSummary',
             'financialPerBarangay',
             'assistanceByPurpose',

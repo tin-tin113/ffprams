@@ -7,6 +7,20 @@
     <li class="breadcrumb-item active">{{ $beneficiary->full_name }}</li>
 @endsection
 
+@php
+    $hasDarAgency = $beneficiary->agencies->contains(fn ($agency) => strtoupper((string) $agency->name) === 'DAR');
+    $hasDarDetails = $hasDarAgency
+        || filled($beneficiary->cloa_ep_number)
+        || filled($beneficiary->arb_classification)
+        || filled($beneficiary->landholding_description)
+        || filled($beneficiary->land_area_awarded_hectares)
+        || filled($beneficiary->ownership_scheme)
+        || filled($beneficiary->barc_membership_status);
+
+    $customFieldUnavailabilityReasons = collect((array) ($beneficiary->custom_field_unavailability_reasons ?? []))
+        ->filter(fn ($value) => filled($value));
+@endphp
+
 @section('content')
     {{-- Page Header --}}
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
@@ -96,7 +110,7 @@
                 </div>
                 <div class="col-md-4">
                     <div class="text-muted small">Highest Education</div>
-                    <div class="fw-semibold">{{ $beneficiary->highest_education }}</div>
+                    <div class="fw-semibold">{{ $beneficiary->highest_education ?? '—' }}</div>
                 </div>
                 <div class="col-md-4">
                     <div class="text-muted small">Contact Number</div>
@@ -114,10 +128,6 @@
                 <div class="col-md-4">
                     <div class="text-muted small">Barangay</div>
                     <div class="fw-semibold">{{ $beneficiary->barangay->name ?? '—' }}</div>
-                </div>
-                <div class="col-md-4">
-                    <div class="text-muted small">Government ID Type</div>
-                    <div class="fw-semibold">{{ $beneficiary->id_type }}</div>
                 </div>
 
                 @if($beneficiary->isFarmer())
@@ -229,6 +239,41 @@
             </div>
         @endif
 
+        {{-- DAR Details --}}
+        @if($hasDarDetails)
+            <div class="card-header bg-white fw-semibold border-top">
+                <i class="bi bi-file-earmark-text me-1"></i> DAR/ARB Details
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="text-muted small">CLOA/EP Number</div>
+                        <div class="fw-semibold">{{ $beneficiary->cloa_ep_number ?? '—' }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">ARB Classification</div>
+                        <div class="fw-semibold">{{ $beneficiary->arb_classification ?? '—' }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">Ownership Scheme</div>
+                        <div class="fw-semibold">{{ $beneficiary->ownership_scheme ?? '—' }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">Land Area Awarded</div>
+                        <div class="fw-semibold">{{ $beneficiary->land_area_awarded_hectares ? $beneficiary->land_area_awarded_hectares . ' hectares' : '—' }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">BARC Membership Status</div>
+                        <div class="fw-semibold">{{ $beneficiary->barc_membership_status ?? '—' }}</div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="text-muted small">Landholding Description</div>
+                        <div class="fw-semibold">{{ $beneficiary->landholding_description ?? '—' }}</div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         {{-- Fisherfolk Details --}}
         @if($beneficiary->isFisherfolk())
             <div class="card-header bg-white fw-semibold border-top">
@@ -311,6 +356,22 @@
                         <div class="col-md-4">
                             <div class="text-muted small">{{ Str::title(str_replace('_', ' ', $fieldGroup)) }}</div>
                             <div class="fw-semibold">{{ $fieldValue }}</div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
+        @if($customFieldUnavailabilityReasons->isNotEmpty())
+            <div class="card-header bg-white fw-semibold border-top">
+                <i class="bi bi-info-circle me-1"></i> Field Unavailability Reasons
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    @foreach($customFieldUnavailabilityReasons as $fieldName => $reason)
+                        <div class="col-md-6">
+                            <div class="text-muted small">{{ Str::title(str_replace('_', ' ', $fieldName)) }}</div>
+                            <div class="fw-semibold">{{ $reason }}</div>
                         </div>
                     @endforeach
                 </div>
@@ -494,7 +555,9 @@
                                 </td>
 
                                 @if($distribution->type === 'allocation')
-                                    @php($allocation = $distribution->data)
+                                    @php
+                                        $allocation = $distribution->data;
+                                    @endphp
                                     <td class="fw-semibold" data-label="Program">{{ $allocation->programName->name ?? $allocation->distributionEvent->programName->name ?? '—' }}</td>
                                     <td data-label="Resource Type">{{ $allocation->resourceType->name ?? $allocation->distributionEvent->resourceType->name ?? '—' }}</td>
                                     <td data-label="Source Agency">{{ $allocation->resourceType->agency->name ?? $allocation->distributionEvent->resourceType->agency->name ?? '—' }}</td>
@@ -512,19 +575,23 @@
                                                 default     => 'bg-secondary',
                                             };
                                         @endphp
-                                        <span class="badge {{ $statusBadge }}">{{ $eventStatus ?: '—' }}</span>
+                                        <span class="badge {{ $statusBadge ?? 'bg-secondary' }}">{{ $eventStatus ?? '—' }}</span>
                                     </td>
                                     <td class="text-muted small" data-label="Distributed At">{{ $allocation->distributed_at?->format('M d, Y h:i A') ?? '—' }}</td>
                                     <td data-label="Remarks">{{ $allocation->remarks ?? '—' }}</td>
                                 @else
-                                    @php($assistance = $distribution->data)
+                                    @php
+                                        $assistance = $distribution->data;
+                                    @endphp
                                     <td class="fw-semibold" data-label="Program">{{ $assistance->programName->name ?? '—' }}</td>
                                     <td data-label="Resource Type">{{ $assistance->resourceType->name ?? '—' }}</td>
                                     <td data-label="Source Agency">{{ $assistance->programName->agency->name ?? '—' }}</td>
                                     <td data-label="Value">{{ $assistance->getDisplayValue() }}</td>
                                     <td class="text-muted small" data-label="Distribution Date">{{ $assistance->created_at?->format('M d, Y') ?? '—' }}</td>
                                     <td data-label="Status">
-                                        @php($normalizedStatus = $assistance->normalized_status)
+                                        @php
+                                            $normalizedStatus = $assistance->normalized_status;
+                                        @endphp
                                         @switch($normalizedStatus)
                                             @case('planned')
                                                 <span class="badge bg-warning text-dark">Planned</span>
