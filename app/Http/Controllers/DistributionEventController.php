@@ -17,19 +17,23 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DistributionEventController extends Controller
 {
+    private ?bool $hasComplianceFieldStatesColumn = null;
+
     public function __construct(
         private AuditLogService $audit,
     ) {}
 
     public function index(Request $request): View
     {
-        $sort = (string) $request->input('sort', 'date_desc');
-        $allowedSorts = ['date_desc', 'date_asc', 'program_asc', 'program_desc', 'status_asc', 'status_desc'];
+        $sort = (string) $request->input('sort', 'created_desc');
+        $allowedSorts = ['created_desc', 'created_asc', 'date_desc', 'date_asc', 'program_asc', 'program_desc', 'status_asc', 'status_desc'];
 
         if (! in_array($sort, $allowedSorts, true)) {
             $sort = 'date_desc';
@@ -48,16 +52,40 @@ class DistributionEventController extends Controller
                 });
             })
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
-            ->when($sort === 'date_desc', fn ($q) => $q->orderByDesc('distribution_date'))
-            ->when($sort === 'date_asc', fn ($q) => $q->orderBy('distribution_date'))
-            ->when($sort === 'program_asc', fn ($q) => $q->orderBy(
-                ProgramName::select('name')->whereColumn('program_names.id', 'distribution_events.program_name_id')
-            ))
-            ->when($sort === 'program_desc', fn ($q) => $q->orderByDesc(
-                ProgramName::select('name')->whereColumn('program_names.id', 'distribution_events.program_name_id')
-            ))
-            ->when($sort === 'status_asc', fn ($q) => $q->orderBy('status'))
-            ->when($sort === 'status_desc', fn ($q) => $q->orderByDesc('status'))
+            ->when($sort === 'created_desc', fn ($q) => $q
+                ->orderByDesc('created_at')
+                ->orderByDesc('id'))
+            ->when($sort === 'created_asc', fn ($q) => $q
+                ->orderBy('created_at')
+                ->orderByDesc('id'))
+            ->when($sort === 'date_desc', fn ($q) => $q
+                ->orderByDesc('distribution_date')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id'))
+            ->when($sort === 'date_asc', fn ($q) => $q
+                ->orderBy('distribution_date')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id'))
+            ->when($sort === 'program_asc', fn ($q) => $q
+                ->orderBy(ProgramName::select('name')->whereColumn('program_names.id', 'distribution_events.program_name_id'))
+                ->orderByDesc('distribution_date')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id'))
+            ->when($sort === 'program_desc', fn ($q) => $q
+                ->orderByDesc(ProgramName::select('name')->whereColumn('program_names.id', 'distribution_events.program_name_id'))
+                ->orderByDesc('distribution_date')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id'))
+            ->when($sort === 'status_asc', fn ($q) => $q
+                ->orderBy('status')
+                ->orderByDesc('distribution_date')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id'))
+            ->when($sort === 'status_desc', fn ($q) => $q
+                ->orderByDesc('status')
+                ->orderByDesc('distribution_date')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id'))
             ->paginate(15)
             ->withQueryString();
 
@@ -76,7 +104,7 @@ class DistributionEventController extends Controller
             ->whereNull('allocations.deleted_at')
             ->sum('allocations.amount');
 
-        $agencies = Agency::orderBy('name')->get(['id', 'name']);
+        $agencies = Agency::active()->orderBy('name')->get(['id', 'name']);
         $programNames = ProgramName::with('agency')->active()->orderBy('name')->get();
 
         return view('distribution_events.index', compact(
@@ -95,8 +123,16 @@ class DistributionEventController extends Controller
     public function create(): View
     {
         $barangays = Barangay::orderBy('name')->get();
-        $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
-        $programNames = ProgramName::with('agency')->active()->orderBy('name')->get();
+        $resourceTypes = ResourceType::with('agency')
+            ->active()
+            ->whereHas('agency', fn ($query) => $query->active())
+            ->orderBy('name')
+            ->get();
+        $programNames = ProgramName::with('agency')
+            ->active()
+            ->whereHas('agency', fn ($query) => $query->active())
+            ->orderBy('name')
+            ->get();
 
         return view('distribution_events.create', compact('barangays', 'resourceTypes', 'programNames'));
     }
@@ -104,8 +140,19 @@ class DistributionEventController extends Controller
     public function store(DistributionEventRequest $request): RedirectResponse|JsonResponse
     {
         $event = DB::transaction(function () use ($request) {
+            $validated = $request->validated();
+
+            if ($this->hasComplianceFieldStatesColumn()) {
+                $validated['compliance_field_states'] = $this->normalizeComplianceFieldStates(
+                    $validated,
+                    [],
+                    (array) $request->input('compliance_states', []),
+                    (array) $request->input('compliance_reasons', []),
+                );
+            }
+
             $event = DistributionEvent::create([
-                ...$request->validated(),
+                ...$validated,
                 'created_by' => auth()->id(),
             ]);
 
@@ -163,7 +210,20 @@ class DistributionEventController extends Controller
             })
             ->values();
 
-        return view('distribution_events.show', compact('event', 'allocatedBeneficiaryIds', 'assistancePurposes', 'availableBeneficiaries'));
+        $completionComplianceIssues = $event->isFinancial()
+            ? $this->getCompletionComplianceIssues($event)
+            : [];
+
+        $completionComplianceReady = empty($completionComplianceIssues);
+
+        return view('distribution_events.show', compact(
+            'event',
+            'allocatedBeneficiaryIds',
+            'assistancePurposes',
+            'availableBeneficiaries',
+            'completionComplianceIssues',
+            'completionComplianceReady',
+        ));
     }
 
     public function distributionList(DistributionEvent $event): View
@@ -258,8 +318,16 @@ class DistributionEventController extends Controller
         }
 
         $barangays = Barangay::orderBy('name')->get();
-        $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
-        $programNames = ProgramName::with('agency')->active()->orderBy('name')->get();
+        $resourceTypes = ResourceType::with('agency')
+            ->active()
+            ->whereHas('agency', fn ($query) => $query->active())
+            ->orderBy('name')
+            ->get();
+        $programNames = ProgramName::with('agency')
+            ->active()
+            ->whereHas('agency', fn ($query) => $query->active())
+            ->orderBy('name')
+            ->get();
 
         return view('distribution_events.edit', compact('event', 'barangays', 'resourceTypes', 'programNames'));
     }
@@ -281,7 +349,18 @@ class DistributionEventController extends Controller
         DB::transaction(function () use ($request, $event) {
             $oldValues = $event->toArray();
 
-            $event->update($request->validated());
+            $validated = $request->validated();
+
+            if ($this->hasComplianceFieldStatesColumn()) {
+                $validated['compliance_field_states'] = $this->normalizeComplianceFieldStates(
+                    $validated,
+                    is_array($event->compliance_field_states) ? $event->compliance_field_states : [],
+                    (array) $request->input('compliance_states', []),
+                    (array) $request->input('compliance_reasons', []),
+                );
+            }
+
+            $event->update($validated);
 
             $this->audit->log(
                 auth()->id(),
@@ -365,28 +444,13 @@ class DistributionEventController extends Controller
                 ->with('error', 'Approve the beneficiary list before starting this event.');
         }
 
-        // Financial events require legal basis and fund source before start.
-        if ($newStatus === 'Ongoing' && $event->isFinancial()) {
-            if (! $event->hasLegalBasis()) {
-                return redirect()->back()
-                    ->with('error', 'Financial events require legal basis type, reference number, and date before starting.');
-            }
+        if ($newStatus === 'Completed' && $event->isFinancial()) {
+            $completionIssues = $this->getCompletionComplianceIssues($event);
 
-            if (! $event->hasFundSource()) {
+            if (! empty($completionIssues)) {
                 return redirect()->back()
-                    ->with('error', 'Financial events require a fund source before starting.');
+                    ->with('error', 'Financial event completion is blocked until critical compliance items are resolved: '.implode('; ', $completionIssues));
             }
-
-            if (! $event->isFarmcCompliant()) {
-                return redirect()->back()
-                    ->with('error', 'FARMC endorsement is required before starting this event.');
-            }
-        }
-
-        // Financial events must be fully liquidated before completion.
-        if ($newStatus === 'Completed' && $event->isFinancial() && ! $event->isLiquidationVerified()) {
-            return redirect()->back()
-                ->with('error', 'Financial events can only be completed after liquidation status is set to Verified.');
         }
 
         DB::transaction(function () use ($event, $newStatus) {
@@ -404,8 +468,18 @@ class DistributionEventController extends Controller
             );
         });
 
-        return redirect()->back()
+        $response = redirect()->back()
             ->with('success', "Distribution event status updated to {$newStatus}.");
+
+        if ($newStatus === 'Ongoing' && $event->isFinancial()) {
+            $warnings = $this->getOngoingComplianceWarnings($event->fresh());
+
+            if (! empty($warnings)) {
+                $response->with('warning', 'Compliance details can be completed later. Pending items: '.implode('; ', $warnings));
+            }
+        }
+
+        return $response;
     }
 
 
@@ -420,23 +494,34 @@ class DistributionEventController extends Controller
             'requires_farmc_endorsement' => $request->boolean('requires_farmc_endorsement'),
         ]);
 
+        $statusRules = [];
+        $reasonRules = [];
+        foreach (DistributionEvent::COMPLIANCE_TRACKED_FIELDS as $field) {
+            $statusRules["compliance_states.{$field}"] = ['nullable', 'in:'.implode(',', DistributionEvent::complianceStatuses())];
+            $reasonRules["compliance_reasons.{$field}"] = ['nullable', 'string', 'max:500'];
+        }
+
         $validated = $request->validate(
             $event->isFinancial()
                 ? [
-                    'legal_basis_type' => ['required', 'in:resolution,ordinance,memo,special_order,other'],
-                    'legal_basis_reference_no' => ['required', 'string', 'max:150'],
-                    'legal_basis_date' => ['required', 'date', 'before_or_equal:today'],
-                    'legal_basis_remarks' => ['required_if:legal_basis_type,other', 'nullable', 'string', 'max:1000'],
-                    'fund_source' => ['required', 'in:lgu_trust_fund,nga_transfer,local_program,other'],
-                    'trust_account_code' => ['required_if:fund_source,lgu_trust_fund', 'nullable', 'string', 'max:100'],
+                    'legal_basis_type' => ['nullable', 'in:resolution,ordinance,memo,special_order,other'],
+                    'legal_basis_reference_no' => ['nullable', 'string', 'max:150'],
+                    'legal_basis_date' => ['nullable', 'date', 'before_or_equal:today'],
+                    'legal_basis_remarks' => ['nullable', 'string', 'max:1000'],
+                    'fund_source' => ['nullable', 'in:lgu_trust_fund,nga_transfer,local_program,other'],
+                    'trust_account_code' => ['nullable', 'string', 'max:100'],
                     'fund_release_reference' => ['nullable', 'string', 'max:150'],
-                    'liquidation_status' => ['required', 'in:not_required,pending,submitted,verified'],
-                    'liquidation_due_date' => ['required_if:liquidation_status,pending,submitted,verified', 'nullable', 'date'],
-                    'liquidation_submitted_at' => ['required_if:liquidation_status,submitted,verified', 'nullable', 'date', 'before_or_equal:today'],
-                    'liquidation_reference_no' => ['required_if:liquidation_status,submitted,verified', 'nullable', 'string', 'max:150'],
+                    'liquidation_status' => ['nullable', 'in:not_required,pending,submitted,verified'],
+                    'liquidation_due_date' => ['nullable', 'date'],
+                    'liquidation_submitted_at' => ['nullable', 'date', 'before_or_equal:today'],
+                    'liquidation_reference_no' => ['nullable', 'string', 'max:150'],
                     'requires_farmc_endorsement' => ['nullable', 'boolean'],
                     'farmc_endorsed_at' => ['nullable', 'date'],
-                    'farmc_reference_no' => ['required_if:requires_farmc_endorsement,1', 'nullable', 'string', 'max:150'],
+                    'farmc_reference_no' => ['nullable', 'string', 'max:150'],
+                    'compliance_states' => ['nullable', 'array'],
+                    'compliance_reasons' => ['nullable', 'array'],
+                    ...$statusRules,
+                    ...$reasonRules,
                 ]
                 : [
                     'legal_basis_type' => ['nullable'],
@@ -453,10 +538,35 @@ class DistributionEventController extends Controller
                     'requires_farmc_endorsement' => ['nullable', 'boolean'],
                     'farmc_endorsed_at' => ['nullable'],
                     'farmc_reference_no' => ['nullable'],
+                    'compliance_states' => ['nullable', 'array'],
+                    'compliance_reasons' => ['nullable', 'array'],
+                    ...$statusRules,
+                    ...$reasonRules,
                 ]
         );
 
         $validated['requires_farmc_endorsement'] = $request->boolean('requires_farmc_endorsement');
+
+        $inputStates = (array) $request->input('compliance_states', []);
+        $inputReasons = (array) $request->input('compliance_reasons', []);
+
+        unset($validated['compliance_states'], $validated['compliance_reasons']);
+
+        if ($this->hasComplianceFieldStatesColumn()) {
+            $normalizedStates = $this->normalizeComplianceFieldStates(
+                $validated,
+                is_array($event->compliance_field_states) ? $event->compliance_field_states : [],
+                $inputStates,
+                $inputReasons,
+            );
+
+            $reasonErrors = $this->validateComplianceReasonRequirements($normalizedStates, array_keys($inputStates));
+            if (! empty($reasonErrors)) {
+                throw ValidationException::withMessages($reasonErrors);
+            }
+
+            $validated['compliance_field_states'] = $normalizedStates;
+        }
 
         DB::transaction(function () use ($event, $validated) {
             $oldValues = $event->toArray();
@@ -474,6 +584,215 @@ class DistributionEventController extends Controller
         });
 
         return redirect()->back()->with('success', 'Compliance details updated successfully.');
+    }
+
+    /**
+     * @param  array<string, mixed>  $validatedFields
+     * @param  array<string, mixed>  $existingStates
+     * @param  array<string, mixed>  $inputStates
+     * @param  array<string, mixed>  $inputReasons
+     * @return array<string, array{status: string, reason: ?string}>
+     */
+    private function normalizeComplianceFieldStates(
+        array $validatedFields,
+        array $existingStates,
+        array $inputStates,
+        array $inputReasons,
+    ): array {
+        $normalized = [];
+
+        foreach (DistributionEvent::COMPLIANCE_TRACKED_FIELDS as $field) {
+            $existingStatus = (string) data_get($existingStates, "{$field}.status", '');
+            $existingReason = trim((string) data_get($existingStates, "{$field}.reason", ''));
+
+            $value = $validatedFields[$field] ?? null;
+            $hasValue = $this->hasComplianceFieldValue($value);
+
+            $status = (string) ($inputStates[$field] ?? '');
+            if (! in_array($status, DistributionEvent::complianceStatuses(), true)) {
+                if (in_array($existingStatus, DistributionEvent::complianceStatuses(), true)) {
+                    $status = $existingStatus;
+                } else {
+                    $status = $hasValue
+                        ? DistributionEvent::COMPLIANCE_STATUS_PROVIDED
+                        : DistributionEvent::COMPLIANCE_STATUS_NOT_AVAILABLE_YET;
+                }
+            }
+
+            $reason = isset($inputReasons[$field])
+                ? trim((string) $inputReasons[$field])
+                : $existingReason;
+
+            if ($status === DistributionEvent::COMPLIANCE_STATUS_PROVIDED || $reason === '') {
+                $reason = $status === DistributionEvent::COMPLIANCE_STATUS_PROVIDED ? null : $reason;
+            }
+
+            $normalized[$field] = [
+                'status' => $status,
+                'reason' => $reason,
+            ];
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @param  array<string, array{status: string, reason: ?string}>  $states
+     * @param  array<int, string>  $explicitStatusFields
+     * @return array<string, string>
+     */
+    private function validateComplianceReasonRequirements(array $states, array $explicitStatusFields): array
+    {
+        $errors = [];
+        $explicitLookup = array_flip($explicitStatusFields);
+
+        foreach ($states as $field => $state) {
+            if (! isset($explicitLookup[$field])) {
+                continue;
+            }
+
+            $status = $state['status'] ?? DistributionEvent::COMPLIANCE_STATUS_NOT_AVAILABLE_YET;
+            $reason = trim((string) ($state['reason'] ?? ''));
+
+            if ($status !== DistributionEvent::COMPLIANCE_STATUS_PROVIDED && $reason === '') {
+                $errors["compliance_reasons.{$field}"] = 'Provide a reason when this field is not marked as Provided.';
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function getCompletionComplianceIssues(DistributionEvent $event): array
+    {
+        $states = $event->complianceStates();
+
+        $criticalFields = [
+            'legal_basis_type',
+            'legal_basis_reference_no',
+            'legal_basis_date',
+            'fund_source',
+            'liquidation_status',
+        ];
+
+        if (($event->fund_source ?? '') === 'lgu_trust_fund') {
+            $criticalFields[] = 'trust_account_code';
+        }
+
+        if (in_array($event->liquidation_status, ['pending', 'submitted', 'verified'], true)) {
+            $criticalFields[] = 'liquidation_due_date';
+        }
+
+        if (in_array($event->liquidation_status, ['submitted', 'verified'], true)) {
+            $criticalFields[] = 'liquidation_submitted_at';
+            $criticalFields[] = 'liquidation_reference_no';
+        }
+
+        if ((bool) $event->requires_farmc_endorsement) {
+            $criticalFields[] = 'farmc_reference_no';
+        }
+
+        $issues = [];
+        foreach (array_values(array_unique($criticalFields)) as $field) {
+            $state = $states[$field] ?? [
+                'status' => DistributionEvent::COMPLIANCE_STATUS_NOT_AVAILABLE_YET,
+                'reason' => null,
+            ];
+
+            $status = (string) ($state['status'] ?? DistributionEvent::COMPLIANCE_STATUS_NOT_AVAILABLE_YET);
+            $reason = trim((string) ($state['reason'] ?? ''));
+            $hasValue = $this->hasComplianceFieldValue($event->getAttribute($field));
+
+            if ($status === DistributionEvent::COMPLIANCE_STATUS_PROVIDED && ! $hasValue) {
+                $issues[] = $this->complianceFieldLabel($field).' is marked as Provided but has no value.';
+                continue;
+            }
+
+            if ($status === DistributionEvent::COMPLIANCE_STATUS_NOT_APPLICABLE) {
+                if ($reason === '') {
+                    $issues[] = $this->complianceFieldLabel($field).' must include a reason when marked Not applicable.';
+                }
+                continue;
+            }
+
+            if (! $hasValue) {
+                $issues[] = $this->complianceFieldLabel($field).' is unresolved for completion.';
+                continue;
+            }
+
+            if ($status !== DistributionEvent::COMPLIANCE_STATUS_PROVIDED && $reason === '') {
+                $issues[] = $this->complianceFieldLabel($field).' must include a reason when not marked Provided.';
+            }
+        }
+
+        if (! in_array($event->liquidation_status, ['verified'], true)) {
+            $issues[] = 'Liquidation status must be Verified before completion.';
+        }
+
+        return array_values(array_unique($issues));
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function getOngoingComplianceWarnings(DistributionEvent $event): array
+    {
+        $warnings = [];
+        $states = $event->complianceStates();
+
+        foreach (['legal_basis_type', 'legal_basis_reference_no', 'legal_basis_date', 'fund_source', 'liquidation_status'] as $field) {
+            $hasValue = $this->hasComplianceFieldValue($event->getAttribute($field));
+            $status = (string) data_get($states, "{$field}.status", DistributionEvent::COMPLIANCE_STATUS_NOT_AVAILABLE_YET);
+
+            if (! $hasValue || $status !== DistributionEvent::COMPLIANCE_STATUS_PROVIDED) {
+                $warnings[] = $this->complianceFieldLabel($field);
+            }
+        }
+
+        return array_values(array_unique($warnings));
+    }
+
+    private function complianceFieldLabel(string $field): string
+    {
+        return match ($field) {
+            'legal_basis_type' => 'Legal basis type',
+            'legal_basis_reference_no' => 'Legal basis reference number',
+            'legal_basis_date' => 'Legal basis date',
+            'fund_source' => 'Fund source',
+            'trust_account_code' => 'Trust account code',
+            'liquidation_status' => 'Liquidation status',
+            'liquidation_due_date' => 'Liquidation due date',
+            'liquidation_submitted_at' => 'Liquidation submitted at',
+            'liquidation_reference_no' => 'Liquidation reference number',
+            'farmc_reference_no' => 'FARMC reference number',
+            default => str_replace('_', ' ', $field),
+        };
+    }
+
+    private function hasComplianceFieldValue(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return true;
+        }
+
+        if (is_string($value)) {
+            return trim($value) !== '';
+        }
+
+        return $value !== null;
+    }
+
+    private function hasComplianceFieldStatesColumn(): bool
+    {
+        if ($this->hasComplianceFieldStatesColumn !== null) {
+            return $this->hasComplianceFieldStatesColumn;
+        }
+
+        $this->hasComplianceFieldStatesColumn = Schema::hasColumn('distribution_events', 'compliance_field_states');
+
+        return $this->hasComplianceFieldStatesColumn;
     }
 
     public function approveBeneficiaryList(DistributionEvent $event): RedirectResponse

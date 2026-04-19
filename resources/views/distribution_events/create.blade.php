@@ -319,7 +319,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!groupEl || !inputEl) return;
         groupEl.classList.toggle('d-none', !show);
         inputEl.disabled = !show;
-        inputEl.required = show && required;
+        inputEl.required = false;
         if (!show && inputEl.type !== 'checkbox') {
             inputEl.value = '';
         }
@@ -521,8 +521,26 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function setFieldError(fieldName, message) {
-        var selector = '[name="' + fieldName.replace(/"/g, '\\"') + '"]';
-        var elements = form.querySelectorAll(selector);
+        var escapedFieldName = fieldName.replace(/"/g, '\\"');
+        var selectors = ['[name="' + escapedFieldName + '"]'];
+
+        if (fieldName.indexOf('.') !== -1) {
+            var parts = fieldName.split('.');
+            var bracketName = parts[0];
+
+            for (var i = 1; i < parts.length; i++) {
+                bracketName += '[' + parts[i] + ']';
+            }
+
+            selectors.push('[name="' + bracketName.replace(/"/g, '\\"') + '"]');
+        }
+
+        var elements = [];
+        selectors.some(function (selector) {
+            elements = Array.from(form.querySelectorAll(selector));
+            return elements.length > 0;
+        });
+
         if (!elements.length) {
             return;
         }
@@ -643,7 +661,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 Object.keys(result.data.errors).forEach(function (field) {
                     var messages = result.data.errors[field] || [];
                     if (messages.length > 0) {
-                        setFieldError(field, messages[0]);
+                        setFieldError(field, messages.join(' '));
                     }
                 });
 

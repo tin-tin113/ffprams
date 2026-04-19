@@ -43,6 +43,7 @@ class SystemSettingsController extends Controller
         $activeAgencies = Agency::where('is_active', true)->orderBy('name')->get();
         $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
         $purposes = AssistancePurpose::orderBy('category')->orderBy('name')->get();
+        $purposeCategoryOptions = AssistancePurpose::getCategoryOptions();
 
         // Form Fields data
         $this->validateFormFieldOptions();
@@ -57,7 +58,7 @@ class SystemSettingsController extends Controller
             ];
         })->unique('group');
 
-        return view('admin.settings.index', compact('agencies', 'activeAgencies', 'resourceTypes', 'purposes', 'formFields', 'fieldGroupMeta'));
+        return view('admin.settings.index', compact('agencies', 'activeAgencies', 'resourceTypes', 'purposes', 'purposeCategoryOptions', 'formFields', 'fieldGroupMeta'));
     }
 
     /**
@@ -82,8 +83,9 @@ class SystemSettingsController extends Controller
         $agencies = Agency::where('is_active', true)->orderBy('name')->get();
         $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
         $purposes = AssistancePurpose::orderBy('category')->orderBy('name')->get();
+        $purposeCategoryOptions = AssistancePurpose::getCategoryOptions();
 
-        return view('admin.settings.resource-types.index', compact('agencies', 'resourceTypes', 'purposes'));
+        return view('admin.settings.resource-types.index', compact('agencies', 'resourceTypes', 'purposes', 'purposeCategoryOptions'));
     }
 
     public function indexProgramNames(): View
@@ -253,9 +255,11 @@ class SystemSettingsController extends Controller
 
     public function storePurpose(Request $request): JsonResponse
     {
+        $categories = array_keys(AssistancePurpose::getCategoryOptions());
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:assistance_purposes,name'],
-            'category' => ['required', Rule::in(['production', 'livelihood', 'emergency'])],
+            'category' => ['required', Rule::in($categories)],
             'type' => ['required', 'string', 'max:255'],
             'is_active' => ['boolean'],
         ]);
@@ -281,9 +285,11 @@ class SystemSettingsController extends Controller
 
     public function updatePurpose(Request $request, AssistancePurpose $purpose): JsonResponse
     {
+        $categories = array_keys(AssistancePurpose::getCategoryOptions());
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('assistance_purposes', 'name')->ignore($purpose->id)],
-            'category' => ['required', Rule::in(['production', 'livelihood', 'emergency'])],
+            'category' => ['required', Rule::in($categories)],
             'type' => ['required', 'string', 'max:255'],
             'is_active' => ['boolean'],
         ]);

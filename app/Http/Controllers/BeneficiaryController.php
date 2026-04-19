@@ -156,19 +156,18 @@ class BeneficiaryController extends Controller
 
         // No duplicates - proceed with registration
         $beneficiary = DB::transaction(function () use ($validated) {
-            // Extract agency IDs from nested structure (agencies[id][fieldName])
-            $agenciesData = (array) $validated['agencies'] ?? [];
-            $agencyIds = array_keys($agenciesData); // Get IDs from nested array keys
+            [$agencyIds, $agencyFieldsData] = $this->extractAgencyData($validated['agencies'] ?? []);
             $validated['agency_id'] = $agencyIds[0] ?? null;
-
-            // Extract dynamic agency field data for later storage
-            $agencyFieldsData = $agenciesData; // Already extracted as nested array
 
             unset($validated['agencies']);
 
             // Store unavailability reasons from dynamic fields
             $customFieldReasons = [];
             foreach ($agencyFieldsData as $agencyId => $fieldData) {
+                if (! is_array($fieldData)) {
+                    continue;
+                }
+
                 foreach ($fieldData as $key => $value) {
                     if (strpos($key, '_unavailability_reason') !== false) {
                         $fieldName = str_replace('_unavailability_reason', '', $key);
@@ -184,6 +183,10 @@ class BeneficiaryController extends Controller
 
             // Store dynamic field values directly in beneficiary record
             foreach ($agencyFieldsData as $agencyId => $fieldData) {
+                if (! is_array($fieldData)) {
+                    continue;
+                }
+
                 foreach ($fieldData as $key => $value) {
                     if ($key !== 'has_value' && strpos($key, '_has_value') === false) {
                         if (property_exists(Beneficiary::class, $key) || in_array($key, (new Beneficiary())->getFillable(), true)) {
@@ -319,19 +322,18 @@ class BeneficiaryController extends Controller
         DB::transaction(function () use ($beneficiary, $validated) {
             $oldValues = $beneficiary->toArray();
 
-            // Extract agency IDs from nested structure (agencies[id][fieldName])
-            $agenciesData = (array) $validated['agencies'] ?? [];
-            $agencyIds = array_keys($agenciesData); // Get IDs from nested array keys
+            [$agencyIds, $agencyFieldsData] = $this->extractAgencyData($validated['agencies'] ?? []);
             $validated['agency_id'] = $agencyIds[0] ?? null;
-
-            // Extract dynamic agency field data for later storage
-            $agencyFieldsData = $agenciesData; // Already extracted as nested array
 
             unset($validated['agencies']);
 
             // Store unavailability reasons from dynamic fields
             $customFieldReasons = [];
             foreach ($agencyFieldsData as $agencyId => $fieldData) {
+                if (! is_array($fieldData)) {
+                    continue;
+                }
+
                 foreach ($fieldData as $key => $value) {
                     if (strpos($key, '_unavailability_reason') !== false) {
                         $fieldName = str_replace('_unavailability_reason', '', $key);
@@ -347,6 +349,10 @@ class BeneficiaryController extends Controller
 
             // Store dynamic field values directly in beneficiary record
             foreach ($agencyFieldsData as $agencyId => $fieldData) {
+                if (! is_array($fieldData)) {
+                    continue;
+                }
+
                 foreach ($fieldData as $key => $value) {
                     if ($key !== 'has_value' && strpos($key, '_has_value') === false) {
                         if (property_exists(Beneficiary::class, $key) || in_array($key, (new Beneficiary())->getFillable(), true)) {
@@ -411,6 +417,46 @@ class BeneficiaryController extends Controller
 
         return redirect()->route('beneficiaries.index')
             ->with('success', 'Beneficiary updated successfully.');
+    }
+
+    /**
+     * Normalize agency payload to support both flat IDs and nested dynamic-field structure.
+     *
+     * @return array{0: array<int>, 1: array<int, array<string, mixed>>}
+     */
+    private function extractAgencyData(mixed $agenciesInput): array
+    {
+        if (! is_array($agenciesInput)) {
+            return [[], []];
+        }
+
+        $agencyIds = [];
+        $agencyFieldsData = [];
+
+        foreach ($agenciesInput as $key => $value) {
+            if (is_array($value)) {
+                if (is_numeric($key)) {
+                    $agencyId = (int) $key;
+                    if ($agencyId > 0) {
+                        $agencyIds[] = $agencyId;
+                        $agencyFieldsData[$agencyId] = $value;
+                    }
+                }
+
+                continue;
+            }
+
+            if (is_numeric($value)) {
+                $agencyId = (int) $value;
+                if ($agencyId > 0) {
+                    $agencyIds[] = $agencyId;
+                }
+            }
+        }
+
+        $agencyIds = array_values(array_unique($agencyIds));
+
+        return [$agencyIds, $agencyFieldsData];
     }
 
     /**

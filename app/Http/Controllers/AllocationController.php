@@ -42,9 +42,17 @@ class AllocationController extends Controller
 
         // Programs now loaded dynamically via AJAX when beneficiary is selected
         // This prevents showing ineligible programs to users
-        $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
-        $programNames = ProgramName::with('agency')->active()->orderBy('name')->get();
-        $agencies = Agency::orderBy('name')->get(['id', 'name']);
+        $resourceTypes = ResourceType::with('agency')
+            ->active()
+            ->whereHas('agency', fn ($query) => $query->active())
+            ->orderBy('name')
+            ->get();
+        $programNames = ProgramName::with('agency')
+            ->active()
+            ->whereHas('agency', fn ($query) => $query->active())
+            ->orderBy('name')
+            ->get();
+        $agencies = Agency::active()->orderBy('name')->get(['id', 'name']);
         $assistancePurposes = AssistancePurpose::active()->orderBy('name')->get();
 
         $status = (string) $request->input('status', '');
@@ -213,6 +221,8 @@ class AllocationController extends Controller
             $agencyName = strtoupper(trim((string) ($program->agency?->name ?? '')));
 
             $resourceTypes = ResourceType::query()
+                ->active()
+                ->whereHas('agency', fn ($query) => $query->active())
                 ->where('agency_id', $program->agency_id)
                 ->orderBy('name')
                 ->get(['id', 'name', 'unit', 'agency_id'])

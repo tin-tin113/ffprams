@@ -56,8 +56,7 @@ class BeneficiaryRequest extends FormRequest
 
         $beneficiaryId = $this->route('beneficiary')?->id;
         $agencyData = (array) $this->input('agencies', []);
-        // Extract agency IDs from nested array structure (agencies[id][fieldName])
-        $agencyIds = is_array($agencyData) ? array_keys($agencyData) : [];
+        $agencyIds = $this->extractAgencyIds($agencyData);
         $selectedAgencies = Agency::whereIn('id', $agencyIds)->get();
         $fieldGroupSettings = $this->fieldGroupSettings();
         $classification = $this->input('classification');
@@ -601,8 +600,7 @@ class BeneficiaryRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             $agencyData = (array) $this->input('agencies', []);
-            // Extract agency IDs from nested array structure (agencies[id][fieldName])
-            $selectedAgencyIds = is_array($agencyData) ? array_keys($agencyData) : [];
+            $selectedAgencyIds = $this->extractAgencyIds($agencyData);
             $selectedAgencies = \App\Models\Agency::whereIn('id', $selectedAgencyIds)->get();
 
             foreach ($selectedAgencies as $agency) {
@@ -639,6 +637,37 @@ class BeneficiaryRequest extends FormRequest
                 }
             }
         });
+    }
+
+    /**
+     * @param  array<int|string, mixed>  $agencyData
+     * @return array<int>
+     */
+    private function extractAgencyIds(array $agencyData): array
+    {
+        $agencyIds = [];
+
+        foreach ($agencyData as $key => $value) {
+            if (is_array($value)) {
+                if (is_numeric($key)) {
+                    $agencyId = (int) $key;
+                    if ($agencyId > 0) {
+                        $agencyIds[] = $agencyId;
+                    }
+                }
+
+                continue;
+            }
+
+            if (is_numeric($value)) {
+                $agencyId = (int) $value;
+                if ($agencyId > 0) {
+                    $agencyIds[] = $agencyId;
+                }
+            }
+        }
+
+        return array_values(array_unique($agencyIds));
     }
 
 }

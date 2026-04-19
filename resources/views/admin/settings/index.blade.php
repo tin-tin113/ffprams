@@ -237,6 +237,7 @@
                                         <tr>
                                             <th>Name</th>
                                             <th>Category</th>
+                                            <th>Type</th>
                                             <th class="text-center" style="width: 120px;">Actions</th>
                                         </tr>
                                     </thead>
@@ -247,12 +248,16 @@
                                                 <td>
                                                     <span class="badge bg-info">{{ $purpose->category }}</span>
                                                 </td>
+                                                <td>{{ $purpose->type }}</td>
                                                 <td class="text-center">
                                                     <div class="btn-group btn-group-sm" role="group">
                                                         <button class="btn btn-outline-primary edit-purpose-btn"
                                                                 data-bs-toggle="modal"
                                                                 data-bs-target="#editPurposeModal"
                                                                 data-purpose-id="{{ $purpose->id }}"
+                                                                data-purpose-name="{{ $purpose->name }}"
+                                                                data-purpose-category="{{ $purpose->category }}"
+                                                                data-purpose-type="{{ $purpose->type }}"
                                                                 title="Edit">
                                                             <i class="bi bi-pencil"></i>
                                                         </button>
@@ -267,7 +272,7 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="3" class="text-center text-muted py-4">No purposes found</td>
+                                                <td colspan="4" class="text-center text-muted py-4">No purposes found</td>
                                             </tr>
                                         @endforelse
                                     </tbody>
@@ -677,7 +682,19 @@
 
                     <div class="mb-3">
                         <label for="purposeCategory" class="form-label">Category <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="purposeCategory" name="category" required placeholder="e.g., Agriculture">
+                        <select class="form-select" id="purposeCategory" name="category" required>
+                            <option value="">-- Select Category --</option>
+                            @foreach(($purposeCategoryOptions ?? []) as $value => $option)
+                                <option value="{{ $value }}">{{ $option['label'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="purposeType" class="form-label">Type <span class="text-danger">*</span></label>
+                        <select class="form-select" id="purposeType" name="type" required disabled>
+                            <option value="">-- Select Type --</option>
+                        </select>
                     </div>
                 </form>
             </div>
@@ -708,7 +725,19 @@
 
                     <div class="mb-3">
                         <label for="editPurposeCategory" class="form-label">Category <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="editPurposeCategory" name="category" required>
+                        <select class="form-select" id="editPurposeCategory" name="category" required>
+                            <option value="">-- Select Category --</option>
+                            @foreach(($purposeCategoryOptions ?? []) as $value => $option)
+                                <option value="{{ $value }}">{{ $option['label'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editPurposeType" class="form-label">Type <span class="text-danger">*</span></label>
+                        <select class="form-select" id="editPurposeType" name="type" required disabled>
+                            <option value="">-- Select Type --</option>
+                        </select>
                     </div>
                 </form>
             </div>
@@ -719,6 +748,8 @@
         </div>
     </div>
 </div>
+
+<div id="purposeCategoryOptionsData" data-options='@json($purposeCategoryOptions ?? [])' class="d-none"></div>
 
 <style>
     .nav-tabs .nav-link {
@@ -773,6 +804,32 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const purposeCategoryOptionsElement = document.getElementById('purposeCategoryOptionsData');
+    const purposeCategoryOptions = purposeCategoryOptionsElement
+        ? JSON.parse(purposeCategoryOptionsElement.dataset.options || '{}')
+        : {};
+
+    function populatePurposeTypeSelect(typeSelectId, category, selectedType = '') {
+        const typeSelect = document.getElementById(typeSelectId);
+        const types = purposeCategoryOptions[category]?.types ?? [];
+
+        typeSelect.innerHTML = '<option value="">-- Select Type --</option>';
+
+        types.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type;
+            option.textContent = type;
+
+            if (type === selectedType) {
+                option.selected = true;
+            }
+
+            typeSelect.appendChild(option);
+        });
+
+        typeSelect.disabled = types.length === 0;
+    }
+
     // ========== AGENCIES MANAGEMENT ==========
     async function loadClassifications(containerId) {
         try {
@@ -946,9 +1003,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const agencyId = this.dataset.agencyId;
             const agencyName = this.dataset.agencyName;
 
-            if (confirm(`⚠️ Deactivate "${agencyName}"?\n\nThe agency will be marked as INACTIVE but all data will be preserved.\nIt will no longer appear in forms for new registrations.\n\nYou can reactivate it anytime.`)) {
-                deactivateAgency(agencyId);
-            }
+            confirmThenRun(
+                'Confirm Deactivation',
+                `Deactivate "${agencyName}"? The agency will be marked as inactive and hidden from operational forms, but existing records are preserved.`,
+                function () {
+                    deactivateAgency(agencyId);
+                }
+            );
         });
     });
 
@@ -958,9 +1019,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const agencyId = this.dataset.agencyId;
             const agencyName = this.dataset.agencyName;
 
-            if (confirm(`✓ Activate "${agencyName}"?\n\nThe agency will be marked as ACTIVE.\nIt will appear in forms for new registrations.`)) {
-                activateAgency(agencyId);
-            }
+            confirmThenRun(
+                'Confirm Activation',
+                `Activate "${agencyName}"? The agency will appear again in operational forms and filters.`,
+                function () {
+                    activateAgency(agencyId);
+                }
+            );
         });
     });
 
@@ -1074,9 +1139,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     btn.addEventListener('click', function() {
                         const fieldId = this.dataset.fieldId;
                         const agencyId = this.dataset.agencyId;
-                        if (confirm('Delete this form field?')) {
-                            deleteField(fieldId, agencyId);
-                        }
+                        confirmThenRun(
+                            'Confirm Deletion',
+                            'Delete this form field? This action cannot be undone.',
+                            function () {
+                                deleteField(fieldId, agencyId);
+                            }
+                        );
                     });
                 });
             }
@@ -1365,6 +1434,15 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('addPurposeModal').addEventListener('show.bs.modal', function() {
         document.getElementById('purposeForm').reset();
         document.getElementById('purposeId').value = '';
+        populatePurposeTypeSelect('purposeType', '');
+    });
+
+    document.getElementById('purposeCategory').addEventListener('change', function() {
+        populatePurposeTypeSelect('purposeType', this.value);
+    });
+
+    document.getElementById('editPurposeCategory').addEventListener('change', function() {
+        populatePurposeTypeSelect('editPurposeType', this.value);
     });
 
     document.getElementById('savePurposeBtn').addEventListener('click', async function() {
@@ -1376,7 +1454,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const formData = {
             name: document.getElementById('purposeName').value,
-            category: document.getElementById('purposeCategory').value
+            category: document.getElementById('purposeCategory').value,
+            type: document.getElementById('purposeType').value
         };
 
         try {
@@ -1392,7 +1471,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (!response.ok) {
                 const error = await response.json();
-                alert('Error: ' + (error.message || 'Failed to save purpose'));
+                const details = error.errors
+                    ? Object.values(error.errors).flat().join('\n')
+                    : '';
+
+                alert('Error: ' + (details || error.message || 'Failed to save purpose'));
                 return;
             }
 
@@ -1407,29 +1490,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Edit Purpose
     document.querySelectorAll('.edit-purpose-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            const purposeId = this.dataset.purposeId;
-            loadPurposeData(purposeId);
-        });
-    });
+            document.getElementById('editPurposeId').value = this.dataset.purposeId;
+            document.getElementById('editPurposeName').value = this.dataset.purposeName;
+            document.getElementById('editPurposeCategory').value = this.dataset.purposeCategory;
 
-    async function loadPurposeData(purposeId) {
-        try {
-            const response = await fetch(`/admin/settings/purposes/${purposeId}`, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-            if (!response.ok) throw new Error('Failed to load purpose');
-            const purpose = await response.json();
-
-            document.getElementById('editPurposeId').value = purpose.id;
-            document.getElementById('editPurposeName').value = purpose.name;
-            document.getElementById('editPurposeCategory').value = purpose.category;
+            populatePurposeTypeSelect('editPurposeType', this.dataset.purposeCategory, this.dataset.purposeType);
 
             bootstrap.Modal.getOrCreateInstance(document.getElementById('editPurposeModal')).show();
-        } catch (error) {
-            console.error('Error loading purpose:', error);
-            alert('Error loading purpose data');
-        }
-    }
+        });
+    });
 
     document.getElementById('saveEditPurposeBtn').addEventListener('click', async function() {
         const form = document.getElementById('editPurposeForm');
@@ -1441,7 +1510,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const purposeId = document.getElementById('editPurposeId').value;
         const formData = {
             name: document.getElementById('editPurposeName').value,
-            category: document.getElementById('editPurposeCategory').value
+            category: document.getElementById('editPurposeCategory').value,
+            type: document.getElementById('editPurposeType').value
         };
 
         try {
@@ -1457,7 +1527,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (!response.ok) {
                 const error = await response.json();
-                alert('Error: ' + (error.message || 'Failed to update purpose'));
+                const details = error.errors
+                    ? Object.values(error.errors).flat().join('\n')
+                    : '';
+
+                alert('Error: ' + (details || error.message || 'Failed to update purpose'));
                 return;
             }
 

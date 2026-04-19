@@ -84,8 +84,12 @@ class DirectAssistanceController extends Controller
         $directAssistance = $query->paginate(15)->withQueryString();
 
         // Load filter options
-        $agencies = Agency::orderBy('name')->get();
-        $programs = ProgramName::with('agency')->active()->orderBy('name')->get();
+        $agencies = Agency::active()->orderBy('name')->get();
+        $programs = ProgramName::with('agency')
+            ->active()
+            ->whereHas('agency', fn ($query) => $query->active())
+            ->orderBy('name')
+            ->get();
 
         // Summary stats
         $stats = [

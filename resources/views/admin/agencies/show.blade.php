@@ -126,8 +126,11 @@
                                         <button class="btn btn-xs btn-warning" data-bs-toggle="modal" data-bs-target="#editFieldModal{{ $field->id }}">
                                             <i class="fas fa-edit"></i>
                                         </button>
-                                        <form method="POST" action="{{ route('admin.agencies.form-fields.destroy', [$agency, $field]) }}" class="d-inline"
-                                            onsubmit="return confirm('Delete this field?');">
+                                        <form method="POST"
+                                            action="{{ route('admin.agencies.form-fields.destroy', [$agency, $field]) }}"
+                                            class="d-inline"
+                                            data-confirm-title="Confirm Deletion"
+                                            data-confirm-message="Delete field {{ addslashes($field->display_label) }}? This action cannot be undone.">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-xs btn-danger">
@@ -163,7 +166,9 @@
                                                                     <td>
                                                                         <form method="POST"
                                                                             action="{{ route('admin.agencies.form-fields.options.destroy', [$agency, $field, $option]) }}"
-                                                                            class="d-inline" onsubmit="return confirm('Delete this option?');">
+                                                                            class="d-inline"
+                                                                            data-confirm-title="Confirm Deletion"
+                                                                            data-confirm-message="Delete option {{ addslashes($option->label) }}? This action cannot be undone.">
                                                                             @csrf
                                                                             @method('DELETE')
                                                                             <button type="submit" class="btn btn-xs btn-danger">

@@ -145,7 +145,9 @@
                     <div class="col-xl-2 col-lg-2 col-md-6">
                         <label class="form-label">Sort</label>
                         <select class="form-select" name="sort">
-                            <option value="date_desc" {{ request('sort', 'date_desc') === 'date_desc' ? 'selected' : '' }}>Date: Newest</option>
+                            <option value="created_desc" {{ request('sort', 'created_desc') === 'created_desc' ? 'selected' : '' }}>Created: Newest</option>
+                            <option value="created_asc" {{ request('sort') === 'created_asc' ? 'selected' : '' }}>Created: Oldest</option>
+                            <option value="date_desc" {{ request('sort') === 'date_desc' ? 'selected' : '' }}>Distribution Date: Newest</option>
                             <option value="date_asc" {{ request('sort') === 'date_asc' ? 'selected' : '' }}>Date: Oldest</option>
                             <option value="program_asc" {{ request('sort') === 'program_asc' ? 'selected' : '' }}>Program: A-Z</option>
                             <option value="program_desc" {{ request('sort') === 'program_desc' ? 'selected' : '' }}>Program: Z-A</option>

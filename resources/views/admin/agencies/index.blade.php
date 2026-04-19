@@ -77,7 +77,11 @@
                                 <a href="{{ route('admin.agencies.edit', $agency) }}" class="btn btn-sm btn-warning" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <form method="POST" action="{{ route('admin.agencies.destroy', $agency) }}" class="d-inline" onsubmit="return confirm('Delete this agency?');">
+                                <form method="POST"
+                                      action="{{ route('admin.agencies.destroy', $agency) }}"
+                                      class="d-inline"
+                                      data-confirm-title="Confirm Deletion"
+                                      data-confirm-message="Delete {{ addslashes($agency->name) }}? This action cannot be undone.">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-sm btn-danger" title="Delete">

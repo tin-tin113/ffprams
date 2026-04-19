@@ -33,6 +33,25 @@
             'local_program' => 'Local Program',
             'other' => 'Other',
         ];
+        $complianceStatusLabels = [
+            'provided' => 'Provided',
+            'not_available_yet' => 'Not available yet',
+            'not_applicable' => 'Not applicable',
+            'to_be_verified' => 'To be verified',
+        ];
+        $trackedComplianceFields = [
+            'legal_basis_type' => 'Legal Basis Type',
+            'legal_basis_reference_no' => 'Legal Basis Reference No.',
+            'legal_basis_date' => 'Legal Basis Date',
+            'fund_source' => 'Fund Source',
+            'trust_account_code' => 'Trust Account Code',
+            'liquidation_status' => 'Liquidation Status',
+            'liquidation_due_date' => 'Liquidation Due Date',
+            'liquidation_submitted_at' => 'Liquidation Submitted At',
+            'liquidation_reference_no' => 'Liquidation Reference No.',
+            'farmc_reference_no' => 'FARMC Reference No.',
+        ];
+        $complianceStates = $event->complianceStates();
         $agencyName = $event->resourceType->agency->name ?? 'N/A';
         $agencyBadge = match($agencyName) {
             'DA'   => 'bg-success',
@@ -210,6 +229,23 @@
                 <i class="bi bi-shield-check me-1"></i> Legal and Compliance
             </div>
             <div class="card-body">
+                <div class="mb-3">
+                    @if($completionComplianceReady)
+                        <div class="alert alert-success mb-0">
+                            <strong>Completion Readiness:</strong> All critical compliance checks are currently satisfied.
+                        </div>
+                    @else
+                        <div class="alert alert-warning mb-0">
+                            <strong>Completion Readiness:</strong> Event cannot be marked Completed yet.
+                            <ul class="mb-0 mt-2">
+                                @foreach($completionComplianceIssues as $issue)
+                                    <li>{{ $issue }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+                </div>
+
                 <div class="row g-3 mb-3">
                     <div class="col-md-4">
                         <div class="text-muted small">Legal Basis</div>
@@ -326,6 +362,52 @@
                                 <label for="legal_basis_remarks" class="form-label">Legal/Compliance Remarks</label>
                                 <textarea class="form-control @error('legal_basis_remarks') is-invalid @enderror" id="legal_basis_remarks" name="legal_basis_remarks" rows="2" maxlength="1000">{{ old('legal_basis_remarks', $event->legal_basis_remarks) }}</textarea>
                             </div>
+
+                            <div class="col-12">
+                                <hr>
+                                <h6 class="mb-1">Compliance Availability Tracking</h6>
+                                <p class="text-muted small mb-0">Use status and reason when information is not currently available.</p>
+                            </div>
+
+                            @foreach($trackedComplianceFields as $field => $fieldLabel)
+                                @php
+                                    $stateStatus = old("compliance_states.$field", data_get($complianceStates, "$field.status", 'not_available_yet'));
+                                    $stateReason = old("compliance_reasons.$field", data_get($complianceStates, "$field.reason"));
+                                    $reasonHidden = $stateStatus === 'provided';
+                                @endphp
+                                <div class="col-md-4">
+                                    <label for="compliance_state_{{ $field }}" class="form-label">{{ $fieldLabel }} Status</label>
+                                    <select
+                                        class="form-select compliance-status-select @error("compliance_states.$field") is-invalid @enderror"
+                                        id="compliance_state_{{ $field }}"
+                                        name="compliance_states[{{ $field }}]"
+                                        data-reason-target="compliance_reason_group_{{ $field }}"
+                                    >
+                                        @foreach($complianceStatusLabels as $statusValue => $statusLabel)
+                                            <option value="{{ $statusValue }}" {{ $stateStatus === $statusValue ? 'selected' : '' }}>{{ $statusLabel }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error("compliance_states.$field")
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-md-8 compliance-reason-group {{ $reasonHidden ? 'd-none' : '' }}" id="compliance_reason_group_{{ $field }}">
+                                    <label for="compliance_reason_{{ $field }}" class="form-label">{{ $fieldLabel }} Reason</label>
+                                    <input
+                                        type="text"
+                                        maxlength="500"
+                                        class="form-control @error("compliance_reasons.$field") is-invalid @enderror"
+                                        id="compliance_reason_{{ $field }}"
+                                        name="compliance_reasons[{{ $field }}]"
+                                        value="{{ $stateReason }}"
+                                        placeholder="Explain why this field is not marked as Provided"
+                                    >
+                                    @error("compliance_reasons.$field")
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            @endforeach
+
                             <div class="col-12">
                                 <button type="submit" class="btn btn-outline-primary">
                                     <i class="bi bi-save me-1"></i> Save Compliance Details
@@ -1084,7 +1166,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!groupEl || !inputEl) return;
         groupEl.classList.toggle('d-none', !show);
         inputEl.disabled = !show;
-        inputEl.required = show && required;
+        inputEl.required = false;
     }
 
     function updateShowComplianceDependencies() {
@@ -1113,6 +1195,34 @@ document.addEventListener('DOMContentLoaded', function () {
     showLiquidationStatus?.addEventListener('change', updateShowComplianceDependencies);
     showRequiresFarmc?.addEventListener('change', updateShowComplianceDependencies);
     updateShowComplianceDependencies();
+
+    const complianceStatusSelects = Array.from(document.querySelectorAll('.compliance-status-select'));
+
+    function updateComplianceReasonGroup(selectEl) {
+        const targetId = selectEl.getAttribute('data-reason-target');
+        if (!targetId) {
+            return;
+        }
+
+        const reasonGroup = document.getElementById(targetId);
+        if (!reasonGroup) {
+            return;
+        }
+
+        const reasonInput = reasonGroup.querySelector('input, textarea');
+        const showReason = selectEl.value !== 'provided';
+
+        reasonGroup.classList.toggle('d-none', !showReason);
+
+        if (reasonInput) {
+            reasonInput.required = showReason;
+        }
+    }
+
+    complianceStatusSelects.forEach((selectEl) => {
+        selectEl.addEventListener('change', () => updateComplianceReasonGroup(selectEl));
+        updateComplianceReasonGroup(selectEl);
+    });
 
     const bulkSelectAll = document.getElementById('bulkSelectAll');
     const bulkReleaseForm = document.getElementById('bulkReleaseForm');

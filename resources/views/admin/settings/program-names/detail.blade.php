@@ -315,28 +315,30 @@ document.addEventListener('DOMContentLoaded', function() {
             const reqId = this.dataset.id;
             const programId = this.dataset.programId;
 
-            if (!confirm('Delete this legal requirement document? This action cannot be undone.')) {
-                return;
-            }
-
-            fetch(`/admin/settings/program-names/${programId}/legal-requirements/${reqId}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': csrftoken,
-                    'Accept': 'application/json'
+            confirmThenRun(
+                'Confirm Deletion',
+                'Delete this legal requirement document? This action cannot be undone.',
+                function () {
+                    fetch(`/admin/settings/program-names/${programId}/legal-requirements/${reqId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': csrftoken,
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert(data.message || 'Failed to delete document');
+                        }
+                    })
+                    .catch(function () {
+                        alert('An error occurred');
+                    });
                 }
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert(data.message || 'Failed to delete document');
-                }
-            })
-            .catch(error => {
-                alert('An error occurred');
-            });
+            );
         });
     });
 });

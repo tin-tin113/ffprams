@@ -3,7 +3,6 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -17,10 +16,7 @@ return new class extends Migration
                 $table->string('province')->default('Negros Occidental')->after('municipality');
             }
 
-            // Check before adding index
-            $indexExists = false;
-            $indexes = DB::select("SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_NAME = 'barangays' AND COLUMN_NAME IN ('municipality', 'province')");
-            if (empty($indexes)) {
+            if (! Schema::hasIndex('barangays', ['municipality', 'province'])) {
                 $table->index(['municipality', 'province']);
             }
         });
@@ -29,8 +25,13 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('barangays', function (Blueprint $table) {
-            $table->dropIndex(['municipality', 'province']);
-            $table->dropColumn(['municipality', 'province']);
+            if (Schema::hasColumn('barangays', 'municipality') && Schema::hasColumn('barangays', 'province')) {
+                if (Schema::hasIndex('barangays', ['municipality', 'province'])) {
+                    $table->dropIndex(['municipality', 'province']);
+                }
+
+                $table->dropColumn(['municipality', 'province']);
+            }
         });
     }
 };

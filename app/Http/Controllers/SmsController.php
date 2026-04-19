@@ -27,14 +27,20 @@ class SmsController extends Controller
     public function index(Request $request): View
     {
         $barangays = Barangay::orderBy('name')->get();
-        $programs = ProgramName::active()->orderBy('name')->get(['id', 'name']);
+        $programs = ProgramName::active()
+            ->whereHas('agency', fn ($query) => $query->active())
+            ->orderBy('name')
+            ->get(['id', 'name']);
         $events = DistributionEvent::query()
             ->with(['programName:id,name', 'barangay:id,name'])
             ->whereIn('status', ['Pending', 'Ongoing'])
             ->orderByDesc('distribution_date')
             ->get(['id', 'program_name_id', 'barangay_id', 'distribution_date', 'status']);
 
-        $resourceTypes = ResourceType::active()->orderBy('name')->get(['id', 'name']);
+        $resourceTypes = ResourceType::active()
+            ->whereHas('agency', fn ($query) => $query->active())
+            ->orderBy('name')
+            ->get(['id', 'name']);
         $assistancePurposes = AssistancePurpose::active()
             ->orderBy('category')
             ->orderBy('name')

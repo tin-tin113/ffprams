@@ -187,9 +187,9 @@
                                     <label class="form-label fw-semibold">Category</label>
                                     <select id="purposeCategoryFilter" class="form-select form-select-sm">
                                         <option value="">All Categories</option>
-                                        <option value="production">Production</option>
-                                        <option value="livelihood">Livelihood</option>
-                                        <option value="emergency">Emergency</option>
+                                        @foreach(($purposeCategoryOptions ?? []) as $value => $option)
+                                            <option value="{{ $value }}">{{ $option['label'] }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                                 <div class="col-12 col-md-4">
@@ -381,9 +381,9 @@
                         <label for="purposeCategory" class="form-label">Category <span class="text-danger">*</span></label>
                         <select id="purposeCategory" class="form-select form-select-sm" required>
                             <option value="">-- Select Category --</option>
-                            <option value="production">Production</option>
-                            <option value="livelihood">Livelihood</option>
-                            <option value="emergency">Emergency</option>
+                            @foreach(($purposeCategoryOptions ?? []) as $value => $option)
+                                <option value="{{ $value }}">{{ $option['label'] }}</option>
+                            @endforeach
                         </select>
                     </div>
 
@@ -417,6 +417,8 @@
         </div>
     </div>
 </div>
+
+<div id="purposeCategoryOptionsData" data-options='@json($purposeCategoryOptions ?? [])' class="d-none"></div>
 
 <style>
     /* Page-specific styles - only affect content area, not sidebar */
@@ -651,35 +653,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ========== ASSISTANCE PURPOSES FUNCTIONS ==========
 
+    const purposeCategoryOptionsElement = document.getElementById('purposeCategoryOptionsData');
+    const purposeCategoryOptions = purposeCategoryOptionsElement
+        ? JSON.parse(purposeCategoryOptionsElement.dataset.options || '{}')
+        : {};
+
     // Category Types Mapping
-    const categoryTypes = {
-        production: [
-            'Seeds & Seedlings',
-            'Fertilizers & Soil Amendments',
-            'Farm Equipment & Tools',
-            'Pesticides & Farm Inputs',
-            'Irrigation System',
-            'Livestock Assistance',
-            'Fishery/Aquaculture',
-            'Production Infrastructure',
-        ],
-        livelihood: [
-            'Skills Training',
-            'Alternative Income Program',
-            'Business Capital',
-            'Market Access Support',
-            'Post-Harvest Processing',
-            'Cooperative Development',
-            'Value-Chain Development',
-        ],
-        emergency: [
-            'Disaster Relief',
-            'Emergency Food Assistance',
-            'Medical/Health Assistance',
-            'Livelihood Recovery',
-            'Infrastructure Rehabilitation',
-        ]
-    };
+    const categoryTypes = Object.entries(purposeCategoryOptions).reduce((accumulator, [category, config]) => {
+        accumulator[category] = Array.isArray(config.types) ? config.types : [];
+
+        return accumulator;
+    }, {});
 
     // Populate type dropdown based on category
     function updateTypeDropdown(category) {
