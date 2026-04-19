@@ -1,258 +1,565 @@
-﻿<mxfile host="65bd71144e">
-    <diagram id="ERD_OVERALL" name="00_Overall_System_ERD">
-        <mxGraphModel dx="1800" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2600" pageHeight="1800" background="#ffffff" math="0" shadow="0">
-            <root>
-                <mxCell id="0"/>
-                <mxCell id="1" parent="0"/>
-
-                <mxCell id="title" value="FFPRAMS OVERALL SYSTEM - ERD" style="text;html=1;align=center;verticalAlign=middle;fontSize=20;fontStyle=1" parent="1" vertex="1">
-                    <mxGeometry x="560" y="20" width="1500" height="40" as="geometry"/>
-                </mxCell>
-
-                <mxCell id="t_agencies" value="AGENCIES" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" parent="1" vertex="1">
-                    <mxGeometry x="60" y="100" width="280" height="166" as="geometry"/>
-                </mxCell>
-                <mxCell id="ag_1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_agencies" vertex="1"><mxGeometry y="26" width="280" height="20" as="geometry"/></mxCell>
-                <mxCell id="ag_2" value="name" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_agencies" vertex="1"><mxGeometry y="46" width="280" height="20" as="geometry"/></mxCell>
-                <mxCell id="ag_3" value="full_name" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_agencies" vertex="1"><mxGeometry y="66" width="280" height="20" as="geometry"/></mxCell>
-                <mxCell id="ag_4" value="description" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_agencies" vertex="1"><mxGeometry y="86" width="280" height="20" as="geometry"/></mxCell>
-                <mxCell id="ag_5" value="is_active" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_agencies" vertex="1"><mxGeometry y="106" width="280" height="20" as="geometry"/></mxCell>
-                <mxCell id="ag_6" value="created_at / updated_at" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_agencies" vertex="1"><mxGeometry y="126" width="280" height="20" as="geometry"/></mxCell>
-
-                <mxCell id="t_users" value="USERS" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" parent="1" vertex="1">
-                    <mxGeometry x="60" y="300" width="280" height="166" as="geometry"/>
-                </mxCell>
-                <mxCell id="us_1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_users" vertex="1"><mxGeometry y="26" width="280" height="20" as="geometry"/></mxCell>
-                <mxCell id="us_2" value="name" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_users" vertex="1"><mxGeometry y="46" width="280" height="20" as="geometry"/></mxCell>
-                <mxCell id="us_3" value="email (unique)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_users" vertex="1"><mxGeometry y="66" width="280" height="20" as="geometry"/></mxCell>
-                <mxCell id="us_4" value="role" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_users" vertex="1"><mxGeometry y="86" width="280" height="20" as="geometry"/></mxCell>
-                <mxCell id="us_5" value="FK agency_id (nullable)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_users" vertex="1"><mxGeometry y="106" width="280" height="20" as="geometry"/></mxCell>
-                <mxCell id="us_6" value="timestamps" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_users" vertex="1"><mxGeometry y="126" width="280" height="20" as="geometry"/></mxCell>
-
-                <mxCell id="t_classifications" value="CLASSIFICATIONS" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" parent="1" vertex="1">
-                    <mxGeometry x="380" y="100" width="280" height="126" as="geometry"/>
-                </mxCell>
-                <mxCell id="cl_1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_classifications" vertex="1"><mxGeometry y="26" width="280" height="20" as="geometry"/></mxCell>
-                <mxCell id="cl_2" value="name (unique)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_classifications" vertex="1"><mxGeometry y="46" width="280" height="20" as="geometry"/></mxCell>
-                <mxCell id="cl_3" value="description" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_classifications" vertex="1"><mxGeometry y="66" width="280" height="20" as="geometry"/></mxCell>
-                <mxCell id="cl_4" value="timestamps" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_classifications" vertex="1"><mxGeometry y="86" width="280" height="20" as="geometry"/></mxCell>
-
-                <mxCell id="t_agency_classifications" value="AGENCY_CLASSIFICATIONS" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" parent="1" vertex="1">
-                    <mxGeometry x="380" y="250" width="300" height="146" as="geometry"/>
-                </mxCell>
-                <mxCell id="ac_1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_agency_classifications" vertex="1"><mxGeometry y="26" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="ac_2" value="FK agency_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_agency_classifications" vertex="1"><mxGeometry y="46" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="ac_3" value="FK classification_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_agency_classifications" vertex="1"><mxGeometry y="66" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="ac_4" value="UNIQUE(agency_id, classification_id)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_agency_classifications" vertex="1"><mxGeometry y="86" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="ac_5" value="timestamps" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_agency_classifications" vertex="1"><mxGeometry y="106" width="300" height="20" as="geometry"/></mxCell>
-
-                <mxCell id="t_agency_form_fields" value="AGENCY_FORM_FIELDS" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" parent="1" vertex="1">
-                    <mxGeometry x="720" y="90" width="330" height="206" as="geometry"/>
-                </mxCell>
-                <mxCell id="af_1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_agency_form_fields" vertex="1"><mxGeometry y="26" width="330" height="20" as="geometry"/></mxCell>
-                <mxCell id="af_2" value="FK agency_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_agency_form_fields" vertex="1"><mxGeometry y="46" width="330" height="20" as="geometry"/></mxCell>
-                <mxCell id="af_3" value="field_name / display_label" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_agency_form_fields" vertex="1"><mxGeometry y="66" width="330" height="20" as="geometry"/></mxCell>
-                <mxCell id="af_4" value="field_type / is_required / is_active" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_agency_form_fields" vertex="1"><mxGeometry y="86" width="330" height="20" as="geometry"/></mxCell>
-                <mxCell id="af_5" value="sort_order / form_section" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_agency_form_fields" vertex="1"><mxGeometry y="106" width="330" height="20" as="geometry"/></mxCell>
-                <mxCell id="af_6" value="help_text / validation_rules" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_agency_form_fields" vertex="1"><mxGeometry y="126" width="330" height="20" as="geometry"/></mxCell>
-                <mxCell id="af_7" value="UNIQUE(agency_id, field_name)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_agency_form_fields" vertex="1"><mxGeometry y="146" width="330" height="20" as="geometry"/></mxCell>
-                <mxCell id="af_8" value="timestamps" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_agency_form_fields" vertex="1"><mxGeometry y="166" width="330" height="20" as="geometry"/></mxCell>
-
-                <mxCell id="t_agency_form_field_options" value="AGENCY_FORM_FIELD_OPTIONS" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" parent="1" vertex="1">
-                    <mxGeometry x="1090" y="120" width="330" height="146" as="geometry"/>
-                </mxCell>
-                <mxCell id="afo_1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_agency_form_field_options" vertex="1"><mxGeometry y="26" width="330" height="20" as="geometry"/></mxCell>
-                <mxCell id="afo_2" value="FK agency_form_field_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_agency_form_field_options" vertex="1"><mxGeometry y="46" width="330" height="20" as="geometry"/></mxCell>
-                <mxCell id="afo_3" value="label / value / sort_order" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_agency_form_field_options" vertex="1"><mxGeometry y="66" width="330" height="20" as="geometry"/></mxCell>
-                <mxCell id="afo_4" value="timestamps" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_agency_form_field_options" vertex="1"><mxGeometry y="86" width="330" height="20" as="geometry"/></mxCell>
-
-                <mxCell id="t_form_field_options" value="FORM_FIELD_OPTIONS" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" parent="1" vertex="1">
-                    <mxGeometry x="1460" y="110" width="330" height="166" as="geometry"/>
-                </mxCell>
-                <mxCell id="fo_1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_form_field_options" vertex="1"><mxGeometry y="26" width="330" height="20" as="geometry"/></mxCell>
-                <mxCell id="fo_2" value="field_group / placement_section" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_form_field_options" vertex="1"><mxGeometry y="46" width="330" height="20" as="geometry"/></mxCell>
-                <mxCell id="fo_3" value="label / value / sort_order" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_form_field_options" vertex="1"><mxGeometry y="66" width="330" height="20" as="geometry"/></mxCell>
-                <mxCell id="fo_4" value="is_required / is_active" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_form_field_options" vertex="1"><mxGeometry y="86" width="330" height="20" as="geometry"/></mxCell>
-                <mxCell id="fo_5" value="UNIQUE(field_group, value)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_form_field_options" vertex="1"><mxGeometry y="106" width="330" height="20" as="geometry"/></mxCell>
-                <mxCell id="fo_6" value="timestamps" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_form_field_options" vertex="1"><mxGeometry y="126" width="330" height="20" as="geometry"/></mxCell>
-
-                <mxCell id="t_barangays" value="BARANGAYS" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" parent="1" vertex="1">
-                    <mxGeometry x="60" y="560" width="300" height="146" as="geometry"/>
-                </mxCell>
-                <mxCell id="br_1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_barangays" vertex="1"><mxGeometry y="26" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="br_2" value="name / municipality / province" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_barangays" vertex="1"><mxGeometry y="46" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="br_3" value="latitude / longitude" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_barangays" vertex="1"><mxGeometry y="66" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="br_4" value="timestamps" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_barangays" vertex="1"><mxGeometry y="86" width="300" height="20" as="geometry"/></mxCell>
-
-                <mxCell id="t_beneficiaries" value="BENEFICIARIES" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" parent="1" vertex="1">
-                    <mxGeometry x="400" y="500" width="390" height="286" as="geometry"/>
-                </mxCell>
-                <mxCell id="bf_1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_beneficiaries" vertex="1"><mxGeometry y="26" width="390" height="20" as="geometry"/></mxCell>
-                <mxCell id="bf_2" value="FK agency_id (nullable)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_beneficiaries" vertex="1"><mxGeometry y="46" width="390" height="20" as="geometry"/></mxCell>
-                <mxCell id="bf_3" value="FK barangay_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_beneficiaries" vertex="1"><mxGeometry y="66" width="390" height="20" as="geometry"/></mxCell>
-                <mxCell id="bf_4" value="first_name / middle_name / last_name / name_suffix" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_beneficiaries" vertex="1"><mxGeometry y="86" width="390" height="20" as="geometry"/></mxCell>
-                <mxCell id="bf_5" value="full_name / sex / date_of_birth" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_beneficiaries" vertex="1"><mxGeometry y="106" width="390" height="20" as="geometry"/></mxCell>
-                <mxCell id="bf_6" value="classification / civil_status / highest_education / id_type" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_beneficiaries" vertex="1"><mxGeometry y="126" width="390" height="20" as="geometry"/></mxCell>
-                <mxCell id="bf_7" value="contact_number / home_address / photo_path / status" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_beneficiaries" vertex="1"><mxGeometry y="146" width="390" height="20" as="geometry"/></mxCell>
-                <mxCell id="bf_8" value="agency-specific fields (RSBSA / FishR / CLOA)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_beneficiaries" vertex="1"><mxGeometry y="166" width="390" height="20" as="geometry"/></mxCell>
-                <mxCell id="bf_9" value="custom_fields / custom_field_unavailability_reasons" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_beneficiaries" vertex="1"><mxGeometry y="186" width="390" height="20" as="geometry"/></mxCell>
-                <mxCell id="bf_10" value="registered_at / timestamps / deleted_at" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_beneficiaries" vertex="1"><mxGeometry y="206" width="390" height="20" as="geometry"/></mxCell>
-
-                <mxCell id="t_beneficiary_agencies" value="BENEFICIARY_AGENCIES" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" parent="1" vertex="1">
-                    <mxGeometry x="820" y="520" width="320" height="146" as="geometry"/>
-                </mxCell>
-                <mxCell id="ba_1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_beneficiary_agencies" vertex="1"><mxGeometry y="26" width="320" height="20" as="geometry"/></mxCell>
-                <mxCell id="ba_2" value="FK beneficiary_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_beneficiary_agencies" vertex="1"><mxGeometry y="46" width="320" height="20" as="geometry"/></mxCell>
-                <mxCell id="ba_3" value="FK agency_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_beneficiary_agencies" vertex="1"><mxGeometry y="66" width="320" height="20" as="geometry"/></mxCell>
-                <mxCell id="ba_4" value="identifier / registered_at" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_beneficiary_agencies" vertex="1"><mxGeometry y="86" width="320" height="20" as="geometry"/></mxCell>
-                <mxCell id="ba_5" value="UNIQUE(beneficiary_id, agency_id) + timestamps" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_beneficiary_agencies" vertex="1"><mxGeometry y="106" width="320" height="20" as="geometry"/></mxCell>
-
-                <mxCell id="t_beneficiary_attachments" value="BENEFICIARY_ATTACHMENTS" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" parent="1" vertex="1">
-                    <mxGeometry x="1180" y="500" width="350" height="166" as="geometry"/>
-                </mxCell>
-                <mxCell id="bat_1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_beneficiary_attachments" vertex="1"><mxGeometry y="26" width="350" height="20" as="geometry"/></mxCell>
-                <mxCell id="bat_2" value="FK beneficiary_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_beneficiary_attachments" vertex="1"><mxGeometry y="46" width="350" height="20" as="geometry"/></mxCell>
-                <mxCell id="bat_3" value="FK uploaded_by (nullable)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_beneficiary_attachments" vertex="1"><mxGeometry y="66" width="350" height="20" as="geometry"/></mxCell>
-                <mxCell id="bat_4" value="document metadata (path, disk, mime, size, sha256)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_beneficiary_attachments" vertex="1"><mxGeometry y="86" width="350" height="20" as="geometry"/></mxCell>
-                <mxCell id="bat_5" value="timestamps" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_beneficiary_attachments" vertex="1"><mxGeometry y="106" width="350" height="20" as="geometry"/></mxCell>
-
-                <mxCell id="t_resource_types" value="RESOURCE_TYPES" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" parent="1" vertex="1">
-                    <mxGeometry x="60" y="780" width="300" height="166" as="geometry"/>
-                </mxCell>
-                <mxCell id="rt_1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_resource_types" vertex="1"><mxGeometry y="26" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="rt_2" value="name / unit / description" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_resource_types" vertex="1"><mxGeometry y="46" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="rt_3" value="source_agency" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_resource_types" vertex="1"><mxGeometry y="66" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="rt_4" value="FK agency_id (nullable)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_resource_types" vertex="1"><mxGeometry y="86" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="rt_5" value="is_active / timestamps" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_resource_types" vertex="1"><mxGeometry y="106" width="300" height="20" as="geometry"/></mxCell>
-
-                <mxCell id="t_program_names" value="PROGRAM_NAMES" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" parent="1" vertex="1">
-                    <mxGeometry x="400" y="820" width="320" height="166" as="geometry"/>
-                </mxCell>
-                <mxCell id="pn_1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_program_names" vertex="1"><mxGeometry y="26" width="320" height="20" as="geometry"/></mxCell>
-                <mxCell id="pn_2" value="FK agency_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_program_names" vertex="1"><mxGeometry y="46" width="320" height="20" as="geometry"/></mxCell>
-                <mxCell id="pn_3" value="name / description" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_program_names" vertex="1"><mxGeometry y="66" width="320" height="20" as="geometry"/></mxCell>
-                <mxCell id="pn_4" value="classification / is_active" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_program_names" vertex="1"><mxGeometry y="86" width="320" height="20" as="geometry"/></mxCell>
-                <mxCell id="pn_5" value="timestamps" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_program_names" vertex="1"><mxGeometry y="106" width="320" height="20" as="geometry"/></mxCell>
-
-                <mxCell id="t_assistance_purposes" value="ASSISTANCE_PURPOSES" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" parent="1" vertex="1">
-                    <mxGeometry x="760" y="820" width="300" height="146" as="geometry"/>
-                </mxCell>
-                <mxCell id="ap_1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_assistance_purposes" vertex="1"><mxGeometry y="26" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="ap_2" value="name" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_assistance_purposes" vertex="1"><mxGeometry y="46" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="ap_3" value="category / type / is_active" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_assistance_purposes" vertex="1"><mxGeometry y="66" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="ap_4" value="timestamps" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_assistance_purposes" vertex="1"><mxGeometry y="86" width="300" height="20" as="geometry"/></mxCell>
-
-                <mxCell id="t_distribution_events" value="DISTRIBUTION_EVENTS" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" parent="1" vertex="1">
-                    <mxGeometry x="1100" y="760" width="390" height="266" as="geometry"/>
-                </mxCell>
-                <mxCell id="de_1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_distribution_events" vertex="1"><mxGeometry y="26" width="390" height="20" as="geometry"/></mxCell>
-                <mxCell id="de_2" value="FK barangay_id / FK resource_type_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_distribution_events" vertex="1"><mxGeometry y="46" width="390" height="20" as="geometry"/></mxCell>
-                <mxCell id="de_3" value="FK program_name_id (required)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_distribution_events" vertex="1"><mxGeometry y="66" width="390" height="20" as="geometry"/></mxCell>
-                <mxCell id="de_4" value="FK created_by / FK beneficiary_list_approved_by" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_distribution_events" vertex="1"><mxGeometry y="86" width="390" height="20" as="geometry"/></mxCell>
-                <mxCell id="de_5" value="distribution_date / status / type / total_fund_amount" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_distribution_events" vertex="1"><mxGeometry y="106" width="390" height="20" as="geometry"/></mxCell>
-                <mxCell id="de_6" value="legal_basis_* / fund_source / trust_account_code" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_distribution_events" vertex="1"><mxGeometry y="126" width="390" height="20" as="geometry"/></mxCell>
-                <mxCell id="de_7" value="liquidation_* / requires_farmc_endorsement / farmc_*" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_distribution_events" vertex="1"><mxGeometry y="146" width="390" height="20" as="geometry"/></mxCell>
-                <mxCell id="de_8" value="beneficiary_list_approved_at / timestamps / deleted_at" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_distribution_events" vertex="1"><mxGeometry y="166" width="390" height="20" as="geometry"/></mxCell>
-
-                <mxCell id="t_allocations" value="ALLOCATIONS" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" parent="1" vertex="1">
-                    <mxGeometry x="1540" y="760" width="380" height="226" as="geometry"/>
-                </mxCell>
-                <mxCell id="al_1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_allocations" vertex="1"><mxGeometry y="26" width="380" height="20" as="geometry"/></mxCell>
-                <mxCell id="al_2" value="FK distribution_event_id (nullable) / FK beneficiary_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_allocations" vertex="1"><mxGeometry y="46" width="380" height="20" as="geometry"/></mxCell>
-                <mxCell id="al_3" value="FK program_name_id / FK resource_type_id / FK assistance_purpose_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_allocations" vertex="1"><mxGeometry y="66" width="380" height="20" as="geometry"/></mxCell>
-                <mxCell id="al_4" value="release_method / quantity / amount / is_ready_for_release" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_allocations" vertex="1"><mxGeometry y="86" width="380" height="20" as="geometry"/></mxCell>
-                <mxCell id="al_5" value="distributed_at / release_outcome / remarks" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_allocations" vertex="1"><mxGeometry y="106" width="380" height="20" as="geometry"/></mxCell>
-                <mxCell id="al_6" value="timestamps / deleted_at" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_allocations" vertex="1"><mxGeometry y="126" width="380" height="20" as="geometry"/></mxCell>
-
-                <mxCell id="t_direct_assistance" value="DIRECT_ASSISTANCE" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" parent="1" vertex="1">
-                    <mxGeometry x="1540" y="1020" width="380" height="226" as="geometry"/>
-                </mxCell>
-                <mxCell id="da_1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_direct_assistance" vertex="1"><mxGeometry y="26" width="380" height="20" as="geometry"/></mxCell>
-                <mxCell id="da_2" value="FK beneficiary_id / FK program_name_id / FK resource_type_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_direct_assistance" vertex="1"><mxGeometry y="46" width="380" height="20" as="geometry"/></mxCell>
-                <mxCell id="da_3" value="FK assistance_purpose_id (nullable) / FK distribution_event_id (nullable)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_direct_assistance" vertex="1"><mxGeometry y="66" width="380" height="20" as="geometry"/></mxCell>
-                <mxCell id="da_4" value="FK created_by / FK distributed_by (nullable)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_direct_assistance" vertex="1"><mxGeometry y="86" width="380" height="20" as="geometry"/></mxCell>
-                <mxCell id="da_5" value="quantity / amount / status" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_direct_assistance" vertex="1"><mxGeometry y="106" width="380" height="20" as="geometry"/></mxCell>
-                <mxCell id="da_6" value="distributed_at / release_outcome / remarks" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_direct_assistance" vertex="1"><mxGeometry y="126" width="380" height="20" as="geometry"/></mxCell>
-                <mxCell id="da_7" value="timestamps / deleted_at" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_direct_assistance" vertex="1"><mxGeometry y="146" width="380" height="20" as="geometry"/></mxCell>
-
-                <mxCell id="t_program_legal_requirements" value="PROGRAM_LEGAL_REQUIREMENTS" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" parent="1" vertex="1">
-                    <mxGeometry x="400" y="1040" width="380" height="166" as="geometry"/>
-                </mxCell>
-                <mxCell id="plr_1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_program_legal_requirements" vertex="1"><mxGeometry y="26" width="380" height="20" as="geometry"/></mxCell>
-                <mxCell id="plr_2" value="FK program_name_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_program_legal_requirements" vertex="1"><mxGeometry y="46" width="380" height="20" as="geometry"/></mxCell>
-                <mxCell id="plr_3" value="FK uploaded_by (nullable)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_program_legal_requirements" vertex="1"><mxGeometry y="66" width="380" height="20" as="geometry"/></mxCell>
-                <mxCell id="plr_4" value="document metadata + remarks" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_program_legal_requirements" vertex="1"><mxGeometry y="86" width="380" height="20" as="geometry"/></mxCell>
-                <mxCell id="plr_5" value="timestamps" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_program_legal_requirements" vertex="1"><mxGeometry y="106" width="380" height="20" as="geometry"/></mxCell>
-
-                <mxCell id="t_record_attachments" value="RECORD_ATTACHMENTS (POLYMORPHIC)" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" parent="1" vertex="1">
-                    <mxGeometry x="820" y="1040" width="460" height="166" as="geometry"/>
-                </mxCell>
-                <mxCell id="ra_1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_record_attachments" vertex="1"><mxGeometry y="26" width="460" height="20" as="geometry"/></mxCell>
-                <mxCell id="ra_2" value="attachable_type / attachable_id (morph to allocations/direct_assistance/distribution_events)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_record_attachments" vertex="1"><mxGeometry y="46" width="460" height="20" as="geometry"/></mxCell>
-                <mxCell id="ra_3" value="FK uploaded_by (nullable)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_record_attachments" vertex="1"><mxGeometry y="66" width="460" height="20" as="geometry"/></mxCell>
-                <mxCell id="ra_4" value="document metadata (path, disk, mime, size, sha256)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_record_attachments" vertex="1"><mxGeometry y="86" width="460" height="20" as="geometry"/></mxCell>
-                <mxCell id="ra_5" value="timestamps" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_record_attachments" vertex="1"><mxGeometry y="106" width="460" height="20" as="geometry"/></mxCell>
-
-                <mxCell id="t_sms_logs" value="SMS_LOGS" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" parent="1" vertex="1">
-                    <mxGeometry x="1320" y="1040" width="300" height="166" as="geometry"/>
-                </mxCell>
-                <mxCell id="sm_1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_sms_logs" vertex="1"><mxGeometry y="26" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="sm_2" value="FK beneficiary_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_sms_logs" vertex="1"><mxGeometry y="46" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="sm_3" value="message / status / delivery_status" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_sms_logs" vertex="1"><mxGeometry y="66" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="sm_4" value="response / gateway_message_id / sent_at / callback_received_at / retry_count" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_sms_logs" vertex="1"><mxGeometry y="86" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="sm_5" value="timestamps" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_sms_logs" vertex="1"><mxGeometry y="106" width="300" height="20" as="geometry"/></mxCell>
-
-                <mxCell id="t_audit_logs" value="AUDIT_LOGS" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" parent="1" vertex="1">
-                    <mxGeometry x="1660" y="500" width="300" height="166" as="geometry"/>
-                </mxCell>
-                <mxCell id="au_1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_audit_logs" vertex="1"><mxGeometry y="26" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="au_2" value="FK user_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" parent="t_audit_logs" vertex="1"><mxGeometry y="46" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="au_3" value="action / table_name / record_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_audit_logs" vertex="1"><mxGeometry y="66" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="au_4" value="old_values / new_values" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_audit_logs" vertex="1"><mxGeometry y="86" width="300" height="20" as="geometry"/></mxCell>
-                <mxCell id="au_5" value="timestamps" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" parent="t_audit_logs" vertex="1"><mxGeometry y="106" width="300" height="20" as="geometry"/></mxCell>
-
-                <mxCell id="r1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_users" target="t_agencies" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_agency_classifications" target="t_agencies" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_agency_classifications" target="t_classifications" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_agency_form_fields" target="t_agencies" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_agency_form_field_options" target="t_agency_form_fields" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-
-                <mxCell id="r6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_beneficiaries" target="t_agencies" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_beneficiaries" target="t_barangays" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_beneficiary_agencies" target="t_beneficiaries" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_beneficiary_agencies" target="t_agencies" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_beneficiary_attachments" target="t_beneficiaries" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_beneficiary_attachments" target="t_users" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-
-                <mxCell id="r12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_resource_types" target="t_agencies" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_program_names" target="t_agencies" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_program_legal_requirements" target="t_program_names" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_program_legal_requirements" target="t_users" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-
-                <mxCell id="r16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_distribution_events" target="t_barangays" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_distribution_events" target="t_resource_types" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_distribution_events" target="t_program_names" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r19" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_distribution_events" target="t_users" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-
-                <mxCell id="r20" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_allocations" target="t_distribution_events" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r21" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_allocations" target="t_beneficiaries" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_allocations" target="t_program_names" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r23" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_allocations" target="t_resource_types" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r24" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_allocations" target="t_assistance_purposes" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-
-                <mxCell id="r25" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_direct_assistance" target="t_beneficiaries" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r26" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_direct_assistance" target="t_program_names" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r27" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_direct_assistance" target="t_resource_types" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r28" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_direct_assistance" target="t_assistance_purposes" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r29" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_direct_assistance" target="t_distribution_events" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r30" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_direct_assistance" target="t_users" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-
-                <mxCell id="r31" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_record_attachments" target="t_users" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r32" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_sms_logs" target="t_beneficiaries" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="r33" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" parent="1" source="t_audit_logs" target="t_users" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-
-            </root>
-        </mxGraphModel>
-    </diagram>
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.6 Chrome/144.0.7559.236 Electron/40.8.4 Safari/537.36" version="29.6.6">
+  <diagram id="ERD_OVERALL" name="00_Overall_System_ERD">
+    <mxGraphModel dx="4069" dy="873" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2600" pageHeight="1800" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=20;fontStyle=1" value="FFPRAMS OVERALL SYSTEM - ERD" vertex="1">
+          <mxGeometry height="40" width="1500" x="560" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="t_agencies" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" value="AGENCIES" vertex="1">
+          <mxGeometry height="166" width="280" x="-20" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="ag_1" parent="t_agencies" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="PK id" vertex="1">
+          <mxGeometry height="20" width="280" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="ag_2" parent="t_agencies" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="name" vertex="1">
+          <mxGeometry height="20" width="280" y="46" as="geometry" />
+        </mxCell>
+        <mxCell id="ag_3" parent="t_agencies" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="full_name" vertex="1">
+          <mxGeometry height="20" width="280" y="66" as="geometry" />
+        </mxCell>
+        <mxCell id="ag_4" parent="t_agencies" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="description" vertex="1">
+          <mxGeometry height="20" width="280" y="86" as="geometry" />
+        </mxCell>
+        <mxCell id="ag_5" parent="t_agencies" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="is_active" vertex="1">
+          <mxGeometry height="20" width="280" y="106" as="geometry" />
+        </mxCell>
+        <mxCell id="ag_6" parent="t_agencies" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="created_at / updated_at" vertex="1">
+          <mxGeometry height="20" width="280" y="126" as="geometry" />
+        </mxCell>
+        <mxCell id="t_users" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" value="USERS" vertex="1">
+          <mxGeometry height="166" width="280" x="-20" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="us_1" parent="t_users" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="PK id" vertex="1">
+          <mxGeometry height="20" width="280" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="us_2" parent="t_users" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="name" vertex="1">
+          <mxGeometry height="20" width="280" y="46" as="geometry" />
+        </mxCell>
+        <mxCell id="us_3" parent="t_users" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="email (unique)" vertex="1">
+          <mxGeometry height="20" width="280" y="66" as="geometry" />
+        </mxCell>
+        <mxCell id="us_4" parent="t_users" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="role" vertex="1">
+          <mxGeometry height="20" width="280" y="86" as="geometry" />
+        </mxCell>
+        <mxCell id="us_5" parent="t_users" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK agency_id (nullable)" vertex="1">
+          <mxGeometry height="20" width="280" y="106" as="geometry" />
+        </mxCell>
+        <mxCell id="us_6" parent="t_users" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="timestamps" vertex="1">
+          <mxGeometry height="20" width="280" y="126" as="geometry" />
+        </mxCell>
+        <mxCell id="t_classifications" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" value="CLASSIFICATIONS" vertex="1">
+          <mxGeometry height="126" width="280" x="380" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="cl_1" parent="t_classifications" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="PK id" vertex="1">
+          <mxGeometry height="20" width="280" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="cl_2" parent="t_classifications" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="name (unique)" vertex="1">
+          <mxGeometry height="20" width="280" y="46" as="geometry" />
+        </mxCell>
+        <mxCell id="cl_3" parent="t_classifications" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="description" vertex="1">
+          <mxGeometry height="20" width="280" y="66" as="geometry" />
+        </mxCell>
+        <mxCell id="cl_4" parent="t_classifications" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="timestamps" vertex="1">
+          <mxGeometry height="20" width="280" y="86" as="geometry" />
+        </mxCell>
+        <mxCell id="t_agency_classifications" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" value="AGENCY_CLASSIFICATIONS" vertex="1">
+          <mxGeometry height="146" width="300" x="380" y="276" as="geometry" />
+        </mxCell>
+        <mxCell id="ac_1" parent="t_agency_classifications" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="PK id" vertex="1">
+          <mxGeometry height="20" width="300" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="ac_2" parent="t_agency_classifications" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK agency_id" vertex="1">
+          <mxGeometry height="20" width="300" y="46" as="geometry" />
+        </mxCell>
+        <mxCell id="ac_3" parent="t_agency_classifications" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK classification_id" vertex="1">
+          <mxGeometry height="20" width="300" y="66" as="geometry" />
+        </mxCell>
+        <mxCell id="ac_4" parent="t_agency_classifications" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="UNIQUE(agency_id, classification_id)" vertex="1">
+          <mxGeometry height="20" width="300" y="86" as="geometry" />
+        </mxCell>
+        <mxCell id="ac_5" parent="t_agency_classifications" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="timestamps" vertex="1">
+          <mxGeometry height="20" width="300" y="106" as="geometry" />
+        </mxCell>
+        <mxCell id="t_agency_form_fields" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" value="AGENCY_FORM_FIELDS" vertex="1">
+          <mxGeometry height="206" width="330" x="720" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="af_1" parent="t_agency_form_fields" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="PK id" vertex="1">
+          <mxGeometry height="20" width="330" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="af_2" parent="t_agency_form_fields" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK agency_id" vertex="1">
+          <mxGeometry height="20" width="330" y="46" as="geometry" />
+        </mxCell>
+        <mxCell id="af_3" parent="t_agency_form_fields" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="field_name / display_label" vertex="1">
+          <mxGeometry height="20" width="330" y="66" as="geometry" />
+        </mxCell>
+        <mxCell id="af_4" parent="t_agency_form_fields" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="field_type / is_required / is_active" vertex="1">
+          <mxGeometry height="20" width="330" y="86" as="geometry" />
+        </mxCell>
+        <mxCell id="af_5" parent="t_agency_form_fields" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="sort_order / form_section" vertex="1">
+          <mxGeometry height="20" width="330" y="106" as="geometry" />
+        </mxCell>
+        <mxCell id="af_6" parent="t_agency_form_fields" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="help_text / validation_rules" vertex="1">
+          <mxGeometry height="20" width="330" y="126" as="geometry" />
+        </mxCell>
+        <mxCell id="af_7" parent="t_agency_form_fields" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="UNIQUE(agency_id, field_name)" vertex="1">
+          <mxGeometry height="20" width="330" y="146" as="geometry" />
+        </mxCell>
+        <mxCell id="af_8" parent="t_agency_form_fields" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="timestamps" vertex="1">
+          <mxGeometry height="20" width="330" y="166" as="geometry" />
+        </mxCell>
+        <mxCell id="t_agency_form_field_options" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" value="AGENCY_FORM_FIELD_OPTIONS" vertex="1">
+          <mxGeometry height="146" width="330" x="1090" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="afo_1" parent="t_agency_form_field_options" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="PK id" vertex="1">
+          <mxGeometry height="20" width="330" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="afo_2" parent="t_agency_form_field_options" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK agency_form_field_id" vertex="1">
+          <mxGeometry height="20" width="330" y="46" as="geometry" />
+        </mxCell>
+        <mxCell id="afo_3" parent="t_agency_form_field_options" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="label / value / sort_order" vertex="1">
+          <mxGeometry height="20" width="330" y="66" as="geometry" />
+        </mxCell>
+        <mxCell id="afo_4" parent="t_agency_form_field_options" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="timestamps" vertex="1">
+          <mxGeometry height="20" width="330" y="86" as="geometry" />
+        </mxCell>
+        <mxCell id="t_form_field_options" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" value="FORM_FIELD_OPTIONS" vertex="1">
+          <mxGeometry height="166" width="330" x="1460" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="fo_1" parent="t_form_field_options" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="PK id" vertex="1">
+          <mxGeometry height="20" width="330" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="fo_2" parent="t_form_field_options" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="field_group / placement_section" vertex="1">
+          <mxGeometry height="20" width="330" y="46" as="geometry" />
+        </mxCell>
+        <mxCell id="fo_3" parent="t_form_field_options" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="label / value / sort_order" vertex="1">
+          <mxGeometry height="20" width="330" y="66" as="geometry" />
+        </mxCell>
+        <mxCell id="fo_4" parent="t_form_field_options" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="is_required / is_active" vertex="1">
+          <mxGeometry height="20" width="330" y="86" as="geometry" />
+        </mxCell>
+        <mxCell id="fo_5" parent="t_form_field_options" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="UNIQUE(field_group, value)" vertex="1">
+          <mxGeometry height="20" width="330" y="106" as="geometry" />
+        </mxCell>
+        <mxCell id="fo_6" parent="t_form_field_options" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="timestamps" vertex="1">
+          <mxGeometry height="20" width="330" y="126" as="geometry" />
+        </mxCell>
+        <mxCell id="t_barangays" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" value="BARANGAYS" vertex="1">
+          <mxGeometry height="146" width="300" x="-20" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="br_1" parent="t_barangays" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="PK id" vertex="1">
+          <mxGeometry height="20" width="300" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="br_2" parent="t_barangays" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="name / municipality / province" vertex="1">
+          <mxGeometry height="20" width="300" y="46" as="geometry" />
+        </mxCell>
+        <mxCell id="br_3" parent="t_barangays" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="latitude / longitude" vertex="1">
+          <mxGeometry height="20" width="300" y="66" as="geometry" />
+        </mxCell>
+        <mxCell id="br_4" parent="t_barangays" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="timestamps" vertex="1">
+          <mxGeometry height="20" width="300" y="86" as="geometry" />
+        </mxCell>
+        <mxCell id="t_beneficiaries" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" value="BENEFICIARIES" vertex="1">
+          <mxGeometry height="286" width="390" x="440" y="760" as="geometry" />
+        </mxCell>
+        <mxCell id="bf_1" parent="t_beneficiaries" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="PK id" vertex="1">
+          <mxGeometry height="20" width="390" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="bf_2" parent="t_beneficiaries" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK agency_id (nullable)" vertex="1">
+          <mxGeometry height="20" width="390" y="46" as="geometry" />
+        </mxCell>
+        <mxCell id="bf_3" parent="t_beneficiaries" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK barangay_id" vertex="1">
+          <mxGeometry height="20" width="390" y="66" as="geometry" />
+        </mxCell>
+        <mxCell id="bf_4" parent="t_beneficiaries" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="first_name / middle_name / last_name / name_suffix" vertex="1">
+          <mxGeometry height="20" width="390" y="86" as="geometry" />
+        </mxCell>
+        <mxCell id="bf_5" parent="t_beneficiaries" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="full_name / sex / date_of_birth" vertex="1">
+          <mxGeometry height="20" width="390" y="106" as="geometry" />
+        </mxCell>
+        <mxCell id="bf_6" parent="t_beneficiaries" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="classification / civil_status / highest_education / id_type" vertex="1">
+          <mxGeometry height="20" width="390" y="126" as="geometry" />
+        </mxCell>
+        <mxCell id="bf_7" parent="t_beneficiaries" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="contact_number / home_address / photo_path / status" vertex="1">
+          <mxGeometry height="20" width="390" y="146" as="geometry" />
+        </mxCell>
+        <mxCell id="bf_8" parent="t_beneficiaries" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="agency-specific fields (RSBSA / FishR / CLOA)" vertex="1">
+          <mxGeometry height="20" width="390" y="166" as="geometry" />
+        </mxCell>
+        <mxCell id="bf_9" parent="t_beneficiaries" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="custom_fields / custom_field_unavailability_reasons" vertex="1">
+          <mxGeometry height="20" width="390" y="186" as="geometry" />
+        </mxCell>
+        <mxCell id="bf_10" parent="t_beneficiaries" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="registered_at / timestamps / deleted_at" vertex="1">
+          <mxGeometry height="20" width="390" y="206" as="geometry" />
+        </mxCell>
+        <mxCell id="t_beneficiary_agencies" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" value="BENEFICIARY_AGENCIES" vertex="1">
+          <mxGeometry height="146" width="320" x="400" y="464" as="geometry" />
+        </mxCell>
+        <mxCell id="ba_1" parent="t_beneficiary_agencies" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="PK id" vertex="1">
+          <mxGeometry height="20" width="320" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="ba_2" parent="t_beneficiary_agencies" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK beneficiary_id" vertex="1">
+          <mxGeometry height="20" width="320" y="46" as="geometry" />
+        </mxCell>
+        <mxCell id="ba_3" parent="t_beneficiary_agencies" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK agency_id" vertex="1">
+          <mxGeometry height="20" width="320" y="66" as="geometry" />
+        </mxCell>
+        <mxCell id="ba_4" parent="t_beneficiary_agencies" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="identifier / registered_at" vertex="1">
+          <mxGeometry height="20" width="320" y="86" as="geometry" />
+        </mxCell>
+        <mxCell id="ba_5" parent="t_beneficiary_agencies" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="UNIQUE(beneficiary_id, agency_id) + timestamps" vertex="1">
+          <mxGeometry height="20" width="320" y="106" as="geometry" />
+        </mxCell>
+        <mxCell id="t_beneficiary_attachments" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" value="BENEFICIARY_ATTACHMENTS" vertex="1">
+          <mxGeometry height="166" width="350" x="760" y="444" as="geometry" />
+        </mxCell>
+        <mxCell id="bat_1" parent="t_beneficiary_attachments" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="PK id" vertex="1">
+          <mxGeometry height="20" width="350" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="bat_2" parent="t_beneficiary_attachments" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK beneficiary_id" vertex="1">
+          <mxGeometry height="20" width="350" y="46" as="geometry" />
+        </mxCell>
+        <mxCell id="bat_3" parent="t_beneficiary_attachments" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK uploaded_by (nullable)" vertex="1">
+          <mxGeometry height="20" width="350" y="66" as="geometry" />
+        </mxCell>
+        <mxCell id="bat_4" parent="t_beneficiary_attachments" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="document metadata (path, disk, mime, size, sha256)" vertex="1">
+          <mxGeometry height="20" width="350" y="86" as="geometry" />
+        </mxCell>
+        <mxCell id="bat_5" parent="t_beneficiary_attachments" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="timestamps" vertex="1">
+          <mxGeometry height="20" width="350" y="106" as="geometry" />
+        </mxCell>
+        <mxCell id="t_resource_types" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" value="RESOURCE_TYPES" vertex="1">
+          <mxGeometry height="166" width="300" x="1520" y="860" as="geometry" />
+        </mxCell>
+        <mxCell id="rt_1" parent="t_resource_types" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="PK id" vertex="1">
+          <mxGeometry height="20" width="300" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="rt_2" parent="t_resource_types" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="name / unit / description" vertex="1">
+          <mxGeometry height="20" width="300" y="46" as="geometry" />
+        </mxCell>
+        <mxCell id="rt_3" parent="t_resource_types" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="source_agency" vertex="1">
+          <mxGeometry height="20" width="300" y="66" as="geometry" />
+        </mxCell>
+        <mxCell id="rt_4" parent="t_resource_types" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK agency_id (nullable)" vertex="1">
+          <mxGeometry height="20" width="300" y="86" as="geometry" />
+        </mxCell>
+        <mxCell id="rt_5" parent="t_resource_types" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="is_active / timestamps" vertex="1">
+          <mxGeometry height="20" width="300" y="106" as="geometry" />
+        </mxCell>
+        <mxCell id="t_program_names" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" value="PROGRAM_NAMES" vertex="1">
+          <mxGeometry height="166" width="320" x="440" y="1080" as="geometry" />
+        </mxCell>
+        <mxCell id="pn_1" parent="t_program_names" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="PK id" vertex="1">
+          <mxGeometry height="20" width="320" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="pn_2" parent="t_program_names" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK agency_id" vertex="1">
+          <mxGeometry height="20" width="320" y="46" as="geometry" />
+        </mxCell>
+        <mxCell id="pn_3" parent="t_program_names" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="name / description" vertex="1">
+          <mxGeometry height="20" width="320" y="66" as="geometry" />
+        </mxCell>
+        <mxCell id="pn_4" parent="t_program_names" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="classification / is_active" vertex="1">
+          <mxGeometry height="20" width="320" y="86" as="geometry" />
+        </mxCell>
+        <mxCell id="pn_5" parent="t_program_names" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="timestamps" vertex="1">
+          <mxGeometry height="20" width="320" y="106" as="geometry" />
+        </mxCell>
+        <mxCell id="t_assistance_purposes" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" value="ASSISTANCE_PURPOSES" vertex="1">
+          <mxGeometry height="146" width="300" x="1760" y="1360" as="geometry" />
+        </mxCell>
+        <mxCell id="ap_1" parent="t_assistance_purposes" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="PK id" vertex="1">
+          <mxGeometry height="20" width="300" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="ap_2" parent="t_assistance_purposes" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="name" vertex="1">
+          <mxGeometry height="20" width="300" y="46" as="geometry" />
+        </mxCell>
+        <mxCell id="ap_3" parent="t_assistance_purposes" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="category / type / is_active" vertex="1">
+          <mxGeometry height="20" width="300" y="66" as="geometry" />
+        </mxCell>
+        <mxCell id="ap_4" parent="t_assistance_purposes" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="timestamps" vertex="1">
+          <mxGeometry height="20" width="300" y="86" as="geometry" />
+        </mxCell>
+        <mxCell id="t_distribution_events" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" value="DISTRIBUTION_EVENTS" vertex="1">
+          <mxGeometry height="266" width="390" x="1210" y="404" as="geometry" />
+        </mxCell>
+        <mxCell id="de_1" parent="t_distribution_events" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="PK id" vertex="1">
+          <mxGeometry height="20" width="390" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="de_2" parent="t_distribution_events" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK barangay_id / FK resource_type_id" vertex="1">
+          <mxGeometry height="20" width="390" y="46" as="geometry" />
+        </mxCell>
+        <mxCell id="de_3" parent="t_distribution_events" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK program_name_id (required)" vertex="1">
+          <mxGeometry height="20" width="390" y="66" as="geometry" />
+        </mxCell>
+        <mxCell id="de_4" parent="t_distribution_events" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK created_by / FK beneficiary_list_approved_by" vertex="1">
+          <mxGeometry height="20" width="390" y="86" as="geometry" />
+        </mxCell>
+        <mxCell id="de_5" parent="t_distribution_events" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="distribution_date / status / type / total_fund_amount" vertex="1">
+          <mxGeometry height="20" width="390" y="106" as="geometry" />
+        </mxCell>
+        <mxCell id="de_6" parent="t_distribution_events" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="legal_basis_* / fund_source / trust_account_code" vertex="1">
+          <mxGeometry height="20" width="390" y="126" as="geometry" />
+        </mxCell>
+        <mxCell id="de_7" parent="t_distribution_events" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="liquidation_* / requires_farmc_endorsement / farmc_*" vertex="1">
+          <mxGeometry height="20" width="390" y="146" as="geometry" />
+        </mxCell>
+        <mxCell id="de_8" parent="t_distribution_events" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="beneficiary_list_approved_at / timestamps / deleted_at" vertex="1">
+          <mxGeometry height="20" width="390" y="166" as="geometry" />
+        </mxCell>
+        <mxCell id="t_allocations" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" value="ALLOCATIONS" vertex="1">
+          <mxGeometry height="226" width="380" x="1730" y="404" as="geometry" />
+        </mxCell>
+        <mxCell id="al_1" parent="t_allocations" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="PK id" vertex="1">
+          <mxGeometry height="20" width="380" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="al_2" parent="t_allocations" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK distribution_event_id (nullable) / FK beneficiary_id" vertex="1">
+          <mxGeometry height="20" width="380" y="46" as="geometry" />
+        </mxCell>
+        <mxCell id="al_3" parent="t_allocations" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK program_name_id / FK resource_type_id / FK assistance_purpose_id" vertex="1">
+          <mxGeometry height="20" width="380" y="66" as="geometry" />
+        </mxCell>
+        <mxCell id="al_4" parent="t_allocations" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="release_method / quantity / amount / is_ready_for_release" vertex="1">
+          <mxGeometry height="20" width="380" y="86" as="geometry" />
+        </mxCell>
+        <mxCell id="al_5" parent="t_allocations" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="distributed_at / release_outcome / remarks" vertex="1">
+          <mxGeometry height="20" width="380" y="106" as="geometry" />
+        </mxCell>
+        <mxCell id="al_6" parent="t_allocations" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="timestamps / deleted_at" vertex="1">
+          <mxGeometry height="20" width="380" y="126" as="geometry" />
+        </mxCell>
+        <mxCell id="t_direct_assistance" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" value="DIRECT_ASSISTANCE" vertex="1">
+          <mxGeometry height="226" width="380" x="1110" y="1360" as="geometry" />
+        </mxCell>
+        <mxCell id="da_1" parent="t_direct_assistance" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="PK id" vertex="1">
+          <mxGeometry height="20" width="380" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="da_2" parent="t_direct_assistance" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK beneficiary_id / FK program_name_id / FK resource_type_id" vertex="1">
+          <mxGeometry height="20" width="380" y="46" as="geometry" />
+        </mxCell>
+        <mxCell id="da_3" parent="t_direct_assistance" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK assistance_purpose_id (nullable) / FK distribution_event_id (nullable)" vertex="1">
+          <mxGeometry height="20" width="380" y="66" as="geometry" />
+        </mxCell>
+        <mxCell id="da_4" parent="t_direct_assistance" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK created_by / FK distributed_by (nullable)" vertex="1">
+          <mxGeometry height="20" width="380" y="86" as="geometry" />
+        </mxCell>
+        <mxCell id="da_5" parent="t_direct_assistance" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="quantity / amount / status" vertex="1">
+          <mxGeometry height="20" width="380" y="106" as="geometry" />
+        </mxCell>
+        <mxCell id="da_6" parent="t_direct_assistance" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="distributed_at / release_outcome / remarks" vertex="1">
+          <mxGeometry height="20" width="380" y="126" as="geometry" />
+        </mxCell>
+        <mxCell id="da_7" parent="t_direct_assistance" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="timestamps / deleted_at" vertex="1">
+          <mxGeometry height="20" width="380" y="146" as="geometry" />
+        </mxCell>
+        <mxCell id="t_program_legal_requirements" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" value="PROGRAM_LEGAL_REQUIREMENTS" vertex="1">
+          <mxGeometry height="166" width="380" x="440" y="1300" as="geometry" />
+        </mxCell>
+        <mxCell id="plr_1" parent="t_program_legal_requirements" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="PK id" vertex="1">
+          <mxGeometry height="20" width="380" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="plr_2" parent="t_program_legal_requirements" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK program_name_id" vertex="1">
+          <mxGeometry height="20" width="380" y="46" as="geometry" />
+        </mxCell>
+        <mxCell id="plr_3" parent="t_program_legal_requirements" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK uploaded_by (nullable)" vertex="1">
+          <mxGeometry height="20" width="380" y="66" as="geometry" />
+        </mxCell>
+        <mxCell id="plr_4" parent="t_program_legal_requirements" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="document metadata + remarks" vertex="1">
+          <mxGeometry height="20" width="380" y="86" as="geometry" />
+        </mxCell>
+        <mxCell id="plr_5" parent="t_program_legal_requirements" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="timestamps" vertex="1">
+          <mxGeometry height="20" width="380" y="106" as="geometry" />
+        </mxCell>
+        <mxCell id="t_sms_logs" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" value="SMS_LOGS" vertex="1">
+          <mxGeometry height="166" width="300" x="1030" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="sm_1" parent="t_sms_logs" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="PK id" vertex="1">
+          <mxGeometry height="20" width="300" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="sm_2" parent="t_sms_logs" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK beneficiary_id" vertex="1">
+          <mxGeometry height="20" width="300" y="46" as="geometry" />
+        </mxCell>
+        <mxCell id="sm_3" parent="t_sms_logs" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="message / status / delivery_status" vertex="1">
+          <mxGeometry height="20" width="300" y="66" as="geometry" />
+        </mxCell>
+        <mxCell id="sm_4" parent="t_sms_logs" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="response / gateway_message_id / sent_at " vertex="1">
+          <mxGeometry height="20" width="300" y="86" as="geometry" />
+        </mxCell>
+        <mxCell id="sm_5" parent="t_sms_logs" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="timestamps" vertex="1">
+          <mxGeometry height="20" width="300" y="106" as="geometry" />
+        </mxCell>
+        <mxCell id="t_audit_logs" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=26;fillColor=none;collapsible=0" value="AUDIT_LOGS" vertex="1">
+          <mxGeometry height="166" width="300" x="-540" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="au_1" parent="t_audit_logs" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="PK id" vertex="1">
+          <mxGeometry height="20" width="300" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="au_2" parent="t_audit_logs" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" value="FK user_id" vertex="1">
+          <mxGeometry height="20" width="300" y="46" as="geometry" />
+        </mxCell>
+        <mxCell id="au_3" parent="t_audit_logs" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="action / table_name / record_id" vertex="1">
+          <mxGeometry height="20" width="300" y="66" as="geometry" />
+        </mxCell>
+        <mxCell id="au_4" parent="t_audit_logs" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="old_values / new_values" vertex="1">
+          <mxGeometry height="20" width="300" y="86" as="geometry" />
+        </mxCell>
+        <mxCell id="au_5" parent="t_audit_logs" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" value="timestamps" vertex="1">
+          <mxGeometry height="20" width="300" y="106" as="geometry" />
+        </mxCell>
+        <mxCell id="r1" edge="1" parent="1" source="t_users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_agencies" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r2" edge="1" parent="1" source="t_agency_classifications" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_agencies" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r3" edge="1" parent="1" source="t_agency_classifications" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="540" y="250" />
+              <mxPoint x="540" y="250" />
+            </Array>
+            <mxPoint x="540" y="230" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r4" edge="1" parent="1" source="t_agency_form_fields" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_agencies" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="885" y="40" />
+              <mxPoint x="200" y="40" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r5" edge="1" parent="1" source="t_agency_form_field_options" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_agency_form_fields" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r6" edge="1" parent="1" source="t_beneficiaries" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_agencies" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r7" edge="1" parent="1" source="t_beneficiaries" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_barangays" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r8" edge="1" parent="1" source="t_beneficiary_agencies" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_beneficiaries" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="635" y="640" />
+              <mxPoint x="635" y="640" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r9" edge="1" parent="1" source="t_beneficiary_agencies" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_agencies" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r10" edge="1" parent="1" source="t_beneficiary_attachments" style="rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_beneficiaries" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r11" edge="1" parent="1" source="t_beneficiary_attachments" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_users" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r12" edge="1" parent="1" source="t_resource_types" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_agencies" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r13" edge="1" parent="1" source="t_program_names" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_agencies" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-140" y="1150" />
+              <mxPoint x="-140" y="183" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r14" edge="1" parent="1" source="t_program_legal_requirements" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_program_names" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r15" edge="1" parent="1" source="t_program_legal_requirements" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_users" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r16" edge="1" parent="1" source="t_distribution_events" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_barangays" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r17" edge="1" parent="1" source="t_distribution_events" style="rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;edgeStyle=orthogonalEdgeStyle;" target="t_resource_types" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1560" y="750" />
+              <mxPoint x="1560" y="750" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r18" edge="1" parent="1" source="t_distribution_events" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_program_names" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="960" y="640" />
+              <mxPoint x="960" y="1163" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r20" edge="1" parent="1" source="t_allocations" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_distribution_events" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1640" y="517" />
+              <mxPoint x="1640" y="517" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r21" edge="1" parent="1" source="t_allocations" style="rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_beneficiaries" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r22" edge="1" parent="1" source="t_allocations" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_program_names" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1920" y="1160" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r23" edge="1" parent="1" style="rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;entryX=0.807;entryY=-0.009;entryDx=0;entryDy=0;entryPerimeter=0;" target="t_resource_types" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1760" y="630" as="sourcePoint" />
+            <mxPoint x="1764" y="760" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r24" edge="1" parent="1" source="t_allocations" style="rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;edgeStyle=orthogonalEdgeStyle;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1840" y="330" />
+              <mxPoint x="1420" y="330" />
+            </Array>
+            <mxPoint x="1420" y="390" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r25" edge="1" parent="1" source="t_direct_assistance" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_beneficiaries" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r26" edge="1" parent="1" source="t_direct_assistance" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_program_names" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r27" edge="1" parent="1" source="t_direct_assistance" style="rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_resource_types" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r28" edge="1" parent="1" source="t_direct_assistance" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_assistance_purposes" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1670" y="1420" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r30" edge="1" parent="1" source="t_direct_assistance" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_users" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-50" y="1540" />
+              <mxPoint x="-50" y="433" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r32" edge="1" parent="1" source="t_sms_logs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" target="bf_9" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="990" y="961" />
+              <mxPoint x="990" y="961" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r33" edge="1" parent="1" source="t_audit_logs" style="rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" target="t_users" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
 </mxfile>
-
