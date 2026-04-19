@@ -940,10 +940,12 @@
                     <i class="bi bi-people-fill"></i> Beneficiaries
                 </a>
 
+                @if(Auth::user()->isAdmin())
                 <a class="nav-link {{ request()->routeIs('admin.settings.program-names.*') ? 'active' : '' }}"
                    href="{{ route('admin.settings.program-names.index') }}">
                     <i class="bi bi-list"></i> Programs
                 </a>
+                @endif
 
                 <a class="nav-link {{ request()->routeIs('allocations.*') ? 'active' : '' }}"
                    href="{{ route('allocations.index') }}">

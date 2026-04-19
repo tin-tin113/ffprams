@@ -152,14 +152,6 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
     Route::get('api/programs/{program}/resource-types', [AllocationController::class, 'getResourceTypesByAgency'])
         ->name('api.programs.resource-types');
 
-    // API endpoint for dynamic agency form fields (beneficiary registration)
-    Route::get('api/agencies/form-fields', [\App\Http\Controllers\Api\AgencyFormFieldController::class, 'getFormFields'])
-        ->name('api.agencies.form-fields');
-    Route::get('api/agencies/by-classification', [\App\Http\Controllers\Api\AgencyFormFieldController::class, 'getByClassification'])
-        ->name('api.agencies.by-classification');
-    Route::get('api/classifications', [\App\Http\Controllers\Api\AgencyFormFieldController::class, 'getClassifications'])
-        ->name('api.classifications');
-
     // SMS Broadcast
     Route::get('sms', [SmsController::class, 'index'])->name('sms.index');
     Route::get('sms/beneficiaries', [SmsController::class, 'beneficiaries'])->name('sms.beneficiaries');
@@ -199,7 +191,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
         ->name('allocations.destroy');
 });
 
-Route::middleware(['auth', 'verified', 'role:admin,staff'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     // Settings — Program Names
     Route::get('settings/program-names', [SystemSettingsController::class, 'indexProgramNames'])->name('settings.program-names.index');
     Route::get('settings/program-names/list', [SystemSettingsController::class, 'listProgramNames'])->name('settings.program-names.list');
@@ -246,14 +238,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 
     // Settings — Agencies
     Route::post('settings/agencies', [SystemSettingsController::class, 'storeAgency'])->name('settings.agencies.store');
-    Route::get('settings/agencies/{agency}', [SystemSettingsController::class, 'getAgency'])->name('settings.agencies.show');
     Route::put('settings/agencies/{agency}', [SystemSettingsController::class, 'updateAgency'])->name('settings.agencies.update');
     Route::delete('settings/agencies/{agency}', [SystemSettingsController::class, 'destroyAgency'])->name('settings.agencies.destroy');
-    Route::get('settings/agencies/{agency}/form-fields', [SystemSettingsController::class, 'getAgencyFormFields'])->name('settings.agencies.form-fields.get');
-    Route::post('settings/agencies/{agency}/form-fields', [SystemSettingsController::class, 'addFormField'])->name('settings.agencies.form-fields.store');
-    Route::get('settings/agencies/{agency}/form-fields/{field}', [SystemSettingsController::class, 'getFormField'])->name('settings.agencies.form-fields.show');
-    Route::put('settings/agencies/{agency}/form-fields/{field}', [SystemSettingsController::class, 'updateAgencyFormField'])->name('settings.agencies.form-fields.update');
-    Route::delete('settings/agencies/{agency}/form-fields/{field}', [SystemSettingsController::class, 'deleteFormField'])->name('settings.agencies.form-fields.destroy');
 
     // Settings — Assistance Purposes
     Route::post('settings/purposes', [SystemSettingsController::class, 'storePurpose'])->name('settings.purposes.store');

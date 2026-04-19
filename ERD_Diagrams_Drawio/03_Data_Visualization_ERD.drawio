@@ -1,0 +1,64 @@
+﻿<mxfile host="app.diagrams.net" agent="GPT-5.3-Codex" version="22.1.11">
+  <diagram id="ERD_DV" name="03_Data_Visualization_ERD">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1500" pageHeight="900" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/><mxCell id="1" parent="0"/>
+        <mxCell id="title" value="DATA VISUALIZATION - ERD" style="text;html=1;align=center;verticalAlign=middle;fontSize=18;fontStyle=1" vertex="1" parent="1"><mxGeometry x="180" y="20" width="1100" height="40" as="geometry"/></mxCell>
+
+        <mxCell id="t_barangays" value="BARANGAYS" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;resizeParent=1;collapsible=0" vertex="1" parent="1"><mxGeometry x="70" y="120" width="250" height="106" as="geometry"/></mxCell>
+        <mxCell id="bg1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_barangays"><mxGeometry y="26" width="250" height="20" as="geometry"/></mxCell>
+        <mxCell id="bg2" value="name" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_barangays"><mxGeometry y="46" width="250" height="20" as="geometry"/></mxCell>
+        <mxCell id="bg3" value="municipality" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_barangays"><mxGeometry y="66" width="250" height="20" as="geometry"/></mxCell>
+        <mxCell id="bg4" value="province" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_barangays"><mxGeometry y="86" width="250" height="20" as="geometry"/></mxCell>
+
+        <mxCell id="t_benef" value="BENEFICIARIES" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;resizeParent=1;collapsible=0" vertex="1" parent="1"><mxGeometry x="400" y="120" width="280" height="126" as="geometry"/></mxCell>
+        <mxCell id="b1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_benef"><mxGeometry y="26" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="b2" value="FK barangay_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" vertex="1" parent="t_benef"><mxGeometry y="46" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="b3" value="beneficiary_name" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_benef"><mxGeometry y="66" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="b4" value="classification" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_benef"><mxGeometry y="86" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="b5" value="status" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_benef"><mxGeometry y="106" width="280" height="20" as="geometry"/></mxCell>
+
+        <mxCell id="t_events" value="DISTRIBUTION_EVENTS" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;resizeParent=1;collapsible=0" vertex="1" parent="1"><mxGeometry x="780" y="80" width="280" height="106" as="geometry"/></mxCell>
+        <mxCell id="e1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_events"><mxGeometry y="26" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="e2" value="event_name" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_events"><mxGeometry y="46" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="e3" value="event_date" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_events"><mxGeometry y="66" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="e4" value="status" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_events"><mxGeometry y="86" width="280" height="20" as="geometry"/></mxCell>
+
+        <mxCell id="t_prog" value="PROGRAM_NAMES" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;resizeParent=1;collapsible=0" vertex="1" parent="1"><mxGeometry x="1140" y="80" width="260" height="106" as="geometry"/></mxCell>
+        <mxCell id="p1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_prog"><mxGeometry y="26" width="260" height="20" as="geometry"/></mxCell>
+        <mxCell id="p2" value="program_name" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_prog"><mxGeometry y="46" width="260" height="20" as="geometry"/></mxCell>
+        <mxCell id="p3" value="agency_id (nullable)" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_prog"><mxGeometry y="66" width="260" height="20" as="geometry"/></mxCell>
+        <mxCell id="p4" value="created_at" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_prog"><mxGeometry y="86" width="260" height="20" as="geometry"/></mxCell>
+
+        <mxCell id="t_res" value="RESOURCE_TYPES" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;resizeParent=1;collapsible=0" vertex="1" parent="1"><mxGeometry x="1140" y="250" width="260" height="106" as="geometry"/></mxCell>
+        <mxCell id="r1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_res"><mxGeometry y="26" width="260" height="20" as="geometry"/></mxCell>
+        <mxCell id="r2" value="resource_name" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_res"><mxGeometry y="46" width="260" height="20" as="geometry"/></mxCell>
+        <mxCell id="r3" value="unit" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_res"><mxGeometry y="66" width="260" height="20" as="geometry"/></mxCell>
+        <mxCell id="r4" value="created_at" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_res"><mxGeometry y="86" width="260" height="20" as="geometry"/></mxCell>
+
+        <mxCell id="t_purpose" value="ASSISTANCE_PURPOSES" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;resizeParent=1;collapsible=0" vertex="1" parent="1"><mxGeometry x="1140" y="420" width="260" height="106" as="geometry"/></mxCell>
+        <mxCell id="ap1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_purpose"><mxGeometry y="26" width="260" height="20" as="geometry"/></mxCell>
+        <mxCell id="ap2" value="purpose_name" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_purpose"><mxGeometry y="46" width="260" height="20" as="geometry"/></mxCell>
+        <mxCell id="ap3" value="description" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_purpose"><mxGeometry y="66" width="260" height="20" as="geometry"/></mxCell>
+        <mxCell id="ap4" value="created_at" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_purpose"><mxGeometry y="86" width="260" height="20" as="geometry"/></mxCell>
+
+        <mxCell id="t_alloc" value="ALLOCATIONS" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;resizeParent=1;collapsible=0" vertex="1" parent="1"><mxGeometry x="780" y="250" width="280" height="166" as="geometry"/></mxCell>
+        <mxCell id="a1" value="PK id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_alloc"><mxGeometry y="26" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="a2" value="FK beneficiary_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" vertex="1" parent="t_alloc"><mxGeometry y="46" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="a3" value="FK distribution_event_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" vertex="1" parent="t_alloc"><mxGeometry y="66" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="a4" value="FK program_name_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" vertex="1" parent="t_alloc"><mxGeometry y="86" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="a5" value="FK resource_type_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" vertex="1" parent="t_alloc"><mxGeometry y="106" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="a6" value="FK assistance_purpose_id" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1" vertex="1" parent="t_alloc"><mxGeometry y="126" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="a7" value="amount / status" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10" vertex="1" parent="t_alloc"><mxGeometry y="146" width="280" height="20" as="geometry"/></mxCell>
+
+        <mxCell id="c1" edge="1" parent="1" source="t_benef" target="t_barangays" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" value=""><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c2" edge="1" parent="1" source="t_alloc" target="t_benef" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" value=""><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c3" edge="1" parent="1" source="t_alloc" target="t_events" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" value=""><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c4" edge="1" parent="1" source="t_alloc" target="t_prog" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" value=""><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c5" edge="1" parent="1" source="t_alloc" target="t_res" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" value=""><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c6" edge="1" parent="1" source="t_alloc" target="t_purpose" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;startArrow=ERone;endArrow=ERmany;startFill=0;endFill=0;startSize=12;endSize=18;" value=""><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
+
