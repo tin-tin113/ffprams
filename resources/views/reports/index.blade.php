@@ -512,28 +512,191 @@
         }
     }
 
+    .print-only {
+        display: none;
+    }
+
     @media print {
+        @page {
+            size: A4 portrait;
+            margin: 10mm;
+        }
+
+        .top-header,
         .top-navbar,
         .sidebar,
+        .sidebar-overlay,
         .no-print,
         .btn,
         .alert {
             display: none !important;
         }
 
+        .print-only {
+            display: block !important;
+        }
+
+        html,
+        body {
+            background: #fff !important;
+            color: #111827 !important;
+            font-size: 11px !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            height: auto !important;
+            overflow: visible !important;
+        }
+
+        body {
+            display: block !important;
+        }
+
         .main-content {
             margin-left: 0 !important;
             padding-top: 0 !important;
+            width: 100% !important;
+            min-height: auto !important;
+            height: auto !important;
+            display: block !important;
+            overflow: visible !important;
+        }
+
+        .main-content .container-fluid {
+            max-width: none !important;
+            width: 100% !important;
+            overflow: visible !important;
+        }
+
+        .reports-shell {
+            padding: 0 !important;
+        }
+
+        .tab-content {
+            padding-top: 0 !important;
+        }
+
+        #reportsTabContent .tab-pane {
+            display: none !important;
+            opacity: 1 !important;
+        }
+
+        #reportsTabContent .tab-pane.show.active {
+            display: block !important;
         }
 
         .card {
             border: 1px solid #dee2e6 !important;
             box-shadow: none !important;
-            break-inside: avoid;
+            break-inside: auto;
+            page-break-inside: auto;
+            overflow: visible !important;
         }
 
-        body {
-            background: #fff !important;
+        .report-card,
+        .report-card .card-body,
+        .report-card .table-responsive {
+            break-inside: auto !important;
+            page-break-inside: auto !important;
+            overflow: visible !important;
+        }
+
+        .report-card,
+        .summary-card,
+        .insight-card,
+        .beneficiary-kpi-card,
+        .kpi-card {
+            margin-bottom: 8px !important;
+        }
+
+        .summary-card,
+        .insight-card,
+        .beneficiary-kpi-card,
+        .kpi-card {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+        }
+
+        .report-chart-wrap {
+            height: 70mm !important;
+            max-height: 70mm !important;
+            page-break-inside: avoid;
+        }
+
+        .report-chart-wrap.compact-donut {
+            height: 62mm !important;
+            max-width: 100% !important;
+        }
+
+        .table-responsive {
+            overflow: visible !important;
+        }
+
+        .report-data-table,
+        .table {
+            width: 100% !important;
+            min-width: 0 !important;
+            table-layout: fixed;
+            font-size: 10px !important;
+        }
+
+        .table th,
+        .table td {
+            white-space: normal !important;
+            word-break: break-word;
+            padding: 4px 6px !important;
+        }
+
+        thead {
+            display: table-header-group;
+        }
+
+        tfoot {
+            display: table-footer-group;
+        }
+
+        tr,
+        img,
+        canvas,
+        progress {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .badge {
+            border: 1px solid #cbd5e1 !important;
+        }
+
+        body.print-compact-mode .insight-grid,
+        body.print-compact-mode .beneficiary-kpi-grid,
+        body.print-compact-mode .beneficiary-analytics-grid,
+        body.print-compact-mode .kpi-card,
+        body.print-compact-mode .summary-card,
+        body.print-compact-mode .insight-card,
+        body.print-compact-mode .beneficiary-kpi-card {
+            display: none !important;
+        }
+
+        body.print-compact-mode .report-chart-wrap,
+        body.print-compact-mode .beneficiary-mix-chart-wrap,
+        body.print-compact-mode .beneficiary-priority-chart-wrap,
+        body.print-compact-mode canvas,
+        body.print-compact-mode progress {
+            display: none !important;
+            height: 0 !important;
+            max-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+        }
+
+        body.print-compact-mode .card-body.border-top,
+        body.print-compact-mode .card-body.border-bottom.pb-3,
+        body.print-compact-mode .beneficiary-analytics-card {
+            display: none !important;
+        }
+
+        body.print-compact-mode .report-card:not(:has(table)) {
+            display: none !important;
         }
     }
 </style>
@@ -556,6 +719,7 @@
     if (! $validTabIds->contains($activeTab)) {
         $activeTab = 'overview';
     }
+    $activeTabLabel = collect($reportTabs)->firstWhere('id', $activeTab)['label'] ?? ucfirst($activeTab);
 
     $farmersTotal = (int) $beneficiariesPerBarangay->sum('total_farmers');
     $fisherfolkTotal = (int) $beneficiariesPerBarangay->sum('total_fisherfolk');
@@ -772,6 +936,13 @@
 @endphp
 
 <div class="container-fluid reports-shell">
+    <div class="print-only mb-2">
+        <h2 class="mb-1" style="font-size:16px; font-weight:700;">FFPRAMS Reports and Analytics</h2>
+        <div style="font-size:11px; color:#475569;">
+            Year: {{ $currentYear }} | Tab: <span id="printTabLabel">{{ $activeTabLabel }}</span> | Mode: <span id="printModeLabel">Standard</span> | Generated: {{ now()->format('F d, Y h:i A') }}
+        </div>
+    </div>
+
     <div class="card reports-toolbar border-0 no-print">
         <div class="card-body">
             <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3">
@@ -802,6 +973,10 @@
                     <button type="button" class="btn btn-success" id="reportsExcelBtn">
                         <i class="bi bi-file-earmark-spreadsheet me-1"></i> Excel
                     </button>
+                    <div class="form-check form-switch ms-md-2 d-flex align-items-center">
+                        <input class="form-check-input" type="checkbox" role="switch" id="compactPrintModeToggle">
+                        <label class="form-check-label small text-muted ms-2" for="compactPrintModeToggle">Compact Print</label>
+                    </div>
                 </div>
             </div>
         </div>
@@ -998,6 +1173,19 @@
                 </div>
             </div>
 
+            @if($complianceOverview->financial_events_total > 0 || $complianceOverview->missing_legal_basis > 0 || $complianceOverview->liquidation_pending > 0 || $complianceOverview->farmc_required_pending > 0)
+                <div class="card report-card border-0 mb-4">
+                    <div class="card-header report-card-header">
+                        <span class="report-card-title"><i class="bi bi-shield-check me-1"></i> Compliance Risk Snapshot</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-chart-wrap">
+                            <canvas id="overviewComplianceRiskChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <div class="card report-card border-0 mb-4">
                 <div class="card-header report-card-header">
                     <span class="report-card-title"><i class="bi bi-calendar3 me-1"></i> Monthly Summary (Event vs Direct, {{ $currentYear }})</span>
@@ -1170,6 +1358,19 @@
                 </div>
             </div>
 
+            @if($beneficiariesPerBarangay->count())
+                <div class="card report-card border-0 mb-4">
+                    <div class="card-header report-card-header">
+                        <span class="report-card-title"><i class="bi bi-bar-chart-stacked me-1"></i> Beneficiary Composition by Barangay (Top 10)</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-chart-wrap">
+                            <canvas id="beneficiaryCompositionByBarangayChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <div class="card report-card border-0 mb-4">
                 <div class="card-header report-card-header">
                     <span class="report-card-title"><i class="bi bi-people me-1"></i> Beneficiaries per Barangay</span>
@@ -1316,6 +1517,19 @@
                     <div class="insight-note">{{ number_format($topBarangayByEventsTotal) }} recorded events</div>
                 </div>
             </div>
+
+            @if($resourceDistribution->count())
+                <div class="card report-card border-0 mb-4">
+                    <div class="card-header report-card-header">
+                        <span class="report-card-title"><i class="bi bi-people-fill me-1"></i> Resource Reach by Type (Event vs Direct)</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-chart-wrap">
+                            <canvas id="allocationReachByResourceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             <div class="card report-card border-0 mb-4">
                 <div class="card-header report-card-header">
@@ -1477,6 +1691,19 @@
                     <div class="insight-note">Based on {{ number_format($financialReachedTotal) }} reached beneficiaries</div>
                 </div>
             </div>
+
+            @if($financialSummary->sum('total_amount_disbursed') > 0)
+                <div class="card report-card border-0 mb-4">
+                    <div class="card-header report-card-header">
+                        <span class="report-card-title"><i class="bi bi-pie-chart-fill me-1"></i> Financial Channel Mix (Event vs Direct)</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-chart-wrap compact-donut">
+                            <canvas id="financialChannelMixChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             <div class="card report-card border-0 mb-4">
                 <div class="card-header report-card-header">
@@ -1654,6 +1881,32 @@
                 </div>
             </div>
 
+            @if($barangayInsights->count())
+                <div class="card report-card border-0 mb-4">
+                    <div class="card-header report-card-header">
+                        <span class="report-card-title"><i class="bi bi-bar-chart-line me-1"></i> Barangay Beneficiaries vs Financial Assistance</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-chart-wrap">
+                            <canvas id="barangayPerformanceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            @if($barangayInsights->sum('total_events') > 0)
+                <div class="card report-card border-0 mb-4">
+                    <div class="card-header report-card-header">
+                        <span class="report-card-title"><i class="bi bi-diagram-2 me-1"></i> Barangay Event Status Mix</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-chart-wrap">
+                            <canvas id="barangayEventMixChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <div class="card report-card border-0 mb-4">
                 <div class="card-header report-card-header">
                     <span class="report-card-title"><i class="bi bi-pin-map me-1"></i> Barangay Performance Snapshot</span>
@@ -1724,6 +1977,45 @@
                     <div class="insight-note">Average disbursement across active agencies</div>
                 </div>
             </div>
+
+            @if($agencySummary->count())
+                <div class="card report-card border-0 mb-4">
+                    <div class="card-header report-card-header">
+                        <span class="report-card-title"><i class="bi bi-graph-up me-1"></i> Agency Reach vs Financial Contribution</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-chart-wrap">
+                            <canvas id="agencyContributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            @if($agencySummary->sum('financial_amount') > 0)
+                <div class="card report-card border-0 mb-4">
+                    <div class="card-header report-card-header">
+                        <span class="report-card-title"><i class="bi bi-pie-chart me-1"></i> Agency Financial Share</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-chart-wrap compact-donut">
+                            <canvas id="agencyFinancialShareChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            @if($agencySummary->sum('completed_events') > 0 || $agencySummary->sum('resource_quantity') > 0)
+                <div class="card report-card border-0 mb-4">
+                    <div class="card-header report-card-header">
+                        <span class="report-card-title"><i class="bi bi-activity me-1"></i> Agency Operations Mix</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-chart-wrap">
+                            <canvas id="agencyOperationsMixChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             <div class="card report-card border-0 mb-4">
                 <div class="card-header report-card-header">
@@ -1817,6 +2109,45 @@
                 </div>
             </div>
 
+            @if($programCategorySummary->count())
+                <div class="card report-card border-0 mb-4">
+                    <div class="card-header report-card-header">
+                        <span class="report-card-title"><i class="bi bi-diagram-3 me-1"></i> Program Category Reach and Funding</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-chart-wrap">
+                            <canvas id="programCategoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            @if($assistanceByPurpose->count())
+                <div class="card report-card border-0 mb-4">
+                    <div class="card-header report-card-header">
+                        <span class="report-card-title"><i class="bi bi-bar-chart-steps me-1"></i> Program Event vs Direct Amount (Top Purposes)</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-chart-wrap">
+                            <canvas id="programEventDirectChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            @if($assistanceByPurpose->sum('total_beneficiaries') > 0)
+                <div class="card report-card border-0 mb-4">
+                    <div class="card-header report-card-header">
+                        <span class="report-card-title"><i class="bi bi-people me-1"></i> Program Beneficiary Reach (Top Purposes)</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-chart-wrap">
+                            <canvas id="programBeneficiaryReachChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <div class="card report-card border-0 mb-4">
                 <div class="card-header report-card-header">
                     <span class="report-card-title"><i class="bi bi-cash-coin me-1"></i> Financial Assistance Distribution by Purpose (Event vs Direct)</span>
@@ -1901,6 +2232,7 @@
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -1919,6 +2251,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const assistanceByPurposeData = @json($assistanceByPurpose->values());
     const beneficiaryMixData = @json($beneficiaryMixRows->values());
     const beneficiaryPriorityData = @json($unreachedByBarangay->take(10)->values());
+    const barangayInsightsData = @json($barangayInsights->values());
+    const agencySummaryData = @json($agencySummary->values());
+    const programCategoryData = @json($programCategorySummary->values());
+    const complianceOverviewData = @json($complianceOverview);
 
     const chartInstances = {};
 
@@ -1937,6 +2273,15 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         chartInstances[canvasId] = createFn(canvas);
+    }
+
+    function topRowsBy(rows, field, limit) {
+        return rows
+            .slice()
+            .sort(function (a, b) {
+                return toNumber(b[field]) - toNumber(a[field]);
+            })
+            .slice(0, limit);
     }
 
     function initializeMonthlyChart() {
@@ -2004,23 +2349,80 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function initializeOverviewComplianceRiskChart() {
+        const totalFinancialEvents = toNumber(complianceOverviewData.financial_events_total);
+        const missingLegalBasis = toNumber(complianceOverviewData.missing_legal_basis);
+        const liquidationPending = toNumber(complianceOverviewData.liquidation_pending);
+        const liquidationOverdue = toNumber(complianceOverviewData.liquidation_overdue);
+        const farmcPending = toNumber(complianceOverviewData.farmc_required_pending);
+
+        if (!totalFinancialEvents && !missingLegalBasis && !liquidationPending && !liquidationOverdue && !farmcPending) {
+            return;
+        }
+
+        createChartIfNeeded('overviewComplianceRiskChart', function (canvas) {
+            return new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: ['Missing Legal Basis', 'Pending Liquidation', 'Overdue Liquidation', 'FARMC Pending'],
+                    datasets: [
+                        {
+                            label: 'Events',
+                            data: [missingLegalBasis, liquidationPending, liquidationOverdue, farmcPending],
+                            backgroundColor: [
+                                'rgba(220, 53, 69, 0.72)',
+                                'rgba(217, 119, 6, 0.72)',
+                                'rgba(153, 27, 27, 0.72)',
+                                'rgba(37, 99, 235, 0.72)'
+                            ],
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Total financial events: ' + totalFinancialEvents
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        });
+    }
+
     function initializeBeneficiariesChart() {
         if (!beneficiariesByBarangayData.length) {
             return;
         }
 
         createChartIfNeeded('barangayBeneficiariesChart', function (canvas) {
-            const labels = beneficiariesByBarangayData
-                .map(function (row) {
-                    return row.barangay && row.barangay.name ? row.barangay.name : 'Unknown';
+            const rows = beneficiariesByBarangayData
+                .slice()
+                .sort(function (a, b) {
+                    return toNumber(b.grand_total) - toNumber(a.grand_total);
                 })
                 .slice(0, 10);
 
-            const values = beneficiariesByBarangayData
+            const labels = rows
+                .map(function (row) {
+                    return row.barangay && row.barangay.name ? row.barangay.name : 'Unknown';
+                });
+
+            const values = rows
                 .map(function (row) {
                     return toNumber(row.grand_total);
-                })
-                .slice(0, 10);
+                });
 
             return new Chart(canvas, {
                 type: 'bar',
@@ -2054,15 +2456,76 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function initializeBeneficiaryCompositionByBarangayChart() {
+        if (!beneficiariesByBarangayData.length) {
+            return;
+        }
+
+        createChartIfNeeded('beneficiaryCompositionByBarangayChart', function (canvas) {
+            const rows = topRowsBy(beneficiariesByBarangayData, 'grand_total', 10);
+
+            return new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: rows.map(function (row) {
+                        return row.barangay && row.barangay.name ? row.barangay.name : 'Unknown';
+                    }),
+                    datasets: [
+                        {
+                            label: 'Farmers',
+                            data: rows.map(function (row) { return toNumber(row.total_farmers); }),
+                            backgroundColor: 'rgba(22, 163, 74, 0.72)',
+                            borderColor: 'rgba(22, 163, 74, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Fisherfolk',
+                            data: rows.map(function (row) { return toNumber(row.total_fisherfolk); }),
+                            backgroundColor: 'rgba(37, 99, 235, 0.72)',
+                            borderColor: 'rgba(37, 99, 235, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Both',
+                            data: rows.map(function (row) { return toNumber(row.total_both); }),
+                            backgroundColor: 'rgba(14, 165, 233, 0.72)',
+                            borderColor: 'rgba(14, 165, 233, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        },
+                        y: {
+                            stacked: true
+                        }
+                    }
+                }
+            });
+        });
+    }
+
     function initializeResourceDistributionChart() {
         if (!resourceDistributionData.length) {
             return;
         }
 
         createChartIfNeeded('resourceDistributionChart', function (canvas) {
-            const labels = resourceDistributionData.map(function (row) { return row.name; }).slice(0, 10);
-            const eventQty = resourceDistributionData.map(function (row) { return toNumber(row.event_quantity_distributed); }).slice(0, 10);
-            const directQty = resourceDistributionData.map(function (row) { return toNumber(row.direct_quantity_distributed); }).slice(0, 10);
+            const rows = topRowsBy(resourceDistributionData, 'total_quantity_distributed', 10);
+            const labels = rows.map(function (row) { return row.name; });
+            const eventQty = rows.map(function (row) { return toNumber(row.event_quantity_distributed); });
+            const directQty = rows.map(function (row) { return toNumber(row.direct_quantity_distributed); });
 
             return new Chart(canvas, {
                 type: 'bar',
@@ -2102,21 +2565,70 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function initializeAllocationReachByResourceChart() {
+        if (!resourceDistributionData.length) {
+            return;
+        }
+
+        createChartIfNeeded('allocationReachByResourceChart', function (canvas) {
+            const rows = topRowsBy(resourceDistributionData, 'total_beneficiaries_reached', 10);
+
+            return new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: rows.map(function (row) { return row.name; }),
+                    datasets: [
+                        {
+                            label: 'Event Beneficiaries',
+                            data: rows.map(function (row) { return toNumber(row.event_beneficiaries_reached); }),
+                            backgroundColor: 'rgba(22, 163, 74, 0.72)',
+                            borderColor: 'rgba(22, 163, 74, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Direct Beneficiaries',
+                            data: rows.map(function (row) { return toNumber(row.direct_beneficiaries_reached); }),
+                            backgroundColor: 'rgba(37, 99, 235, 0.72)',
+                            borderColor: 'rgba(37, 99, 235, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    scales: {
+                        x: { stacked: true },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        });
+    }
+
     function initializeStatusPerBarangayChart() {
         if (!statusPerBarangayData.length) {
             return;
         }
 
         createChartIfNeeded('statusPerBarangayChart', function (canvas) {
-            const labels = statusPerBarangayData
+            const rows = topRowsBy(statusPerBarangayData, 'total_events', 10);
+
+            const labels = rows
                 .map(function (row) {
                     return row.barangay && row.barangay.name ? row.barangay.name : 'Unknown';
-                })
-                .slice(0, 10);
+                });
 
-            const pending = statusPerBarangayData.map(function (row) { return toNumber(row.pending_events); }).slice(0, 10);
-            const ongoing = statusPerBarangayData.map(function (row) { return toNumber(row.ongoing_events); }).slice(0, 10);
-            const completed = statusPerBarangayData.map(function (row) { return toNumber(row.completed_events); }).slice(0, 10);
+            const pending = rows.map(function (row) { return toNumber(row.pending_events); });
+            const ongoing = rows.map(function (row) { return toNumber(row.ongoing_events); });
+            const completed = rows.map(function (row) { return toNumber(row.completed_events); });
 
             return new Chart(canvas, {
                 type: 'bar',
@@ -2277,8 +2789,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         createChartIfNeeded('financialSummaryChart', function (canvas) {
-            const labels = financialSummaryData.map(function (row) { return row.name; }).slice(0, 10);
-            const values = financialSummaryData.map(function (row) { return toNumber(row.total_amount_disbursed); }).slice(0, 10);
+            const rows = topRowsBy(financialSummaryData, 'total_amount_disbursed', 10);
+            const labels = rows.map(function (row) { return row.name; });
+            const values = rows.map(function (row) { return toNumber(row.total_amount_disbursed); });
 
             return new Chart(canvas, {
                 type: 'bar',
@@ -2309,15 +2822,57 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function initializeFinancialChannelMixChart() {
+        if (!financialSummaryData.length) {
+            return;
+        }
+
+        createChartIfNeeded('financialChannelMixChart', function (canvas) {
+            const eventAmount = financialSummaryData.reduce(function (sum, row) {
+                return sum + toNumber(row.event_amount_disbursed);
+            }, 0);
+            const directAmount = financialSummaryData.reduce(function (sum, row) {
+                return sum + toNumber(row.direct_amount_disbursed);
+            }, 0);
+
+            if (eventAmount <= 0 && directAmount <= 0) {
+                return null;
+            }
+
+            return new Chart(canvas, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Event', 'Direct'],
+                    datasets: [
+                        {
+                            data: [eventAmount, directAmount],
+                            backgroundColor: ['rgba(22, 163, 74, 0.72)', 'rgba(37, 99, 235, 0.72)'],
+                            borderColor: ['rgba(22, 163, 74, 1)', 'rgba(37, 99, 235, 1)'],
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        });
+    }
+
     function initializeFinancialPerBarangayChart() {
         if (!financialPerBarangayData.length) {
             return;
         }
 
         createChartIfNeeded('financialPerBarangayChart', function (canvas) {
-            const labels = financialPerBarangayData.map(function (row) { return row.name; });
-            const eventAmounts = financialPerBarangayData.map(function (row) { return toNumber(row.event_amount); });
-            const directAmounts = financialPerBarangayData.map(function (row) { return toNumber(row.direct_amount); });
+            const rows = topRowsBy(financialPerBarangayData, 'total_amount', 10);
+            const labels = rows.map(function (row) { return row.name; });
+            const eventAmounts = rows.map(function (row) { return toNumber(row.event_amount); });
+            const directAmounts = rows.map(function (row) { return toNumber(row.direct_amount); });
 
             return new Chart(canvas, {
                 type: 'bar',
@@ -2355,14 +2910,473 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function initializeBarangayPerformanceChart() {
+        if (!barangayInsightsData.length) {
+            return;
+        }
+
+        createChartIfNeeded('barangayPerformanceChart', function (canvas) {
+            const rows = topRowsBy(barangayInsightsData, 'financial_amount', 10);
+
+            return new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: rows.map(function (row) { return row.barangay_name; }),
+                    datasets: [
+                        {
+                            label: 'Beneficiaries',
+                            data: rows.map(function (row) { return toNumber(row.beneficiaries_total); }),
+                            backgroundColor: 'rgba(37, 99, 235, 0.65)',
+                            borderColor: 'rgba(37, 99, 235, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Financial Amount (PHP)',
+                            data: rows.map(function (row) { return toNumber(row.financial_amount); }),
+                            type: 'line',
+                            tension: 0.35,
+                            borderColor: 'rgba(22, 163, 74, 1)',
+                            backgroundColor: 'rgba(22, 163, 74, 0.2)',
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            grid: { drawOnChartArea: false }
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    function initializeBarangayEventMixChart() {
+        if (!barangayInsightsData.length) {
+            return;
+        }
+
+        createChartIfNeeded('barangayEventMixChart', function (canvas) {
+            const rows = topRowsBy(barangayInsightsData, 'total_events', 10)
+                .filter(function (row) {
+                    return toNumber(row.total_events) > 0;
+                });
+
+            if (!rows.length) {
+                return null;
+            }
+
+            return new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: rows.map(function (row) { return row.barangay_name; }),
+                    datasets: [
+                        {
+                            label: 'Pending',
+                            data: rows.map(function (row) { return toNumber(row.pending_events); }),
+                            backgroundColor: 'rgba(37, 99, 235, 0.72)',
+                            borderColor: 'rgba(37, 99, 235, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Ongoing',
+                            data: rows.map(function (row) { return toNumber(row.ongoing_events); }),
+                            backgroundColor: 'rgba(217, 119, 6, 0.72)',
+                            borderColor: 'rgba(217, 119, 6, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Completed',
+                            data: rows.map(function (row) { return toNumber(row.completed_events); }),
+                            backgroundColor: 'rgba(22, 163, 74, 0.72)',
+                            borderColor: 'rgba(22, 163, 74, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        },
+                        y: {
+                            stacked: true
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    function initializeAgencyContributionChart() {
+        if (!agencySummaryData.length) {
+            return;
+        }
+
+        createChartIfNeeded('agencyContributionChart', function (canvas) {
+            const rows = topRowsBy(agencySummaryData, 'financial_amount', 10);
+
+            return new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: rows.map(function (row) { return row.agency_name; }),
+                    datasets: [
+                        {
+                            label: 'Beneficiaries Reached',
+                            data: rows.map(function (row) { return toNumber(row.beneficiaries_reached); }),
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Financial Amount (PHP)',
+                            data: rows.map(function (row) { return toNumber(row.financial_amount); }),
+                            type: 'line',
+                            tension: 0.35,
+                            borderColor: 'rgba(217, 119, 6, 1)',
+                            backgroundColor: 'rgba(217, 119, 6, 0.2)',
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            grid: { drawOnChartArea: false }
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    function initializeAgencyOperationsMixChart() {
+        if (!agencySummaryData.length) {
+            return;
+        }
+
+        createChartIfNeeded('agencyOperationsMixChart', function (canvas) {
+            const rows = topRowsBy(agencySummaryData, 'completed_events', 10);
+
+            return new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: rows.map(function (row) { return row.agency_name; }),
+                    datasets: [
+                        {
+                            label: 'Completed Events',
+                            data: rows.map(function (row) { return toNumber(row.completed_events); }),
+                            backgroundColor: 'rgba(37, 99, 235, 0.72)',
+                            borderColor: 'rgba(37, 99, 235, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Resource Quantity',
+                            data: rows.map(function (row) { return toNumber(row.resource_quantity); }),
+                            type: 'line',
+                            tension: 0.35,
+                            borderColor: 'rgba(22, 163, 74, 1)',
+                            backgroundColor: 'rgba(22, 163, 74, 0.2)',
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            grid: { drawOnChartArea: false }
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    function initializeAgencyFinancialShareChart() {
+        if (!agencySummaryData.length) {
+            return;
+        }
+
+        createChartIfNeeded('agencyFinancialShareChart', function (canvas) {
+            const rows = topRowsBy(agencySummaryData, 'financial_amount', 8)
+                .filter(function (row) {
+                    return toNumber(row.financial_amount) > 0;
+                });
+
+            if (!rows.length) {
+                return null;
+            }
+
+            const labels = rows.map(function (row) { return row.agency_name || 'N/A'; });
+            const values = rows.map(function (row) { return toNumber(row.financial_amount); });
+            const palette = [
+                'rgba(37, 99, 235, 0.7)',
+                'rgba(22, 163, 74, 0.7)',
+                'rgba(217, 119, 6, 0.7)',
+                'rgba(220, 53, 69, 0.7)',
+                'rgba(14, 165, 233, 0.7)',
+                'rgba(124, 58, 237, 0.7)',
+                'rgba(245, 158, 11, 0.7)',
+                'rgba(100, 116, 139, 0.7)'
+            ];
+
+            return new Chart(canvas, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            data: values,
+                            backgroundColor: labels.map(function (_, index) { return palette[index % palette.length]; }),
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        });
+    }
+
+    function initializeProgramCategoryChart() {
+        if (!programCategoryData.length) {
+            return;
+        }
+
+        createChartIfNeeded('programCategoryChart', function (canvas) {
+            const rows = topRowsBy(programCategoryData, 'amount', 8);
+
+            return new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: rows.map(function (row) {
+                        if (!row.category) {
+                            return 'Uncategorized';
+                        }
+
+                        return String(row.category).charAt(0).toUpperCase() + String(row.category).slice(1);
+                    }),
+                    datasets: [
+                        {
+                            label: 'Beneficiaries',
+                            data: rows.map(function (row) { return toNumber(row.beneficiaries); }),
+                            backgroundColor: 'rgba(14, 165, 233, 0.7)',
+                            borderColor: 'rgba(14, 165, 233, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Total Amount (PHP)',
+                            data: rows.map(function (row) { return toNumber(row.amount); }),
+                            type: 'line',
+                            tension: 0.35,
+                            borderColor: 'rgba(22, 163, 74, 1)',
+                            backgroundColor: 'rgba(22, 163, 74, 0.25)',
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            grid: { drawOnChartArea: false }
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    function initializeProgramEventDirectChart() {
+        if (!assistanceByPurposeData.length) {
+            return;
+        }
+
+        createChartIfNeeded('programEventDirectChart', function (canvas) {
+            const rows = topRowsBy(assistanceByPurposeData, 'total_amount', 8);
+
+            return new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: rows.map(function (row) { return row.name; }),
+                    datasets: [
+                        {
+                            label: 'Event Amount (PHP)',
+                            data: rows.map(function (row) { return toNumber(row.event_amount); }),
+                            backgroundColor: 'rgba(22, 163, 74, 0.7)',
+                            borderColor: 'rgba(22, 163, 74, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Direct Amount (PHP)',
+                            data: rows.map(function (row) { return toNumber(row.direct_amount); }),
+                            backgroundColor: 'rgba(37, 99, 235, 0.7)',
+                            borderColor: 'rgba(37, 99, 235, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    scales: {
+                        x: { stacked: true },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    function initializeProgramBeneficiaryReachChart() {
+        if (!assistanceByPurposeData.length) {
+            return;
+        }
+
+        createChartIfNeeded('programBeneficiaryReachChart', function (canvas) {
+            const rows = topRowsBy(assistanceByPurposeData, 'total_beneficiaries', 10)
+                .filter(function (row) {
+                    return toNumber(row.total_beneficiaries) > 0;
+                });
+
+            if (!rows.length) {
+                return null;
+            }
+
+            return new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: rows.map(function (row) { return row.name; }),
+                    datasets: [
+                        {
+                            label: 'Event Beneficiaries',
+                            data: rows.map(function (row) { return toNumber(row.event_beneficiaries); }),
+                            backgroundColor: 'rgba(22, 163, 74, 0.72)',
+                            borderColor: 'rgba(22, 163, 74, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Direct Beneficiaries',
+                            data: rows.map(function (row) { return toNumber(row.direct_beneficiaries); }),
+                            backgroundColor: 'rgba(37, 99, 235, 0.72)',
+                            borderColor: 'rgba(37, 99, 235, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        },
+                        y: {
+                            stacked: true
+                        }
+                    }
+                }
+            });
+        });
+    }
+
     function initializePurposeChart() {
         if (!assistanceByPurposeData.length) {
             return;
         }
 
         createChartIfNeeded('assistanceByPurposeChart', function (canvas) {
-            const labels = assistanceByPurposeData.map(function (row) { return row.name; });
-            const amounts = assistanceByPurposeData.map(function (row) { return toNumber(row.total_amount); });
+            const rankedRows = topRowsBy(assistanceByPurposeData, 'total_amount', 8);
+            const remainingTotal = assistanceByPurposeData
+                .slice()
+                .sort(function (a, b) {
+                    return toNumber(b.total_amount) - toNumber(a.total_amount);
+                })
+                .slice(8)
+                .reduce(function (sum, row) {
+                    return sum + toNumber(row.total_amount);
+                }, 0);
+
+            const labels = rankedRows.map(function (row) { return row.name; });
+            const amounts = rankedRows.map(function (row) { return toNumber(row.total_amount); });
+
+            if (remainingTotal > 0) {
+                labels.push('Others');
+                amounts.push(remainingTotal);
+            }
 
             const palette = [
                 ['rgba(37, 99, 235, 0.65)', 'rgba(37, 99, 235, 1)'],
@@ -2405,13 +3419,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     const tabChartInitializers = {
-        overview: [initializeMonthlyChart],
-        beneficiary: [initializeBeneficiariesChart, initializeUnreachedChart, initializeBeneficiaryMixChart, initializeBeneficiaryPriorityChart],
-        allocation: [initializeResourceDistributionChart, initializeStatusPerBarangayChart],
-        financial: [initializeFinancialSummaryChart, initializeFinancialPerBarangayChart],
-        barangay: [],
-        agency: [],
-        program: [initializePurposeChart]
+        overview: [initializeMonthlyChart, initializeOverviewComplianceRiskChart],
+        beneficiary: [initializeBeneficiariesChart, initializeBeneficiaryCompositionByBarangayChart, initializeUnreachedChart, initializeBeneficiaryMixChart, initializeBeneficiaryPriorityChart],
+        allocation: [initializeResourceDistributionChart, initializeAllocationReachByResourceChart, initializeStatusPerBarangayChart],
+        financial: [initializeFinancialSummaryChart, initializeFinancialChannelMixChart, initializeFinancialPerBarangayChart],
+        barangay: [initializeBarangayPerformanceChart, initializeBarangayEventMixChart],
+        agency: [initializeAgencyContributionChart, initializeAgencyFinancialShareChart, initializeAgencyOperationsMixChart],
+        program: [initializePurposeChart, initializeProgramCategoryChart, initializeProgramEventDirectChart, initializeProgramBeneficiaryReachChart]
     };
 
     function initializeChartsForTab(tabKey) {
@@ -2431,6 +3445,44 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const reportTabInput = document.getElementById('reportTabInput');
     const tabButtons = document.querySelectorAll('#reportsTabNav [data-bs-toggle="pill"]');
+    const printTabLabel = document.getElementById('printTabLabel');
+    const printModeLabel = document.getElementById('printModeLabel');
+    const compactPrintModeToggle = document.getElementById('compactPrintModeToggle');
+    const compactPrintStorageKey = 'reportsCompactPrintMode';
+
+    function applyCompactPrintMode(isEnabled) {
+        document.body.classList.toggle('print-compact-mode', Boolean(isEnabled));
+
+        if (compactPrintModeToggle) {
+            compactPrintModeToggle.checked = Boolean(isEnabled);
+        }
+
+        if (printModeLabel) {
+            printModeLabel.textContent = isEnabled ? 'Compact' : 'Standard';
+        }
+    }
+
+    let compactPrintModeEnabled = false;
+    try {
+        compactPrintModeEnabled = window.localStorage.getItem(compactPrintStorageKey) === '1';
+    } catch (error) {
+        compactPrintModeEnabled = false;
+    }
+
+    applyCompactPrintMode(compactPrintModeEnabled);
+
+    if (compactPrintModeToggle) {
+        compactPrintModeToggle.addEventListener('change', function () {
+            const isEnabled = compactPrintModeToggle.checked;
+            applyCompactPrintMode(isEnabled);
+
+            try {
+                window.localStorage.setItem(compactPrintStorageKey, isEnabled ? '1' : '0');
+            } catch (error) {
+                // Ignore storage errors in restricted browsing contexts.
+            }
+        });
+    }
 
     tabButtons.forEach(function (button) {
         button.addEventListener('shown.bs.tab', function (event) {
@@ -2438,6 +3490,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (reportTabInput) {
                 reportTabInput.value = tabKey;
+            }
+
+            if (printTabLabel) {
+                const tabText = event.target.querySelector('span');
+                printTabLabel.textContent = tabText ? tabText.textContent.trim() : tabKey;
             }
 
             initializeChartsForTab(tabKey);
@@ -2458,16 +3515,157 @@ document.addEventListener('DOMContentLoaded', function () {
         reportTabInput.value = initialTabKey;
     }
 
+    if (printTabLabel && initiallyActiveButton) {
+        const activeText = initiallyActiveButton.querySelector('span');
+        printTabLabel.textContent = activeText ? activeText.textContent.trim() : initialTabKey;
+    }
+
     initializeChartsForTab(initialTabKey);
 
     window.addEventListener('resize', function () {
         resizeCharts();
     });
 
+    window.addEventListener('beforeprint', function () {
+        applyCompactPrintMode(compactPrintModeToggle ? compactPrintModeToggle.checked : compactPrintModeEnabled);
+        resizeCharts();
+    });
+
+    window.addEventListener('afterprint', function () {
+        setTimeout(function () {
+            resizeCharts();
+        }, 50);
+    });
+
     const pdfButton = document.getElementById('reportsPdfBtn');
     if (pdfButton) {
-        pdfButton.addEventListener('click', function () {
-            window.print();
+        pdfButton.addEventListener('click', async function () {
+            const activePane = document.querySelector('#reportsTabContent .tab-pane.active');
+
+            if (!activePane) {
+                window.alert('No active report tab available for PDF export.');
+                return;
+            }
+
+            if (typeof html2pdf === 'undefined') {
+                window.alert('PDF export library failed to load. Please refresh the page and try again.');
+                return;
+            }
+
+            const tabKey = activePane.getAttribute('data-report-pane') || 'report';
+            const now = new Date();
+            const generatedAt = now.toLocaleString();
+
+            const exportWrapper = document.createElement('div');
+            exportWrapper.style.position = 'absolute';
+            exportWrapper.style.left = '0';
+            exportWrapper.style.top = '0';
+            exportWrapper.style.zIndex = '-1';
+            exportWrapper.style.pointerEvents = 'none';
+            exportWrapper.style.width = '1120px';
+            exportWrapper.style.background = '#ffffff';
+            exportWrapper.style.color = '#111827';
+            exportWrapper.style.padding = '20px';
+            exportWrapper.style.boxSizing = 'border-box';
+            exportWrapper.setAttribute('aria-hidden', 'true');
+
+            const header = document.createElement('div');
+            header.style.marginBottom = '12px';
+            header.innerHTML =
+                '<h2 style="margin:0 0 4px 0;font-size:20px;font-weight:700;">FFPRAMS Reports and Analytics</h2>' +
+                '<div style="font-size:12px;color:#475569;">Tab: ' + tabKey + ' | Year: {{ $currentYear }} | Generated: ' + generatedAt + '</div>';
+
+            const exportPane = activePane.cloneNode(true);
+            exportPane.classList.remove('tab-pane', 'fade');
+            exportPane.style.display = 'block';
+            exportPane.style.opacity = '1';
+
+            exportPane.querySelectorAll('.table-responsive').forEach(function (el) {
+                el.style.overflow = 'visible';
+            });
+
+            exportPane.querySelectorAll('.report-data-table, .table').forEach(function (el) {
+                el.style.minWidth = '0';
+                el.style.width = '100%';
+                el.style.tableLayout = 'fixed';
+            });
+
+            exportPane.querySelectorAll('.no-print').forEach(function (el) {
+                el.remove();
+            });
+
+            // Copy canvas drawing data so charts appear in the generated PDF.
+            const sourceCanvases = activePane.querySelectorAll('canvas');
+            const clonedCanvases = exportPane.querySelectorAll('canvas');
+
+            clonedCanvases.forEach(function (canvas, index) {
+                const sourceCanvas = sourceCanvases[index];
+                if (!sourceCanvas) {
+                    return;
+                }
+
+                canvas.width = sourceCanvas.width;
+                canvas.height = sourceCanvas.height;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.drawImage(sourceCanvas, 0, 0);
+                }
+            });
+
+            exportWrapper.appendChild(header);
+            exportWrapper.appendChild(exportPane);
+            document.body.appendChild(exportWrapper);
+
+            // Ensure the temporary export DOM is fully laid out before html2canvas snapshots it.
+            await new Promise(function (resolve) {
+                requestAnimationFrame(function () {
+                    requestAnimationFrame(resolve);
+                });
+            });
+
+            const previousButtonHtml = pdfButton.innerHTML;
+            pdfButton.disabled = true;
+            pdfButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Generating PDF...';
+
+            const pdfOptions = {
+                margin: [10, 10, 10, 10],
+                filename: 'reports-' + tabKey + '-{{ $currentYear }}.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    scrollY: 0,
+                    windowWidth: 1120
+                },
+                jsPDF: {
+                    unit: 'mm',
+                    format: 'a4',
+                    orientation: 'portrait'
+                },
+                pagebreak: {
+                    mode: ['css', 'legacy']
+                }
+            };
+
+            try {
+                await html2pdf().set(pdfOptions).from(exportWrapper).save();
+            } catch (error) {
+                console.error('PDF export failed on cloned container, trying active pane fallback:', error);
+
+                try {
+                    await html2pdf().set(pdfOptions).from(activePane).save();
+                } catch (fallbackError) {
+                    console.error('PDF fallback export failed:', fallbackError);
+                    window.alert('Failed to generate PDF. Please try again.');
+                }
+            } finally {
+                pdfButton.disabled = false;
+                pdfButton.innerHTML = previousButtonHtml;
+                if (exportWrapper.parentNode) {
+                    exportWrapper.parentNode.removeChild(exportWrapper);
+                }
+            }
         });
     }
 
