@@ -248,8 +248,23 @@
                 </div>
                 <div class="card-body">
                     @if($allocations->count() > 0)
+                    <div class="table-tools mb-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <label for="allocationsSearch" class="small text-muted mb-0">Search</label>
+                            <input id="allocationsSearch" type="search" class="form-control form-control-sm" placeholder="Beneficiary, barangay, resource, status..." style="min-width: 260px;">
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <label for="allocationsPageSize" class="small text-muted mb-0">Rows</label>
+                            <select id="allocationsPageSize" class="form-select form-select-sm" style="width: 90px;">
+                                <option value="10">10</option>
+                                <option value="25" selected>25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="table-responsive">
-                        <table class="table table-sm table-hover mb-0">
+                        <table id="allocationsTable" class="table table-sm table-hover mb-0">
                             <thead class="table-light">
                                 <tr>
                                     <th>Created</th>
@@ -262,7 +277,7 @@
                                     <th>Status</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="allocationsTableBody">
                                 @foreach($allocations as $allocation)
                                 <tr>
                                     <td><small>{{ $allocation->created_at?->format('Y-m-d H:i') ?? 'N/A' }}</small></td>
@@ -277,6 +292,14 @@
                                 @endforeach
                             </tbody>
                         </table>
+                    </div>
+                    <div class="table-tools mt-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
+                        <small id="allocationsInfo" class="text-muted"></small>
+                        <div class="d-flex align-items-center gap-1">
+                            <button id="allocationsPrev" type="button" class="btn btn-sm btn-outline-secondary">Prev</button>
+                            <small id="allocationsPage" class="text-muted px-2"></small>
+                            <button id="allocationsNext" type="button" class="btn btn-sm btn-outline-secondary">Next</button>
+                        </div>
                     </div>
                     @else
                     <p class="text-muted mb-0">No allocations found for this program.</p>
@@ -297,8 +320,23 @@
                 </div>
                 <div class="card-body">
                     @if($directAssistanceRecords->count() > 0)
+                    <div class="table-tools mb-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <label for="directAssistanceSearch" class="small text-muted mb-0">Search</label>
+                            <input id="directAssistanceSearch" type="search" class="form-control form-control-sm" placeholder="Beneficiary, resource, status..." style="min-width: 260px;">
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <label for="directAssistancePageSize" class="small text-muted mb-0">Rows</label>
+                            <select id="directAssistancePageSize" class="form-select form-select-sm" style="width: 90px;">
+                                <option value="10">10</option>
+                                <option value="25" selected>25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="table-responsive">
-                        <table class="table table-sm table-hover mb-0">
+                        <table id="directAssistanceTable" class="table table-sm table-hover mb-0">
                             <thead class="table-light">
                                 <tr>
                                     <th>Recorded</th>
@@ -310,7 +348,7 @@
                                     <th>Distributed At</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="directAssistanceTableBody">
                                 @foreach($directAssistanceRecords as $record)
                                 <tr>
                                     <td><small>{{ $record->created_at?->format('Y-m-d H:i') ?? 'N/A' }}</small></td>
@@ -324,6 +362,14 @@
                                 @endforeach
                             </tbody>
                         </table>
+                    </div>
+                    <div class="table-tools mt-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
+                        <small id="directAssistanceInfo" class="text-muted"></small>
+                        <div class="d-flex align-items-center gap-1">
+                            <button id="directAssistancePrev" type="button" class="btn btn-sm btn-outline-secondary">Prev</button>
+                            <small id="directAssistancePage" class="text-muted px-2"></small>
+                            <button id="directAssistanceNext" type="button" class="btn btn-sm btn-outline-secondary">Next</button>
+                        </div>
                     </div>
                     @else
                     <p class="text-muted mb-0">No direct assistance records found for this program.</p>
@@ -396,11 +442,120 @@
     .card {
         border-radius: 0.5rem;
     }
+
+    .table-tools .form-control,
+    .table-tools .form-select {
+        max-width: 300px;
+    }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const csrftoken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    const setupTable = ({
+        bodyId,
+        searchId,
+        pageSizeId,
+        prevId,
+        nextId,
+        pageId,
+        infoId,
+    }) => {
+        const tbody = document.getElementById(bodyId);
+        const searchInput = document.getElementById(searchId);
+        const pageSizeSelect = document.getElementById(pageSizeId);
+        const prevBtn = document.getElementById(prevId);
+        const nextBtn = document.getElementById(nextId);
+        const pageText = document.getElementById(pageId);
+        const infoText = document.getElementById(infoId);
+
+        if (!tbody || !searchInput || !pageSizeSelect || !prevBtn || !nextBtn || !pageText || !infoText) {
+            return;
+        }
+
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        let currentPage = 1;
+
+        const refresh = () => {
+            const query = searchInput.value.trim().toLowerCase();
+            const pageSize = parseInt(pageSizeSelect.value, 10) || 25;
+
+            const filteredRows = rows.filter((row) => row.textContent.toLowerCase().includes(query));
+            const totalRows = filteredRows.length;
+            const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+
+            if (currentPage > totalPages) {
+                currentPage = totalPages;
+            }
+
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+
+            rows.forEach((row) => {
+                row.style.display = 'none';
+            });
+
+            filteredRows.slice(start, end).forEach((row) => {
+                row.style.display = '';
+            });
+
+            if (totalRows === 0) {
+                pageText.textContent = 'No results';
+                infoText.textContent = 'Showing 0 results';
+            } else {
+                pageText.textContent = `Page ${currentPage} of ${totalPages}`;
+                infoText.textContent = `Showing ${start + 1}-${Math.min(end, totalRows)} of ${totalRows}`;
+            }
+
+            prevBtn.disabled = currentPage <= 1 || totalRows === 0;
+            nextBtn.disabled = currentPage >= totalPages || totalRows === 0;
+        };
+
+        searchInput.addEventListener('input', () => {
+            currentPage = 1;
+            refresh();
+        });
+
+        pageSizeSelect.addEventListener('change', () => {
+            currentPage = 1;
+            refresh();
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage -= 1;
+                refresh();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            currentPage += 1;
+            refresh();
+        });
+
+        refresh();
+    };
+
+    setupTable({
+        bodyId: 'allocationsTableBody',
+        searchId: 'allocationsSearch',
+        pageSizeId: 'allocationsPageSize',
+        prevId: 'allocationsPrev',
+        nextId: 'allocationsNext',
+        pageId: 'allocationsPage',
+        infoId: 'allocationsInfo',
+    });
+
+    setupTable({
+        bodyId: 'directAssistanceTableBody',
+        searchId: 'directAssistanceSearch',
+        pageSizeId: 'directAssistancePageSize',
+        prevId: 'directAssistancePrev',
+        nextId: 'directAssistanceNext',
+        pageId: 'directAssistancePage',
+        infoId: 'directAssistanceInfo',
+    });
 
     // Delete legal requirement
     document.querySelectorAll('.delete-req').forEach(btn => {
