@@ -151,7 +151,7 @@
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#event{{ $event->id }}" aria-expanded="false" aria-controls="event{{ $event->id }}">
                                     <div class="d-flex align-items-center gap-3 flex-grow-1">
-                                        <span class="badge bg-secondary">{{ $event->event_date?->format('Y-m-d') ?? 'N/A' }}</span>
+                                        <span class="badge bg-secondary">{{ $event->distribution_date?->format('Y-m-d') ?? 'N/A' }}</span>
                                         <span><strong>{{ $event->barangay?->name ?? 'N/A' }}</strong></span>
                                         <span class="text-muted">{{ $event->resourceType?->name ?? 'N/A' }}</span>
                                         <span class="ms-auto badge bg-light text-dark">{{ $event->allocations->count() }} allocations</span>
@@ -164,7 +164,7 @@
                                     <div class="row mb-3">
                                         <div class="col-md-3">
                                             <small class="text-muted">Event Date</small>
-                                            <p class="mb-0"><strong>{{ $event->event_date?->format('Y-m-d') ?? 'N/A' }}</strong></p>
+                                            <p class="mb-0"><strong>{{ $event->distribution_date?->format('Y-m-d') ?? 'N/A' }}</strong></p>
                                         </div>
                                         <div class="col-md-3">
                                             <small class="text-muted">Barangay</small>
@@ -175,8 +175,8 @@
                                             <p class="mb-0"><strong>{{ $event->resourceType?->name ?? 'N/A' }}</strong></p>
                                         </div>
                                         <div class="col-md-3">
-                                            <small class="text-muted">Total Quantity</small>
-                                            <p class="mb-0"><strong>{{ $event->total_quantity ?? '-' }}</strong></p>
+                                            <small class="text-muted">Event Status</small>
+                                            <p class="mb-0"><strong>{{ $event->status ?? '-' }}</strong></p>
                                         </div>
                                     </div>
 
@@ -237,6 +237,102 @@
         </div>
     </div>
 
+    {{-- Complete Allocations List for this Program --}}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-list-check"></i> All Allocations Under This Program ({{ $allocations->count() }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if($allocations->count() > 0)
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Created</th>
+                                    <th>Beneficiary</th>
+                                    <th>Barangay</th>
+                                    <th>Resource Type</th>
+                                    <th class="text-end">Quantity</th>
+                                    <th class="text-end">Amount (₱)</th>
+                                    <th>Release Method</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($allocations as $allocation)
+                                <tr>
+                                    <td><small>{{ $allocation->created_at?->format('Y-m-d H:i') ?? 'N/A' }}</small></td>
+                                    <td><small>{{ $allocation->beneficiary?->full_name ?? $allocation->beneficiary?->name ?? 'N/A' }}</small></td>
+                                    <td><small>{{ $allocation->distributionEvent?->barangay?->name ?? $allocation->beneficiary?->barangay?->name ?? 'N/A' }}</small></td>
+                                    <td><small>{{ $allocation->resourceType?->name ?? $allocation->distributionEvent?->resourceType?->name ?? 'N/A' }}</small></td>
+                                    <td class="text-end"><small>{{ $allocation->quantity !== null ? number_format((float) $allocation->quantity, 2) : '-' }}</small></td>
+                                    <td class="text-end"><small>{{ $allocation->amount !== null ? number_format((float) $allocation->amount, 2) : '-' }}</small></td>
+                                    <td><small>{{ $allocation->release_method ? ucfirst($allocation->release_method) : 'N/A' }}</small></td>
+                                    <td><small><span class="badge bg-light text-dark">{{ $allocation->release_status_label ?? 'Planned' }}</span></small></td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @else
+                    <p class="text-muted mb-0">No allocations found for this program.</p>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Complete Direct Assistance List for this Program --}}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-heart-pulse"></i> All Direct Assistance Under This Program ({{ $directAssistanceRecords->count() }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if($directAssistanceRecords->count() > 0)
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Recorded</th>
+                                    <th>Beneficiary</th>
+                                    <th>Resource Type</th>
+                                    <th class="text-end">Quantity</th>
+                                    <th class="text-end">Amount (₱)</th>
+                                    <th>Status</th>
+                                    <th>Distributed At</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($directAssistanceRecords as $record)
+                                <tr>
+                                    <td><small>{{ $record->created_at?->format('Y-m-d H:i') ?? 'N/A' }}</small></td>
+                                    <td><small>{{ $record->beneficiary?->full_name ?? $record->beneficiary?->name ?? 'N/A' }}</small></td>
+                                    <td><small>{{ $record->resourceType?->name ?? 'N/A' }}</small></td>
+                                    <td class="text-end"><small>{{ $record->quantity !== null ? number_format((float) $record->quantity, 2) : '-' }}</small></td>
+                                    <td class="text-end"><small>{{ $record->amount !== null ? number_format((float) $record->amount, 2) : '-' }}</small></td>
+                                    <td><small><span class="badge bg-light text-dark">{{ $record->status_label ?? 'Planned' }}</span></small></td>
+                                    <td><small>{{ $record->distributed_at?->format('Y-m-d H:i') ?? 'N/A' }}</small></td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @else
+                    <p class="text-muted mb-0">No direct assistance records found for this program.</p>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- Beneficiaries Table --}}
     <div class="row mb-4">
         <div class="col-12">
@@ -258,7 +354,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($beneficiaries->take(10) as $beneficiary)
+                                @foreach($beneficiaries as $beneficiary)
                                 <tr>
                                     <td>
                                         <small>{{ $beneficiary->name ?? 'N/A' }}</small>
@@ -282,9 +378,6 @@
                             </tbody>
                         </table>
                     </div>
-                    @if($beneficiaries->count() > 10)
-                    <small class="text-muted d-block mt-2">Showing 10 of {{ $beneficiaries->count() }} beneficiaries</small>
-                    @endif
                     @else
                     <p class="text-muted mb-0">No beneficiaries found.</p>
                     @endif

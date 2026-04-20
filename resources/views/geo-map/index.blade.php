@@ -53,9 +53,21 @@
     .badge-info.pending { background: #d1ecf1; color: #0c5460; }
     .badge-info.none { background: #f8d7da; color: #721c24; }
     .beneficiary-list { margin-top: 0.8rem; }
-    .beneficiary-item { background: #f8f9fa; border-left: 3px solid #28a745; padding: 0.6rem; margin-bottom: 0.5rem; border-radius: 0.25rem; font-size: 0.85rem; }
-    .beneficiary-item .name { font-weight: 600; color: #333; }
-    .beneficiary-item .details { color: #6c757d; font-size: 0.8rem; margin-top: 0.2rem; }
+    .beneficiary-item { background: #f8f9fa; border-left: 3px solid #28a745; padding: 0.7rem; margin-bottom: 0.6rem; border-radius: 0.25rem; font-size: 0.85rem; }
+    .beneficiary-item .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.4rem; }
+    .beneficiary-item .name { font-weight: 600; color: #333; margin-bottom: 0.1rem; }
+    .beneficiary-item .subtext { color: #6c757d; font-size: 0.76rem; }
+    .beneficiary-item .meta { display: grid; grid-template-columns: 1fr; gap: 0.15rem; margin-top: 0.45rem; }
+    .beneficiary-item .meta-row { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.77rem; color: #495057; }
+    .beneficiary-item .meta-row .label { color: #6c757d; }
+    .beneficiary-item .meta-row .value { font-weight: 600; color: #343a40; text-align: right; }
+    .beneficiary-item .actions { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.55rem; }
+    .beneficiary-item .actions .btn { --bs-btn-padding-y: 0.2rem; --bs-btn-padding-x: 0.45rem; --bs-btn-font-size: 0.72rem; }
+    .beneficiary-item .chip-row { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.45rem; }
+    .beneficiary-item .chip { border-radius: 999px; padding: 0.14rem 0.48rem; font-size: 0.66rem; font-weight: 700; }
+    .beneficiary-item .chip-urgent { background: #fde2e1; color: #a61b17; }
+    .beneficiary-item .chip-unverified { background: #fff3cd; color: #7a5d00; }
+    .beneficiary-item .chip-duplicate { background: #ece7ff; color: #4a2f8d; }
     .beneficiary-badge { display: inline-block; background: #e7f5e9; color: #2e7d32; padding: 0.2rem 0.4rem; border-radius: 0.2rem; font-size: 0.7rem; font-weight: 600; margin-top: 0.3rem; }
     .no-data { text-align: center; padding: 1rem; color: #999; font-style: italic; }
     @media (max-width: 991.98px) { #map { height: 50vh; min-height: 400px; } .filters-bar { padding: 0.8rem; } .stat-card { padding: 0.6rem; } }
@@ -312,6 +324,58 @@ document.addEventListener('DOMContentLoaded', function () {
         const container = document.getElementById('beneficiary-list-container');
         const countBadge = document.getElementById('beneficiary-count');
 
+        const escapeHtml = (value) => {
+            return String(value ?? '').replace(/[&<>"']/g, function (char) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                }[char];
+            });
+        };
+
+        const formatDate = (value) => {
+            if (!value) return 'N/A';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return 'N/A';
+            return date.toLocaleDateString('en-PH', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        };
+
+        const copyToClipboard = async (text) => {
+            if (!text) return false;
+
+            if (navigator.clipboard && window.isSecureContext) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                } catch (_) {
+                    // Fall back to legacy method below.
+                }
+            }
+
+            try {
+                const helper = document.createElement('textarea');
+                helper.value = text;
+                helper.style.position = 'fixed';
+                helper.style.left = '-9999px';
+                helper.style.top = '0';
+                document.body.appendChild(helper);
+                helper.focus();
+                helper.select();
+                const copied = document.execCommand('copy');
+                document.body.removeChild(helper);
+                return copied;
+            } catch (_) {
+                return false;
+            }
+        };
+
         // Show loading state
         container.innerHTML = '<div class="no-data">Loading beneficiaries...</div>';
 
@@ -334,17 +398,103 @@ document.addEventListener('DOMContentLoaded', function () {
             data.beneficiaries.forEach(benef => {
                 const classification = benef.classification || 'Unknown';
                 const classColor = classification === 'Farmer' ? 'success' : classification === 'Fisherfolk' ? 'info' : 'warning';
+                const latestType = benef.latest_assistance_type || 'No assistance yet';
+                const latestDate = formatDate(benef.latest_assistance_date);
+                const safeName = escapeHtml(benef.full_name || benef.name || 'N/A');
+                const safeCode = escapeHtml(benef.beneficiary_code || ('BEN-' + benef.id));
+                const safeAgency = escapeHtml(benef.agency_name || 'Unassigned');
+                const safeAddress = escapeHtml(benef.full_address || 'No address provided');
+                const safeContact = benef.contact_number ? escapeHtml(benef.contact_number) : 'No contact';
+                const statusText = (benef.status || 'Unknown').toString();
+                const statusColor = statusText.toLowerCase() === 'active' ? 'success' : 'secondary';
+                const assistanceCount = Number(benef.assistance_count_this_year || 0).toLocaleString('en-PH');
+                const safeLatestType = escapeHtml(latestType);
+                const safeLatestDate = escapeHtml(latestDate);
+                const safeProfileUrl = escapeHtml(benef.profile_url || '#');
+                const safeSmsUrl = escapeHtml(benef.sms_url || '#');
+                const hasContact = !!(benef.contact_number && String(benef.contact_number).trim() !== '');
+
+                const chips = [];
+                if (benef.is_urgent) chips.push('<span class="chip chip-urgent">Urgent</span>');
+                if (benef.is_unverified_profile) chips.push('<span class="chip chip-unverified">Unverified</span>');
+                if (benef.has_duplicate_risk) chips.push('<span class="chip chip-duplicate">Duplicate Risk</span>');
+
                 html += `
                     <div class="beneficiary-item">
-                        <div class="name">${benef.full_name || benef.name || 'N/A'}</div>
-                        <div class="details">
-                            <span class="badge bg-${classColor}" style="font-size: 0.7rem;">${classification}</span>
-                            ${benef.contact_number ? '<span class="ms-2 text-secondary">' + benef.contact_number + '</span>' : ''}
+                        <div class="header">
+                            <div>
+                                <div class="name">${safeName}</div>
+                                <div class="subtext">${safeCode}</div>
+                            </div>
+                            <div>
+                                <span class="badge bg-${classColor}" style="font-size: 0.68rem;">${escapeHtml(classification)}</span>
+                                <span class="badge bg-${statusColor} ms-1" style="font-size: 0.68rem;">${escapeHtml(statusText)}</span>
+                            </div>
+                        </div>
+                        <div class="meta">
+                            <div class="meta-row">
+                                <span class="label">Latest Assistance</span>
+                                <span class="value">${safeLatestType}</span>
+                            </div>
+                            <div class="meta-row">
+                                <span class="label">Latest Date</span>
+                                <span class="value">${safeLatestDate}</span>
+                            </div>
+                            <div class="meta-row">
+                                <span class="label">Assistance This Year</span>
+                                <span class="value">${assistanceCount}</span>
+                            </div>
+                            <div class="meta-row">
+                                <span class="label">Agency</span>
+                                <span class="value">${safeAgency}</span>
+                            </div>
+                            <div class="meta-row">
+                                <span class="label">Address</span>
+                                <span class="value">${safeAddress}</span>
+                            </div>
+                            <div class="meta-row">
+                                <span class="label">Contact</span>
+                                <span class="value">${safeContact}</span>
+                            </div>
+                        </div>
+                        ${chips.length ? `<div class="chip-row">${chips.join('')}</div>` : ''}
+                        <div class="actions">
+                            <a href="${safeProfileUrl}" class="btn btn-outline-success btn-sm">View Profile</a>
+                            <a href="${safeSmsUrl}" class="btn btn-outline-primary btn-sm">Open SMS</a>
+                            <button type="button" class="btn btn-outline-secondary btn-sm js-copy-contact" data-contact="${encodeURIComponent(String(benef.contact_number || ''))}" ${hasContact ? '' : 'disabled'}>${hasContact ? 'Copy Contact' : 'No Contact'}</button>
                         </div>
                     </div>
                 `;
             });
             container.innerHTML = html;
+
+            container.querySelectorAll('.js-copy-contact').forEach((button) => {
+                button.addEventListener('click', async () => {
+                    const encodedContact = button.getAttribute('data-contact') || '';
+                    let contact = '';
+
+                    try {
+                        contact = decodeURIComponent(encodedContact);
+                    } catch (_) {
+                        contact = encodedContact;
+                    }
+
+                    if (!contact) {
+                        return;
+                    }
+
+                    const originalLabel = button.textContent;
+                    const copied = await copyToClipboard(contact);
+                    if (!copied) {
+                        window.prompt('Copy this contact number:', contact);
+                    }
+
+                    button.textContent = copied ? 'Copied' : 'Manual Copy';
+                    setTimeout(() => {
+                        button.textContent = originalLabel;
+                    }, 1000);
+                });
+            });
         })
         .catch(error => {
             console.error('Error loading beneficiaries:', error);

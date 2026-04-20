@@ -5,7 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Agency;
 use App\Models\AgencyFormField;
+use App\Models\Allocation;
 use App\Models\AssistancePurpose;
+use App\Models\Beneficiary;
+use App\Models\DirectAssistance;
+use App\Models\DistributionEvent;
 use App\Models\FormFieldOption;
 use App\Models\ProgramName;
 use App\Models\ProgramLegalRequirement;
@@ -807,36 +811,56 @@ class SystemSettingsController extends Controller
             'legalRequirements.uploader',
         ]);
 
-        // Get all distribution events for this program with allocations
-        $events = $programName->distributionEvents()
-            ->with(['allocations.beneficiary', 'allocations.resourceType', 'resourceType', 'barangay'])
-            ->get();
-
-        // Get allocations from those events
-        $allocations = $events->pluck('allocations')
-            ->flatten()
-            ->sortByDesc('created_at');
-
-        // Get direct assistance records
-        $directAssistanceRecords = DB::table('direct_assistance')
+        $events = DistributionEvent::query()
             ->where('program_name_id', $programName->id)
-            ->orderBy('created_at', 'desc')
+            ->with([
+                'allocations.beneficiary',
+                'allocations.resourceType',
+                'allocations.assistancePurpose',
+                'resourceType',
+                'barangay',
+            ])
+            ->orderByDesc('distribution_date')
             ->get();
 
-        // Get unique beneficiary IDs from allocations and direct assistance
+        // Include both event-based and direct allocations under this specific program.
+        $allocations = Allocation::query()
+            ->where('program_name_id', $programName->id)
+            ->with([
+                'beneficiary',
+                'resourceType',
+                'assistancePurpose',
+                'distributionEvent.barangay',
+            ])
+            ->orderByDesc('created_at')
+            ->get();
+
+        $directAssistanceRecords = DirectAssistance::query()
+            ->where('program_name_id', $programName->id)
+            ->with([
+                'beneficiary',
+                'resourceType',
+                'assistancePurpose',
+                'distributionEvent.barangay',
+            ])
+            ->orderByDesc('created_at')
+            ->get();
+
         $beneficiaryIds = collect()
             ->merge($allocations->pluck('beneficiary_id'))
             ->merge($directAssistanceRecords->pluck('beneficiary_id'))
             ->unique()
             ->values();
 
-        // Load beneficiaries with their data
-        $beneficiaries = \App\Models\Beneficiary::whereIn('id', $beneficiaryIds)
+        $beneficiaries = Beneficiary::query()
+            ->whereIn('id', $beneficiaryIds)
+            ->orderBy('full_name')
             ->get();
 
-        // Calculate summary counters
         $totalEvents = $events->count();
-        $totalAllocatedAmount = $allocations->sum('amount');
+        $totalAllocatedAmount = (float) $allocations->sum(function ($allocation) {
+            return (float) ($allocation->amount ?? 0);
+        });
         $totalBeneficiaries = $beneficiaries->count();
 
         return view('admin.settings.program-names.detail', compact(
@@ -887,16 +911,16 @@ class SystemSettingsController extends Controller
     {
         $programName->load('agency');
 
-        // Get all distribution events for this program with allocations
-        $events = $programName->distributionEvents()
-            ->with(['allocations.beneficiary'])
+        $events = DistributionEvent::query()
+            ->where('program_name_id', $programName->id)
             ->get();
 
-        // Get allocations from those events
-        $allocations = $events->pluck('allocations')->flatten();
+        // Include all allocations directly linked to this program.
+        $allocations = Allocation::query()
+            ->where('program_name_id', $programName->id)
+            ->get();
 
-        // Get direct assistance records
-        $directAssistanceRecords = DB::table('direct_assistance')
+        $directAssistanceRecords = DirectAssistance::query()
             ->where('program_name_id', $programName->id)
             ->get();
 
