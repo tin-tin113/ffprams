@@ -7,6 +7,7 @@ use App\Models\Beneficiary;
 use App\Models\FormFieldOption;
 use App\Support\PhilippineMobileNumber;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class BeneficiaryRequest extends FormRequest
@@ -291,7 +292,9 @@ class BeneficiaryRequest extends FormRequest
         // ===== DYNAMIC AGENCY FORM FIELDS VALIDATION =====
         // Validate custom fields defined by each selected agency
         foreach ($selectedAgencies as $agency) {
-            $agencyFormFields = $agency->formFields()->where('is_active', true)->get();
+            $agencyFormFields = $agency->formFields()
+                ->where('is_active', true)
+                ->get();
 
             foreach ($agencyFormFields as $field) {
                 $fieldName = $field->field_name;
@@ -299,15 +302,14 @@ class BeneficiaryRequest extends FormRequest
 
                 // Fields from the form are in format: agencies[{agencyId}][{fieldName}]
                 $inputKey = "agencies.{$agencyId}.{$fieldName}";
-                $hasValueKey = "agencies.{$agencyId}.{$fieldName}_has_value";
+                $statusKey = "agencies.{$agencyId}.{$fieldName}_availability_status";
                 $reasonKey = "agencies.{$agencyId}.{$fieldName}_unavailability_reason";
 
                 if ($field->is_required) {
                     // Required field: must have value OR unavailability reason
                     $rules[$inputKey] = ['nullable', $this->getFieldTypeValidation($field)];
                     $rules[$reasonKey] = ['nullable', 'string', 'max:500'];
-                    // Toggle field is always required for required fields - must be "yes" or "no"
-                    $rules[$hasValueKey] = ['required', 'in:yes,no'];
+                    $rules[$statusKey] = ['required', 'in:provided,not_available_yet,not_applicable,to_be_verified'];
 
                     // Will be validated in withValidator() hook
                 } else {
@@ -355,11 +357,10 @@ class BeneficiaryRequest extends FormRequest
         $isFisherfolk = $classification === 'Fisherfolk';
 
         foreach ($customGroupSettings as $fieldGroup => $groupSetting) {
-            $allowedValues = $this->allowedFieldValues($fieldGroup, []);
+            $fieldType = strtolower((string) ($groupSetting['field_type'] ?? FormFieldOption::FIELD_TYPE_DROPDOWN));
+            $isOptionBased = in_array($fieldType, FormFieldOption::optionBasedFieldTypes(), true);
 
-            if (empty($allowedValues)) {
-                continue;
-            }
+            $fieldRules = [];
 
             $placement = $groupSetting['placement_section'] ?? FormFieldOption::PLACEMENT_PERSONAL_INFORMATION;
 
@@ -373,10 +374,33 @@ class BeneficiaryRequest extends FormRequest
 
             $isRequired = (bool) ($groupSetting['is_required'] ?? false) && $isVisible;
 
-            $rules['custom_fields.' . $fieldGroup] = [
-                $isRequired ? 'required' : 'nullable',
-                Rule::in($allowedValues),
-            ];
+            $fieldRules[] = $isRequired ? 'required' : 'nullable';
+
+            if ($isOptionBased) {
+                $allowedValues = $this->allowedFieldValues($fieldGroup, []);
+
+                if (empty($allowedValues)) {
+                    continue;
+                }
+
+                if ($fieldType === FormFieldOption::FIELD_TYPE_CHECKBOX) {
+                    $checkboxRules = [$isRequired ? 'required' : 'nullable', 'array'];
+                    if ($isRequired) {
+                        $checkboxRules[] = 'min:1';
+                    }
+
+                    $rules['custom_fields.' . $fieldGroup] = $checkboxRules;
+                    $rules['custom_fields.' . $fieldGroup . '.*'] = [Rule::in($allowedValues)];
+
+                    continue;
+                }
+
+                $fieldRules[] = Rule::in($allowedValues);
+            } else {
+                $fieldRules[] = $this->getGlobalFieldTypeValidationRule($fieldType);
+            }
+
+            $rules['custom_fields.' . $fieldGroup] = $fieldRules;
         }
 
         return $rules;
@@ -551,11 +575,16 @@ class BeneficiaryRequest extends FormRequest
 
     private function fieldGroupSettings(): array
     {
+        $selectColumns = ['field_group', 'placement_section', 'is_required'];
+        if (Schema::hasColumn('form_field_options', 'field_type')) {
+            $selectColumns[] = 'field_type';
+        }
+
         return FormFieldOption::query()
             ->where('is_active', true)
             ->orderBy('field_group')
             ->orderByDesc('id')
-            ->get(['field_group', 'placement_section', 'is_required'])
+            ->get($selectColumns)
             ->groupBy('field_group')
             ->map(function ($rows) {
                 $first = $rows->first();
@@ -563,9 +592,20 @@ class BeneficiaryRequest extends FormRequest
                 return [
                     'placement_section' => $first?->placement_section ?? FormFieldOption::PLACEMENT_PERSONAL_INFORMATION,
                     'is_required' => (bool) ($first?->is_required ?? false),
+                    'field_type' => $first?->field_type ?? FormFieldOption::FIELD_TYPE_DROPDOWN,
                 ];
             })
             ->toArray();
+    }
+
+    private function getGlobalFieldTypeValidationRule(string $fieldType): string
+    {
+        return match ($fieldType) {
+            'number' => 'integer',
+            'decimal' => 'numeric',
+            'date', 'datetime' => 'date',
+            default => 'string',
+        };
     }
 
     private function isFieldGroupRequired(array $settings, string $fieldGroup, bool $fallback): bool
@@ -615,23 +655,24 @@ class BeneficiaryRequest extends FormRequest
 
                     $fieldValue = $this->input("agencies.{$agencyId}.{$fieldName}");
                     $reasonValue = $this->input("agencies.{$agencyId}.{$fieldName}_unavailability_reason");
-                    $hasValue = $this->input("agencies.{$agencyId}.{$fieldName}_has_value");
+                    $status = $this->input("agencies.{$agencyId}.{$fieldName}_availability_status");
+                    $validStatuses = ['provided', 'not_available_yet', 'not_applicable', 'to_be_verified'];
 
                     // Required field must have: value OR reason
-                    if ($hasValue !== 'yes' && $hasValue !== 'no') {
+                    if (! in_array($status, $validStatuses, true)) {
                         $validator->errors()->add(
-                            "agencies.{$agencyId}.{$fieldName}_has_value",
-                            "Please specify whether you have {$field->display_label}."
+                            "agencies.{$agencyId}.{$fieldName}_availability_status",
+                            "Please select a status for {$field->display_label}."
                         );
-                    } elseif ($hasValue === 'yes' && empty($fieldValue)) {
+                    } elseif ($status === 'provided' && empty($fieldValue)) {
                         $validator->errors()->add(
                             "agencies.{$agencyId}.{$fieldName}",
-                            "{$field->display_label} is required when you selected 'I have it'."
+                            "{$field->display_label} is required when status is set to Provided."
                         );
-                    } elseif ($hasValue === 'no' && empty($reasonValue)) {
+                    } elseif ($status !== 'provided' && empty($reasonValue)) {
                         $validator->errors()->add(
                             "agencies.{$agencyId}.{$fieldName}_unavailability_reason",
-                            "Please provide a reason for not having {$field->display_label}."
+                            "Please provide a reason when {$field->display_label} is not marked as Provided."
                         );
                     }
                 }

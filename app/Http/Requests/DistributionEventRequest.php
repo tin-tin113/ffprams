@@ -49,6 +49,8 @@ class DistributionEventRequest extends FormRequest
 
             $rules['compliance_states'] = ['nullable', 'array'];
             $rules['compliance_reasons'] = ['nullable', 'array'];
+            $rules['compliance_overall_status'] = ['nullable', Rule::in(DistributionEvent::complianceStatuses())];
+            $rules['compliance_overall_reason'] = ['nullable', 'string', 'max:500'];
 
             foreach (DistributionEvent::COMPLIANCE_TRACKED_FIELDS as $field) {
                 $rules["compliance_states.{$field}"] = ['nullable', Rule::in(DistributionEvent::complianceStatuses())];
@@ -72,6 +74,8 @@ class DistributionEventRequest extends FormRequest
             $rules['farmc_reference_no'] = ['nullable'];
             $rules['compliance_states'] = ['nullable', 'array'];
             $rules['compliance_reasons'] = ['nullable', 'array'];
+            $rules['compliance_overall_status'] = ['nullable', Rule::in(DistributionEvent::complianceStatuses())];
+            $rules['compliance_overall_reason'] = ['nullable', 'string', 'max:500'];
         }
 
         return $rules;

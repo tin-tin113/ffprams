@@ -54,6 +54,13 @@ class SmsController extends Controller
             ['name' => 'Update Info', 'content' => 'Reminder: Please update your beneficiary information at the MAO office.'],
         ];
 
+        $summary = [
+            'total' => SmsLog::count(),
+            'pending' => SmsLog::where('status', 'pending')->count(),
+            'sent' => SmsLog::where('status', 'sent')->count(),
+            'failed' => SmsLog::where('status', 'failed')->count(),
+        ];
+
         $smsLogs = SmsLog::with('beneficiary.barangay')
             ->when($request->filled('search'), function ($q) use ($request) {
                 $q->whereHas('beneficiary', fn ($b) => $b->where('full_name', 'like', "%{$request->search}%"));
@@ -73,6 +80,7 @@ class SmsController extends Controller
             'assistancePurposes',
             'templates',
             'smsLogs',
+            'summary'
         ));
     }
 

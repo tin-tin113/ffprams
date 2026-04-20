@@ -20,7 +20,7 @@
                 <strong>Resource Type management was moved to System Settings.</strong>
                 <div class="small mb-0">Use Settings for add, edit, and delete. This page is now read-only for quick reference.</div>
             </div>
-            <a href="{{ route('admin.settings.resource-types.index') }}" class="btn btn-sm btn-primary">
+            <a href="{{ route('admin.settings.index', ['tab' => 'resource-types']) }}" class="btn btn-sm btn-primary">
                 <i class="bi bi-gear-fill me-1"></i> Manage in Settings
             </a>
         </div>

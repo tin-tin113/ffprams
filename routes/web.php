@@ -10,6 +10,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ResourceTypeController;
 use App\Http\Controllers\DistributionEventController;
 use App\Http\Controllers\AllocationController;
+use App\Http\Controllers\Api\AgencyFormFieldController;
 use App\Http\Controllers\DirectAssistanceController;
 use App\Http\Controllers\GeoMapController;
 use App\Http\Controllers\RecordAttachmentController;
@@ -151,6 +152,10 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
         ->name('api.beneficiaries.search');
     Route::get('api/programs/{program}/resource-types', [AllocationController::class, 'getResourceTypesByAgency'])
         ->name('api.programs.resource-types');
+    Route::get('api/agencies/by-classification', [AgencyFormFieldController::class, 'getByClassification'])
+        ->name('api.agencies.by-classification');
+    Route::get('api/agencies/form-fields', [AgencyFormFieldController::class, 'getFormFields'])
+        ->name('api.agencies.form-fields');
 
     // SMS Broadcast
     Route::get('sms', [SmsController::class, 'index'])->name('sms.index');
@@ -225,10 +230,16 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     // System Settings
     Route::get('settings', [SystemSettingsController::class, 'index'])->name('settings.index');
 
-    // Settings — Separate Pages (Multi-page Interface)
-    Route::get('settings/agencies', [SystemSettingsController::class, 'indexAgencies'])->name('settings.agencies.index');
-    Route::get('settings/resource-types', [SystemSettingsController::class, 'indexResourceTypes'])->name('settings.resource-types.index');
-    Route::get('settings/form-fields', [SystemSettingsController::class, 'indexFormFields'])->name('settings.form-fields.index');
+    // Settings — Legacy URLs (redirect to single tabbed interface)
+    Route::get('settings/agencies', function () {
+        return redirect()->route('admin.settings.index', ['tab' => 'agencies']);
+    })->name('settings.agencies.index');
+    Route::get('settings/resource-types', function () {
+        return redirect()->route('admin.settings.index', ['tab' => 'resource-types']);
+    })->name('settings.resource-types.index');
+    Route::get('settings/form-fields', function () {
+        return redirect()->route('admin.settings.index', ['tab' => 'form-fields']);
+    })->name('settings.form-fields.index');
 
     // Settings — API List Endpoints
     Route::get('settings/agencies/list', [SystemSettingsController::class, 'listAgencies'])->name('settings.agencies.list');
@@ -240,6 +251,12 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('settings/agencies', [SystemSettingsController::class, 'storeAgency'])->name('settings.agencies.store');
     Route::put('settings/agencies/{agency}', [SystemSettingsController::class, 'updateAgency'])->name('settings.agencies.update');
     Route::delete('settings/agencies/{agency}', [SystemSettingsController::class, 'destroyAgency'])->name('settings.agencies.destroy');
+    Route::get('settings/agencies/{agency}/form-fields', [SystemSettingsController::class, 'getAgencyFormFields'])->name('settings.agencies.form-fields.index');
+    Route::delete('settings/agencies/{agency}/form-fields/cleanup-reserved', [SystemSettingsController::class, 'cleanupReservedAgencyFormFields'])->name('settings.agencies.form-fields.cleanup-reserved');
+    Route::get('settings/agencies/{agency}/form-fields/{fieldId}', [SystemSettingsController::class, 'getFormField'])->name('settings.agencies.form-fields.show');
+    Route::post('settings/agencies/{agency}/form-fields', [SystemSettingsController::class, 'addFormField'])->name('settings.agencies.form-fields.store');
+    Route::put('settings/agencies/{agency}/form-fields/{fieldId}', [SystemSettingsController::class, 'updateAgencyFormField'])->name('settings.agencies.form-fields.update');
+    Route::delete('settings/agencies/{agency}/form-fields/{fieldId}', [SystemSettingsController::class, 'deleteFormField'])->name('settings.agencies.form-fields.destroy');
 
     // Settings — Assistance Purposes
     Route::post('settings/purposes', [SystemSettingsController::class, 'storePurpose'])->name('settings.purposes.store');

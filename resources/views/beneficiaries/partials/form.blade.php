@@ -4,6 +4,9 @@
     $fo = $fieldOptions ?? [];
     $fieldGroupSettings = $fieldGroupSettings ?? [];
     $beneficiaryCustomFields = (array) (($beneficiary->custom_fields ?? []) ?: []);
+    $beneficiaryDynamicAgencyValues = (array) ($beneficiaryCustomFields['agency_dynamic'] ?? []);
+    $beneficiaryReasonMap = $editing ? (array) (($beneficiary->custom_field_unavailability_reasons ?? []) ?: []) : [];
+    $beneficiaryDynamicAgencyReasons = (array) ($beneficiaryReasonMap['agency_dynamic'] ?? []);
 
     $placementLabels = [
         'personal_information' => 'Agency & Personal Information',
@@ -61,10 +64,15 @@
         ->filter(fn ($items, $group) => ! in_array($group, $nativeFieldGroups, true))
         ->map(function ($items, $group) use ($normalizeFieldOptions, $getGroupSetting) {
             $placement = $getGroupSetting($group, 'placement_section', 'personal_information');
+            $fieldType = strtolower((string) $getGroupSetting($group, 'field_type', \App\Models\FormFieldOption::FIELD_TYPE_DROPDOWN));
+            $isOptionBased = in_array($fieldType, \App\Models\FormFieldOption::optionBasedFieldTypes(), true);
+            $options = $normalizeFieldOptions($items, []);
 
             return [
                 'field_group' => $group,
                 'label' => Str::title(str_replace('_', ' ', $group)),
+                'field_type' => $fieldType,
+                'is_option_based' => $isOptionBased,
                 'placement_section' => $placement,
                 'placement_label' => [
                     'personal_information' => 'Agency & Personal Information',
@@ -73,10 +81,10 @@
                     'dar_information' => 'DAR/ARB Information',
                 ][$placement] ?? Str::title(str_replace('_', ' ', $placement)),
                 'is_required' => (bool) $getGroupSetting($group, 'is_required', false),
-                'options' => $normalizeFieldOptions($items, []),
+                'options' => $options,
             ];
         })
-        ->filter(fn ($config) => $config['options']->isNotEmpty())
+        ->filter(fn ($config) => $config['is_option_based'] ? $config['options']->isNotEmpty() : true)
         ->sortBy('label')
         ->groupBy('placement_section');
 
@@ -295,31 +303,7 @@
 
 
             @foreach($customFieldGroups->get('personal_information', collect()) as $customField)
-                @php
-                    $customGroup = $customField['field_group'];
-                    $customFieldName = 'custom_fields.' . $customGroup;
-                    $customFieldValue = old($customFieldName, $beneficiaryCustomFields[$customGroup] ?? '');
-                @endphp
-                <div class="col-12 col-md-3">
-                    <label for="custom_{{ $customGroup }}" class="form-label">
-                        {{ $customField['label'] }}
-                        @if($customField['is_required'])
-                            <span class="text-danger">*</span>
-                        @endif
-                    </label>
-                    <select class="form-select @error($customFieldName) is-invalid @enderror"
-                            id="custom_{{ $customGroup }}"
-                            name="custom_fields[{{ $customGroup }}]"
-                            data-custom-required="{{ $customField['is_required'] ? '1' : '0' }}"
-                            data-custom-placement="personal_information"
-                            {{ $customField['is_required'] ? 'required' : '' }}>
-                        <option value="">Select...</option>
-                        @foreach($customField['options'] as $opt)
-                            <option value="{{ $opt->value }}" {{ (string) $customFieldValue === (string) $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
-                        @endforeach
-                    </select>
-                    @error($customFieldName)<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
+                @include('beneficiaries.partials.custom-field-input', ['customField' => $customField, 'beneficiaryCustomFields' => $beneficiaryCustomFields])
             @endforeach
 
             <input type="hidden" name="photo_path" value="{{ old('photo_path', $beneficiary->photo_path ?? '') }}">
@@ -434,6 +418,10 @@
                        value="{{ old('organization_membership', $beneficiary->organization_membership ?? '') }}">
                 @error('organization_membership')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
+
+            @foreach($customFieldGroups->get('farmer_information', collect()) as $customField)
+                @include('beneficiaries.partials.custom-field-input', ['customField' => $customField, 'beneficiaryCustomFields' => $beneficiaryCustomFields])
+            @endforeach
         </div>
     </div>
 </div>
@@ -511,6 +499,10 @@
                        value="{{ old('fishing_vessel_tonnage', $beneficiary->fishing_vessel_tonnage ?? '') }}">
                 @error('fishing_vessel_tonnage')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
+
+            @foreach($customFieldGroups->get('fisherfolk_information', collect()) as $customField)
+                @include('beneficiaries.partials.custom-field-input', ['customField' => $customField, 'beneficiaryCustomFields' => $beneficiaryCustomFields])
+            @endforeach
         </div>
     </div>
 </div>
@@ -596,6 +588,10 @@
                        value="{{ old('barc_membership_status', $beneficiary->barc_membership_status ?? '') }}">
                 @error('barc_membership_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
+
+            @foreach($customFieldGroups->get('dar_information', collect()) as $customField)
+                @include('beneficiaries.partials.custom-field-input', ['customField' => $customField, 'beneficiaryCustomFields' => $beneficiaryCustomFields])
+            @endforeach
         </div>
     </div>
 </div>
@@ -604,6 +600,13 @@
 <div id="dynamic-agencies-container">
     {{-- Will be populated by JavaScript based on selected agencies --}}
 </div>
+
+<div
+    id="existingAgencyDynamicData"
+    class="d-none"
+    data-values='@json($beneficiaryDynamicAgencyValues)'
+    data-reasons='@json($beneficiaryDynamicAgencyReasons)'
+></div>
 
 {{-- SECTION 8 — Association Membership --}}
 <div class="card border-0 shadow-sm mb-4">

@@ -39,18 +39,6 @@
             'not_applicable' => 'Not applicable',
             'to_be_verified' => 'To be verified',
         ];
-        $trackedComplianceFields = [
-            'legal_basis_type' => 'Legal Basis Type',
-            'legal_basis_reference_no' => 'Legal Basis Reference No.',
-            'legal_basis_date' => 'Legal Basis Date',
-            'fund_source' => 'Fund Source',
-            'trust_account_code' => 'Trust Account Code',
-            'liquidation_status' => 'Liquidation Status',
-            'liquidation_due_date' => 'Liquidation Due Date',
-            'liquidation_submitted_at' => 'Liquidation Submitted At',
-            'liquidation_reference_no' => 'Liquidation Reference No.',
-            'farmc_reference_no' => 'FARMC Reference No.',
-        ];
         $complianceStates = $event->complianceStates();
         $agencyName = $event->resourceType->agency->name ?? 'N/A';
         $agencyBadge = match($agencyName) {
@@ -365,48 +353,47 @@
 
                             <div class="col-12">
                                 <hr>
-                                <h6 class="mb-1">Compliance Availability Tracking</h6>
-                                <p class="text-muted small mb-0">Use status and reason when information is not currently available.</p>
+                                <h6 class="mb-1">General Compliance Availability</h6>
+                                <p class="text-muted small mb-0">Use one overall status and reason for legal/compliance availability.</p>
                             </div>
 
-                            @foreach($trackedComplianceFields as $field => $fieldLabel)
-                                @php
-                                    $stateStatus = old("compliance_states.$field", data_get($complianceStates, "$field.status", 'not_available_yet'));
-                                    $stateReason = old("compliance_reasons.$field", data_get($complianceStates, "$field.reason"));
-                                    $reasonHidden = $stateStatus === 'provided';
-                                @endphp
-                                <div class="col-md-4">
-                                    <label for="compliance_state_{{ $field }}" class="form-label">{{ $fieldLabel }} Status</label>
-                                    <select
-                                        class="form-select compliance-status-select @error("compliance_states.$field") is-invalid @enderror"
-                                        id="compliance_state_{{ $field }}"
-                                        name="compliance_states[{{ $field }}]"
-                                        data-reason-target="compliance_reason_group_{{ $field }}"
-                                    >
-                                        @foreach($complianceStatusLabels as $statusValue => $statusLabel)
-                                            <option value="{{ $statusValue }}" {{ $stateStatus === $statusValue ? 'selected' : '' }}>{{ $statusLabel }}</option>
-                                        @endforeach
-                                    </select>
-                                    @error("compliance_states.$field")
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-md-8 compliance-reason-group {{ $reasonHidden ? 'd-none' : '' }}" id="compliance_reason_group_{{ $field }}">
-                                    <label for="compliance_reason_{{ $field }}" class="form-label">{{ $fieldLabel }} Reason</label>
-                                    <input
-                                        type="text"
-                                        maxlength="500"
-                                        class="form-control @error("compliance_reasons.$field") is-invalid @enderror"
-                                        id="compliance_reason_{{ $field }}"
-                                        name="compliance_reasons[{{ $field }}]"
-                                        value="{{ $stateReason }}"
-                                        placeholder="Explain why this field is not marked as Provided"
-                                    >
-                                    @error("compliance_reasons.$field")
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            @endforeach
+                            @php
+                                $defaultOverallStatus = data_get($complianceStates, 'legal_basis_type.status', 'not_available_yet');
+                                $defaultOverallReason = data_get($complianceStates, 'legal_basis_type.reason');
+                                $overallStatus = old('compliance_overall_status', $defaultOverallStatus);
+                                $overallReason = old('compliance_overall_reason', $defaultOverallReason);
+                                $overallReasonHidden = $overallStatus === 'provided';
+                            @endphp
+                            <div class="col-md-4">
+                                <label for="compliance_overall_status" class="form-label">General Compliance Status</label>
+                                <select
+                                    class="form-select @error('compliance_overall_status') is-invalid @enderror"
+                                    id="compliance_overall_status"
+                                    name="compliance_overall_status"
+                                >
+                                    @foreach($complianceStatusLabels as $statusValue => $statusLabel)
+                                        <option value="{{ $statusValue }}" {{ $overallStatus === $statusValue ? 'selected' : '' }}>{{ $statusLabel }}</option>
+                                    @endforeach
+                                </select>
+                                @error('compliance_overall_status')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-8 {{ $overallReasonHidden ? 'd-none' : '' }}" id="compliance_overall_reason_group">
+                                <label for="compliance_overall_reason" class="form-label">General Compliance Reason</label>
+                                <input
+                                    type="text"
+                                    maxlength="500"
+                                    class="form-control @error('compliance_overall_reason') is-invalid @enderror"
+                                    id="compliance_overall_reason"
+                                    name="compliance_overall_reason"
+                                    value="{{ $overallReason }}"
+                                    placeholder="Explain why legal/compliance details are not fully provided yet"
+                                >
+                                @error('compliance_overall_reason')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
 
                             <div class="col-12">
                                 <button type="submit" class="btn btn-outline-primary">
@@ -1196,33 +1183,24 @@ document.addEventListener('DOMContentLoaded', function () {
     showRequiresFarmc?.addEventListener('change', updateShowComplianceDependencies);
     updateShowComplianceDependencies();
 
-    const complianceStatusSelects = Array.from(document.querySelectorAll('.compliance-status-select'));
+    const overallComplianceStatus = document.getElementById('compliance_overall_status');
+    const overallComplianceReasonGroup = document.getElementById('compliance_overall_reason_group');
+    const overallComplianceReason = document.getElementById('compliance_overall_reason');
 
-    function updateComplianceReasonGroup(selectEl) {
-        const targetId = selectEl.getAttribute('data-reason-target');
-        if (!targetId) {
+    function updateOverallComplianceReasonState() {
+        if (!overallComplianceStatus || !overallComplianceReasonGroup) {
             return;
         }
 
-        const reasonGroup = document.getElementById(targetId);
-        if (!reasonGroup) {
-            return;
-        }
-
-        const reasonInput = reasonGroup.querySelector('input, textarea');
-        const showReason = selectEl.value !== 'provided';
-
-        reasonGroup.classList.toggle('d-none', !showReason);
-
-        if (reasonInput) {
-            reasonInput.required = showReason;
+        const showReason = overallComplianceStatus.value !== 'provided';
+        overallComplianceReasonGroup.classList.toggle('d-none', !showReason);
+        if (overallComplianceReason) {
+            overallComplianceReason.required = showReason;
         }
     }
 
-    complianceStatusSelects.forEach((selectEl) => {
-        selectEl.addEventListener('change', () => updateComplianceReasonGroup(selectEl));
-        updateComplianceReasonGroup(selectEl);
-    });
+    overallComplianceStatus?.addEventListener('change', updateOverallComplianceReasonState);
+    updateOverallComplianceReasonState();
 
     const bulkSelectAll = document.getElementById('bulkSelectAll');
     const bulkReleaseForm = document.getElementById('bulkReleaseForm');

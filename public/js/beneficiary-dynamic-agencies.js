@@ -5,7 +5,7 @@
  * - Dynamic agency loading based on classification
  * - Agency selection via checkboxes
  * - Dynamic form field rendering for selected agencies
- * - "I have it / I don't have it" toggle for required fields
+ * - Compliance-style status + reason handling for required fields
  */
 
 class DynamicAgencyForm {
@@ -16,6 +16,7 @@ class DynamicAgencyForm {
         this.selectedAgencies = new Set();
         this.agenciesData = {};
         this.formFieldsData = {};
+        this.cachedExistingAgencyData = null;
 
         this.init();
     }
@@ -198,49 +199,70 @@ class DynamicAgencyForm {
 
         const fieldName = `agencies[${agencyId}][${field.field_name}]`;
         const unavailabilityFieldName = `agencies[${agencyId}][${field.field_name}_unavailability_reason]`;
-        const toggleFieldName = `agencies[${agencyId}][${field.field_name}_has_value]`;
+        const statusFieldName = `agencies[${agencyId}][${field.field_name}_availability_status]`;
+        const legacyToggleFieldName = `agencies[${agencyId}][${field.field_name}_has_value]`;
 
         const fieldValue = this.getOldInputValue(fieldName);
-        const toggleValue = this.getOldInputValue(toggleFieldName);
+        const statusValue = this.getOldInputValue(statusFieldName);
+        const legacyToggleValue = this.getOldInputValue(legacyToggleFieldName);
         const unavailabilityValue = this.getOldInputValue(unavailabilityFieldName);
 
-        // Determine initial state
-        const hasValue = !unavailabilityValue && (fieldValue || toggleValue === 'yes');
-        const toggleId = `toggle_${agencyId}_${field.field_name}`;
+        let availabilityStatus = statusValue;
+        if (!availabilityStatus) {
+            if (legacyToggleValue === 'yes') {
+                availabilityStatus = 'provided';
+            } else if (legacyToggleValue === 'no') {
+                availabilityStatus = 'not_available_yet';
+            }
+        }
+        if (!availabilityStatus) {
+            availabilityStatus = fieldValue ? 'provided' : 'not_available_yet';
+        }
 
-        console.log(`Field ${field.field_name} - is_required: ${field.is_required}, hasValue: ${hasValue}`);
+        const showFieldValue = availabilityStatus === 'provided';
+        const statusSelectId = `availability_status_${agencyId}_${field.field_name}`;
+        const valueSectionId = `availability_value_${agencyId}_${field.field_name}`;
+        const reasonSectionId = `availability_reason_${agencyId}_${field.field_name}`;
+
+        console.log(`Field ${field.field_name} - is_required: ${field.is_required}, availabilityStatus: ${availabilityStatus}`);
 
         let fieldHtml = '';
 
         if (field.is_required) {
-            console.log(`Creating required field toggle for ${field.field_name}`);
-            // Required field with toggle option
+            console.log(`Creating required field status for ${field.field_name}`);
+            // Required field with status and reason option
             fieldHtml += `
                 <div class="col-12">
                     <div class="card bg-light border-0 p-3 mb-3">
-                        <div class="row g-2 align-items-center">
-                            <div class="col-auto">
-                                <div class="btn-group" role="group">
-                                    <input type="radio" class="btn-check has-value-toggle" name="${toggleFieldName}" value="yes" id="${toggleId}_yes" data-toggle-id="${toggleId}" ${hasValue ? 'checked' : ''}>
-                                    <label class="btn btn-sm btn-outline-primary" for="${toggleId}_yes">I have it</label>
-
-                                    <input type="radio" class="btn-check has-value-toggle" name="${toggleFieldName}" value="no" id="${toggleId}_no" data-toggle-id="${toggleId}" ${!hasValue ? 'checked' : ''}>
-                                    <label class="btn btn-sm btn-outline-secondary" for="${toggleId}_no">I don't have it</label>
-                                </div>
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-6">
+                                <label for="${statusSelectId}" class="form-label mb-1">${field.display_label} Status <span class="text-danger">*</span></label>
+                                <select
+                                    class="form-select availability-status-select"
+                                    id="${statusSelectId}"
+                                    name="${statusFieldName}"
+                                    data-field-target="${valueSectionId}"
+                                    data-reason-target="${reasonSectionId}"
+                                >
+                                    <option value="provided" ${availabilityStatus === 'provided' ? 'selected' : ''}>Provided</option>
+                                    <option value="not_available_yet" ${availabilityStatus === 'not_available_yet' ? 'selected' : ''}>Not available yet</option>
+                                    <option value="not_applicable" ${availabilityStatus === 'not_applicable' ? 'selected' : ''}>Not applicable</option>
+                                    <option value="to_be_verified" ${availabilityStatus === 'to_be_verified' ? 'selected' : ''}>To be verified</option>
+                                </select>
                             </div>
-                            <div class="col">
-                                <small class="text-muted">${field.display_label}</small>
+                            <div class="col-md-6">
+                                <small class="text-muted">Set status to Provided when the field value is available.</small>
                             </div>
                         </div>
                     </div>
 
-                    <div class="has-value-section" data-toggle-id="${toggleId}" style="display: ${hasValue ? 'block' : 'none'}">
+                    <div class="availability-value-section" id="${valueSectionId}" style="display: ${showFieldValue ? 'block' : 'none'}">
                         <label for="${fieldName}" class="form-label">${field.display_label} <span class="text-danger">*</span></label>
                         ${this.renderFieldInput(fieldName, field, fieldValue)}
                         ${field.help_text ? `<small class="text-muted d-block mt-1">${field.help_text}</small>` : ''}
                     </div>
 
-                    <div class="no-value-section" data-toggle-id="${toggleId}" style="display: ${!hasValue ? 'block' : 'none'}">
+                    <div class="availability-reason-section" id="${reasonSectionId}" style="display: ${showFieldValue ? 'none' : 'block'}">
                         <label for="${unavailabilityFieldName}" class="form-label">Reason for Unavailability <span class="text-danger">*</span></label>
                         <textarea class="form-control" id="${unavailabilityFieldName}" name="${unavailabilityFieldName}" rows="3" placeholder="Explain why you don't have this...">${unavailabilityValue || ''}</textarea>
                         <small class="text-muted d-block mt-1">${field.help_text || 'Please provide a reason'}</small>
@@ -316,34 +338,70 @@ class DynamicAgencyForm {
     }
 
     attachEventListeners() {
-        // Attach listeners to "I have it / I don't have it" toggles
-        this.dynamicAgenciesContainer.querySelectorAll('.has-value-toggle').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                const toggleId = e.target.dataset.toggleId;
-                console.log('Toggle clicked:', toggleId, 'Value:', e.target.value);
+        this.dynamicAgenciesContainer.querySelectorAll('.availability-status-select').forEach((selectEl) => {
+            const updateState = () => {
+                const fieldTargetId = selectEl.dataset.fieldTarget;
+                const reasonTargetId = selectEl.dataset.reasonTarget;
+                const fieldSection = fieldTargetId ? document.getElementById(fieldTargetId) : null;
+                const reasonSection = reasonTargetId ? document.getElementById(reasonTargetId) : null;
 
-                if (!toggleId) return;
+                const showFieldValue = selectEl.value === 'provided';
 
-                const hasValueSections = this.dynamicAgenciesContainer.querySelectorAll(`.has-value-section[data-toggle-id="${toggleId}"]`);
-                const noValueSections = this.dynamicAgenciesContainer.querySelectorAll(`.no-value-section[data-toggle-id="${toggleId}"]`);
+                if (fieldSection) {
+                    fieldSection.style.display = showFieldValue ? 'block' : 'none';
+                    const valueInput = fieldSection.querySelector('input, select, textarea');
+                    if (valueInput) {
+                        valueInput.required = showFieldValue;
+                    }
+                }
 
-                console.log('Found has-value sections:', hasValueSections.length);
-                console.log('Found no-value sections:', noValueSections.length);
+                if (reasonSection) {
+                    reasonSection.style.display = showFieldValue ? 'none' : 'block';
+                    const reasonInput = reasonSection.querySelector('input, textarea');
+                    if (reasonInput) {
+                        reasonInput.required = !showFieldValue;
+                    }
+                }
+            };
 
-                // Check for 'yes' or '1' for showing has-value section
-                const showHasValue = e.target.value === 'yes' || e.target.value === '1';
-
-                hasValueSections.forEach(section => {
-                    section.style.display = showHasValue ? 'block' : 'none';
-                    console.log('Set has-value section display to:', showHasValue ? 'block' : 'none');
-                });
-
-                noValueSections.forEach(section => {
-                    section.style.display = !showHasValue ? 'block' : 'none';
-                    console.log('Set no-value section display to:', !showHasValue ? 'block' : 'none');
-                });
-            });
+            selectEl.addEventListener('change', updateState);
+            updateState();
         });
+    }
+
+    getExistingAgencyData() {
+        if (this.cachedExistingAgencyData) {
+            return this.cachedExistingAgencyData;
+        }
+
+        const defaultData = { values: {}, reasons: {} };
+        const dataEl = document.getElementById('existingAgencyDynamicData');
+        if (!dataEl) {
+            this.cachedExistingAgencyData = defaultData;
+            return this.cachedExistingAgencyData;
+        }
+
+        let values = {};
+        let reasons = {};
+
+        try {
+            values = JSON.parse(dataEl.dataset.values || '{}');
+        } catch (error) {
+            values = {};
+        }
+
+        try {
+            reasons = JSON.parse(dataEl.dataset.reasons || '{}');
+        } catch (error) {
+            reasons = {};
+        }
+
+        this.cachedExistingAgencyData = {
+            values: values || {},
+            reasons: reasons || {},
+        };
+
+        return this.cachedExistingAgencyData;
     }
 
     getOldInputValue(fieldName) {
@@ -356,7 +414,66 @@ class DynamicAgencyForm {
             }
             return input.value;
         }
-        return '';
+
+        const fieldMatch = fieldName.match(/^agencies\[(\d+)\]\[([a-z0-9_]+)\]$/i);
+        if (!fieldMatch) {
+            return '';
+        }
+
+        const agencyId = fieldMatch[1];
+        const agencyFieldKey = fieldMatch[2];
+    const existingAgencyData = this.getExistingAgencyData();
+    const existingValues = existingAgencyData.values || {};
+    const existingReasons = existingAgencyData.reasons || {};
+        const agencyValues = existingValues[agencyId] || {};
+        const agencyReasons = existingReasons[agencyId] || {};
+
+        const hasStoredValue = (candidate) => {
+            if (Array.isArray(candidate)) {
+                return candidate.length > 0;
+            }
+
+            return candidate !== undefined && candidate !== null && String(candidate).trim() !== '';
+        };
+
+        if (agencyFieldKey.endsWith('_availability_status')) {
+            const baseFieldName = agencyFieldKey.replace(/_availability_status$/, '');
+            const storedValue = agencyValues[baseFieldName];
+            const storedReason = agencyReasons[baseFieldName];
+
+            if (hasStoredValue(storedValue)) {
+                return 'provided';
+            }
+
+            if (hasStoredValue(storedReason)) {
+                return 'not_available_yet';
+            }
+
+            return '';
+        }
+
+        if (agencyFieldKey.endsWith('_has_value')) {
+            const baseFieldName = agencyFieldKey.replace(/_has_value$/, '');
+            const storedValue = agencyValues[baseFieldName];
+            const storedReason = agencyReasons[baseFieldName];
+
+            if (hasStoredValue(storedValue)) {
+                return 'yes';
+            }
+
+            if (hasStoredValue(storedReason)) {
+                return 'no';
+            }
+
+            return '';
+        }
+
+        if (agencyFieldKey.endsWith('_unavailability_reason')) {
+            const baseFieldName = agencyFieldKey.replace(/_unavailability_reason$/, '');
+            return agencyReasons[baseFieldName] || '';
+        }
+
+        return agencyValues[agencyFieldKey] ?? '';
     }
 
     escapeHtml(text) {

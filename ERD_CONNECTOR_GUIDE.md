@@ -1,4 +1,4 @@
-# FFPRAMS ERD Connector Guide
+# geFFPRAMS ERD Connector Guide
 
 This guide tells you exactly which connectors to draw in your Draw.io ERD using Crow's Foot notation.
 
@@ -22,26 +22,31 @@ Use orthogonal connectors for readability.
 If Draw.io shows labels like "Many Optional to Many Mandatory", use this mapping:
 
 1. `Many Optional to Many Mandatory`
+
 - Meaning: `0..*` on one side, `1..*` on the other side.
 - Use case: Rare in normalized physical DB design.
 - In this project: Usually not used directly; replace with a junction table (`beneficiary_agencies`, `agency_classifications`) and two 1-to-many links.
 
 2. `Many Optional to One Mandatory`
+
 - Meaning: `0..*` child rows can exist per parent, but each child must reference exactly one parent.
 - Typical FK case: Parent can have none/many children; child has required FK.
 - Example here: `beneficiaries` -> `beneficiary_attachments` (if using that table).
 
 3. `Many Optional to One Optional`
+
 - Meaning: Parent may have `0..*` children, and child FK can be null.
 - Use when FK column is nullable.
 - Example here: `distribution_events` -> `allocations` (`distribution_event_id` is nullable for direct releases).
 
 4. `Many Mandatory to One Mandatory`
+
 - Meaning: Parent must have at least one child and child must have one parent.
 - Use carefully: This is a business-rule relationship, not just FK structure.
 - In this project: Avoid unless you enforce minimum-child rules in app/database logic.
 
 5. `One Mandatory to One Mandatory`
+
 - Meaning: strict 1:1 required both sides.
 - In this project: Not a primary pattern in current core tables.
 
@@ -62,144 +67,177 @@ Recommended default in FFPRAMS:
 ### 1) Geography and Beneficiaries
 
 1. `barangays.id` -> `beneficiaries.barangay_id`
+
 - Cardinality: One barangay to many beneficiaries
 - FK optionality: Required child (`beneficiaries.barangay_id` is required)
 
 2. `agencies.id` -> `beneficiaries.agency_id`
+
 - Cardinality: One agency to many beneficiaries
 - FK optionality: Optional child (`beneficiaries.agency_id` nullable)
 
 3. `beneficiaries.id` -> `sms_logs.beneficiary_id`
+
 - Cardinality: One beneficiary to many SMS logs
 - FK optionality: Required child
 
 ### 2) Agencies, Programs, and Resources
 
 4. `agencies.id` -> `users.agency_id`
+
 - Cardinality: One agency to many users
 - FK optionality: Optional child (`users.agency_id` nullable)
 
 5. `agencies.id` -> `resource_types.agency_id`
+
 - Cardinality: One agency to many resource types
 - FK optionality: Optional child (`resource_types.agency_id` nullable)
 
 6. `agencies.id` -> `program_names.agency_id`
+
 - Cardinality: One agency to many program names
 - FK optionality: Required child
 
 7. `program_names.id` -> `program_legal_requirements.program_name_id`
+
 - Cardinality: One program to many legal requirement files
 - FK optionality: Required child
 
 8. `users.id` -> `program_legal_requirements.uploaded_by`
+
 - Cardinality: One user to many uploaded legal files
 - FK optionality: Optional child (`uploaded_by` nullable)
 
 ### 3) Dynamic Agency System
 
 9. `agencies.id` -> `agency_classifications.agency_id`
+
 - Cardinality: One agency to many agency_classifications rows
 - FK optionality: Required child
 
 10. `classifications.id` -> `agency_classifications.classification_id`
+
 - Cardinality: One classification to many agency_classifications rows
 - FK optionality: Required child
 
 11. `agencies.id` -> `agency_form_fields.agency_id`
+
 - Cardinality: One agency to many agency form fields
 - FK optionality: Required child
 
 12. `agency_form_fields.id` -> `agency_form_field_options.agency_form_field_id`
+
 - Cardinality: One form field to many selectable options
 - FK optionality: Required child
 
 13. `beneficiaries.id` -> `beneficiary_agencies.beneficiary_id`
+
 - Cardinality: One beneficiary to many beneficiary_agencies rows
 - FK optionality: Required child
 
 14. `agencies.id` -> `beneficiary_agencies.agency_id`
+
 - Cardinality: One agency to many beneficiary_agencies rows
 - FK optionality: Required child
 
 ### 4) Distribution Event Flow
 
 15. `barangays.id` -> `distribution_events.barangay_id`
+
 - Cardinality: One barangay to many distribution events
 - FK optionality: Required child
 
 16. `resource_types.id` -> `distribution_events.resource_type_id`
+
 - Cardinality: One resource type to many distribution events
 - FK optionality: Required child
 
 17. `program_names.id` -> `distribution_events.program_name_id`
+
 - Cardinality: One program to many distribution events
 - FK optionality: Required child in current schema
 
 18. `users.id` -> `distribution_events.created_by`
+
 - Cardinality: One user to many created distribution events
 - FK optionality: Required child
 
 19. `users.id` -> `distribution_events.beneficiary_list_approved_by`
+
 - Cardinality: One user to many approvals
 - FK optionality: Optional child (`beneficiary_list_approved_by` nullable)
 
 ### 5) Allocation and Direct Assistance
 
 20. `distribution_events.id` -> `allocations.distribution_event_id`
+
 - Cardinality: One event to many allocations
 - FK optionality: Optional child in current schema (supports direct allocations)
 
 21. `beneficiaries.id` -> `allocations.beneficiary_id`
+
 - Cardinality: One beneficiary to many allocations
 - FK optionality: Required child
 
 22. `program_names.id` -> `allocations.program_name_id`
+
 - Cardinality: One program to many allocations
 - FK optionality: Optional child
 
 23. `resource_types.id` -> `allocations.resource_type_id`
+
 - Cardinality: One resource type to many allocations
 - FK optionality: Optional child
 
 24. `assistance_purposes.id` -> `allocations.assistance_purpose_id`
+
 - Cardinality: One purpose to many allocations
 - FK optionality: Optional child
 
 25. `beneficiaries.id` -> `direct_assistance.beneficiary_id`
+
 - Cardinality: One beneficiary to many direct assistance rows
 - FK optionality: Required child
 
 26. `program_names.id` -> `direct_assistance.program_name_id`
+
 - Cardinality: One program to many direct assistance rows
 - FK optionality: Required child
 
 27. `resource_types.id` -> `direct_assistance.resource_type_id`
+
 - Cardinality: One resource type to many direct assistance rows
 - FK optionality: Required child
 
 28. `assistance_purposes.id` -> `direct_assistance.assistance_purpose_id`
+
 - Cardinality: One purpose to many direct assistance rows
 - FK optionality: Optional child
 
 29. `users.id` -> `direct_assistance.created_by`
+
 - Cardinality: One user to many created direct assistance rows
 - FK optionality: Required child
 
 30. `users.id` -> `direct_assistance.distributed_by`
+
 - Cardinality: One user to many distributed direct assistance rows
 - FK optionality: Optional child
 
 31. `distribution_events.id` -> `direct_assistance.distribution_event_id`
+
 - Cardinality: One event to many direct assistance rows
 - FK optionality: Optional child
 
 ### 6) Audit Trail
 
 32. `users.id` -> `audit_logs.user_id`
+
 - Cardinality: One user to many audit log rows
 - FK optionality: Required child
 
 33. `users.id` -> `record_attachments.uploaded_by`
+
 - Cardinality: One user to many uploaded attachments
 - FK optionality: Optional child (`uploaded_by` nullable)
 - Notes: `record_attachments.attachable_type` + `record_attachments.attachable_id` is polymorphic; do not draw hard FK lines from those fields.
@@ -207,15 +245,19 @@ Recommended default in FFPRAMS:
 ## Tables In Your Diagram That Are Standalone (No FK connector)
 
 1. `form_field_options`
+
 - Legacy system options table (not FK-linked to other tables).
 
 2. `sessions`
+
 - Has `user_id` index but no FK constraint in migration.
 
 3. `audit_logs.table_name` + `audit_logs.record_id`
+
 - Polymorphic-style reference by value, not a real FK; do not draw hard FK connectors from these two fields.
 
 4. `record_attachments.attachable_type` + `record_attachments.attachable_id`
+
 - Polymorphic reference; do not draw hard FK connectors from these two fields.
 
 ## Realistic Diagram Notes
@@ -261,51 +303,67 @@ Draw only these in your main ERD canvas to keep it clean and realistic:
 Use these exact Draw.io relationship labels when drawing each final connector:
 
 1. `barangays.id` -> `beneficiaries.barangay_id`
+
 - Draw.io label: `Many Optional to One Mandatory`
 
 2. `agencies.id` -> `beneficiaries.agency_id`
+
 - Draw.io label: `Many Optional to One Optional`
 
 3. `agencies.id` -> `program_names.agency_id`
+
 - Draw.io label: `Many Optional to One Mandatory`
 
 4. `agencies.id` -> `resource_types.agency_id`
+
 - Draw.io label: `Many Optional to One Optional`
 
 5. `barangays.id` -> `distribution_events.barangay_id`
+
 - Draw.io label: `Many Optional to One Mandatory`
 
 6. `resource_types.id` -> `distribution_events.resource_type_id`
+
 - Draw.io label: `Many Optional to One Mandatory`
 
 7. `program_names.id` -> `distribution_events.program_name_id`
+
 - Draw.io label: `Many Optional to One Mandatory`
 
 8. `distribution_events.id` -> `allocations.distribution_event_id`
+
 - Draw.io label: `Many Optional to One Optional`
 
 9. `beneficiaries.id` -> `allocations.beneficiary_id`
+
 - Draw.io label: `Many Optional to One Mandatory`
 
 10. `program_names.id` -> `allocations.program_name_id`
+
 - Draw.io label: `Many Optional to One Optional`
 
 11. `resource_types.id` -> `allocations.resource_type_id`
+
 - Draw.io label: `Many Optional to One Optional`
 
 12. `assistance_purposes.id` -> `allocations.assistance_purpose_id`
+
 - Draw.io label: `Many Optional to One Optional`
 
 13. `beneficiaries.id` -> `direct_assistance.beneficiary_id`
+
 - Draw.io label: `Many Optional to One Mandatory`
 
 14. `program_names.id` -> `direct_assistance.program_name_id`
+
 - Draw.io label: `Many Optional to One Mandatory`
 
 15. `resource_types.id` -> `direct_assistance.resource_type_id`
+
 - Draw.io label: `Many Optional to One Mandatory`
 
 16. `assistance_purposes.id` -> `direct_assistance.assistance_purpose_id`
+
 - Draw.io label: `Many Optional to One Optional`
 
 Direction tip while drawing:
@@ -334,44 +392,51 @@ Add these only in full technical ERD version:
 ## Suggested DB Improvements (Normalize + Clean)
 
 1. Resolve dual agency modeling on beneficiaries
+
 - Current design has both `beneficiaries.agency_id` and `beneficiary_agencies` pivot.
 - Cleaner options:
-	- Option A: keep pivot as source of truth and remove `beneficiaries.agency_id`.
-	- Option B: keep `beneficiaries.agency_id` as `primary_agency_id` and enforce consistency with pivot.
+  - Option A: keep pivot as source of truth and remove `beneficiaries.agency_id`.
+  - Option B: keep `beneficiaries.agency_id` as `primary_agency_id` and enforce consistency with pivot.
 
 2. Consolidate direct release data model
+
 - You currently use both `allocations` (`release_method='direct'`) and `direct_assistance`.
 - Pick one canonical transactional table to avoid duplicate workflow logic and reporting drift.
 
 3. Normalize status domains
+
 - Status values are spread across event/allocation/direct tables.
 - Standardize status enum sets and transition rules in one service/policy layer.
 
 4. Consider lookup tables for frequently changing enums
+
 - Move business enums (`release_outcome`, legal/fund/liquidation domains) to lookup tables if these are expected to evolve.
 
 5. Add check constraints for value integrity (if MySQL version supports)
+
 - Enforce at least one of `quantity` or `amount` depending on resource type context.
 - Enforce non-negative numeric constraints.
 
 6. Clarify soft-delete uniqueness strategy
+
 - Keep unique indexes aligned with soft delete behavior for all key pairings (similar to your allocations fix).
 
 7. Keep legacy tables out of main ERD
+
 - Show `form_field_options` only in legacy/appendix diagram if still physically present.
 
 ## Strict 3NF Target (Before -> After)
 
 Use this as your practical normalization blueprint.
 
-| Area | Current (Before) | 3NF Target (After) | Benefit |
-|---|---|---|---|
-| Beneficiary-Agency relation | `beneficiaries.agency_id` plus `beneficiary_agencies` pivot | Keep `beneficiary_agencies` as source of truth; replace `beneficiaries.agency_id` with optional `primary_agency_id` only if needed for UX | Removes duplicated relationship meaning and update anomalies |
-| Direct distribution flow | Both `allocations` (`release_method='direct'`) and `direct_assistance` carry similar facts | Keep one transactional table only (recommended: keep `allocations` and archive/merge `direct_assistance`) | Single source of truth for reports, workflow, and audits |
-| Program/resource fields on allocations | `allocations.program_name_id` and `allocations.resource_type_id` can duplicate event-derived context | Keep these fields only for direct rows (`distribution_event_id IS NULL`), enforce consistency rule for event rows | Prevents transitive inconsistency between event and allocation rows |
-| Status domains | Multiple enum-like status sets spread across tables | Create lookup tables (`release_statuses`, `release_outcomes`, `event_statuses`) and reference by FK | Central governance of allowed states |
-| Polymorphic attachments | `record_attachments.attachable_type` and `attachable_id` | Keep polymorphic if flexibility needed, or split to typed join tables for strict FK model | Better integrity guarantees if strict mode required |
-| Legacy option catalogs | `form_field_options` and new agency-driven metadata both present | Keep only active metadata model and deprecate legacy options table from operational model | Cleaner schema surface and less ambiguity |
+| Area                                   | Current (Before)                                                                                         | 3NF Target (After)                                                                                                                              | Benefit                                                             |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Beneficiary-Agency relation            | `beneficiaries.agency_id` plus `beneficiary_agencies` pivot                                          | Keep `beneficiary_agencies` as source of truth; replace `beneficiaries.agency_id` with optional `primary_agency_id` only if needed for UX | Removes duplicated relationship meaning and update anomalies        |
+| Direct distribution flow               | Both `allocations` (`release_method='direct'`) and `direct_assistance` carry similar facts         | Keep one transactional table only (recommended: keep `allocations` and archive/merge `direct_assistance`)                                   | Single source of truth for reports, workflow, and audits            |
+| Program/resource fields on allocations | `allocations.program_name_id` and `allocations.resource_type_id` can duplicate event-derived context | Keep these fields only for direct rows (`distribution_event_id IS NULL`), enforce consistency rule for event rows                             | Prevents transitive inconsistency between event and allocation rows |
+| Status domains                         | Multiple enum-like status sets spread across tables                                                      | Create lookup tables (`release_statuses`, `release_outcomes`, `event_statuses`) and reference by FK                                       | Central governance of allowed states                                |
+| Polymorphic attachments                | `record_attachments.attachable_type` and `attachable_id`                                             | Keep polymorphic if flexibility needed, or split to typed join tables for strict FK model                                                       | Better integrity guarantees if strict mode required                 |
+| Legacy option catalogs                 | `form_field_options` and new agency-driven metadata both present                                       | Keep only active metadata model and deprecate legacy options table from operational model                                                       | Cleaner schema surface and less ambiguity                           |
 
 ### Minimal 3NF Rule Set To Enforce
 
@@ -383,18 +448,23 @@ Use this as your practical normalization blueprint.
 ### Phased Migration Plan (Low Risk)
 
 1. Phase 1: Add constraints/checks
+
 - Add validation constraints for allocation consistency (`event` rows must align with event program/resource).
 
 2. Phase 2: Converge direct workflow
+
 - Backfill one canonical transactional table and switch reads/reports to it.
 
 3. Phase 3: Remove duplicate relationship paths
+
 - Drop redundant agency relation column or formally rename it to `primary_agency_id`.
 
 4. Phase 4: Replace enums with lookup FKs
+
 - Introduce lookup tables and migrate existing values.
 
 5. Phase 5: Archive/deprecate legacy tables from main ERD
+
 - Keep historical data accessible, but remove deprecated structures from operational diagram.
 
 ## Important Note About "PROGRAMS" Box In Diagram

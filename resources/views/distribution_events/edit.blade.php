@@ -10,6 +10,16 @@
 @section('content')
 <div class="container-fluid">
 
+    @php
+        $complianceStatusLabels = [
+            'provided' => 'Provided',
+            'not_available_yet' => 'Not available yet',
+            'not_applicable' => 'Not applicable',
+            'to_be_verified' => 'To be verified',
+        ];
+        $complianceStates = $event->complianceStates();
+    @endphp
+
     {{-- Page Header --}}
     <div class="d-flex align-items-center mb-4">
         <a href="{{ route('distribution-events.index') }}" class="btn btn-outline-secondary btn-sm me-3">
@@ -146,9 +156,10 @@
                     <div class="col-12 d-none" id="financialComplianceFields">
                         <div class="border rounded p-3 bg-light">
                             <h6 class="mb-3">Legal and Compliance Details (Financial)</h6>
+                            <p class="text-muted small mb-3">Capture available details now. Use status and reason to document missing information while the event is still pending.</p>
                             <div class="row g-3">
                                 <div class="col-md-4">
-                                    <label for="legal_basis_type" class="form-label">Legal Basis Type <span class="text-danger">*</span></label>
+                                    <label for="legal_basis_type" class="form-label">Legal Basis Type</label>
                                     <select class="form-select @error('legal_basis_type') is-invalid @enderror" id="legal_basis_type" name="legal_basis_type">
                                         <option value="" disabled>Select legal basis type</option>
                                         <option value="resolution" {{ old('legal_basis_type', $event->legal_basis_type) === 'resolution' ? 'selected' : '' }}>Resolution</option>
@@ -162,21 +173,21 @@
                                     @enderror
                                 </div>
                                 <div class="col-md-4">
-                                    <label for="legal_basis_reference_no" class="form-label">Legal Basis Reference No. <span class="text-danger">*</span></label>
+                                    <label for="legal_basis_reference_no" class="form-label">Legal Basis Reference No.</label>
                                     <input type="text" maxlength="150" class="form-control @error('legal_basis_reference_no') is-invalid @enderror" id="legal_basis_reference_no" name="legal_basis_reference_no" value="{{ old('legal_basis_reference_no', $event->legal_basis_reference_no) }}" placeholder="e.g. RES-2026-014">
                                     @error('legal_basis_reference_no')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                                 <div class="col-md-4">
-                                    <label for="legal_basis_date" class="form-label">Legal Basis Date <span class="text-danger">*</span></label>
+                                    <label for="legal_basis_date" class="form-label">Legal Basis Date</label>
                                     <input type="date" class="form-control @error('legal_basis_date') is-invalid @enderror" id="legal_basis_date" name="legal_basis_date" value="{{ old('legal_basis_date', optional($event->legal_basis_date)->format('Y-m-d')) }}">
                                     @error('legal_basis_date')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="fund_source" class="form-label">Fund Source <span class="text-danger">*</span></label>
+                                    <label for="fund_source" class="form-label">Fund Source</label>
                                     <select class="form-select @error('fund_source') is-invalid @enderror" id="fund_source" name="fund_source">
                                         <option value="" disabled>Select fund source</option>
                                         <option value="lgu_trust_fund" {{ old('fund_source', $event->fund_source) === 'lgu_trust_fund' ? 'selected' : '' }}>LGU Trust Fund</option>
@@ -203,7 +214,7 @@
                                     @enderror
                                 </div>
                                 <div class="col-md-4">
-                                    <label for="liquidation_status" class="form-label">Liquidation Status <span class="text-danger">*</span></label>
+                                    <label for="liquidation_status" class="form-label">Liquidation Status</label>
                                     <select class="form-select @error('liquidation_status') is-invalid @enderror" id="liquidation_status" name="liquidation_status">
                                         <option value="not_required" {{ old('liquidation_status', $event->liquidation_status ?? 'not_required') === 'not_required' ? 'selected' : '' }}>Not Required</option>
                                         <option value="pending" {{ old('liquidation_status', $event->liquidation_status) === 'pending' ? 'selected' : '' }}>Pending</option>
@@ -261,6 +272,50 @@
                                     <label for="legal_basis_remarks" class="form-label">Legal/Compliance Remarks</label>
                                     <textarea class="form-control @error('legal_basis_remarks') is-invalid @enderror" id="legal_basis_remarks" name="legal_basis_remarks" rows="2" maxlength="1000">{{ old('legal_basis_remarks', $event->legal_basis_remarks) }}</textarea>
                                     @error('legal_basis_remarks')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="col-12">
+                                    <hr>
+                                    <h6 class="mb-1">General Compliance Availability</h6>
+                                    <p class="text-muted small mb-0">Set one overall status for legal/compliance details in this event.</p>
+                                </div>
+
+                                @php
+                                    $defaultOverallStatus = data_get($complianceStates, 'legal_basis_type.status', 'not_available_yet');
+                                    $defaultOverallReason = data_get($complianceStates, 'legal_basis_type.reason');
+                                    $overallStatus = old('compliance_overall_status', $defaultOverallStatus);
+                                    $overallReason = old('compliance_overall_reason', $defaultOverallReason);
+                                    $overallReasonHidden = $overallStatus === 'provided';
+                                @endphp
+                                <div class="col-md-4">
+                                    <label for="compliance_overall_status" class="form-label">General Compliance Status</label>
+                                    <select
+                                        class="form-select @error('compliance_overall_status') is-invalid @enderror"
+                                        id="compliance_overall_status"
+                                        name="compliance_overall_status"
+                                    >
+                                        @foreach($complianceStatusLabels as $statusValue => $statusLabel)
+                                            <option value="{{ $statusValue }}" {{ $overallStatus === $statusValue ? 'selected' : '' }}>{{ $statusLabel }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('compliance_overall_status')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-md-8 {{ $overallReasonHidden ? 'd-none' : '' }}" id="compliance_overall_reason_group">
+                                    <label for="compliance_overall_reason" class="form-label">General Compliance Reason</label>
+                                    <input
+                                        type="text"
+                                        maxlength="500"
+                                        class="form-control @error('compliance_overall_reason') is-invalid @enderror"
+                                        id="compliance_overall_reason"
+                                        name="compliance_overall_reason"
+                                        value="{{ $overallReason }}"
+                                        placeholder="Explain why legal/compliance details are not fully provided yet"
+                                    >
+                                    @error('compliance_overall_reason')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
@@ -456,6 +511,26 @@ document.addEventListener('DOMContentLoaded', function () {
     fundSource?.addEventListener('change', updateComplianceDependencies);
     liquidationStatus?.addEventListener('change', updateComplianceDependencies);
     requiresFarmc?.addEventListener('change', updateComplianceDependencies);
+
+    const overallComplianceStatus = document.getElementById('compliance_overall_status');
+    const overallComplianceReasonGroup = document.getElementById('compliance_overall_reason_group');
+    const overallComplianceReason = document.getElementById('compliance_overall_reason');
+
+    function updateOverallComplianceReasonState() {
+        if (!overallComplianceStatus || !overallComplianceReasonGroup) {
+            return;
+        }
+
+        const showReason = overallComplianceStatus.value !== 'provided';
+        overallComplianceReasonGroup.classList.toggle('d-none', !showReason);
+        if (overallComplianceReason) {
+            overallComplianceReason.required = showReason;
+        }
+    }
+
+    overallComplianceStatus?.addEventListener('change', updateOverallComplianceReasonState);
+    updateOverallComplianceReasonState();
+
     toggleType();
     updateComplianceDependencies();
 });

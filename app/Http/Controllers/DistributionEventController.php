@@ -143,11 +143,18 @@ class DistributionEventController extends Controller
             $validated = $request->validated();
 
             if ($this->hasComplianceFieldStatesColumn()) {
+                $expandedInputs = $this->expandComplianceStateInputs(
+                    (array) $request->input('compliance_states', []),
+                    (array) $request->input('compliance_reasons', []),
+                    (string) $request->input('compliance_overall_status', ''),
+                    isset($request['compliance_overall_reason']) ? trim((string) $request->input('compliance_overall_reason')) : null,
+                );
+
                 $validated['compliance_field_states'] = $this->normalizeComplianceFieldStates(
                     $validated,
                     [],
-                    (array) $request->input('compliance_states', []),
-                    (array) $request->input('compliance_reasons', []),
+                    $expandedInputs['states'],
+                    $expandedInputs['reasons'],
                 );
             }
 
@@ -352,11 +359,18 @@ class DistributionEventController extends Controller
             $validated = $request->validated();
 
             if ($this->hasComplianceFieldStatesColumn()) {
+                $expandedInputs = $this->expandComplianceStateInputs(
+                    (array) $request->input('compliance_states', []),
+                    (array) $request->input('compliance_reasons', []),
+                    (string) $request->input('compliance_overall_status', ''),
+                    isset($request['compliance_overall_reason']) ? trim((string) $request->input('compliance_overall_reason')) : null,
+                );
+
                 $validated['compliance_field_states'] = $this->normalizeComplianceFieldStates(
                     $validated,
                     is_array($event->compliance_field_states) ? $event->compliance_field_states : [],
-                    (array) $request->input('compliance_states', []),
-                    (array) $request->input('compliance_reasons', []),
+                    $expandedInputs['states'],
+                    $expandedInputs['reasons'],
                 );
             }
 
@@ -520,6 +534,8 @@ class DistributionEventController extends Controller
                     'farmc_reference_no' => ['nullable', 'string', 'max:150'],
                     'compliance_states' => ['nullable', 'array'],
                     'compliance_reasons' => ['nullable', 'array'],
+                    'compliance_overall_status' => ['nullable', 'in:'.implode(',', DistributionEvent::complianceStatuses())],
+                    'compliance_overall_reason' => ['nullable', 'string', 'max:500'],
                     ...$statusRules,
                     ...$reasonRules,
                 ]
@@ -540,6 +556,8 @@ class DistributionEventController extends Controller
                     'farmc_reference_no' => ['nullable'],
                     'compliance_states' => ['nullable', 'array'],
                     'compliance_reasons' => ['nullable', 'array'],
+                    'compliance_overall_status' => ['nullable', 'in:'.implode(',', DistributionEvent::complianceStatuses())],
+                    'compliance_overall_reason' => ['nullable', 'string', 'max:500'],
                     ...$statusRules,
                     ...$reasonRules,
                 ]
@@ -547,10 +565,35 @@ class DistributionEventController extends Controller
 
         $validated['requires_farmc_endorsement'] = $request->boolean('requires_farmc_endorsement');
 
-        $inputStates = (array) $request->input('compliance_states', []);
-        $inputReasons = (array) $request->input('compliance_reasons', []);
+        $overallStatus = (string) $request->input('compliance_overall_status', '');
+        $overallReason = isset($request['compliance_overall_reason']) ? trim((string) $request->input('compliance_overall_reason')) : null;
 
-        unset($validated['compliance_states'], $validated['compliance_reasons']);
+        if (
+            in_array($overallStatus, DistributionEvent::complianceStatuses(), true)
+            && $overallStatus !== DistributionEvent::COMPLIANCE_STATUS_PROVIDED
+            && $overallReason === ''
+        ) {
+            throw ValidationException::withMessages([
+                'compliance_overall_reason' => 'Provide a reason when general compliance status is not marked as Provided.',
+            ]);
+        }
+
+        $expandedInputs = $this->expandComplianceStateInputs(
+            (array) $request->input('compliance_states', []),
+            (array) $request->input('compliance_reasons', []),
+            $overallStatus,
+            $overallReason,
+        );
+
+        $inputStates = $expandedInputs['states'];
+        $inputReasons = $expandedInputs['reasons'];
+
+        unset(
+            $validated['compliance_states'],
+            $validated['compliance_reasons'],
+            $validated['compliance_overall_status'],
+            $validated['compliance_overall_reason'],
+        );
 
         if ($this->hasComplianceFieldStatesColumn()) {
             $normalizedStates = $this->normalizeComplianceFieldStates(
@@ -634,6 +677,42 @@ class DistributionEventController extends Controller
         }
 
         return $normalized;
+    }
+
+    /**
+     * @param  array<string, mixed>  $inputStates
+     * @param  array<string, mixed>  $inputReasons
+     * @return array{states: array<string, string>, reasons: array<string, string>}
+     */
+    private function expandComplianceStateInputs(
+        array $inputStates,
+        array $inputReasons,
+        string $overallStatus,
+        ?string $overallReason,
+    ): array {
+        $overallStatus = trim($overallStatus);
+        $overallReason = $overallReason !== null ? trim($overallReason) : null;
+
+        if (! in_array($overallStatus, DistributionEvent::complianceStatuses(), true)) {
+            return [
+                'states' => $inputStates,
+                'reasons' => $inputReasons,
+            ];
+        }
+
+        foreach (DistributionEvent::COMPLIANCE_TRACKED_FIELDS as $field) {
+            $inputStates[$field] = $overallStatus;
+            if ($overallStatus === DistributionEvent::COMPLIANCE_STATUS_PROVIDED) {
+                $inputReasons[$field] = '';
+            } elseif ($overallReason !== null) {
+                $inputReasons[$field] = $overallReason;
+            }
+        }
+
+        return [
+            'states' => $inputStates,
+            'reasons' => $inputReasons,
+        ];
     }
 
     /**

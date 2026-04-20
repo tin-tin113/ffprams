@@ -106,6 +106,65 @@
     <p class="text-muted mb-0">Send messages directly to beneficiaries</p>
 </div>
 
+{{-- Summary Dashboard --}}
+<div class="row g-3 mb-4 mt-2">
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm stat-card h-100">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="stat-icon bg-primary bg-opacity-10 text-primary me-3 flex-shrink-0">
+                    <i class="bi bi-chat-left-text fs-4"></i>
+                </div>
+                <div>
+                    <p class="text-muted small mb-1 fw-medium text-uppercase text-truncate">Total SMS</p>
+                    <h3 class="mb-0 fw-bold">{{ number_format($summary['total']) }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm stat-card h-100">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="stat-icon bg-success bg-opacity-10 text-success me-3 flex-shrink-0">
+                    <i class="bi bi-check-circle fs-4"></i>
+                </div>
+                <div>
+                    <p class="text-muted small mb-1 fw-medium text-uppercase text-truncate">Successfully Sent</p>
+                    <h3 class="mb-0 fw-bold">{{ number_format($summary['sent']) }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm stat-card h-100">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="stat-icon bg-warning bg-opacity-10 text-warning me-3 flex-shrink-0">
+                    <i class="bi bi-hourglass-split fs-4"></i>
+                </div>
+                <div>
+                    <p class="text-muted small mb-1 fw-medium text-uppercase text-truncate">Pending</p>
+                    <h3 class="mb-0 fw-bold">{{ number_format($summary['pending']) }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm stat-card h-100">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="stat-icon bg-danger bg-opacity-10 text-danger me-3 flex-shrink-0">
+                    <i class="bi bi-x-circle fs-4"></i>
+                </div>
+                <div>
+                    <p class="text-muted small mb-1 fw-medium text-uppercase text-truncate">Failed</p>
+                    <h3 class="mb-0 fw-bold">{{ number_format($summary['failed']) }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- Tab Navigation --}}
 <div class="card border-0 shadow-sm">
     <ul class="nav nav-tabs sms-nav-tabs card-header" role="tablist">

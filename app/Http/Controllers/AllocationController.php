@@ -68,6 +68,14 @@ class AllocationController extends Controller
             $sort = 'date_desc';
         }
 
+        $summary = [
+            'total' => Allocation::where('release_method', 'direct')->count(),
+            'planned' => Allocation::where('release_method', 'direct')->whereReleaseStatus('planned')->count(),
+            'ready' => Allocation::where('release_method', 'direct')->whereReleaseStatus('ready_for_release')->count(),
+            'released' => Allocation::where('release_method', 'direct')->whereReleaseStatus('released')->count(),
+            'not_received' => Allocation::where('release_method', 'direct')->whereReleaseStatus('not_received')->count(),
+        ];
+
         $directAllocations = Allocation::with([
             'beneficiary',
             'programName',
@@ -110,6 +118,7 @@ class AllocationController extends Controller
             'agencies',
             'assistancePurposes',
             'directAllocations',
+            'summary'
         ));
     }
 

@@ -7,6 +7,16 @@ use Illuminate\Support\Collection;
 
 class FormFieldOption extends Model
 {
+    public const FIELD_TYPE_TEXT = 'text';
+    public const FIELD_TYPE_TEXTAREA = 'textarea';
+    public const FIELD_TYPE_NUMBER = 'number';
+    public const FIELD_TYPE_DECIMAL = 'decimal';
+    public const FIELD_TYPE_DATE = 'date';
+    public const FIELD_TYPE_DATETIME = 'datetime';
+    public const FIELD_TYPE_DROPDOWN = 'dropdown';
+    public const FIELD_TYPE_RADIO = 'radio';
+    public const FIELD_TYPE_CHECKBOX = 'checkbox';
+
     public const PLACEMENT_PERSONAL_INFORMATION = 'personal_information';
     public const PLACEMENT_FARMER_INFORMATION = 'farmer_information';
     public const PLACEMENT_FISHERFOLK_INFORMATION = 'fisherfolk_information';
@@ -14,6 +24,7 @@ class FormFieldOption extends Model
 
     protected $fillable = [
         'field_group',
+        'field_type',
         'placement_section',
         'label',
         'value',
@@ -28,6 +39,43 @@ class FormFieldOption extends Model
             'sort_order' => 'integer',
             'is_required' => 'boolean',
             'is_active'  => 'boolean',
+        ];
+    }
+
+    public static function fieldTypeLabels(): array
+    {
+        return [
+            self::FIELD_TYPE_TEXT => 'Text',
+            self::FIELD_TYPE_TEXTAREA => 'Textarea',
+            self::FIELD_TYPE_NUMBER => 'Number',
+            self::FIELD_TYPE_DECIMAL => 'Decimal',
+            self::FIELD_TYPE_DATE => 'Date',
+            self::FIELD_TYPE_DATETIME => 'Date & Time',
+            self::FIELD_TYPE_DROPDOWN => 'Dropdown',
+            self::FIELD_TYPE_RADIO => 'Radio',
+            self::FIELD_TYPE_CHECKBOX => 'Checkboxes',
+        ];
+    }
+
+    public static function fieldTypeLabel(?string $fieldType): string
+    {
+        $normalizedType = strtolower(trim((string) $fieldType));
+        $labels = self::fieldTypeLabels();
+
+        return $labels[$normalizedType] ?? ucfirst(str_replace('_', ' ', $normalizedType));
+    }
+
+    public static function supportedFieldTypes(): array
+    {
+        return array_keys(self::fieldTypeLabels());
+    }
+
+    public static function optionBasedFieldTypes(): array
+    {
+        return [
+            self::FIELD_TYPE_DROPDOWN,
+            self::FIELD_TYPE_RADIO,
+            self::FIELD_TYPE_CHECKBOX,
         ];
     }
 

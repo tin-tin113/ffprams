@@ -10,12 +10,14 @@ use App\Models\FormFieldOption;
 use App\Services\AuditLogService;
 use App\Services\DuplicateDetectionService;
 use App\Services\SemaphoreService;
+use App\Support\BeneficiaryCoreFields;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class BeneficiaryController extends Controller
@@ -158,11 +160,13 @@ class BeneficiaryController extends Controller
         $beneficiary = DB::transaction(function () use ($validated) {
             [$agencyIds, $agencyFieldsData] = $this->extractAgencyData($validated['agencies'] ?? []);
             $validated['agency_id'] = $agencyIds[0] ?? null;
+            $beneficiaryFillable = (new Beneficiary())->getFillable();
 
             unset($validated['agencies']);
 
             // Store unavailability reasons from dynamic fields
-            $customFieldReasons = [];
+            $customFieldReasons = (array) ($validated['custom_field_unavailability_reasons'] ?? []);
+            $agencyDynamicReasons = [];
             foreach ($agencyFieldsData as $agencyId => $fieldData) {
                 if (! is_array($fieldData)) {
                     continue;
@@ -171,10 +175,21 @@ class BeneficiaryController extends Controller
                 foreach ($fieldData as $key => $value) {
                     if (strpos($key, '_unavailability_reason') !== false) {
                         $fieldName = str_replace('_unavailability_reason', '', $key);
-                        $customFieldReasons[$fieldName] = $value;
+
+                        $reasonColumn = BeneficiaryCoreFields::unavailabilityReasonColumnFor($fieldName);
+                        if ($reasonColumn !== null) {
+                            $validated[$reasonColumn] = $value;
+                        } elseif ($value !== null && $value !== '') {
+                            $agencyDynamicReasons[(string) $agencyId][$fieldName] = $value;
+                        }
+
                         unset($agencyFieldsData[$agencyId][$key]);
                     }
                 }
+            }
+
+            if (! empty($agencyDynamicReasons)) {
+                $customFieldReasons['agency_dynamic'] = $agencyDynamicReasons;
             }
 
             if (! empty($customFieldReasons)) {
@@ -182,18 +197,32 @@ class BeneficiaryController extends Controller
             }
 
             // Store dynamic field values directly in beneficiary record
+            $customFields = (array) ($validated['custom_fields'] ?? []);
+            $agencyDynamicValues = [];
             foreach ($agencyFieldsData as $agencyId => $fieldData) {
                 if (! is_array($fieldData)) {
                     continue;
                 }
 
                 foreach ($fieldData as $key => $value) {
-                    if ($key !== 'has_value' && strpos($key, '_has_value') === false) {
-                        if (property_exists(Beneficiary::class, $key) || in_array($key, (new Beneficiary())->getFillable(), true)) {
-                            $validated[$key] = $value;
-                        }
+                    if ($this->isAgencyMetaFieldKey((string) $key)) {
+                        continue;
+                    }
+
+                    if (in_array($key, $beneficiaryFillable, true)) {
+                        $validated[$key] = $value;
+                    } else {
+                        $agencyDynamicValues[(string) $agencyId][$key] = $value;
                     }
                 }
+            }
+
+            if (! empty($agencyDynamicValues)) {
+                $customFields['agency_dynamic'] = $agencyDynamicValues;
+            }
+
+            if (! empty($customFields)) {
+                $validated['custom_fields'] = $customFields;
             }
 
             $beneficiary = Beneficiary::create(array_merge($validated, ['status' => 'Active']));
@@ -324,11 +353,13 @@ class BeneficiaryController extends Controller
 
             [$agencyIds, $agencyFieldsData] = $this->extractAgencyData($validated['agencies'] ?? []);
             $validated['agency_id'] = $agencyIds[0] ?? null;
+            $beneficiaryFillable = (new Beneficiary())->getFillable();
 
             unset($validated['agencies']);
 
             // Store unavailability reasons from dynamic fields
-            $customFieldReasons = [];
+            $customFieldReasons = (array) ($validated['custom_field_unavailability_reasons'] ?? []);
+            $agencyDynamicReasons = [];
             foreach ($agencyFieldsData as $agencyId => $fieldData) {
                 if (! is_array($fieldData)) {
                     continue;
@@ -337,30 +368,55 @@ class BeneficiaryController extends Controller
                 foreach ($fieldData as $key => $value) {
                     if (strpos($key, '_unavailability_reason') !== false) {
                         $fieldName = str_replace('_unavailability_reason', '', $key);
-                        $customFieldReasons[$fieldName] = $value;
+
+                        $reasonColumn = BeneficiaryCoreFields::unavailabilityReasonColumnFor($fieldName);
+                        if ($reasonColumn !== null) {
+                            $validated[$reasonColumn] = $value;
+                        } elseif ($value !== null && $value !== '') {
+                            $agencyDynamicReasons[(string) $agencyId][$fieldName] = $value;
+                        }
+
                         unset($agencyFieldsData[$agencyId][$key]);
                     }
                 }
             }
 
-            if (! empty($customFieldReasons)) {
-                $validated['custom_field_unavailability_reasons'] = $customFieldReasons;
+            if (! empty($agencyDynamicReasons)) {
+                $customFieldReasons['agency_dynamic'] = $agencyDynamicReasons;
+            } else {
+                unset($customFieldReasons['agency_dynamic']);
             }
 
+            $validated['custom_field_unavailability_reasons'] = $customFieldReasons;
+
             // Store dynamic field values directly in beneficiary record
+            $customFields = (array) ($validated['custom_fields'] ?? []);
+            $agencyDynamicValues = [];
             foreach ($agencyFieldsData as $agencyId => $fieldData) {
                 if (! is_array($fieldData)) {
                     continue;
                 }
 
                 foreach ($fieldData as $key => $value) {
-                    if ($key !== 'has_value' && strpos($key, '_has_value') === false) {
-                        if (property_exists(Beneficiary::class, $key) || in_array($key, (new Beneficiary())->getFillable(), true)) {
-                            $validated[$key] = $value;
-                        }
+                    if ($this->isAgencyMetaFieldKey((string) $key)) {
+                        continue;
+                    }
+
+                    if (in_array($key, $beneficiaryFillable, true)) {
+                        $validated[$key] = $value;
+                    } else {
+                        $agencyDynamicValues[(string) $agencyId][$key] = $value;
                     }
                 }
             }
+
+            if (! empty($agencyDynamicValues)) {
+                $customFields['agency_dynamic'] = $agencyDynamicValues;
+            } else {
+                unset($customFields['agency_dynamic']);
+            }
+
+            $validated['custom_fields'] = $customFields;
 
             $beneficiary->update($validated);
 
@@ -457,6 +513,15 @@ class BeneficiaryController extends Controller
         $agencyIds = array_values(array_unique($agencyIds));
 
         return [$agencyIds, $agencyFieldsData];
+    }
+
+    private function isAgencyMetaFieldKey(string $key): bool
+    {
+        return $key === 'has_value'
+            || $key === 'availability_status'
+            || str_ends_with($key, '_has_value')
+            || str_ends_with($key, '_availability_status')
+            || str_ends_with($key, '_unavailability_reason');
     }
 
     /**
@@ -616,11 +681,16 @@ class BeneficiaryController extends Controller
 
     private function getFieldGroupSettings(): array
     {
+        $selectColumns = ['field_group', 'placement_section', 'is_required'];
+        if (Schema::hasColumn('form_field_options', 'field_type')) {
+            $selectColumns[] = 'field_type';
+        }
+
         return FormFieldOption::query()
             ->active()
             ->orderBy('field_group')
             ->orderByDesc('id')
-            ->get(['field_group', 'placement_section', 'is_required'])
+            ->get($selectColumns)
             ->groupBy('field_group')
             ->map(function ($groupRows) {
                 $first = $groupRows->first();
@@ -628,6 +698,7 @@ class BeneficiaryController extends Controller
                 return [
                     'placement_section' => $first?->placement_section ?? FormFieldOption::PLACEMENT_PERSONAL_INFORMATION,
                     'is_required' => (bool) ($first?->is_required ?? false),
+                    'field_type' => $first?->field_type ?? FormFieldOption::FIELD_TYPE_DROPDOWN,
                 ];
             })
             ->toArray();

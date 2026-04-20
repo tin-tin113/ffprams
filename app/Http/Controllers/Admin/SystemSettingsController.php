@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Agency;
+use App\Models\AgencyFormField;
 use App\Models\AssistancePurpose;
 use App\Models\FormFieldOption;
 use App\Models\ProgramName;
 use App\Models\ProgramLegalRequirement;
 use App\Models\ResourceType;
 use App\Services\AuditLogService;
+use App\Support\BeneficiaryCoreFields;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -51,41 +54,17 @@ class SystemSettingsController extends Controller
 
         $fieldGroupMeta = $formFields->map(function ($options) {
             $group = $options->first();
+
             return [
                 'group' => $group->field_group,
-                'placement' => $group->form_field_placement ?? 'personal_information',
+                'field_type' => $group->field_type ?? FormFieldOption::FIELD_TYPE_DROPDOWN,
+                'placement' => $group->placement_section ?? FormFieldOption::PLACEMENT_PERSONAL_INFORMATION,
                 'required' => $group->is_required ?? false,
+                'active' => (bool) $options->contains(fn ($option) => (bool) $option->is_active),
             ];
         })->unique('group');
 
         return view('admin.settings.index', compact('agencies', 'activeAgencies', 'resourceTypes', 'purposes', 'purposeCategoryOptions', 'formFields', 'fieldGroupMeta'));
-    }
-
-    /**
-     * Separate Page Views for Multi-Page Interface
-     */
-    public function indexAgencies(): View
-    {
-        $agencies = Agency::orderBy('name')->get();
-
-        return view('admin.settings.agencies.index', compact('agencies'));
-    }
-
-    public function indexPurposes(): View
-    {
-        $purposes = AssistancePurpose::orderBy('category')->orderBy('name')->get();
-
-        return view('admin.settings.purposes.index', compact('purposes'));
-    }
-
-    public function indexResourceTypes(): View
-    {
-        $agencies = Agency::where('is_active', true)->orderBy('name')->get();
-        $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
-        $purposes = AssistancePurpose::orderBy('category')->orderBy('name')->get();
-        $purposeCategoryOptions = AssistancePurpose::getCategoryOptions();
-
-        return view('admin.settings.resource-types.index', compact('agencies', 'resourceTypes', 'purposes', 'purposeCategoryOptions'));
     }
 
     public function indexProgramNames(): View
@@ -93,28 +72,14 @@ class SystemSettingsController extends Controller
         $agencies = Agency::where('is_active', true)->orderBy('name')->get();
         $programNames = ProgramName::with(['agency', 'legalRequirements'])->orderBy('name')->get();
 
-        return view('admin.settings.program-names.index', compact('agencies', 'programNames'));
+        $summary = [
+            'total' => ProgramName::count(),
+            'active' => ProgramName::where('is_active', true)->count(),
+            'inactive' => ProgramName::where('is_active', false)->count(),
+        ];
+
+        return view('admin.settings.program-names.index', compact('agencies', 'programNames', 'summary'));
     }
-
-    public function indexFormFields(): View
-    {
-        $this->validateFormFieldOptions();
-        $formFields = FormFieldOption::orderBy('field_group')->orderBy('sort_order')->orderBy('label')->get()->groupBy('field_group');
-
-        $fieldGroupMeta = $formFields->map(function ($options) {
-            $first = $options->first();
-
-            return [
-                'placement_section' => $first?->placement_section ?? FormFieldOption::PLACEMENT_PERSONAL_INFORMATION,
-                'is_required' => (bool) ($first?->is_required ?? false),
-            ];
-        });
-
-        $placementLabels = FormFieldOption::placementLabels();
-
-        return view('admin.settings.form-fields.index', compact('formFields', 'fieldGroupMeta', 'placementLabels'));
-    }
-
     // ── API List Methods ────────────────────────────────────
 
     public function listAgencies(): JsonResponse
@@ -837,9 +802,10 @@ class SystemSettingsController extends Controller
     {
         $validated = $request->validate([
             'field_group' => ['required', 'string', 'max:100'],
+            'field_type' => ['required', Rule::in(FormFieldOption::supportedFieldTypes())],
             'placement_section' => ['required', Rule::in(FormFieldOption::allowedPlacements())],
             'label' => ['required', 'string', 'max:255'],
-            'value' => ['required', 'string', 'max:255'],
+            'value' => ['nullable', 'string', 'max:255'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'order_mode' => ['nullable', Rule::in(self::ORDER_MODES)],
             'position_target_id' => ['nullable', 'integer', 'exists:form_field_options,id'],
@@ -848,15 +814,61 @@ class SystemSettingsController extends Controller
         ]);
 
         $validated['field_group'] = $this->normalizeKey($validated['field_group']);
-        $validated['value'] = $this->normalizeKey($validated['value']);
+        $validated['field_type'] = strtolower(trim((string) $validated['field_type']));
 
-        if ($validated['field_group'] === '' || $validated['value'] === '') {
+        $isOptionBased = in_array($validated['field_type'], FormFieldOption::optionBasedFieldTypes(), true);
+        $validated['value'] = $isOptionBased
+            ? $this->normalizeKey((string) ($validated['value'] ?? ''))
+            : $validated['field_group'];
+
+        if ($validated['field_group'] === '' || ($isOptionBased && $validated['value'] === '')) {
             return response()->json([
                 'success' => false,
                 'errors' => [
-                    'value' => ['Value and field group must contain letters or numbers.'],
+                    'value' => ['Field group and value must contain letters or numbers.'],
                 ],
             ], 422);
+        }
+
+        if ($overlapError = $this->globalAgencyOverlapError($validated['field_group'])) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'field_group' => [$overlapError],
+                ],
+            ], 422);
+        }
+
+        $existingGroupOptions = FormFieldOption::query()
+            ->where('field_group', $validated['field_group'])
+            ->orderBy('id')
+            ->get(['id', 'field_type']);
+
+        if ($existingGroupOptions->isNotEmpty()) {
+            $existingType = (string) ($existingGroupOptions->first()->field_type ?? FormFieldOption::FIELD_TYPE_DROPDOWN);
+            if ($existingType !== $validated['field_type']) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'field_type' => [
+                            "Field group '{$validated['field_group']}' already exists as type '{$existingType}'. "
+                            . 'Use the same type for all entries under one group.',
+                        ],
+                    ],
+                ], 422);
+            }
+
+            if (! $isOptionBased) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'field_group' => [
+                            "Field group '{$validated['field_group']}' stores a single {$validated['field_type']} value. "
+                            . 'Edit the existing field instead of adding another item.',
+                        ],
+                    ],
+                ], 422);
+            }
         }
 
         $resolvedOrderMode = $this->resolveOrderMode(
@@ -865,10 +877,12 @@ class SystemSettingsController extends Controller
             false,
         );
 
-        // Ensure unique field_group + value pair
-        $exists = FormFieldOption::where('field_group', $validated['field_group'])
-            ->where('value', $validated['value'])
-            ->exists();
+        // Ensure unique field_group + value pair for option-based groups.
+        $exists = $isOptionBased
+            ? FormFieldOption::where('field_group', $validated['field_group'])
+                ->where('value', $validated['value'])
+                ->exists()
+            : false;
 
         if ($exists) {
             return response()->json([
@@ -894,12 +908,14 @@ class SystemSettingsController extends Controller
 
             // Keep group-level configuration aligned across all options in the same group.
             FormFieldOption::where('field_group', $validated['field_group'])->update([
+                'field_type' => $validated['field_type'],
                 'placement_section' => $validated['placement_section'],
                 'is_required' => $validated['is_required'] ?? false,
             ]);
 
             $option = FormFieldOption::create([
                 'field_group' => $validated['field_group'],
+                'field_type' => $validated['field_type'],
                 'placement_section' => $validated['placement_section'],
                 'label' => $validated['label'],
                 'value' => $validated['value'],
@@ -929,9 +945,10 @@ class SystemSettingsController extends Controller
     public function updateFormField(Request $request, FormFieldOption $formFieldOption): JsonResponse
     {
         $validated = $request->validate([
+            'field_type' => ['required', Rule::in(FormFieldOption::supportedFieldTypes())],
             'placement_section' => ['required', Rule::in(FormFieldOption::allowedPlacements())],
             'label' => ['required', 'string', 'max:255'],
-            'value' => ['required', 'string', 'max:255'],
+            'value' => ['nullable', 'string', 'max:255'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'order_mode' => ['nullable', Rule::in(self::ORDER_MODES)],
             'position_target_id' => ['nullable', 'integer', 'exists:form_field_options,id'],
@@ -939,13 +956,34 @@ class SystemSettingsController extends Controller
             'is_active' => ['boolean'],
         ]);
 
-        $validated['value'] = $this->normalizeKey($validated['value']);
+        $validated['field_type'] = strtolower(trim((string) $validated['field_type']));
 
-        if ($validated['value'] === '') {
+        $isOptionBased = in_array($validated['field_type'], FormFieldOption::optionBasedFieldTypes(), true);
+        $validated['value'] = $isOptionBased
+            ? $this->normalizeKey((string) ($validated['value'] ?? ''))
+            : $formFieldOption->field_group;
+
+        if ($isOptionBased && $validated['value'] === '') {
             return response()->json([
                 'success' => false,
                 'errors' => [
                     'value' => ['Value must contain letters or numbers.'],
+                ],
+            ], 422);
+        }
+
+        $groupOptionsCount = FormFieldOption::query()
+            ->where('field_group', $formFieldOption->field_group)
+            ->count();
+
+        if (! $isOptionBased && $groupOptionsCount > 1) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'field_type' => [
+                        "Field group '{$formFieldOption->field_group}' has multiple options. "
+                        . 'Delete extra options before changing the type to a single-value field.',
+                    ],
                 ],
             ], 422);
         }
@@ -986,11 +1024,13 @@ class SystemSettingsController extends Controller
             FormFieldOption::where('field_group', $formFieldOption->field_group)
                 ->where('id', '!=', $formFieldOption->id)
                 ->update([
+                    'field_type' => $validated['field_type'],
                     'placement_section' => $validated['placement_section'],
                     'is_required' => $validated['is_required'] ?? false,
                 ]);
 
             $formFieldOption->update([
+                'field_type' => $validated['field_type'],
                 'placement_section' => $validated['placement_section'],
                 'label' => $validated['label'],
                 'value' => $validated['value'],
@@ -1128,6 +1168,44 @@ class SystemSettingsController extends Controller
         return response()->json(['success' => true]);
     }
 
+    private function globalAgencyOverlapError(string $fieldGroup): ?string
+    {
+        $normalizedGroup = $this->normalizeKey($fieldGroup);
+        if ($normalizedGroup === '') {
+            return null;
+        }
+
+        $hasAgencyOverlap = AgencyFormField::query()
+            ->where('field_name', $normalizedGroup)
+            ->exists();
+
+        if ($hasAgencyOverlap) {
+            return "Field group '{$normalizedGroup}' is already used by at least one agency dynamic field name. "
+                . 'Global field groups and agency dynamic field names must be distinct.';
+        }
+
+        return null;
+    }
+
+    private function agencyGlobalOverlapError(string $fieldName): ?string
+    {
+        $normalizedFieldName = $this->normalizeKey($fieldName);
+        if ($normalizedFieldName === '') {
+            return null;
+        }
+
+        $hasGlobalOverlap = FormFieldOption::query()
+            ->where('field_group', $normalizedFieldName)
+            ->exists();
+
+        if ($hasGlobalOverlap) {
+            return "Field name '{$normalizedFieldName}' is already used by a global field group. "
+                . 'Agency dynamic field names must be distinct from global field groups.';
+        }
+
+        return null;
+    }
+
     /**
      * Check for potential field placement conflicts in strict classification mode.
      * In strict mode: Farmer fields (placement=farmer_information) should not overlap
@@ -1259,7 +1337,7 @@ class SystemSettingsController extends Controller
                     'label' => $opt->label,
                 ])->values(),
             ]);
-        } catch (\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json(['error' => 'Form field not found'], 404);
         } catch (\Throwable $e) {
             \Log::error('Error fetching form field', ['error' => $e->getMessage()]);
@@ -1295,6 +1373,15 @@ class SystemSettingsController extends Controller
                 ], 422);
             }
 
+            if ($overlapError = $this->agencyGlobalOverlapError($validated['field_name'])) {
+                return response()->json([
+                    'message' => 'Validation error',
+                    'errors' => [
+                        'field_name' => [$overlapError],
+                    ],
+                ], 422);
+            }
+
             $field = DB::transaction(function () use ($validated, $agency) {
                 return $agency->formFields()->create([
                     'field_name' => $validated['field_name'],
@@ -1302,7 +1389,7 @@ class SystemSettingsController extends Controller
                     'field_type' => $validated['field_type'],
                     'is_required' => $validated['is_required'] ?? false,
                     'is_active' => true,
-                    'help_text' => $validated['help_text'],
+                    'help_text' => $validated['help_text'] ?? null,
                     'form_section' => $validated['form_section'] ?? 'general_information',
                     'sort_order' => $validated['sort_order'] ?? 0,
                 ]);
@@ -1357,6 +1444,15 @@ class SystemSettingsController extends Controller
                         'error' => 'Field name already exists for this agency'
                     ], 422);
                 }
+
+                if ($overlapError = $this->agencyGlobalOverlapError($validated['field_name'])) {
+                    return response()->json([
+                        'message' => 'Validation error',
+                        'errors' => [
+                            'field_name' => [$overlapError],
+                        ],
+                    ], 422);
+                }
             }
 
             DB::transaction(function () use ($validated, $field) {
@@ -1376,7 +1472,7 @@ class SystemSettingsController extends Controller
                     'sort_order' => $field->sort_order,
                 ],
             ]);
-        } catch (\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json(['error' => 'Form field not found'], 404);
         } catch (\Throwable $e) {
             \Log::error('Error updating form field', ['error' => $e->getMessage()]);
@@ -1401,11 +1497,64 @@ class SystemSettingsController extends Controller
             });
 
             return response()->json(['success' => true]);
-        } catch (\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json(['error' => 'Form field not found'], 404);
         } catch (\Throwable $e) {
             \Log::error('Error deleting form field', ['error' => $e->getMessage()]);
             return response()->json(['error' => 'Failed to delete form field'], 500);
         }
+    }
+
+    /**
+     * Remove legacy reserved core-field duplicates from agency-specific dynamic fields.
+     * DELETE /settings/agencies/{agency}/form-fields/cleanup-reserved
+     */
+    public function cleanupReservedAgencyFormFields(Request $request, Agency $agency): JsonResponse
+    {
+        try {
+            $reservedFieldNames = BeneficiaryCoreFields::reservedAgencyFormFieldNames();
+
+            $fields = $agency->formFields()
+                ->whereIn('field_name', $reservedFieldNames)
+                ->with('options:id,agency_form_field_id')
+                ->get();
+
+            if ($fields->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'deleted_fields' => 0,
+                    'deleted_options' => 0,
+                    'message' => 'No legacy reserved duplicate fields were found for this agency.',
+                ]);
+            }
+
+            $deletedFields = 0;
+            $deletedOptions = 0;
+
+            DB::transaction(function () use ($fields, &$deletedFields, &$deletedOptions) {
+                foreach ($fields as $field) {
+                    $deletedOptions += $field->options->count();
+                    $field->options()->delete();
+                    $field->delete();
+                    $deletedFields++;
+                }
+            });
+
+            return response()->json([
+                'success' => true,
+                'deleted_fields' => $deletedFields,
+                'deleted_options' => $deletedOptions,
+                'message' => "Cleanup completed. Removed {$deletedFields} duplicate field(s).",
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error cleaning up reserved agency form fields', ['error' => $e->getMessage()]);
+
+            return response()->json(['error' => 'Failed to clean up reserved fields'], 500);
+        }
+    }
+
+    private function isReservedAgencyFormFieldName(string $fieldName): bool
+    {
+        return BeneficiaryCoreFields::isReservedAgencyFormFieldName($fieldName);
     }
 }

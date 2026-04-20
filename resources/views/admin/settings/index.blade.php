@@ -303,44 +303,131 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>Field Group</th>
+                                    <th>Type</th>
                                     <th>Placement</th>
                                     <th>Required</th>
-                                    <th>Options Count</th>
-                                    <th class="text-center">Actions</th>
+                                    <th>Status</th>
+                                    <th>Options</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse ($fieldGroupMeta as $meta)
-                                    <tr>
-                                        <td><strong>{{ Str::title(str_replace('_', ' ', $meta['group'])) }}</strong></td>
+                                @php
+                                    $placementLabels = \App\Models\FormFieldOption::placementLabels();
+                                    $optionBasedTypes = \App\Models\FormFieldOption::optionBasedFieldTypes();
+                                @endphp
+                                @forelse ($formFields as $group => $options)
+                                    @php
+                                        $groupMeta = $options->first();
+                                        $groupType = $groupMeta->field_type ?? \App\Models\FormFieldOption::FIELD_TYPE_DROPDOWN;
+                                        $isOptionBasedGroup = in_array($groupType, $optionBasedTypes, true);
+                                        $groupPlacement = $groupMeta->placement_section ?? \App\Models\FormFieldOption::PLACEMENT_PERSONAL_INFORMATION;
+                                        $groupRequired = (bool) ($groupMeta->is_required ?? false);
+                                        $groupIsActive = (bool) $options->contains(fn ($option) => (bool) $option->is_active);
+                                        $groupOptionsCount = $options->count();
+                                        $collapseId = 'globalFieldOptionsGroup' . $loop->index;
+                                    @endphp
+                                    <tr class="global-field-group-row" data-collapse-target="#{{ $collapseId }}">
+                                        <td>
+                                            <strong>{{ Str::title(str_replace('_', ' ', $group)) }}</strong>
+                                            <div><small class="text-muted">{{ $group }}</small></div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info text-dark">
+                                                {{ \App\Models\FormFieldOption::fieldTypeLabel($groupType) }}
+                                            </span>
+                                        </td>
                                         <td>
                                             <small class="text-muted">
-                                                {{ str_replace('_', ' ', $meta['placement']) }}
+                                                {{ $placementLabels[$groupPlacement] ?? Str::title(str_replace('_', ' ', $groupPlacement)) }}
                                             </small>
                                         </td>
                                         <td>
-                                            @if ($meta['required'])
+                                            @if ($groupRequired)
                                                 <span class="badge bg-danger">Required</span>
                                             @else
                                                 <span class="badge bg-secondary">Optional</span>
                                             @endif
                                         </td>
                                         <td>
-                                            <span class="badge bg-info">
-                                                {{ $formFields[$meta['group']]->count() }} options
-                                            </span>
+                                            @if ($groupIsActive)
+                                                <span class="badge bg-success">Active</span>
+                                            @else
+                                                <span class="badge bg-secondary">Inactive</span>
+                                            @endif
                                         </td>
-                                        <td class="text-center">
-                                            <button class="btn btn-sm btn-outline-info view-field-group-btn"
-                                                    data-field-group="{{ $meta['group'] }}"
-                                                    title="View options">
-                                                <i class="bi bi-eye"></i> View
-                                            </button>
+                                        <td>
+                                            <div class="d-flex align-items-center justify-content-between gap-2">
+                                                <span class="badge bg-light text-dark border">
+                                                    {{ $groupOptionsCount }} {{ Str::plural('option', $groupOptionsCount) }}
+                                                </span>
+                                                <button class="btn btn-sm btn-outline-secondary global-options-toggle"
+                                                        type="button"
+                                                        data-bs-toggle="collapse"
+                                                        data-bs-target="#{{ $collapseId }}"
+                                                        aria-expanded="false"
+                                                        aria-controls="{{ $collapseId }}"
+                                                        title="Show options">
+                                                    <span class="toggle-label">View</span>
+                                                    <i class="bi bi-chevron-down ms-1"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="global-field-options-row">
+                                        <td colspan="6" class="p-0">
+                                            <div class="collapse" id="{{ $collapseId }}">
+                                                <div class="bg-light px-3 py-3 border-top">
+                                                    <div class="small text-muted mb-2">
+                                                        @if ($isOptionBasedGroup)
+                                                            Options under <strong>{{ Str::title(str_replace('_', ' ', $group)) }}</strong>
+                                                        @else
+                                                            Single-value field configuration for <strong>{{ Str::title(str_replace('_', ' ', $group)) }}</strong>
+                                                        @endif
+                                                    </div>
+                                                    <div class="list-group list-group-flush global-options-list">
+                                                        @foreach ($options as $option)
+                                                            <div class="list-group-item px-2 py-2 border rounded mb-2">
+                                                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                                                    <div>
+                                                                        <div class="fw-semibold">{{ $option->label }}</div>
+                                                                        @if ($isOptionBasedGroup)
+                                                                            <small class="text-muted">Value: <code>{{ $option->value }}</code></small>
+                                                                        @else
+                                                                            <small class="text-muted">Stored key: <code>{{ $option->value }}</code></small>
+                                                                        @endif
+                                                                    </div>
+                                                                    <div class="btn-group btn-group-sm" role="group" aria-label="Global field actions">
+                                                                        <button class="btn btn-outline-primary edit-global-field-btn"
+                                                                                data-field-id="{{ $option->id }}"
+                                                                                data-field-group="{{ $option->field_group }}"
+                                                                                data-field-type="{{ $groupType }}"
+                                                                                data-label="{{ $option->label }}"
+                                                                                data-value="{{ $option->value }}"
+                                                                                data-placement="{{ $option->placement_section }}"
+                                                                                data-sort-order="{{ $option->sort_order }}"
+                                                                                data-required="{{ $option->is_required ? '1' : '0' }}"
+                                                                                data-active="{{ $option->is_active ? '1' : '0' }}"
+                                                                                title="{{ $isOptionBasedGroup ? 'Edit option' : 'Edit field' }}">
+                                                                            <i class="bi bi-pencil"></i>
+                                                                        </button>
+                                                                        <button class="btn btn-outline-danger delete-global-field-btn"
+                                                                                data-field-id="{{ $option->id }}"
+                                                                                data-field-label="{{ $option->label }}"
+                                                                                title="{{ $isOptionBasedGroup ? 'Delete option' : 'Delete field' }}">
+                                                                            <i class="bi bi-trash"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted py-4">No form fields found</td>
+                                        <td colspan="6" class="text-center text-muted py-4">No form fields found</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -550,6 +637,91 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="saveFieldBtn">Save Field</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Global Form Field Modal -->
+<div class="modal fade" id="addGlobalFieldModal" tabindex="-1" aria-labelledby="addGlobalFieldModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addGlobalFieldModalLabel">Add Global Form Field</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="globalFieldForm">
+                    <input type="hidden" id="globalFieldId">
+
+                    <div class="mb-3">
+                        <label for="globalFieldGroup" class="form-label">Field Group <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="globalFieldGroup" required placeholder="e.g., beneficiary_category">
+                        <small class="text-muted" id="globalFieldGroupHelp">Lowercase, alphanumeric, and underscores only.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="globalFieldType" class="form-label">Field Type <span class="text-danger">*</span></label>
+                        <select class="form-select" id="globalFieldType" required>
+                            <option value="dropdown">Dropdown</option>
+                            <option value="radio">Radio</option>
+                            <option value="checkbox">Checkbox</option>
+                            <option value="text">Text</option>
+                            <option value="textarea">Textarea</option>
+                            <option value="number">Number</option>
+                            <option value="decimal">Decimal</option>
+                            <option value="date">Date</option>
+                            <option value="datetime">Date &amp; Time</option>
+                        </select>
+                        <small class="text-muted">All labels under one field group use the same field type.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="globalFieldLabel" class="form-label" id="globalFieldLabelLabel">Option Label <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="globalFieldLabel" required placeholder="e.g., Small Farmer">
+                    </div>
+
+                    <div class="mb-3" id="globalFieldValueWrapper">
+                        <label for="globalFieldValue" class="form-label" id="globalFieldValueLabel">Option Value <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="globalFieldValue" required placeholder="e.g., small_farmer">
+                        <small class="text-muted" id="globalFieldValueHelp">Stored key value for this option.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="globalFieldPlacement" class="form-label">Display Section <span class="text-danger">*</span></label>
+                        <select class="form-select" id="globalFieldPlacement" required>
+                            <option value="personal_information">Agency &amp; Personal Information</option>
+                            <option value="farmer_information">DA/RSBSA Information (Farmer)</option>
+                            <option value="fisherfolk_information">BFAR/FishR Information (Fisherfolk)</option>
+                            <option value="dar_information">DAR/ARB Information</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="globalFieldSortOrder" class="form-label">Sort Order</label>
+                        <input type="number" class="form-control" id="globalFieldSortOrder" min="0" placeholder="Optional">
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="globalFieldRequired">
+                        <label class="form-check-label" for="globalFieldRequired">
+                            Required field group
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="globalFieldActive" checked>
+                        <label class="form-check-label" for="globalFieldActive">
+                            Active
+                        </label>
+                    </div>
+
+                    <div id="globalFieldErrors" class="alert alert-danger d-none mb-0"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveGlobalFieldBtn">Save Field</button>
             </div>
         </div>
     </div>
@@ -799,6 +971,22 @@
         border-bottom: 2px solid #dee2e6;
         background-color: #f8f9fa;
     }
+
+    .global-field-group-row {
+        cursor: pointer;
+    }
+
+    .global-field-options-row td {
+        border-top: 0;
+    }
+
+    .global-options-toggle .bi {
+        transition: transform 0.2s ease;
+    }
+
+    .global-options-toggle.is-open .bi {
+        transform: rotate(180deg);
+    }
 </style>
 
 @push('scripts')
@@ -808,6 +996,104 @@ document.addEventListener('DOMContentLoaded', function() {
     const purposeCategoryOptions = purposeCategoryOptionsElement
         ? JSON.parse(purposeCategoryOptionsElement.dataset.options || '{}')
         : {};
+
+    const settingsTabByKey = {
+        agencies: 'agencies-tab',
+        'resource-types': 'resource-types-tab',
+        'form-fields': 'form-fields-tab',
+    };
+    const settingsTabKeyById = {
+        'agencies-tab': 'agencies',
+        'resource-types-tab': 'resource-types',
+        'form-fields-tab': 'form-fields',
+    };
+    const resourceSubTabByKey = {
+        'resource-types': 'resource-types-sub-tab',
+        purposes: 'purposes-sub-tab',
+    };
+    const resourceSubTabKeyById = {
+        'resource-types-sub-tab': 'resource-types',
+        'purposes-sub-tab': 'purposes',
+    };
+
+    function showBootstrapTab(buttonId) {
+        const button = document.getElementById(buttonId);
+        if (!button) {
+            return;
+        }
+
+        bootstrap.Tab.getOrCreateInstance(button).show();
+    }
+
+    function updateSettingsUrlState({ tab = null, subtab = null } = {}) {
+        const url = new URL(window.location.href);
+
+        if (tab === null) {
+            url.searchParams.delete('tab');
+        } else {
+            url.searchParams.set('tab', tab);
+        }
+
+        if (subtab === null) {
+            url.searchParams.delete('subtab');
+        } else {
+            url.searchParams.set('subtab', subtab);
+        }
+
+        const nextSearch = url.searchParams.toString();
+        const nextUrl = `${url.pathname}${nextSearch ? `?${nextSearch}` : ''}${url.hash}`;
+        window.history.replaceState({}, '', nextUrl);
+    }
+
+    const initialParams = new URLSearchParams(window.location.search);
+    const initialTabKey = initialParams.get('tab');
+    const hashTabKey = {
+        '#agencies-content': 'agencies',
+        '#resource-types-content': 'resource-types',
+        '#form-fields-content': 'form-fields',
+    }[window.location.hash] || null;
+    const resolvedTabKey = initialTabKey && settingsTabByKey[initialTabKey] ? initialTabKey : hashTabKey;
+
+    if (resolvedTabKey && settingsTabByKey[resolvedTabKey]) {
+        showBootstrapTab(settingsTabByKey[resolvedTabKey]);
+    }
+
+    const initialSubTabKey = initialParams.get('subtab');
+    if (resolvedTabKey === 'resource-types' && initialSubTabKey && resourceSubTabByKey[initialSubTabKey]) {
+        showBootstrapTab(resourceSubTabByKey[initialSubTabKey]);
+    }
+
+    document.querySelectorAll('#settingsTabs [data-bs-toggle="tab"]').forEach((tabButton) => {
+        tabButton.addEventListener('shown.bs.tab', function (event) {
+            const tabKey = settingsTabKeyById[event.target.id];
+            if (!tabKey) {
+                return;
+            }
+
+            if (tabKey !== 'resource-types') {
+                updateSettingsUrlState({ tab: tabKey, subtab: null });
+                return;
+            }
+
+            const activeSubTab = document.querySelector('#resourceTypesPurposesTabs .nav-link.active');
+            const subTabKey = activeSubTab ? resourceSubTabKeyById[activeSubTab.id] : 'resource-types';
+            updateSettingsUrlState({ tab: tabKey, subtab: subTabKey || 'resource-types' });
+        });
+    });
+
+    document.querySelectorAll('#resourceTypesPurposesTabs [data-bs-toggle="tab"]').forEach((subTabButton) => {
+        subTabButton.addEventListener('shown.bs.tab', function (event) {
+            const activeMainTab = document.querySelector('#settingsTabs .nav-link.active');
+            if (!activeMainTab || activeMainTab.id !== 'resource-types-tab') {
+                return;
+            }
+
+            const subTabKey = resourceSubTabKeyById[event.target.id];
+            if (subTabKey) {
+                updateSettingsUrlState({ tab: 'resource-types', subtab: subTabKey });
+            }
+        });
+    });
 
     function populatePurposeTypeSelect(typeSelectId, category, selectedType = '') {
         const typeSelect = document.getElementById(typeSelectId);
@@ -1268,6 +1554,295 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error saving field:', error);
             alert('Error saving field: ' + error.message);
+        }
+    });
+
+    // Global form fields (tabbed settings page)
+    function normalizeKey(value) {
+        return String(value || '')
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '');
+    }
+
+    const globalFieldModal = document.getElementById('addGlobalFieldModal');
+    const globalFieldForm = document.getElementById('globalFieldForm');
+    const globalFieldErrors = document.getElementById('globalFieldErrors');
+    const globalFieldModalTitle = document.getElementById('addGlobalFieldModalLabel');
+    const globalFieldSaveBtn = document.getElementById('saveGlobalFieldBtn');
+    const globalFieldIdInput = document.getElementById('globalFieldId');
+    const globalFieldGroupInput = document.getElementById('globalFieldGroup');
+    const globalFieldGroupHelp = document.getElementById('globalFieldGroupHelp');
+    const globalFieldTypeInput = document.getElementById('globalFieldType');
+    const globalFieldLabelInput = document.getElementById('globalFieldLabel');
+    const globalFieldLabelLabel = document.getElementById('globalFieldLabelLabel');
+    const globalFieldValueWrapper = document.getElementById('globalFieldValueWrapper');
+    const globalFieldValueLabel = document.getElementById('globalFieldValueLabel');
+    const globalFieldValueInput = document.getElementById('globalFieldValue');
+    const globalFieldValueHelp = document.getElementById('globalFieldValueHelp');
+    const globalFieldPlacementInput = document.getElementById('globalFieldPlacement');
+    const globalFieldSortOrderInput = document.getElementById('globalFieldSortOrder');
+    const globalFieldRequiredInput = document.getElementById('globalFieldRequired');
+    const globalFieldActiveInput = document.getElementById('globalFieldActive');
+    const optionBasedGlobalTypes = ['dropdown', 'radio', 'checkbox'];
+
+    document.querySelectorAll('.global-options-toggle').forEach((toggleBtn) => {
+        const targetSelector = toggleBtn.getAttribute('data-bs-target');
+        if (!targetSelector) {
+            return;
+        }
+
+        const collapseElement = document.querySelector(targetSelector);
+        if (!collapseElement) {
+            return;
+        }
+
+        toggleBtn.addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+
+        collapseElement.addEventListener('show.bs.collapse', function() {
+            toggleBtn.classList.add('is-open');
+            const toggleLabel = toggleBtn.querySelector('.toggle-label');
+            if (toggleLabel) {
+                toggleLabel.textContent = 'Hide';
+            }
+            toggleBtn.title = 'Hide options';
+        });
+
+        collapseElement.addEventListener('hide.bs.collapse', function() {
+            toggleBtn.classList.remove('is-open');
+            const toggleLabel = toggleBtn.querySelector('.toggle-label');
+            if (toggleLabel) {
+                toggleLabel.textContent = 'View';
+            }
+            toggleBtn.title = 'Show options';
+        });
+    });
+
+    document.querySelectorAll('.global-field-group-row').forEach((groupRow) => {
+        groupRow.addEventListener('click', function(event) {
+            if (event.target.closest('.global-options-toggle')) {
+                return;
+            }
+
+            const toggleBtn = groupRow.querySelector('.global-options-toggle');
+            if (toggleBtn) {
+                toggleBtn.click();
+            }
+        });
+    });
+
+    function isOptionBasedGlobalType(fieldType) {
+        return optionBasedGlobalTypes.includes(fieldType);
+    }
+
+    function applyGlobalFieldTypeState(fieldType) {
+        const optionBased = isOptionBasedGlobalType(fieldType);
+
+        globalFieldLabelLabel.innerHTML = optionBased
+            ? 'Option Label <span class="text-danger">*</span>'
+            : 'Field Label <span class="text-danger">*</span>';
+
+        globalFieldValueWrapper.classList.toggle('d-none', !optionBased);
+        globalFieldValueInput.disabled = !optionBased;
+        globalFieldValueInput.required = optionBased;
+        globalFieldValueLabel.innerHTML = optionBased
+            ? 'Option Value <span class="text-danger">*</span>'
+            : 'Stored Value';
+        globalFieldValueHelp.textContent = optionBased
+            ? 'Stored key value for this option.'
+            : 'Single-value field types automatically use the field group as the stored key.';
+
+        if (!optionBased) {
+            globalFieldValueInput.value = normalizeKey(globalFieldGroupInput.value);
+        }
+    }
+
+    function clearGlobalFieldErrors() {
+        globalFieldErrors.classList.add('d-none');
+        globalFieldErrors.textContent = '';
+    }
+
+    function setGlobalFieldModalMode(mode) {
+        const isEdit = mode === 'edit';
+        globalFieldModal.dataset.mode = mode;
+        globalFieldModalTitle.textContent = isEdit ? 'Edit Global Form Field' : 'Add Global Form Field';
+        globalFieldSaveBtn.textContent = isEdit ? 'Update Field' : 'Save Field';
+        globalFieldGroupInput.readOnly = isEdit;
+        globalFieldGroupHelp.textContent = isEdit
+            ? 'Field group is locked while editing an existing option.'
+            : 'Lowercase, alphanumeric, and underscores only.';
+    }
+
+    function resetGlobalFieldForm() {
+        globalFieldForm.reset();
+        globalFieldIdInput.value = '';
+        globalFieldTypeInput.value = 'dropdown';
+        globalFieldActiveInput.checked = true;
+        applyGlobalFieldTypeState(globalFieldTypeInput.value);
+        clearGlobalFieldErrors();
+        setGlobalFieldModalMode('create');
+    }
+
+    globalFieldModal.addEventListener('show.bs.modal', function() {
+        if ((globalFieldModal.dataset.mode || 'create') !== 'edit') {
+            resetGlobalFieldForm();
+        }
+    });
+
+    globalFieldModal.addEventListener('hidden.bs.modal', function() {
+        resetGlobalFieldForm();
+    });
+
+    globalFieldGroupInput.addEventListener('blur', function() {
+        this.value = normalizeKey(this.value);
+
+        if (!isOptionBasedGlobalType(globalFieldTypeInput.value)) {
+            globalFieldValueInput.value = this.value;
+        }
+    });
+
+    globalFieldTypeInput.addEventListener('change', function() {
+        applyGlobalFieldTypeState(this.value);
+    });
+
+    globalFieldValueInput.addEventListener('blur', function() {
+        if (isOptionBasedGlobalType(globalFieldTypeInput.value)) {
+            this.value = normalizeKey(this.value);
+        }
+    });
+
+    document.querySelectorAll('.edit-global-field-btn').forEach((btn) => {
+        btn.addEventListener('click', function() {
+            setGlobalFieldModalMode('edit');
+
+            globalFieldIdInput.value = this.dataset.fieldId || '';
+            globalFieldGroupInput.value = this.dataset.fieldGroup || '';
+            globalFieldTypeInput.value = this.dataset.fieldType || 'dropdown';
+            applyGlobalFieldTypeState(globalFieldTypeInput.value);
+            globalFieldLabelInput.value = this.dataset.label || '';
+            globalFieldValueInput.value = this.dataset.value || '';
+            globalFieldPlacementInput.value = this.dataset.placement || 'personal_information';
+            globalFieldSortOrderInput.value = this.dataset.sortOrder || '';
+            globalFieldRequiredInput.checked = this.dataset.required === '1';
+            globalFieldActiveInput.checked = this.dataset.active !== '0';
+            clearGlobalFieldErrors();
+
+            bootstrap.Modal.getOrCreateInstance(globalFieldModal).show();
+        });
+    });
+
+    document.querySelectorAll('.delete-global-field-btn').forEach((btn) => {
+        btn.addEventListener('click', async function() {
+            const fieldId = this.dataset.fieldId;
+            const fieldLabel = this.dataset.fieldLabel || 'this option';
+
+            if (!confirm(`Delete "${fieldLabel}"?\n\nThis action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/admin/settings/form-fields/${fieldId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Failed to delete field');
+                }
+
+                location.reload();
+            } catch (error) {
+                alert(error.message || 'Error deleting form field.');
+            }
+        });
+    });
+
+    globalFieldSaveBtn.addEventListener('click', async function() {
+        if (!globalFieldForm.checkValidity()) {
+            globalFieldForm.reportValidity();
+            return;
+        }
+
+        clearGlobalFieldErrors();
+
+        const fieldOptionId = globalFieldIdInput.value.trim();
+        const isEditMode = fieldOptionId !== '';
+        const fieldType = globalFieldTypeInput.value;
+        const optionBased = isOptionBasedGlobalType(fieldType);
+
+        const fieldGroup = normalizeKey(globalFieldGroupInput.value);
+        const optionValue = optionBased ? normalizeKey(globalFieldValueInput.value) : fieldGroup;
+        const sortOrderRaw = globalFieldSortOrderInput.value.trim();
+
+        globalFieldGroupInput.value = fieldGroup;
+        globalFieldValueInput.value = optionValue;
+
+        if (!fieldGroup || (optionBased && !optionValue)) {
+            globalFieldErrors.textContent = optionBased
+                ? 'Field group and option value must contain letters or numbers.'
+                : 'Field group must contain letters or numbers.';
+            globalFieldErrors.classList.remove('d-none');
+            return;
+        }
+
+        const payload = {
+            field_type: fieldType,
+            placement_section: globalFieldPlacementInput.value,
+            label: globalFieldLabelInput.value,
+            value: optionValue,
+            sort_order: sortOrderRaw === '' ? null : parseInt(sortOrderRaw, 10),
+            is_required: globalFieldRequiredInput.checked,
+            is_active: globalFieldActiveInput.checked
+        };
+
+        if (!isEditMode) {
+            payload.field_group = fieldGroup;
+        }
+
+        try {
+            const response = await fetch(
+                isEditMode ? `/admin/settings/form-fields/${fieldOptionId}` : '/admin/settings/form-fields',
+                {
+                method: isEditMode ? 'PUT' : 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+                }
+            );
+
+            let result = {};
+            const responseText = await response.text();
+            if (responseText) {
+                result = JSON.parse(responseText);
+            }
+
+            if (!response.ok) {
+                const message = result.errors
+                    ? Object.values(result.errors).flat().join('\n')
+                    : (result.message || `Failed to ${isEditMode ? 'update' : 'save'} field`);
+                globalFieldErrors.textContent = message;
+                globalFieldErrors.classList.remove('d-none');
+                return;
+            }
+
+            bootstrap.Modal.getInstance(globalFieldModal).hide();
+            location.reload();
+        } catch (error) {
+            globalFieldErrors.textContent = `Error ${isEditMode ? 'updating' : 'saving'} form field.`;
+            globalFieldErrors.classList.remove('d-none');
         }
     });
 
