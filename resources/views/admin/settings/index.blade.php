@@ -98,8 +98,8 @@
                                                         data-bs-toggle="modal"
                                                         data-bs-target="#manageFieldsModal"
                                                         data-agency-id="{{ $agency->id }}"
-                                                        title="Manage Form Fields">
-                                                    <i class="bi bi-sliders"></i> Fields
+                                                        title="Manage Agency Fields">
+                                                    <i class="bi bi-sliders"></i> Agency Fields
                                                 </button>
                                                 @if ($agency->is_active)
                                                     <button class="btn btn-outline-danger deactivate-agency-btn"
@@ -293,11 +293,16 @@
                             <i class="bi bi-file-form"></i> Global Form Fields
                         </h5>
                         <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addGlobalFieldModal">
-                            <i class="bi bi-plus-circle me-1"></i> Add Field
+                            <i class="bi bi-plus-circle me-1"></i> Add Global Field
                         </button>
                     </div>
                 </div>
                 <div class="card-body p-0">
+                    <div class="px-3 py-2 border-bottom bg-white">
+                        <small class="text-muted">
+                            These fields are shared across agencies and appear in beneficiary forms by placement section.
+                        </small>
+                    </div>
                     <div class="table-responsive">
                         <table class="table table-hover table-sm mb-0">
                             <thead class="table-light">
@@ -549,17 +554,20 @@
     <div class="modal-dialog modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="manageFieldsModalLabel">Manage Form Fields</h5>
+                <h5 class="modal-title" id="manageFieldsModalLabel">Manage Agency Fields</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <div class="alert alert-info py-2 px-3 small" role="alert">
+                    These fields apply only to the selected agency.
+                </div>
                 <div id="fieldsListContainer">
                     <p class="text-muted">Loading...</p>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-success" id="addFieldBtn" data-bs-toggle="modal" data-bs-target="#addFieldModal">
-                    <i class="bi bi-plus-circle me-1"></i> Add Form Field
+                    <i class="bi bi-plus-circle me-1"></i> Add Agency Field
                 </button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
@@ -572,7 +580,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="addFieldModalLabel">Add Form Field</h5>
+                <h5 class="modal-title" id="addFieldModalLabel">Add Agency Field</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -1045,6 +1053,28 @@ document.addEventListener('DOMContentLoaded', function() {
         window.history.replaceState({}, '', nextUrl);
     }
 
+    function getActiveSettingsTabKey() {
+        const activeMainTab = document.querySelector('#settingsTabs .nav-link.active');
+        return activeMainTab ? settingsTabKeyById[activeMainTab.id] || null : null;
+    }
+
+    function getActiveResourceSubTabKey() {
+        const activeSubTab = document.querySelector('#resourceTypesPurposesTabs .nav-link.active');
+        return activeSubTab ? resourceSubTabKeyById[activeSubTab.id] || 'resource-types' : 'resource-types';
+    }
+
+    function reloadWithCurrentSettingsTab() {
+        const activeTabKey = getActiveSettingsTabKey();
+
+        if (activeTabKey === 'resource-types') {
+            updateSettingsUrlState({ tab: activeTabKey, subtab: getActiveResourceSubTabKey() });
+        } else if (activeTabKey) {
+            updateSettingsUrlState({ tab: activeTabKey, subtab: null });
+        }
+
+        location.reload();
+    }
+
     const initialParams = new URLSearchParams(window.location.search);
     const initialTabKey = initialParams.get('tab');
     const hashTabKey = {
@@ -1196,7 +1226,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             bootstrap.Modal.getInstance(document.getElementById('addAgencyModal')).hide();
-            location.reload();
+            reloadWithCurrentSettingsTab();
         } catch (error) {
             console.error('Error saving agency:', error);
             alert('Error saving agency');
@@ -1276,7 +1306,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             bootstrap.Modal.getInstance(document.getElementById('editAgencyModal')).hide();
-            location.reload();
+            reloadWithCurrentSettingsTab();
         } catch (error) {
             console.error('Error updating agency:', error);
             alert('Error updating agency');
@@ -1326,7 +1356,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (!response.ok) throw new Error('Failed to deactivate agency');
-            location.reload();
+            reloadWithCurrentSettingsTab();
         } catch (error) {
             console.error('Error deactivating agency:', error);
             alert('Error deactivating agency');
@@ -1346,7 +1376,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (!response.ok) throw new Error('Failed to activate agency');
-            location.reload();
+            reloadWithCurrentSettingsTab();
         } catch (error) {
             console.error('Error activating agency:', error);
             alert('Error activating agency');
@@ -1379,7 +1409,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Fields received:', fields);
 
             if (!fields || fields.length === 0) {
-                container.innerHTML = '<p class="text-muted p-3">No form fields configured yet. Click "Add Form Field" to create one.</p>';
+                container.innerHTML = '<p class="text-muted p-3">No agency fields configured yet. Click "Add Agency Field" to create one.</p>';
             } else {
                 let html = '<div class="list-group">';
                 fields.forEach(field => {
@@ -1444,7 +1474,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('addFieldBtn').addEventListener('click', function() {
         document.getElementById('fieldForm').reset();
         document.getElementById('fieldId').value = '';
-        document.querySelector('#addFieldModal .modal-title').textContent = 'Add Form Field';
+        document.querySelector('#addFieldModal .modal-title').textContent = 'Add Agency Field';
     });
 
     async function editField(fieldId, agencyId) {
@@ -1464,7 +1494,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('fieldSection').value = field.form_section || '';
             document.getElementById('fieldSort').value = field.sort_order || 0;
 
-            document.querySelector('#addFieldModal .modal-title').textContent = 'Edit Form Field';
+            document.querySelector('#addFieldModal .modal-title').textContent = 'Edit Agency Field';
             bootstrap.Modal.getOrCreateInstance(document.getElementById('addFieldModal')).show();
         } catch (error) {
             console.error('Error loading field:', error);
@@ -1759,7 +1789,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     throw new Error(result.message || 'Failed to delete field');
                 }
 
-                location.reload();
+                reloadWithCurrentSettingsTab();
             } catch (error) {
                 alert(error.message || 'Error deleting form field.');
             }
@@ -1839,7 +1869,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             bootstrap.Modal.getInstance(globalFieldModal).hide();
-            location.reload();
+            reloadWithCurrentSettingsTab();
         } catch (error) {
             globalFieldErrors.textContent = `Error ${isEditMode ? 'updating' : 'saving'} form field.`;
             globalFieldErrors.classList.remove('d-none');
@@ -1892,7 +1922,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             bootstrap.Modal.getInstance(document.getElementById('addResourceTypeModal')).hide();
-            location.reload();
+            reloadWithCurrentSettingsTab();
         } catch (error) {
             console.error('Error saving resource type:', error);
             alert('Error saving resource type');
@@ -1969,7 +1999,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             bootstrap.Modal.getInstance(document.getElementById('editResourceTypeModal')).hide();
-            location.reload();
+            reloadWithCurrentSettingsTab();
         } catch (error) {
             console.error('Error updating resource type:', error);
             alert('Error updating resource type');
@@ -1998,7 +2028,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (!response.ok) throw new Error('Failed to delete resource type');
-            location.reload();
+            reloadWithCurrentSettingsTab();
         } catch (error) {
             console.error('Error deleting resource type:', error);
             alert('Error deleting resource type');
@@ -2055,7 +2085,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             bootstrap.Modal.getInstance(document.getElementById('addPurposeModal')).hide();
-            location.reload();
+            reloadWithCurrentSettingsTab();
         } catch (error) {
             console.error('Error saving purpose:', error);
             alert('Error saving purpose');
@@ -2111,7 +2141,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             bootstrap.Modal.getInstance(document.getElementById('editPurposeModal')).hide();
-            location.reload();
+            reloadWithCurrentSettingsTab();
         } catch (error) {
             console.error('Error updating purpose:', error);
             alert('Error updating purpose');
@@ -2141,7 +2171,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (!response.ok) throw new Error('Failed to delete purpose');
-            location.reload();
+            reloadWithCurrentSettingsTab();
         } catch (error) {
             console.error('Error deleting purpose:', error);
             alert('Error deleting purpose');
