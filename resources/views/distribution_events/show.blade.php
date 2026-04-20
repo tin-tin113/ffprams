@@ -148,6 +148,10 @@
                     <div class="fw-semibold">{{ $event->resourceType->name }} ({{ $event->resourceType->unit }})</div>
                 </div>
                 <div class="col-md-4">
+                    <div class="text-muted small">Program</div>
+                    <div class="fw-semibold">{{ $event->programName->name ?? 'N/A' }}</div>
+                </div>
+                <div class="col-md-4">
                     <div class="text-muted small">Source Agency</div>
                     <div class="fw-semibold"><span class="badge {{ $agencyBadge }}">{{ $agencyName }}</span></div>
                 </div>
@@ -635,6 +639,16 @@
                 <i class="bi bi-people me-1"></i> Add All Barangay Beneficiaries
             </button>
         </div>
+
+        @if($event->isBeneficiaryListApproved())
+            <div class="alert alert-warning d-flex align-items-start gap-2">
+                <i class="bi bi-exclamation-triangle-fill mt-1"></i>
+                <div>
+                    <strong>Beneficiary list already approved:</strong>
+                    Adding new beneficiaries now requires a valid reason.
+                </div>
+            </div>
+        @endif
     @endif
 
     @if($event->status !== 'Pending' && $bulkEligibleCount > 0)
@@ -859,6 +873,29 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    @if($event->isBeneficiaryListApproved())
+                        <div class="alert alert-warning py-2">
+                            <strong>Reason required:</strong>
+                            This beneficiary list is already approved. Provide a valid reason before adding a new beneficiary.
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="approval_override_reason_single" class="form-label">
+                                Reason for post-approval add <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control @error('approval_override_reason') is-invalid @enderror"
+                                      id="approval_override_reason_single"
+                                      name="approval_override_reason"
+                                      rows="3"
+                                      minlength="10"
+                                      maxlength="500"
+                                      required>{{ old('approval_override_reason') }}</textarea>
+                            @error('approval_override_reason')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    @endif
+
                     <div class="mb-3">
                         <label for="beneficiary_id" class="form-label">Beneficiary <span class="text-danger">*</span></label>
                         <select class="form-select @error('beneficiary_id') is-invalid @enderror"
@@ -931,6 +968,28 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-0">
+                    @if($event->isBeneficiaryListApproved())
+                        <div class="p-3 border-bottom">
+                            <div class="alert alert-warning py-2 mb-3">
+                                <strong>Reason required:</strong>
+                                This beneficiary list is already approved. Provide a valid reason before adding beneficiaries in bulk.
+                            </div>
+                            <label for="approval_override_reason_bulk" class="form-label">
+                                Reason for post-approval add <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control @error('approval_override_reason') is-invalid @enderror"
+                                      id="approval_override_reason_bulk"
+                                      name="approval_override_reason"
+                                      rows="3"
+                                      minlength="10"
+                                      maxlength="500"
+                                      required>{{ old('approval_override_reason') }}</textarea>
+                            @error('approval_override_reason')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    @endif
+
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
                             <thead class="table-light">
@@ -1126,7 +1185,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Re-open add modal on validation errors
     @if($errors->any() && old('_token') && !old('_method'))
-        new bootstrap.Modal(document.getElementById('addBeneficiaryModal')).show();
+        @if(is_array(old('allocations')))
+            new bootstrap.Modal(document.getElementById('addAllModal')).show();
+        @else
+            new bootstrap.Modal(document.getElementById('addBeneficiaryModal')).show();
+        @endif
     @endif
 
     // Compliance form dependencies (financial events)

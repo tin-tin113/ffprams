@@ -279,6 +279,15 @@ class AllocationController extends Controller
 
         if ($releaseMethod === 'event') {
             $event = DistributionEvent::with(['barangay', 'resourceType'])->findOrFail($request->distribution_event_id);
+            $overrideReason = $this->validatedPostApprovalAddReason($request, $event);
+
+            if ($overrideReason === false) {
+                return redirect()->back()
+                    ->withErrors([
+                        'approval_override_reason' => 'Beneficiary list is already approved. Provide a valid reason (at least 10 characters) before adding new beneficiaries.',
+                    ])
+                    ->withInput();
+            }
 
             if ($event->status === 'Completed') {
                 return redirect()->back()
@@ -314,7 +323,7 @@ class AllocationController extends Controller
                 ->forceDelete();
 
             try {
-                DB::transaction(function () use ($request, $event, $beneficiary) {
+                DB::transaction(function () use ($request, $event, $beneficiary, $overrideReason) {
                     if ($event->isFinancial()) {
                         $this->assertFinancialBudgetAvailable($event, (float) $request->amount);
                     }
@@ -337,7 +346,9 @@ class AllocationController extends Controller
                         'allocations',
                         $allocation->id,
                         [],
-                        $allocation->toArray(),
+                        array_merge($allocation->toArray(), [
+                            'beneficiary_list_override_reason' => $overrideReason,
+                        ]),
                     );
 
                     return $allocation;
@@ -400,6 +411,15 @@ class AllocationController extends Controller
 
         // Existing event-based batch logic
         $event = DistributionEvent::with(['barangay', 'resourceType'])->findOrFail($request->distribution_event_id);
+        $overrideReason = $this->validatedPostApprovalAddReason($request, $event);
+
+        if ($overrideReason === false) {
+            return redirect()->back()
+                ->withErrors([
+                    'approval_override_reason' => 'Beneficiary list is already approved. Provide a valid reason (at least 10 characters) before adding new beneficiaries.',
+                ])
+                ->withInput();
+        }
 
         if ($event->status === 'Completed') {
             return redirect()->back()
@@ -437,7 +457,7 @@ class AllocationController extends Controller
         $skipped = 0;
 
         try {
-            DB::transaction(function () use ($request, $event, $existingIds, &$allocated, &$skipped) {
+            DB::transaction(function () use ($request, $event, $existingIds, $overrideReason, &$allocated, &$skipped) {
                 $seenInRequest = [];
 
                 foreach ($request->input('allocations') as $row) {
@@ -492,7 +512,9 @@ class AllocationController extends Controller
                         'allocations',
                         $allocation->id,
                         [],
-                        $allocation->toArray(),
+                        array_merge($allocation->toArray(), [
+                            'beneficiary_list_override_reason' => $overrideReason,
+                        ]),
                     );
 
                     $allocated++;
@@ -664,6 +686,15 @@ class AllocationController extends Controller
         ]);
 
         $event = DistributionEvent::with(['barangay', 'resourceType'])->findOrFail($request->distribution_event_id);
+        $overrideReason = $this->validatedPostApprovalAddReason($request, $event);
+
+        if ($overrideReason === false) {
+            return redirect()->back()
+                ->withErrors([
+                    'approval_override_reason' => 'Beneficiary list is already approved. Provide a valid reason (at least 10 characters) before adding new beneficiaries.',
+                ])
+                ->withInput();
+        }
 
         if ($event->status === 'Completed') {
             return redirect()->back()
@@ -711,7 +742,7 @@ class AllocationController extends Controller
         $skipped = 0;
         $rowErrors = [];
 
-        DB::transaction(function () use ($rows, $event, $existingIds, $validPurposeIds, &$allocated, &$skipped, &$rowErrors): void {
+        DB::transaction(function () use ($rows, $event, $existingIds, $validPurposeIds, $overrideReason, &$allocated, &$skipped, &$rowErrors): void {
             $seenInFile = [];
 
             foreach ($rows as $row) {
@@ -810,7 +841,9 @@ class AllocationController extends Controller
                     'allocations',
                     $allocation->id,
                     [],
-                    $allocation->toArray(),
+                    array_merge($allocation->toArray(), [
+                        'beneficiary_list_override_reason' => $overrideReason,
+                    ]),
                 );
 
                 $seenInFile[] = $beneficiaryId;
@@ -860,6 +893,30 @@ class AllocationController extends Controller
         }
 
         return $response;
+    }
+
+    /**
+     * Require a reason when adding beneficiaries after beneficiary-list approval.
+     *
+     * @return string|false|null Valid reason string, false for invalid input, null when not required.
+     */
+    private function validatedPostApprovalAddReason(Request $request, DistributionEvent $event): string|false|null
+    {
+        if (! $event->isBeneficiaryListApproved()) {
+            return null;
+        }
+
+        $reason = trim((string) $request->input('approval_override_reason', ''));
+
+        if ($reason === '' || Str::length($reason) < 10) {
+            return false;
+        }
+
+        if (Str::length($reason) > 500) {
+            return false;
+        }
+
+        return $reason;
     }
 
     public function update(Request $request, Allocation $allocation): RedirectResponse

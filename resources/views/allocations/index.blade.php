@@ -211,9 +211,9 @@
                 </div>
 
                 <div class="col-md-4" id="quantityGroup">
-                    <label class="form-label">Quantity <span class="text-danger">*</span></label>
+                      <label class="form-label" id="quantity_label">Quantity <span class="text-danger">*</span></label>
                     <input type="number" step="0.01" min="0.01" class="form-control @error('quantity') is-invalid @enderror"
-                           name="quantity" value="{{ old('quantity') }}" placeholder="e.g. 10">
+                          name="quantity" value="{{ old('quantity') }}" placeholder="e.g. 10" id="quantity_input">
                     @error('quantity')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
@@ -609,9 +609,42 @@ document.addEventListener('DOMContentLoaded', function () {
     const programSelect = document.getElementById('program_name_id');
     const quantityGroup = document.getElementById('quantityGroup');
     const amountGroup = document.getElementById('amountGroup');
+    const quantityLabel = document.getElementById('quantity_label');
+    const quantityInput = document.getElementById('quantity_input');
     const programInfo = document.getElementById('program_info');
     const resourceInfo = document.getElementById('resource_info');
     const resourceInfoDefaultHtml = resourceInfo ? resourceInfo.innerHTML : '';
+
+    function formatUnitQuantityPlaceholder(unit) {
+        const normalized = String(unit || '').toLowerCase();
+
+        if (normalized === 'kg') return 'e.g. 10 kg';
+        if (normalized === 'g') return 'e.g. 500 g';
+        if (normalized === 'liters') return 'e.g. 20 liters';
+        if (normalized === 'ml') return 'e.g. 500 ml';
+        if (normalized === 'sacks') return 'e.g. 5 sacks';
+        if (normalized === 'boxes') return 'e.g. 3 boxes';
+        if (normalized === 'packs') return 'e.g. 12 packs';
+        if (normalized === 'pieces') return 'e.g. 30 pieces';
+        if (normalized === 'sets') return 'e.g. 2 sets';
+
+        return `e.g. 10 ${unit}`;
+    }
+
+    function updateQuantityDescription(unit) {
+        if (!quantityLabel || !quantityInput) {
+            return;
+        }
+
+        if (!unit || unit === 'PHP') {
+            quantityLabel.innerHTML = 'Quantity <span class="text-danger">*</span>';
+            quantityInput.placeholder = 'e.g. 10';
+            return;
+        }
+
+        quantityLabel.innerHTML = `Quantity (${unit}) <span class="text-danger">*</span>`;
+        quantityInput.placeholder = formatUnitQuantityPlaceholder(unit);
+    }
 
     function setResourceInfoVisibility(isVisible, messageHtml) {
         if (!resourceInfo) return;
@@ -656,6 +689,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             resetResourceSelectState(resourceSelect, 'Select Program First');
             setResourceInfoVisibility(false);
+            toggleValueInputs();
 
             return;
         }
@@ -715,6 +749,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         quantityGroup.classList.toggle('d-none', isFinancial);
         amountGroup.classList.toggle('d-none', !isFinancial);
+        updateQuantityDescription(unit);
     }
 
     // Toggle value input mode when resource type changes.
@@ -852,6 +887,7 @@ document.addEventListener('DOMContentLoaded', function () {
             resetResourceSelectState(resourceTypeSelect, 'Select Program First');
             if (isSingleForm) {
                 setResourceInfoVisibility(false);
+                toggleValueInputs();
             }
             return;
         }
@@ -878,6 +914,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 resourceTypeSelect.disabled = true;
                 if (isSingleForm) {
                     setResourceInfoVisibility(true, `<i class="bi bi-info-circle me-1"></i>${emptyMessage}`);
+                    toggleValueInputs();
                 }
                 return;
             }
@@ -904,6 +941,7 @@ document.addEventListener('DOMContentLoaded', function () {
             resourceTypeSelect.disabled = true;
             if (isSingleForm) {
                 setResourceInfoVisibility(true, '<i class="bi bi-exclamation-triangle me-1"></i>Error loading resources for this program.');
+                toggleValueInputs();
             }
         }
     }
