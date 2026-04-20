@@ -45,6 +45,7 @@ class SystemSettingsController extends Controller
         // Resource Types data
         $activeAgencies = Agency::where('is_active', true)->orderBy('name')->get();
         $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
+        $resourceUnitOptions = ResourceType::unitOptions();
         $purposes = AssistancePurpose::orderBy('category')->orderBy('name')->get();
         $purposeCategoryOptions = AssistancePurpose::getCategoryOptions();
 
@@ -64,7 +65,7 @@ class SystemSettingsController extends Controller
             ];
         })->unique('group');
 
-        return view('admin.settings.index', compact('agencies', 'activeAgencies', 'resourceTypes', 'purposes', 'purposeCategoryOptions', 'formFields', 'fieldGroupMeta'));
+        return view('admin.settings.index', compact('agencies', 'activeAgencies', 'resourceTypes', 'resourceUnitOptions', 'purposes', 'purposeCategoryOptions', 'formFields', 'fieldGroupMeta'));
     }
 
     public function indexProgramNames(): View
@@ -304,15 +305,20 @@ class SystemSettingsController extends Controller
 
     public function storeResourceType(Request $request): JsonResponse
     {
+        $request->merge([
+            'unit' => ResourceType::normalizeUnit($request->input('unit')),
+        ]);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:resource_types,name'],
-            'unit' => ['required', 'string', 'max:50'],
+            'unit' => ['required', 'string', 'max:50', Rule::in(ResourceType::unitValues())],
             'agency_id' => ['required', 'exists:agencies,id'],
             'description' => ['nullable', 'string', 'max:500'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
         $validated['is_active'] = (bool) ($validated['is_active'] ?? true);
+        $validated['unit'] = ResourceType::normalizeUnit($validated['unit']);
 
         $resourceType = DB::transaction(function () use ($validated) {
             $resourceType = ResourceType::create($validated);
@@ -330,15 +336,20 @@ class SystemSettingsController extends Controller
 
     public function updateResourceType(Request $request, ResourceType $resourceType): JsonResponse
     {
+        $request->merge([
+            'unit' => ResourceType::normalizeUnit($request->input('unit')),
+        ]);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('resource_types', 'name')->ignore($resourceType->id)],
-            'unit' => ['required', 'string', 'max:50'],
+            'unit' => ['required', 'string', 'max:50', Rule::in(ResourceType::unitValues())],
             'agency_id' => ['required', 'exists:agencies,id'],
             'description' => ['nullable', 'string', 'max:500'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
         $validated['is_active'] = (bool) ($validated['is_active'] ?? $resourceType->is_active);
+        $validated['unit'] = ResourceType::normalizeUnit($validated['unit']);
 
         DB::transaction(function () use ($validated, $resourceType) {
             $oldValues = $resourceType->toArray();

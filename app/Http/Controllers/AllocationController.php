@@ -360,7 +360,7 @@ class AllocationController extends Controller
                 throw new \RuntimeException('Beneficiary is not eligible for this program: ' . $reason);
             }
 
-            $isFinancial = $resourceType->unit === 'PHP';
+            $isFinancial = ResourceType::isFinancialUnit($resourceType->unit);
 
             $allocation = Allocation::create([
                 'release_method' => 'direct',

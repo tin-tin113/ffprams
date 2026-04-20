@@ -2,11 +2,19 @@
 
 namespace App\Http\Requests;
 
+use App\Models\ResourceType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class ResourceTypeRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'unit' => ResourceType::normalizeUnit($this->input('unit')),
+        ]);
+    }
+
     public function authorize(): bool
     {
         return true;
@@ -23,7 +31,7 @@ class ResourceTypeRequest extends FormRequest
                 'max:255',
                 Rule::unique('resource_types', 'name')->ignore($resourceTypeId),
             ],
-            'unit' => ['required', 'string', 'max:50'],
+            'unit' => ['required', 'string', 'max:50', Rule::in(ResourceType::unitValues())],
             'agency_id' => ['required', 'exists:agencies,id'],
             'description' => ['nullable', 'string', 'max:500'],
         ];

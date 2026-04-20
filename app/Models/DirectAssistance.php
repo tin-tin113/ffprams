@@ -72,7 +72,7 @@ class DirectAssistance extends Model
             return 'N/A';
         }
 
-        if ($resourceType->unit === 'PHP' || $this->amount) {
+        if (ResourceType::isFinancialUnit($resourceType->unit) || $this->amount) {
             return '₱' . number_format((float) $this->amount, 2);
         }
 
@@ -125,7 +125,7 @@ class DirectAssistance extends Model
      */
     public function isFinancial(): bool
     {
-        return $this->resourceType?->unit === 'PHP' || ($this->amount !== null && $this->quantity === null);
+        return ResourceType::isFinancialUnit($this->resourceType?->unit) || ($this->amount !== null && $this->quantity === null);
     }
 
     // ── Relationships ────────────────────────────────

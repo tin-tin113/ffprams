@@ -45,7 +45,7 @@ class AllocationRequest extends FormRequest
         if ($releaseMethod === 'event' && $event) {
             $isFinancial = $event->isFinancial();
         }
-        if ($releaseMethod === 'direct' && $resourceType && $resourceType->unit === 'PHP') {
+        if ($releaseMethod === 'direct' && $resourceType && ResourceType::isFinancialUnit($resourceType->unit)) {
             $isFinancial = true;
         }
 

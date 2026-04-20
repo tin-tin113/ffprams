@@ -63,6 +63,6 @@ class DirectAssistanceUpdateRequest extends FormRequest
             return false;
         }
 
-        return ResourceType::find($resourceTypeId)?->unit === 'PHP';
+        return ResourceType::isFinancialUnit(ResourceType::find($resourceTypeId)?->unit);
     }
 }

@@ -22,7 +22,7 @@
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="resource-types-tab" data-bs-toggle="tab" data-bs-target="#resource-types-content" type="button" role="tab" aria-controls="resource-types-content" aria-selected="false">
-                <i class="bi bi-box"></i> Resource Types & Purposes
+                <i class="bi bi-box"></i> Resource Types and Assistance Purposes
             </button>
         </li>
         <li class="nav-item" role="presentation">
@@ -131,7 +131,7 @@
             </div>
         </div>
 
-        <!-- ========== RESOURCE TYPES & PURPOSES TAB ========== -->
+        <!-- ========== RESOURCE TYPES AND ASSISTANCE PURPOSES TAB ========== -->
         <div class="tab-pane fade" id="resource-types-content" role="tabpanel" aria-labelledby="resource-types-tab">
             <!-- Nested Sub-Tabs -->
             <ul class="nav nav-tabs mb-3" role="tablist" id="resourceTypesPurposesTabs">
@@ -168,8 +168,8 @@
                                     <thead class="table-light">
                                         <tr>
                                             <th>Name</th>
+                                            <th>Unit</th>
                                             <th>Agency</th>
-                                            <th>Purposes</th>
                                             <th class="text-center" style="width: 120px;">Actions</th>
                                         </tr>
                                     </thead>
@@ -177,16 +177,8 @@
                                         @forelse ($resourceTypes as $resourceType)
                                             <tr data-resource-type-id="{{ $resourceType->id }}">
                                                 <td><strong>{{ $resourceType->name }}</strong></td>
+                                                <td><small>{{ $resourceType->unit ?: 'N/A' }}</small></td>
                                                 <td><small>{{ $resourceType->agency?->name ?? 'N/A' }}</small></td>
-                                                <td>
-                                                    @if ($resourceType->purposes && $resourceType->purposes->count() > 0)
-                                                        @foreach ($resourceType->purposes as $purpose)
-                                                            <span class="badge bg-secondary">{{ $purpose->name }}</span>
-                                                        @endforeach
-                                                    @else
-                                                        <span class="text-muted small">—</span>
-                                                    @endif
-                                                </td>
                                                 <td class="text-center">
                                                     <div class="btn-group btn-group-sm" role="group">
                                                         <button class="btn btn-outline-primary edit-resource-type-btn"
@@ -763,21 +755,14 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Purposes <span class="text-danger">*</span></label>
-                        <div id="purposesContainer" style="max-height: 250px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px; padding: 10px;">
-                            @forelse ($purposes as $purpose)
-                                <div class="form-check">
-                                    <input class="form-check-input purpose-checkbox" type="checkbox"
-                                           id="purpose{{ $purpose->id }}" name="purposes" value="{{ $purpose->id }}">
-                                    <label class="form-check-label" for="purpose{{ $purpose->id }}">
-                                        {{ $purpose->name }} <small class="text-muted">({{ $purpose->category }})</small>
-                                    </label>
-                                </div>
-                            @empty
-                                <p class="text-muted small">No purposes available</p>
-                            @endforelse
-                        </div>
-                        <small class="text-muted">Select at least one purpose</small>
+                        <label for="rtUnit" class="form-label">Unit Type <span class="text-danger">*</span></label>
+                        <select class="form-select" id="rtUnit" name="unit" required>
+                            <option value="" selected disabled>Select unit type...</option>
+                            @foreach(($resourceUnitOptions ?? []) as $unitValue => $unitLabel)
+                                <option value="{{ $unitValue }}">{{ $unitLabel }}</option>
+                            @endforeach
+                        </select>
+                        <small class="text-muted">Use PHP for cash assistance (amount-based).</small>
                     </div>
                 </form>
             </div>
@@ -817,21 +802,14 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Purposes <span class="text-danger">*</span></label>
-                        <div id="editPurposesContainer" style="max-height: 250px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px; padding: 10px;">
-                            @forelse ($purposes as $purpose)
-                                <div class="form-check">
-                                    <input class="form-check-input edit-purpose-checkbox" type="checkbox"
-                                           id="editPurpose{{ $purpose->id }}" name="purposes" value="{{ $purpose->id }}">
-                                    <label class="form-check-label" for="editPurpose{{ $purpose->id }}">
-                                        {{ $purpose->name }} <small class="text-muted">({{ $purpose->category }})</small>
-                                    </label>
-                                </div>
-                            @empty
-                                <p class="text-muted small">No purposes available</p>
-                            @endforelse
-                        </div>
-                        <small class="text-muted">Select at least one purpose</small>
+                        <label for="editRtUnit" class="form-label">Unit Type <span class="text-danger">*</span></label>
+                        <select class="form-select" id="editRtUnit" name="unit" required>
+                            <option value="" selected disabled>Select unit type...</option>
+                            @foreach(($resourceUnitOptions ?? []) as $unitValue => $unitLabel)
+                                <option value="{{ $unitValue }}">{{ $unitLabel }}</option>
+                            @endforeach
+                        </select>
+                        <small class="text-muted">Use PHP for cash assistance (amount-based).</small>
                     </div>
                 </form>
             </div>
@@ -1877,10 +1855,25 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ========== RESOURCE TYPE MANAGEMENT ==========
+    function ensureUnitOption(selectElement, unitValue) {
+        if (!selectElement || !unitValue) {
+            return;
+        }
+
+        const exists = Array.from(selectElement.options).some(option => option.value === unitValue);
+        if (exists) {
+            return;
+        }
+
+        const customOption = document.createElement('option');
+        customOption.value = unitValue;
+        customOption.textContent = `${unitValue} (Existing)`;
+        selectElement.appendChild(customOption);
+    }
+
     document.getElementById('addResourceTypeModal').addEventListener('show.bs.modal', function() {
         document.getElementById('resourceTypeForm').reset();
         document.getElementById('resourceTypeId').value = '';
-        document.querySelectorAll('#purposesContainer .purpose-checkbox').forEach(cb => cb.checked = false);
     });
 
     document.getElementById('saveResourceTypeBtn').addEventListener('click', async function() {
@@ -1890,18 +1883,10 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const purposes = Array.from(document.querySelectorAll('#purposesContainer .purpose-checkbox:checked'))
-            .map(cb => cb.value);
-
-        if (purposes.length === 0) {
-            alert('Please select at least one purpose');
-            return;
-        }
-
         const formData = {
             name: document.getElementById('rtName').value,
-            agency_id: document.getElementById('rtAgency').value,
-            purposes: purposes
+            unit: document.getElementById('rtUnit').value,
+            agency_id: document.getElementById('rtAgency').value
         };
 
         try {
@@ -1947,10 +1932,8 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('editResourceTypeId').value = rt.id;
             document.getElementById('editRtName').value = rt.name;
             document.getElementById('editRtAgency').value = rt.agency_id;
-
-            document.querySelectorAll('#editPurposesContainer .edit-purpose-checkbox').forEach(cb => {
-                cb.checked = rt.purpose_ids.includes(parseInt(cb.value));
-            });
+            ensureUnitOption(document.getElementById('editRtUnit'), rt.unit || '');
+            document.getElementById('editRtUnit').value = rt.unit || '';
 
             bootstrap.Modal.getOrCreateInstance(document.getElementById('editResourceTypeModal')).show();
         } catch (error) {
@@ -1967,18 +1950,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const resourceTypeId = document.getElementById('editResourceTypeId').value;
-        const purposes = Array.from(document.querySelectorAll('#editPurposesContainer .edit-purpose-checkbox:checked'))
-            .map(cb => cb.value);
-
-        if (purposes.length === 0) {
-            alert('Please select at least one purpose');
-            return;
-        }
-
         const formData = {
             name: document.getElementById('editRtName').value,
-            agency_id: document.getElementById('editRtAgency').value,
-            purposes: purposes
+            unit: document.getElementById('editRtUnit').value,
+            agency_id: document.getElementById('editRtAgency').value
         };
 
         try {
