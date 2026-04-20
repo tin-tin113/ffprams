@@ -156,6 +156,8 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
         ->name('api.agencies.by-classification');
     Route::get('api/agencies/form-fields', [AgencyFormFieldController::class, 'getFormFields'])
         ->name('api.agencies.form-fields');
+    Route::get('api/classifications', [AgencyFormFieldController::class, 'getClassifications'])
+        ->name('api.classifications');
 
     // SMS Broadcast
     Route::get('sms', [SmsController::class, 'index'])->name('sms.index');
@@ -229,6 +231,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 
     // System Settings
     Route::get('settings', [SystemSettingsController::class, 'index'])->name('settings.index');
+    Route::get('settings/diagnostics', [SystemSettingsController::class, 'diagnostics'])->name('settings.diagnostics');
 
     // Settings — Legacy URLs (redirect to single tabbed interface)
     Route::get('settings/agencies', function () {
@@ -248,8 +251,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('settings/resource-types/list', [SystemSettingsController::class, 'listResourceTypes'])->name('settings.resource-types.list');
 
     // Settings — Agencies
+    Route::get('settings/agencies/{agency}', [SystemSettingsController::class, 'getAgency'])->name('settings.agencies.show');
     Route::post('settings/agencies', [SystemSettingsController::class, 'storeAgency'])->name('settings.agencies.store');
     Route::put('settings/agencies/{agency}', [SystemSettingsController::class, 'updateAgency'])->name('settings.agencies.update');
+    Route::patch('settings/agencies/{agency}/status', [SystemSettingsController::class, 'updateAgencyStatus'])->name('settings.agencies.status');
     Route::delete('settings/agencies/{agency}', [SystemSettingsController::class, 'destroyAgency'])->name('settings.agencies.destroy');
     Route::get('settings/agencies/{agency}/form-fields', [SystemSettingsController::class, 'getAgencyFormFields'])->name('settings.agencies.form-fields.index');
     Route::delete('settings/agencies/{agency}/form-fields/cleanup-reserved', [SystemSettingsController::class, 'cleanupReservedAgencyFormFields'])->name('settings.agencies.form-fields.cleanup-reserved');

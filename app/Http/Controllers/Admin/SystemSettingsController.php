@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -51,7 +52,14 @@ class SystemSettingsController extends Controller
 
         // Form Fields data
         $this->validateFormFieldOptions();
-        $formFields = FormFieldOption::orderBy('field_group')->orderBy('sort_order')->orderBy('label')->get()->groupBy('field_group');
+        $hiddenGlobalGroups = BeneficiaryCoreFields::agencySpecificCoreFieldNames();
+        $formFields = FormFieldOption::query()
+            ->whereNotIn('field_group', $hiddenGlobalGroups)
+            ->orderBy('field_group')
+            ->orderBy('sort_order')
+            ->orderBy('label')
+            ->get()
+            ->groupBy('field_group');
 
         $fieldGroupMeta = $formFields->map(function ($options) {
             $group = $options->first();
@@ -80,6 +88,87 @@ class SystemSettingsController extends Controller
         ];
 
         return view('admin.settings.program-names.index', compact('agencies', 'programNames', 'summary'));
+    }
+
+    public function diagnostics(): View
+    {
+        $coreAgencyNames = ['DA', 'BFAR', 'DAR'];
+        $coreAgencies = Agency::whereIn('name', $coreAgencyNames)->get();
+
+        $repairedFieldCount = 0;
+        DB::transaction(function () use ($coreAgencies, &$repairedFieldCount): void {
+            foreach ($coreAgencies as $agency) {
+                $repairedFieldCount += $this->bootstrapAgencyCoreFields($agency);
+            }
+        });
+
+        $agencies = Agency::with(['classifications', 'formFields.options'])->orderBy('name')->get();
+
+        $routeChecks = [
+            ['label' => 'Settings Index', 'name' => 'admin.settings.index'],
+            ['label' => 'Agency Show API', 'name' => 'admin.settings.agencies.show'],
+            ['label' => 'Agency Store', 'name' => 'admin.settings.agencies.store'],
+            ['label' => 'Agency Update', 'name' => 'admin.settings.agencies.update'],
+            ['label' => 'Agency Status Toggle', 'name' => 'admin.settings.agencies.status'],
+            ['label' => 'Agency Form Fields List', 'name' => 'admin.settings.agencies.form-fields.index'],
+            ['label' => 'Agency Form Field Store', 'name' => 'admin.settings.agencies.form-fields.store'],
+            ['label' => 'Global Form Fields List', 'name' => 'admin.settings.form-fields.list'],
+            ['label' => 'API Agencies by Classification', 'name' => 'api.agencies.by-classification'],
+            ['label' => 'API Agencies Form Fields', 'name' => 'api.agencies.form-fields'],
+        ];
+
+        $routeDiagnostics = collect($routeChecks)->map(function (array $item): array {
+            return [
+                'label' => $item['label'],
+                'name' => $item['name'],
+                'exists' => Route::has($item['name']),
+            ];
+        })->values();
+
+        $coreAgencyFieldGroups = BeneficiaryCoreFields::agencySpecificCoreFieldNames();
+        $globalCoreGroupCounts = FormFieldOption::query()
+            ->whereIn('field_group', $coreAgencyFieldGroups)
+            ->selectRaw('field_group, COUNT(*) as total')
+            ->groupBy('field_group')
+            ->pluck('total', 'field_group');
+
+        $agencyDiagnostics = $agencies->map(function (Agency $agency): array {
+            $templates = collect($this->agencyCoreFieldTemplatesFor($agency));
+            $expectedCoreFields = $templates
+                ->pluck('field_name')
+                ->map(fn ($name) => strtolower(trim((string) $name)))
+                ->filter()
+                ->unique()
+                ->values();
+
+            $existingCoreFields = $agency->formFields
+                ->pluck('field_name')
+                ->map(fn ($name) => strtolower(trim((string) $name)))
+                ->filter()
+                ->unique()
+                ->values();
+
+            $missingCoreFields = $expectedCoreFields->diff($existingCoreFields)->values();
+
+            return [
+                'id' => $agency->id,
+                'name' => $agency->name,
+                'full_name' => $agency->full_name,
+                'is_active' => (bool) $agency->is_active,
+                'classifications' => $agency->classifications->pluck('name')->values()->all(),
+                'total_form_fields' => $agency->formFields->count(),
+                'expected_core_count' => $expectedCoreFields->count(),
+                'existing_core_count' => $expectedCoreFields->intersect($existingCoreFields)->count(),
+                'missing_core_fields' => $missingCoreFields->all(),
+            ];
+        })->values();
+
+        return view('admin.settings.diagnostics', [
+            'routeDiagnostics' => $routeDiagnostics,
+            'agencyDiagnostics' => $agencyDiagnostics,
+            'globalCoreGroupCounts' => $globalCoreGroupCounts,
+            'repairedFieldCount' => $repairedFieldCount,
+        ]);
     }
     // ── API List Methods ────────────────────────────────────
 
@@ -146,6 +235,8 @@ class SystemSettingsController extends Controller
             'full_name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:500'],
             'is_active' => ['boolean'],
+            'classifications' => ['required', 'array', 'min:1'],
+            'classifications.*' => ['integer', 'exists:classifications,id'],
         ]);
 
         $agency = DB::transaction(function () use ($validated) {
@@ -155,6 +246,8 @@ class SystemSettingsController extends Controller
                 'description' => $validated['description'] ?? null,
                 'is_active' => $validated['is_active'] ?? true,
             ]);
+
+            $agency->classifications()->sync($validated['classifications'] ?? []);
 
             $this->audit->log(
                 auth()->id(), 'created', 'agencies', $agency->id,
@@ -174,6 +267,8 @@ class SystemSettingsController extends Controller
             'full_name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:500'],
             'is_active' => ['boolean'],
+            'classifications' => ['required', 'array', 'min:1'],
+            'classifications.*' => ['integer', 'exists:classifications,id'],
         ]);
 
         DB::transaction(function () use ($validated, $agency) {
@@ -186,6 +281,8 @@ class SystemSettingsController extends Controller
                 'is_active' => $validated['is_active'] ?? true,
             ]);
 
+            $agency->classifications()->sync($validated['classifications'] ?? []);
+
             $this->audit->log(
                 auth()->id(), 'updated', 'agencies', $agency->id,
                 $oldValues, $agency->fresh()->toArray(),
@@ -193,6 +290,36 @@ class SystemSettingsController extends Controller
         });
 
         return response()->json(['success' => true, 'agency' => $agency->fresh()]);
+    }
+
+    public function updateAgencyStatus(Request $request, Agency $agency): JsonResponse
+    {
+        $validated = $request->validate([
+            'is_active' => ['required', 'boolean'],
+        ]);
+
+        DB::transaction(function () use ($validated, $agency) {
+            $oldValues = $agency->toArray();
+
+            $agency->update([
+                'is_active' => (bool) $validated['is_active'],
+            ]);
+
+            $this->audit->log(
+                auth()->id(),
+                'updated',
+                'agencies',
+                $agency->id,
+                $oldValues,
+                $agency->fresh()->toArray(),
+            );
+        });
+
+        return response()->json([
+            'success' => true,
+            'agency' => $agency->fresh(),
+            'message' => $validated['is_active'] ? 'Agency activated successfully.' : 'Agency deactivated successfully.',
+        ]);
     }
 
     public function destroyAgency(Agency $agency): JsonResponse
@@ -801,8 +928,12 @@ class SystemSettingsController extends Controller
 
     public function listFormFields(): JsonResponse
     {
+        $hiddenGlobalGroups = BeneficiaryCoreFields::agencySpecificCoreFieldNames();
+
         return response()->json(
-            FormFieldOption::orderBy('field_group')
+            FormFieldOption::query()
+                ->whereNotIn('field_group', $hiddenGlobalGroups)
+                ->orderBy('field_group')
                 ->orderBy('sort_order')
                 ->orderBy('label')
                 ->get()
@@ -826,6 +957,28 @@ class SystemSettingsController extends Controller
 
         $validated['field_group'] = $this->normalizeKey($validated['field_group']);
         $validated['field_type'] = strtolower(trim((string) $validated['field_type']));
+
+        if ($this->isPersonalInformationCoreFieldName($validated['field_group'])) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'field_group' => [
+                        "Core personal-information field '{$validated['field_group']}' is schema-managed and cannot be edited from Settings.",
+                    ],
+                ],
+            ], 422);
+        }
+
+        if ($this->isAgencySpecificCoreFieldName($validated['field_group'])) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'field_group' => [
+                        "Agency/classification core field '{$validated['field_group']}' is managed in Agencies > Manage Fields.",
+                    ],
+                ],
+            ], 422);
+        }
 
         $isOptionBased = in_array($validated['field_type'], FormFieldOption::optionBasedFieldTypes(), true);
         $validated['value'] = $isOptionBased
@@ -955,6 +1108,28 @@ class SystemSettingsController extends Controller
 
     public function updateFormField(Request $request, FormFieldOption $formFieldOption): JsonResponse
     {
+        if ($this->isPersonalInformationCoreFieldName((string) $formFieldOption->field_group)) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'field_group' => [
+                        "Core personal-information field '{$formFieldOption->field_group}' is schema-managed and cannot be edited from Settings.",
+                    ],
+                ],
+            ], 422);
+        }
+
+        if ($this->isAgencySpecificCoreFieldName((string) $formFieldOption->field_group)) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'field_group' => [
+                        "Agency/classification core field '{$formFieldOption->field_group}' is managed in Agencies > Manage Fields.",
+                    ],
+                ],
+            ], 422);
+        }
+
         $validated = $request->validate([
             'field_type' => ['required', Rule::in(FormFieldOption::supportedFieldTypes())],
             'placement_section' => ['required', Rule::in(FormFieldOption::allowedPlacements())],
@@ -1150,6 +1325,13 @@ class SystemSettingsController extends Controller
 
     public function destroyFormField(FormFieldOption $formFieldOption): JsonResponse
     {
+        if ($this->isPersonalInformationCoreFieldName((string) $formFieldOption->field_group)) {
+            return response()->json([
+                'success' => false,
+                'message' => "Core personal-information field '{$formFieldOption->field_group}' is schema-managed and cannot be deleted from Settings.",
+            ], 422);
+        }
+
         DB::transaction(function () use ($formFieldOption) {
             $this->audit->log(
                 auth()->id(), 'deleted', 'form_field_options', $formFieldOption->id,
@@ -1292,6 +1474,8 @@ class SystemSettingsController extends Controller
     public function getAgencyFormFields(Request $request, Agency $agency): JsonResponse
     {
         try {
+            $this->bootstrapAgencyCoreFields($agency);
+
             $fields = $agency->formFields()
                 ->where('is_active', true)
                 ->with('options')
@@ -1371,12 +1555,43 @@ class SystemSettingsController extends Controller
                 'help_text' => ['nullable', 'string'],
                 'form_section' => ['nullable', 'string'],
                 'sort_order' => ['nullable', 'integer', 'min:0'],
+                'options' => ['nullable', 'array'],
+                'options.*.label' => ['required_with:options', 'string', 'max:255'],
+                'options.*.value' => ['nullable', 'string', 'max:255'],
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 422);
         }
 
         try {
+            if ($this->isPersonalInformationCoreFieldName($validated['field_name'])) {
+                return response()->json([
+                    'message' => 'Validation error',
+                    'errors' => [
+                        'field_name' => [
+                            "Core personal-information field '{$validated['field_name']}' is schema-managed and cannot be added as a dynamic agency field.",
+                        ],
+                    ],
+                ], 422);
+            }
+
+            $reservedSection = BeneficiaryCoreFields::reservedAgencyFormFieldSection($validated['field_name']);
+            if ($reservedSection !== null) {
+                $requestedSection = (string) ($validated['form_section'] ?? '');
+                if ($requestedSection !== '' && $requestedSection !== $reservedSection) {
+                    return response()->json([
+                        'message' => 'Validation error',
+                        'errors' => [
+                            'form_section' => [
+                                "Core field '{$validated['field_name']}' must stay under '{$reservedSection}'.",
+                            ],
+                        ],
+                    ], 422);
+                }
+
+                $validated['form_section'] = $reservedSection;
+            }
+
             // Check if field_name already exists for this agency
             if ($agency->formFields()->where('field_name', $validated['field_name'])->exists()) {
                 return response()->json([
@@ -1394,17 +1609,25 @@ class SystemSettingsController extends Controller
             }
 
             $field = DB::transaction(function () use ($validated, $agency) {
-                return $agency->formFields()->create([
+                $normalizedFieldType = $this->normalizeAgencyFieldType((string) $validated['field_type']);
+
+                $field = $agency->formFields()->create([
                     'field_name' => $validated['field_name'],
                     'display_label' => $validated['display_label'],
-                    'field_type' => $validated['field_type'],
+                    'field_type' => $normalizedFieldType,
                     'is_required' => $validated['is_required'] ?? false,
                     'is_active' => true,
                     'help_text' => $validated['help_text'] ?? null,
                     'form_section' => $validated['form_section'] ?? 'general_information',
                     'sort_order' => $validated['sort_order'] ?? 0,
                 ]);
+
+                $this->syncAgencyFieldOptions($field, $validated['options'] ?? []);
+
+                return $field;
             });
+
+            $field->load('options');
 
             return response()->json([
                 'success' => true,
@@ -1417,6 +1640,12 @@ class SystemSettingsController extends Controller
                     'help_text' => $field->help_text,
                     'form_section' => $field->form_section,
                     'sort_order' => $field->sort_order,
+                    'options' => $field->options->map(fn ($option) => [
+                        'id' => $option->id,
+                        'label' => $option->label,
+                        'value' => $option->value,
+                        'sort_order' => $option->sort_order,
+                    ])->values(),
                 ],
             ]);
         } catch (\Throwable $e) {
@@ -1440,6 +1669,9 @@ class SystemSettingsController extends Controller
                 'help_text' => ['nullable', 'string'],
                 'form_section' => ['nullable', 'string'],
                 'sort_order' => ['nullable', 'integer', 'min:0'],
+                'options' => ['nullable', 'array'],
+                'options.*.label' => ['required_with:options', 'string', 'max:255'],
+                'options.*.value' => ['nullable', 'string', 'max:255'],
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 422);
@@ -1447,6 +1679,37 @@ class SystemSettingsController extends Controller
 
         try {
             $field = $agency->formFields()->findOrFail($fieldId);
+            $effectiveFieldName = (string) ($validated['field_name'] ?? $field->field_name);
+
+            if ($this->isPersonalInformationCoreFieldName($effectiveFieldName)) {
+                return response()->json([
+                    'message' => 'Validation error',
+                    'errors' => [
+                        'field_name' => [
+                            "Core personal-information field '{$effectiveFieldName}' is schema-managed and cannot be edited as a dynamic agency field.",
+                        ],
+                    ],
+                ], 422);
+            }
+
+            $reservedSection = BeneficiaryCoreFields::reservedAgencyFormFieldSection($effectiveFieldName);
+            if ($reservedSection !== null && array_key_exists('form_section', $validated)) {
+                $requestedSection = (string) ($validated['form_section'] ?? '');
+                if ($requestedSection !== '' && $requestedSection !== $reservedSection) {
+                    return response()->json([
+                        'message' => 'Validation error',
+                        'errors' => [
+                            'form_section' => [
+                                "Core field '{$effectiveFieldName}' must stay under '{$reservedSection}'.",
+                            ],
+                        ],
+                    ], 422);
+                }
+            }
+
+            if ($reservedSection !== null) {
+                $validated['form_section'] = $reservedSection;
+            }
 
             // Check if new field_name already exists (if changing)
             if (isset($validated['field_name']) && $validated['field_name'] !== $field->field_name) {
@@ -1467,8 +1730,18 @@ class SystemSettingsController extends Controller
             }
 
             DB::transaction(function () use ($validated, $field) {
+                if (array_key_exists('field_type', $validated)) {
+                    $validated['field_type'] = $this->normalizeAgencyFieldType((string) $validated['field_type']);
+                }
+
                 $field->update($validated);
+
+                if (array_key_exists('options', $validated) || in_array($field->field_type, ['dropdown', 'checkbox'], true)) {
+                    $this->syncAgencyFieldOptions($field, $validated['options'] ?? []);
+                }
             });
+
+            $field->load('options');
 
             return response()->json([
                 'success' => true,
@@ -1481,6 +1754,12 @@ class SystemSettingsController extends Controller
                     'help_text' => $field->help_text,
                     'form_section' => $field->form_section,
                     'sort_order' => $field->sort_order,
+                    'options' => $field->options->map(fn ($option) => [
+                        'id' => $option->id,
+                        'label' => $option->label,
+                        'value' => $option->value,
+                        'sort_order' => $option->sort_order,
+                    ])->values(),
                 ],
             ]);
         } catch (ModelNotFoundException $e) {
@@ -1567,5 +1846,205 @@ class SystemSettingsController extends Controller
     private function isReservedAgencyFormFieldName(string $fieldName): bool
     {
         return BeneficiaryCoreFields::isReservedAgencyFormFieldName($fieldName);
+    }
+
+    private function isPersonalInformationCoreFieldName(string $fieldName): bool
+    {
+        return BeneficiaryCoreFields::isPersonalInformationCoreFieldName($fieldName);
+    }
+
+    private function isAgencySpecificCoreFieldName(string $fieldName): bool
+    {
+        return BeneficiaryCoreFields::isAgencySpecificCoreFieldName($fieldName);
+    }
+
+    private function bootstrapAgencyCoreFields(Agency $agency): int
+    {
+        $templates = $this->agencyCoreFieldTemplatesFor($agency);
+        if (empty($templates)) {
+            return 0;
+        }
+
+        $existingFieldNames = $agency->formFields()
+            ->pluck('field_name')
+            ->map(fn ($name) => strtolower(trim((string) $name)))
+            ->all();
+
+        $existingLookup = array_fill_keys($existingFieldNames, true);
+
+        $createdCount = 0;
+
+        DB::transaction(function () use ($agency, $templates, $existingLookup, &$createdCount): void {
+            foreach ($templates as $template) {
+                $fieldName = strtolower(trim((string) ($template['field_name'] ?? '')));
+                if ($fieldName === '' || isset($existingLookup[$fieldName])) {
+                    continue;
+                }
+
+                $field = $agency->formFields()->create([
+                    'field_name' => $fieldName,
+                    'display_label' => (string) ($template['display_label'] ?? Str::title(str_replace('_', ' ', $fieldName))),
+                    'field_type' => $this->normalizeAgencyFieldType((string) ($template['field_type'] ?? 'text')),
+                    'is_required' => (bool) ($template['is_required'] ?? false),
+                    'is_active' => true,
+                    'help_text' => $template['help_text'] ?? null,
+                    'form_section' => (string) ($template['form_section'] ?? 'general_information'),
+                    'sort_order' => (int) ($template['sort_order'] ?? 0),
+                ]);
+
+                $createdCount++;
+
+                $optionGroup = (string) ($template['option_group'] ?? '');
+                if ($optionGroup !== '' && in_array($field->field_type, ['dropdown', 'checkbox'], true)) {
+                    $globalOptions = FormFieldOption::query()
+                        ->where('field_group', $optionGroup)
+                        ->where('is_active', true)
+                        ->orderBy('sort_order')
+                        ->orderBy('label')
+                        ->get(['label', 'value']);
+
+                    $sortOrder = 10;
+                    foreach ($globalOptions as $option) {
+                        $label = trim((string) $option->label);
+                        $value = trim((string) $option->value);
+                        if ($label === '' && $value === '') {
+                            continue;
+                        }
+
+                        $field->options()->create([
+                            'label' => $label !== '' ? $label : $value,
+                            'value' => $value !== '' ? $value : $label,
+                            'sort_order' => $sortOrder,
+                        ]);
+
+                        $sortOrder += 10;
+                    }
+                }
+            }
+        });
+
+        return $createdCount;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function agencyCoreFieldTemplatesFor(Agency $agency): array
+    {
+        $agencyName = strtoupper(trim((string) $agency->name));
+
+        if ($agencyName === 'DA') {
+            return [
+                ['field_name' => 'rsbsa_number', 'display_label' => 'RSBSA Number', 'field_type' => 'text', 'form_section' => 'farmer_information', 'sort_order' => 10],
+                ['field_name' => 'farm_ownership', 'display_label' => 'Farm Ownership', 'field_type' => 'dropdown', 'form_section' => 'farmer_information', 'sort_order' => 20, 'option_group' => 'farm_ownership'],
+                ['field_name' => 'farm_size_hectares', 'display_label' => 'Farm Size (Hectares)', 'field_type' => 'decimal', 'form_section' => 'farmer_information', 'sort_order' => 30],
+                ['field_name' => 'primary_commodity', 'display_label' => 'Primary Commodity', 'field_type' => 'text', 'form_section' => 'farmer_information', 'sort_order' => 40],
+                ['field_name' => 'farm_type', 'display_label' => 'Farm Type', 'field_type' => 'dropdown', 'form_section' => 'farmer_information', 'sort_order' => 50, 'option_group' => 'farm_type'],
+                ['field_name' => 'organization_membership', 'display_label' => 'Organization Membership', 'field_type' => 'text', 'form_section' => 'farmer_information', 'sort_order' => 60],
+                ['field_name' => 'fisherfolk_type', 'display_label' => 'Fisherfolk Type', 'field_type' => 'dropdown', 'form_section' => 'fisherfolk_information', 'sort_order' => 70, 'option_group' => 'fisherfolk_type'],
+                ['field_name' => 'main_fishing_gear', 'display_label' => 'Main Fishing Gear', 'field_type' => 'text', 'form_section' => 'fisherfolk_information', 'sort_order' => 80],
+                ['field_name' => 'has_fishing_vessel', 'display_label' => 'Has Fishing Vessel', 'field_type' => 'text', 'form_section' => 'fisherfolk_information', 'sort_order' => 90],
+                ['field_name' => 'fishing_vessel_type', 'display_label' => 'Fishing Vessel Type', 'field_type' => 'text', 'form_section' => 'fisherfolk_information', 'sort_order' => 100],
+                ['field_name' => 'fishing_vessel_tonnage', 'display_label' => 'Fishing Vessel Tonnage', 'field_type' => 'decimal', 'form_section' => 'fisherfolk_information', 'sort_order' => 110],
+                ['field_name' => 'length_of_residency_months', 'display_label' => 'Length of Residency (Months)', 'field_type' => 'number', 'form_section' => 'fisherfolk_information', 'sort_order' => 120],
+            ];
+        }
+
+        if ($agencyName === 'BFAR') {
+            return [
+                ['field_name' => 'fishr_number', 'display_label' => 'FishR Number', 'field_type' => 'text', 'form_section' => 'fisherfolk_information', 'sort_order' => 10],
+                ['field_name' => 'fisherfolk_type', 'display_label' => 'Fisherfolk Type', 'field_type' => 'dropdown', 'form_section' => 'fisherfolk_information', 'sort_order' => 20, 'option_group' => 'fisherfolk_type'],
+                ['field_name' => 'main_fishing_gear', 'display_label' => 'Main Fishing Gear', 'field_type' => 'text', 'form_section' => 'fisherfolk_information', 'sort_order' => 30],
+                ['field_name' => 'has_fishing_vessel', 'display_label' => 'Has Fishing Vessel', 'field_type' => 'text', 'form_section' => 'fisherfolk_information', 'sort_order' => 40],
+                ['field_name' => 'fishing_vessel_type', 'display_label' => 'Fishing Vessel Type', 'field_type' => 'text', 'form_section' => 'fisherfolk_information', 'sort_order' => 50],
+                ['field_name' => 'fishing_vessel_tonnage', 'display_label' => 'Fishing Vessel Tonnage', 'field_type' => 'decimal', 'form_section' => 'fisherfolk_information', 'sort_order' => 60],
+                ['field_name' => 'length_of_residency_months', 'display_label' => 'Length of Residency (Months)', 'field_type' => 'number', 'form_section' => 'fisherfolk_information', 'sort_order' => 70],
+            ];
+        }
+
+        if ($agencyName === 'DAR') {
+            return [
+                ['field_name' => 'cloa_ep_number', 'display_label' => 'CLOA/EP Number', 'field_type' => 'text', 'form_section' => 'dar_information', 'sort_order' => 10],
+                ['field_name' => 'arb_classification', 'display_label' => 'ARB Classification', 'field_type' => 'dropdown', 'form_section' => 'dar_information', 'sort_order' => 20, 'option_group' => 'arb_classification'],
+                ['field_name' => 'landholding_description', 'display_label' => 'Landholding Description', 'field_type' => 'text', 'form_section' => 'dar_information', 'sort_order' => 30],
+                ['field_name' => 'land_area_awarded_hectares', 'display_label' => 'Land Area Awarded (Hectares)', 'field_type' => 'decimal', 'form_section' => 'dar_information', 'sort_order' => 40],
+                ['field_name' => 'ownership_scheme', 'display_label' => 'Ownership Scheme', 'field_type' => 'dropdown', 'form_section' => 'dar_information', 'sort_order' => 50, 'option_group' => 'ownership_scheme'],
+                ['field_name' => 'barc_membership_status', 'display_label' => 'BARC Membership Status', 'field_type' => 'text', 'form_section' => 'dar_information', 'sort_order' => 60],
+            ];
+        }
+
+        return [];
+    }
+
+    private function normalizeAgencyFieldType(string $fieldType): string
+    {
+        $normalized = strtolower(trim($fieldType));
+
+        if ($normalized === 'textarea') {
+            return 'text';
+        }
+
+        $allowed = ['text', 'number', 'decimal', 'date', 'datetime', 'dropdown', 'checkbox'];
+
+        if (! in_array($normalized, $allowed, true)) {
+            return 'text';
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @param array<int, array{label?: string, value?: string}> $rawOptions
+     */
+    private function syncAgencyFieldOptions(AgencyFormField $field, array $rawOptions): void
+    {
+        if (! in_array($field->field_type, ['dropdown', 'checkbox'], true)) {
+            $field->options()->delete();
+
+            return;
+        }
+
+        $normalized = collect($rawOptions)
+            ->map(function ($item) {
+                $label = trim((string) ($item['label'] ?? ''));
+                $value = trim((string) ($item['value'] ?? ''));
+
+                if ($label === '' && $value === '') {
+                    return null;
+                }
+
+                if ($label === '') {
+                    $label = $value;
+                }
+
+                if ($value === '') {
+                    $value = Str::of($label)
+                        ->lower()
+                        ->replaceMatches('/[^a-z0-9]+/', '_')
+                        ->trim('_')
+                        ->toString();
+                }
+
+                return [
+                    'label' => $label,
+                    'value' => $value,
+                ];
+            })
+            ->filter()
+            ->unique(fn ($item) => ($item['value'] ?? '') . '|' . ($item['label'] ?? ''))
+            ->values();
+
+        $field->options()->delete();
+
+        $sortOrder = 10;
+        foreach ($normalized as $option) {
+            $field->options()->create([
+                'label' => $option['label'],
+                'value' => $option['value'],
+                'sort_order' => $sortOrder,
+            ]);
+
+            $sortOrder += 10;
+        }
     }
 }

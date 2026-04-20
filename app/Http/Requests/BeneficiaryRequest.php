@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Agency;
+use App\Models\AgencyFormField;
 use App\Models\Beneficiary;
 use App\Models\FormFieldOption;
 use App\Support\PhilippineMobileNumber;
@@ -62,13 +63,13 @@ class BeneficiaryRequest extends FormRequest
         $fieldGroupSettings = $this->fieldGroupSettings();
         $classification = $this->input('classification');
 
-        $civilStatusValues = $this->allowedFieldValues('civil_status', $nativeFallbackValues['civil_status']);
-        $highestEducationValues = $this->allowedFieldValues('highest_education', $nativeFallbackValues['highest_education']);
-        $farmOwnershipValues = $this->allowedFieldValues('farm_ownership', $nativeFallbackValues['farm_ownership']);
-        $farmTypeValues = $this->allowedFieldValues('farm_type', $nativeFallbackValues['farm_type']);
-        $fisherfolkTypeValues = $this->allowedFieldValues('fisherfolk_type', $nativeFallbackValues['fisherfolk_type']);
-        $arbClassificationValues = $this->allowedFieldValues('arb_classification', $nativeFallbackValues['arb_classification']);
-        $ownershipSchemeValues = $this->allowedFieldValues('ownership_scheme', $nativeFallbackValues['ownership_scheme']);
+        $civilStatusValues = $this->allowedFieldValues('civil_status', $nativeFallbackValues['civil_status'], $agencyIds);
+        $highestEducationValues = $this->allowedFieldValues('highest_education', $nativeFallbackValues['highest_education'], $agencyIds);
+        $farmOwnershipValues = $this->allowedFieldValues('farm_ownership', $nativeFallbackValues['farm_ownership'], $agencyIds);
+        $farmTypeValues = $this->allowedFieldValues('farm_type', $nativeFallbackValues['farm_type'], $agencyIds);
+        $fisherfolkTypeValues = $this->allowedFieldValues('fisherfolk_type', $nativeFallbackValues['fisherfolk_type'], $agencyIds);
+        $arbClassificationValues = $this->allowedFieldValues('arb_classification', $nativeFallbackValues['arb_classification'], $agencyIds);
+        $ownershipSchemeValues = $this->allowedFieldValues('ownership_scheme', $nativeFallbackValues['ownership_scheme'], $agencyIds);
 
         $civilStatusRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'civil_status', true);
         $highestEducationRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'highest_education', false);
@@ -291,9 +292,12 @@ class BeneficiaryRequest extends FormRequest
 
         // ===== DYNAMIC AGENCY FORM FIELDS VALIDATION =====
         // Validate custom fields defined by each selected agency
+        $allowedAgencySections = $this->allowedAgencyFormSections((string) $classification);
+
         foreach ($selectedAgencies as $agency) {
             $agencyFormFields = $agency->formFields()
                 ->where('is_active', true)
+            ->whereIn('form_section', $allowedAgencySections)
                 ->get();
 
             foreach ($agencyFormFields as $field) {
@@ -377,7 +381,7 @@ class BeneficiaryRequest extends FormRequest
             $fieldRules[] = $isRequired ? 'required' : 'nullable';
 
             if ($isOptionBased) {
-                $allowedValues = $this->allowedFieldValues($fieldGroup, []);
+                $allowedValues = $this->allowedFieldValues($fieldGroup, [], $agencyIds);
 
                 if (empty($allowedValues)) {
                     continue;
@@ -421,7 +425,7 @@ class BeneficiaryRequest extends FormRequest
         ];
     }
 
-    private function allowedFieldValues(string $fieldGroup, array $fallback): array
+    private function allowedFieldValues(string $fieldGroup, array $fallback, array $agencyIds = []): array
     {
         $dbValues = FormFieldOption::query()
             ->where('field_group', $fieldGroup)
@@ -442,11 +446,42 @@ class BeneficiaryRequest extends FormRequest
             ->values()
             ->all();
 
-        if (empty($dbValues)) {
+        $agencyValues = [];
+        $agencyBackedCoreGroups = [
+            'farm_ownership',
+            'farm_type',
+            'fisherfolk_type',
+            'arb_classification',
+            'ownership_scheme',
+        ];
+
+        if (! empty($agencyIds) && in_array($fieldGroup, $agencyBackedCoreGroups, true)) {
+            $agencyValues = AgencyFormField::query()
+                ->whereIn('agency_id', $agencyIds)
+                ->where('field_name', $fieldGroup)
+                ->where('is_active', true)
+                ->whereIn('field_type', ['dropdown', 'checkbox'])
+                ->with('options')
+                ->get()
+                ->flatMap(fn (AgencyFormField $field) => $field->options)
+                ->map(function ($option): string {
+                    $label = trim((string) ($option->label ?? ''));
+                    $value = trim((string) ($option->value ?? ''));
+
+                    return $label !== '' ? $label : $value;
+                })
+                ->filter()
+                ->values()
+                ->all();
+        }
+
+        $merged = array_values(array_unique(array_merge($fallback, $dbValues, $agencyValues)));
+
+        if (empty($merged)) {
             return $fallback;
         }
 
-        return array_values(array_unique(array_merge($fallback, $dbValues)));
+        return $merged;
     }
 
     private function normalizeNativeFieldInputs(): array
@@ -492,6 +527,52 @@ class BeneficiaryRequest extends FormRequest
             $labelKey = $this->normalizeOptionKey($label);
             if ($labelKey !== '') {
                 $maps[$fieldGroup][$labelKey] = $label;
+            }
+        }
+
+        $agencyBackedCoreGroups = [
+            'farm_ownership',
+            'farm_type',
+            'fisherfolk_type',
+            'arb_classification',
+            'ownership_scheme',
+        ];
+        $agencyIds = $this->extractAgencyIds((array) $this->input('agencies', []));
+
+        if (! empty($agencyIds)) {
+            $agencyNativeOptions = AgencyFormField::query()
+                ->whereIn('agency_id', $agencyIds)
+                ->whereIn('field_name', $agencyBackedCoreGroups)
+                ->where('is_active', true)
+                ->whereIn('field_type', ['dropdown', 'checkbox'])
+                ->with('options')
+                ->get(['id', 'field_name']);
+
+            foreach ($agencyNativeOptions as $agencyField) {
+                $fieldGroup = (string) $agencyField->field_name;
+
+                foreach ($agencyField->options as $option) {
+                    $label = trim((string) ($option->label ?? ''));
+                    if ($label === '') {
+                        $label = trim((string) ($option->value ?? ''));
+                    }
+
+                    if ($label === '') {
+                        continue;
+                    }
+
+                    $maps[$fieldGroup][strtolower($label)] = $label;
+
+                    $valueKey = $this->normalizeOptionKey((string) ($option->value ?? ''));
+                    if ($valueKey !== '') {
+                        $maps[$fieldGroup][$valueKey] = $label;
+                    }
+
+                    $labelKey = $this->normalizeOptionKey($label);
+                    if ($labelKey !== '') {
+                        $maps[$fieldGroup][$labelKey] = $label;
+                    }
+                }
             }
         }
 
@@ -642,11 +723,14 @@ class BeneficiaryRequest extends FormRequest
             $agencyData = (array) $this->input('agencies', []);
             $selectedAgencyIds = $this->extractAgencyIds($agencyData);
             $selectedAgencies = \App\Models\Agency::whereIn('id', $selectedAgencyIds)->get();
+            $classification = (string) $this->input('classification', '');
+            $allowedAgencySections = $this->allowedAgencyFormSections($classification);
 
             foreach ($selectedAgencies as $agency) {
                 $agencyFormFields = $agency->formFields()
                     ->where('is_active', true)
                     ->where('is_required', true)
+                    ->whereIn('form_section', $allowedAgencySections)
                     ->get();
 
                 foreach ($agencyFormFields as $field) {
@@ -709,6 +793,39 @@ class BeneficiaryRequest extends FormRequest
         }
 
         return array_values(array_unique($agencyIds));
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function allowedAgencyFormSections(string $classification): array
+    {
+        $normalized = strtolower(trim($classification));
+
+        $baseSections = [
+            'general_information',
+            'additional_information',
+            '',
+        ];
+
+        if ($normalized === 'farmer') {
+            return array_values(array_unique(array_merge($baseSections, [
+                'farmer_information',
+                'dar_information',
+            ])));
+        }
+
+        if ($normalized === 'fisherfolk') {
+            return array_values(array_unique(array_merge($baseSections, [
+                'fisherfolk_information',
+            ])));
+        }
+
+        return array_values(array_unique(array_merge($baseSections, [
+            'farmer_information',
+            'fisherfolk_information',
+            'dar_information',
+        ])));
     }
 
 }

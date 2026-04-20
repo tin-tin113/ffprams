@@ -5,6 +5,31 @@ namespace App\Support;
 final class BeneficiaryCoreFields
 {
     /**
+     * Personal-information core fields that must remain schema-controlled.
+     * These should not be managed through dynamic Settings CRUD.
+     */
+    private const PERSONAL_INFORMATION_CORE_FIELD_NAMES = [
+        'first_name',
+        'middle_name',
+        'last_name',
+        'name_suffix',
+        'full_name',
+        'sex',
+        'date_of_birth',
+        'photo_path',
+        'home_address',
+        'barangay_id',
+        'contact_number',
+        'civil_status',
+        'highest_education',
+        'id_type',
+        'status',
+        'registered_at',
+        'association_member',
+        'association_name',
+    ];
+
+    /**
      * Core beneficiary fields that are managed by the static schema/flows.
      * These must never be duplicated in agency-specific dynamic field definitions.
      */
@@ -58,6 +83,33 @@ final class BeneficiaryCoreFields
     ];
 
     /**
+     * @var array<string, string>
+     */
+    private const RESERVED_FIELD_SECTION_BY_FIELD_NAME = [
+        'rsbsa_number' => 'farmer_information',
+        'farm_ownership' => 'farmer_information',
+        'farm_size_hectares' => 'farmer_information',
+        'primary_commodity' => 'farmer_information',
+        'farm_type' => 'farmer_information',
+        'organization_membership' => 'farmer_information',
+
+        'fishr_number' => 'fisherfolk_information',
+        'fisherfolk_type' => 'fisherfolk_information',
+        'main_fishing_gear' => 'fisherfolk_information',
+        'has_fishing_vessel' => 'fisherfolk_information',
+        'fishing_vessel_type' => 'fisherfolk_information',
+        'fishing_vessel_tonnage' => 'fisherfolk_information',
+        'length_of_residency_months' => 'fisherfolk_information',
+
+        'cloa_ep_number' => 'dar_information',
+        'arb_classification' => 'dar_information',
+        'landholding_description' => 'dar_information',
+        'land_area_awarded_hectares' => 'dar_information',
+        'ownership_scheme' => 'dar_information',
+        'barc_membership_status' => 'dar_information',
+    ];
+
+    /**
      * @return array<int, string>
      */
     public static function reservedAgencyFormFieldNames(): array
@@ -65,9 +117,44 @@ final class BeneficiaryCoreFields
         return self::RESERVED_AGENCY_FORM_FIELD_NAMES;
     }
 
+    /**
+     * Core agency/classification fields intended to be managed per agency.
+     *
+     * @return array<int, string>
+     */
+    public static function agencySpecificCoreFieldNames(): array
+    {
+        return self::RESERVED_AGENCY_FORM_FIELD_NAMES;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function personalInformationCoreFieldNames(): array
+    {
+        return self::PERSONAL_INFORMATION_CORE_FIELD_NAMES;
+    }
+
     public static function isReservedAgencyFormFieldName(string $fieldName): bool
     {
         return in_array(strtolower(trim($fieldName)), self::RESERVED_AGENCY_FORM_FIELD_NAMES, true);
+    }
+
+    public static function isAgencySpecificCoreFieldName(string $fieldName): bool
+    {
+        return self::isReservedAgencyFormFieldName($fieldName);
+    }
+
+    public static function isPersonalInformationCoreFieldName(string $fieldName): bool
+    {
+        return in_array(strtolower(trim($fieldName)), self::PERSONAL_INFORMATION_CORE_FIELD_NAMES, true);
+    }
+
+    public static function reservedAgencyFormFieldSection(string $fieldName): ?string
+    {
+        $normalized = strtolower(trim($fieldName));
+
+        return self::RESERVED_FIELD_SECTION_BY_FIELD_NAME[$normalized] ?? null;
     }
 
     public static function unavailabilityReasonColumnFor(string $fieldName): ?string

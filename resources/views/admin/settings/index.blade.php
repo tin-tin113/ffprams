@@ -293,6 +293,7 @@
                     <div class="px-3 py-2 border-bottom bg-white">
                         <small class="text-muted">
                             These fields are shared across agencies and appear in beneficiary forms by placement section.
+                            Agency/classification core fields are managed under Agencies > Manage Fields.
                         </small>
                     </div>
                     <div class="table-responsive">
@@ -606,6 +607,12 @@
                         </select>
                     </div>
 
+                    <div class="mb-3 d-none" id="fieldOptionsWrapper">
+                        <label for="fieldOptionsInput" class="form-label">Options (one per line)</label>
+                        <textarea class="form-control" id="fieldOptionsInput" name="field_options" rows="5" placeholder="Capture Fishing|capture_fishing&#10;Aquaculture|aquaculture&#10;Post-Harvest|post_harvest"></textarea>
+                        <small class="text-muted">Format: Label|value. If value is omitted, it will be auto-generated from label.</small>
+                    </div>
+
                     <div class="form-check form-switch mb-3">
                         <input class="form-check-input" type="checkbox" id="fieldRequired" name="is_required" value="1">
                         <label class="form-check-label" for="fieldRequired">
@@ -688,7 +695,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="globalFieldPlacement" class="form-label">Display Section <span class="text-danger">*</span></label>
+                        <label for="globalFieldPlacement" class="form-label">Display Section (Global Fields Only) <span class="text-danger">*</span></label>
                         <select class="form-select" id="globalFieldPlacement" required>
                             <option value="personal_information">Agency &amp; Personal Information</option>
                             <option value="farmer_information">DA/RSBSA Information (Farmer)</option>
@@ -1125,9 +1132,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ========== AGENCIES MANAGEMENT ==========
+    const classificationsApiUrl = "{{ route('api.classifications') }}";
+
     async function loadClassifications(containerId) {
         try {
-            const response = await fetch('/api/classifications', {
+            const response = await fetch(classificationsApiUrl, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
             if (!response.ok) throw new Error('Failed to load classifications');
@@ -1343,8 +1352,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function activateAgency(agencyId) {
         try {
-            const response = await fetch(`/admin/settings/agencies/${agencyId}`, {
-                method: 'PUT',
+            const response = await fetch(`/admin/settings/agencies/${agencyId}/status`, {
+                method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -1362,6 +1371,66 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Manage Form Fields
+    const agencyFieldTypeInput = document.getElementById('fieldType');
+    const agencyFieldOptionsWrapper = document.getElementById('fieldOptionsWrapper');
+    const agencyFieldOptionsInput = document.getElementById('fieldOptionsInput');
+
+    function isAgencyOptionType(fieldType) {
+        return ['dropdown', 'checkbox'].includes(String(fieldType || '').toLowerCase());
+    }
+
+    function toggleAgencyFieldOptions(fieldType) {
+        if (!agencyFieldOptionsWrapper || !agencyFieldOptionsInput) {
+            return;
+        }
+
+        const show = isAgencyOptionType(fieldType);
+        agencyFieldOptionsWrapper.classList.toggle('d-none', !show);
+        agencyFieldOptionsInput.disabled = !show;
+    }
+
+    function serializeAgencyFieldOptions(rawText) {
+        return String(rawText || '')
+            .split(/\r?\n/)
+            .map(line => line.trim())
+            .filter(Boolean)
+            .map((line) => {
+                const [labelRaw, valueRaw] = line.split('|', 2);
+                const label = (labelRaw || '').trim();
+                const value = (valueRaw || '').trim();
+
+                if (!label && !value) {
+                    return null;
+                }
+
+                return {
+                    label: label || value,
+                    value: value || ''
+                };
+            })
+            .filter(Boolean);
+    }
+
+    function deserializeAgencyFieldOptions(options) {
+        if (!Array.isArray(options) || options.length === 0) {
+            return '';
+        }
+
+        return options
+            .map((option) => {
+                const label = String(option?.label || '').trim();
+                const value = String(option?.value || '').trim();
+
+                if (!label && !value) {
+                    return '';
+                }
+
+                return value ? `${label}|${value}` : label;
+            })
+            .filter(Boolean)
+            .join('\n');
+    }
+
     document.querySelectorAll('.manage-fields-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const agencyId = this.dataset.agencyId;
@@ -1393,6 +1462,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 fields.forEach(field => {
                     const fieldType = field.field_type ? field.field_type.charAt(0).toUpperCase() + field.field_type.slice(1) : 'Text';
                     const requiredBadge = field.is_required ? '<span class="badge bg-danger ms-2">Required</span>' : '';
+                    const optionCount = Array.isArray(field.options) ? field.options.length : 0;
+                    const optionBadge = isAgencyOptionType(field.field_type)
+                        ? `<span class="badge bg-light text-dark border ms-2">${optionCount} option${optionCount === 1 ? '' : 's'}</span>`
+                        : '';
 
                     html += `
                         <div class="list-group-item">
@@ -1403,6 +1476,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <strong>Field Name:</strong> ${field.field_name} |
                                         <strong>Type:</strong> ${fieldType}
                                         ${requiredBadge}
+                                        ${optionBadge}
                                     </p>
                                     ${field.help_text ? `<p class="mb-0 small">${field.help_text}</p>` : ''}
                                 </div>
@@ -1452,6 +1526,10 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('addFieldBtn').addEventListener('click', function() {
         document.getElementById('fieldForm').reset();
         document.getElementById('fieldId').value = '';
+        if (agencyFieldOptionsInput) {
+            agencyFieldOptionsInput.value = '';
+        }
+        toggleAgencyFieldOptions(agencyFieldTypeInput?.value);
         document.querySelector('#addFieldModal .modal-title').textContent = 'Add Agency Field';
     });
 
@@ -1471,6 +1549,10 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('fieldHelpText').value = field.help_text || '';
             document.getElementById('fieldSection').value = field.form_section || '';
             document.getElementById('fieldSort').value = field.sort_order || 0;
+            if (agencyFieldOptionsInput) {
+                agencyFieldOptionsInput.value = deserializeAgencyFieldOptions(field.options || []);
+            }
+            toggleAgencyFieldOptions(field.field_type);
 
             document.querySelector('#addFieldModal .modal-title').textContent = 'Edit Agency Field';
             bootstrap.Modal.getOrCreateInstance(document.getElementById('addFieldModal')).show();
@@ -1514,7 +1596,8 @@ document.addEventListener('DOMContentLoaded', function() {
             is_required: document.getElementById('fieldRequired').checked ? 1 : 0,
             help_text: document.getElementById('fieldHelpText').value,
             form_section: document.getElementById('fieldSection').value,
-            sort_order: parseInt(document.getElementById('fieldSort').value)
+            sort_order: parseInt(document.getElementById('fieldSort').value),
+            options: serializeAgencyFieldOptions(agencyFieldOptionsInput ? agencyFieldOptionsInput.value : '')
         };
 
         console.log('Sending form data:', formData);
@@ -1566,6 +1649,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Global form fields (tabbed settings page)
+    if (agencyFieldTypeInput) {
+        agencyFieldTypeInput.addEventListener('change', function() {
+            toggleAgencyFieldOptions(this.value);
+        });
+        toggleAgencyFieldOptions(agencyFieldTypeInput.value);
+    }
+
     function normalizeKey(value) {
         return String(value || '')
             .trim()

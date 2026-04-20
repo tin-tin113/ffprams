@@ -154,6 +154,27 @@ class DynamicAgencyForm {
         }
 
         let html = '';
+        const classification = String(this.classificationSelect?.value || '').trim();
+        const sectionLabelMap = {
+            general_information: 'General Information',
+            additional_information: 'Additional Information',
+            farmer_information: 'Farmer Information',
+            fisherfolk_information: 'Fisherfolk Information',
+            dar_information: 'DAR Information'
+        };
+
+        const normalizeSection = (value) => String(value || 'general_information').trim().toLowerCase();
+        const allowedSections = (() => {
+            if (classification === 'Farmer') {
+                return new Set(['general_information', 'additional_information', 'farmer_information', 'dar_information']);
+            }
+
+            if (classification === 'Fisherfolk') {
+                return new Set(['general_information', 'additional_information', 'fisherfolk_information']);
+            }
+
+            return new Set(['general_information', 'additional_information', 'farmer_information', 'fisherfolk_information', 'dar_information']);
+        })();
 
         agencies.forEach(agency => {
             console.log(`Processing agency: ${agency.name}`);
@@ -166,7 +187,17 @@ class DynamicAgencyForm {
                 return;
             }
 
-            console.log(`Agency ${agency.name} has ${agency.form_fields.length} form fields`);
+            const visibleFields = agency.form_fields.filter((field) => {
+                const section = normalizeSection(field.form_section);
+                return allowedSections.has(section);
+            });
+
+            if (visibleFields.length === 0) {
+                console.log(`Agency ${agency.name} has no form fields for classification ${classification}`);
+                return;
+            }
+
+            console.log(`Agency ${agency.name} has ${visibleFields.length} visible form fields`);
 
             html += `
                 <div class="card border-0 shadow-sm mb-4">
@@ -177,9 +208,32 @@ class DynamicAgencyForm {
                         <div class="row g-3">
             `;
 
-            agency.form_fields.forEach(field => {
-                console.log(`Rendering field: ${field.field_name} (type: ${field.field_type}, required: ${field.is_required})`);
-                html += this.renderField(agency.id, field);
+            const groupedFields = {};
+            visibleFields.forEach((field) => {
+                const section = normalizeSection(field.form_section);
+                if (!groupedFields[section]) {
+                    groupedFields[section] = [];
+                }
+                groupedFields[section].push(field);
+            });
+
+            const sectionOrder = ['general_information', 'additional_information', 'farmer_information', 'fisherfolk_information', 'dar_information'];
+            sectionOrder.forEach((sectionKey) => {
+                const sectionFields = groupedFields[sectionKey] || [];
+                if (sectionFields.length === 0) {
+                    return;
+                }
+
+                html += `
+                    <div class="col-12 mt-2">
+                        <div class="fw-semibold text-uppercase text-muted small border-bottom pb-1 mb-2">${sectionLabelMap[sectionKey] || sectionKey}</div>
+                    </div>
+                `;
+
+                sectionFields.forEach((field) => {
+                    console.log(`Rendering field: ${field.field_name} (type: ${field.field_type}, required: ${field.is_required})`);
+                    html += this.renderField(agency.id, field);
+                });
             });
 
             html += `
@@ -236,7 +290,7 @@ class DynamicAgencyForm {
                     <div class="card bg-light border-0 p-3 mb-3">
                         <div class="row g-3 align-items-end">
                             <div class="col-md-6">
-                                <label for="${statusSelectId}" class="form-label mb-1">${field.display_label} Status <span class="text-danger">*</span></label>
+                                <label for="${statusSelectId}" class="form-label mb-1">Availability Status <span class="text-danger">*</span></label>
                                 <select
                                     class="form-select availability-status-select"
                                     id="${statusSelectId}"
@@ -251,7 +305,7 @@ class DynamicAgencyForm {
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <small class="text-muted">Set status to Provided when the field value is available.</small>
+                                <small class="text-muted">Set status for <strong>${this.escapeHtml(field.display_label)}</strong>.</small>
                             </div>
                         </div>
                     </div>

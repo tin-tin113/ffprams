@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\BeneficiaryRequest;
 use App\Models\Agency;
+use App\Models\AgencyFormField;
 use App\Models\Barangay;
 use App\Models\Beneficiary;
 use App\Models\FormFieldOption;
@@ -667,6 +668,47 @@ class BeneficiaryController extends Controller
         $options = $allGroups
             ->map(fn ($groupOptions) => $groupOptions->values())
             ->toArray();
+
+        $agencyCoreOptions = AgencyFormField::query()
+            ->whereIn('field_name', $coreFields)
+            ->where('is_active', true)
+            ->whereIn('field_type', ['dropdown', 'checkbox'])
+            ->with(['options' => fn ($q) => $q->orderBy('sort_order')])
+            ->get(['id', 'field_name'])
+            ->groupBy('field_name');
+
+        foreach ($coreFields as $field) {
+            if (! isset($options[$field]) || empty($options[$field])) {
+                $options[$field] = collect();
+            }
+
+            $existing = collect($options[$field])
+                ->map(function ($item) {
+                    $label = trim((string) (is_object($item) ? ($item->label ?? '') : ($item['label'] ?? '')));
+
+                    return strtolower($label);
+                })
+                ->filter()
+                ->all();
+
+            $extra = collect($agencyCoreOptions->get($field, collect()))
+                ->flatMap(function (AgencyFormField $fieldDef) {
+                    return $fieldDef->options->map(fn ($opt) => (object) [
+                        'value' => (string) $opt->value,
+                        'label' => (string) $opt->label,
+                    ]);
+                })
+                ->filter(function ($option) use ($existing) {
+                    $label = strtolower(trim((string) ($option->label ?? '')));
+
+                    return $label !== '' && ! in_array($label, $existing, true);
+                })
+                ->values();
+
+            if ($extra->isNotEmpty()) {
+                $options[$field] = collect($options[$field])->merge($extra)->values();
+            }
+        }
 
         foreach ($coreFields as $field) {
             if (! array_key_exists($field, $options) || empty($options[$field])) {
