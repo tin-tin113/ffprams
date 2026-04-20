@@ -943,7 +943,7 @@
         </div>
     </div>
 
-    <div class="card reports-toolbar border-0 no-print">
+    <div class="card reports-toolbar border-0 no-print modern-filter-card">
         <div class="card-body">
             <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3">
                 <div>
@@ -952,12 +952,12 @@
                 </div>
 
                 <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2">
-                    <form method="GET" action="{{ route('reports.index') }}" class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-2">
+                    <form method="GET" action="{{ route('reports.index') }}" class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-2 modern-filter-grid">
                         <input type="hidden" name="tab" value="{{ $activeTab }}" id="reportTabInput">
-                        <select class="form-select reports-filter" aria-label="Period" disabled>
+                        <select class="form-select reports-filter modern-filter-select" aria-label="Period" disabled>
                             <option selected>Full Year</option>
                         </select>
-                        <select class="form-select reports-year" name="year" aria-label="Year" onchange="this.form.submit()">
+                        <select class="form-select reports-year modern-filter-select" name="year" aria-label="Year" onchange="this.form.submit()">
                             @foreach($availableYears as $year)
                                 <option value="{{ $year }}" @selected((int) $year === (int) $currentYear)>{{ $year }}</option>
                             @endforeach

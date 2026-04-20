@@ -15,10 +15,12 @@ class AgencyFormFieldOption extends Model
         'label',
         'value',
         'sort_order',
+        'is_active',
     ];
 
     protected $casts = [
         'sort_order' => 'integer',
+        'is_active' => 'boolean',
     ];
 
     /**
@@ -27,5 +29,13 @@ class AgencyFormFieldOption extends Model
     public function formField(): BelongsTo
     {
         return $this->belongsTo(AgencyFormField::class, 'agency_form_field_id');
+    }
+
+    /**
+     * Scope to get only active options
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
     }
 }

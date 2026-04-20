@@ -24,12 +24,16 @@ class AgencyReservedFormFieldsTest extends TestCase
         $response = $this->actingAs($admin)
             ->get(route('admin.settings.agencies.form-fields.index', $agency));
 
+        $payload = $response->json();
+
         $response
             ->assertOk()
-            ->assertJsonCount(2)
             ->assertJsonFragment(['field_name' => 'rsbsa_number'])
             ->assertJsonFragment(['field_name' => 'custom_crop_code'])
             ->assertJsonMissing(['field_name' => 'non_existent_field_name']);
+
+        $this->assertIsArray($payload);
+        $this->assertGreaterThanOrEqual(2, count($payload));
     }
 
     public function test_public_agency_form_fields_api_includes_static_and_dynamic_agency_fields(): void

@@ -52,9 +52,9 @@
     {{-- Filter Section --}}
     <div class="row mb-3">
         <div class="col-12">
-            <div class="card shadow-sm border-0">
+            <div class="card shadow-sm border-0 modern-filter-card">
                 <div class="card-body p-3">
-                    <div class="row g-3">
+                    <div class="row g-3 modern-filter-grid">
                         <div class="col-12 col-md-3">
                             <label class="form-label fw-semibold">Agency</label>
                             <select id="agencyFilter" class="form-select form-select-sm">

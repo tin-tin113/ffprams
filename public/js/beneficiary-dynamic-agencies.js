@@ -164,6 +164,28 @@ class DynamicAgencyForm {
         };
 
         const normalizeSection = (value) => String(value || 'general_information').trim().toLowerCase();
+        // Core beneficiary fields are rendered in static form sections; skip them in dynamic cards to avoid duplicates.
+        const reservedCoreFieldNames = new Set([
+            'rsbsa_number',
+            'farm_ownership',
+            'farm_size_hectares',
+            'primary_commodity',
+            'farm_type',
+            'organization_membership',
+            'fishr_number',
+            'fisherfolk_type',
+            'main_fishing_gear',
+            'length_of_residency_months',
+            'has_fishing_vessel',
+            'fishing_vessel_type',
+            'fishing_vessel_tonnage',
+            'cloa_ep_number',
+            'arb_classification',
+            'landholding_description',
+            'land_area_awarded_hectares',
+            'ownership_scheme',
+            'barc_membership_status',
+        ]);
         const allowedSections = (() => {
             if (classification === 'Farmer') {
                 return new Set(['general_information', 'additional_information', 'farmer_information', 'dar_information']);
@@ -189,11 +211,24 @@ class DynamicAgencyForm {
 
             const visibleFields = agency.form_fields.filter((field) => {
                 const section = normalizeSection(field.form_section);
-                return allowedSections.has(section);
+                const fieldName = String(field.field_name || '').trim().toLowerCase();
+                return allowedSections.has(section) && !reservedCoreFieldNames.has(fieldName);
             });
 
             if (visibleFields.length === 0) {
                 console.log(`Agency ${agency.name} has no form fields for classification ${classification}`);
+                html += `
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-light fw-semibold">
+                            <i class="bi bi-file-earmark-text me-1"></i> ${agency.name} - ${agency.full_name}
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-0">
+                                No additional agency-specific fields for this classification. Core farmer/fisherfolk fields are shown in the main section above.
+                            </p>
+                        </div>
+                    </div>
+                `;
                 return;
             }
 
@@ -270,7 +305,7 @@ class DynamicAgencyForm {
             }
         }
         if (!availabilityStatus) {
-            availabilityStatus = fieldValue ? 'provided' : 'not_available_yet';
+            availabilityStatus = 'provided';
         }
 
         const showFieldValue = availabilityStatus === 'provided';

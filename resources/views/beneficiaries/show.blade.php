@@ -17,8 +17,71 @@
         || filled($beneficiary->ownership_scheme)
         || filled($beneficiary->barc_membership_status);
 
-    $customFieldUnavailabilityReasons = collect((array) ($beneficiary->custom_field_unavailability_reasons ?? []))
+    $agencyFieldLabels = $agencyFieldLabels ?? [];
+    $agencyNameById = $beneficiary->agencies
+        ->mapWithKeys(fn ($agency) => [(string) $agency->id => (string) $agency->name])
+        ->toArray();
+
+    $rawCustomFieldValues = collect((array) ($beneficiary->custom_fields ?? []));
+    $customFieldValues = $rawCustomFieldValues
+        ->except('agency_dynamic')
         ->filter(fn ($value) => filled($value));
+
+    $agencyDynamicCustomFieldValues = collect((array) ($rawCustomFieldValues->get('agency_dynamic', [])))
+        ->filter(fn ($fields) => is_array($fields))
+        ->flatMap(function ($fields, $agencyId) use ($agencyFieldLabels, $agencyNameById) {
+            if (! is_array($fields)) {
+                return collect();
+            }
+
+            return collect($fields)
+                ->filter(fn ($value) => filled($value))
+                ->map(function ($value, $fieldName) use ($agencyFieldLabels, $agencyNameById, $agencyId) {
+                    $agencyIdString = (string) $agencyId;
+                    $displayValue = is_array($value)
+                        ? implode(', ', array_map('strval', array_values($value)))
+                        : (string) $value;
+
+                    return [
+                        'agency_name' => $agencyNameById[$agencyIdString] ?? ('Agency #' . $agencyIdString),
+                        'field_label' => $agencyFieldLabels[$agencyIdString][$fieldName] ?? Str::title(str_replace('_', ' ', (string) $fieldName)),
+                        'value' => $displayValue,
+                    ];
+                });
+        })
+        ->values();
+
+    $rawCustomFieldUnavailabilityReasons = collect((array) ($beneficiary->custom_field_unavailability_reasons ?? []));
+    $customFieldUnavailabilityReasons = $rawCustomFieldUnavailabilityReasons
+        ->except('agency_dynamic')
+        ->filter(fn ($value) => filled($value));
+
+    $agencyDynamicUnavailabilityReasons = collect((array) ($rawCustomFieldUnavailabilityReasons->get('agency_dynamic', [])))
+        ->filter(fn ($fields) => is_array($fields))
+        ->flatMap(function ($fields, $agencyId) use ($agencyFieldLabels, $agencyNameById) {
+            if (! is_array($fields)) {
+                return collect();
+            }
+
+            return collect($fields)
+                ->filter(fn ($reason) => filled($reason))
+                ->map(function ($reason, $fieldName) use ($agencyFieldLabels, $agencyNameById, $agencyId) {
+                    $agencyIdString = (string) $agencyId;
+
+                    return [
+                        'agency_name' => $agencyNameById[$agencyIdString] ?? ('Agency #' . $agencyIdString),
+                        'field_label' => $agencyFieldLabels[$agencyIdString][$fieldName] ?? Str::title(str_replace('_', ' ', (string) $fieldName)),
+                        'reason' => (string) $reason,
+                    ];
+                });
+        })
+        ->values();
+
+    $coreUnavailabilityReasons = collect([
+        'RSBSA/DA Fields' => $beneficiary->rsbsa_unavailability_reason,
+        'FishR/BFAR Fields' => $beneficiary->fishr_unavailability_reason,
+        'CLOA/EP DAR Fields' => $beneficiary->cloa_ep_unavailability_reason,
+    ])->filter(fn ($reason) => filled($reason));
 @endphp
 
 @section('content')
@@ -342,11 +405,7 @@
             </div>
         </div>
 
-        @php
-            $customFieldValues = collect((array) ($beneficiary->custom_fields ?? []))
-                ->filter(fn ($value) => filled($value));
-        @endphp
-        @if($customFieldValues->isNotEmpty())
+        @if($customFieldValues->isNotEmpty() || $agencyDynamicCustomFieldValues->isNotEmpty())
             <div class="card-header bg-white fw-semibold border-top">
                 <i class="bi bi-sliders me-1"></i> Additional Configured Fields
             </div>
@@ -355,23 +414,46 @@
                     @foreach($customFieldValues as $fieldGroup => $fieldValue)
                         <div class="col-md-4">
                             <div class="text-muted small">{{ Str::title(str_replace('_', ' ', $fieldGroup)) }}</div>
-                            <div class="fw-semibold">{{ $fieldValue }}</div>
+                            <div class="fw-semibold">
+                                {{ is_array($fieldValue) ? collect($fieldValue)->filter(fn ($item) => filled($item))->implode(', ') : $fieldValue }}
+                            </div>
+                        </div>
+                    @endforeach
+
+                    @foreach($agencyDynamicCustomFieldValues as $entry)
+                        <div class="col-md-4">
+                            <div class="text-muted small">{{ $entry['agency_name'] }} &middot; {{ $entry['field_label'] }}</div>
+                            <div class="fw-semibold">{{ $entry['value'] }}</div>
                         </div>
                     @endforeach
                 </div>
             </div>
         @endif
 
-        @if($customFieldUnavailabilityReasons->isNotEmpty())
+        @if($coreUnavailabilityReasons->isNotEmpty() || $customFieldUnavailabilityReasons->isNotEmpty() || $agencyDynamicUnavailabilityReasons->isNotEmpty())
             <div class="card-header bg-white fw-semibold border-top">
                 <i class="bi bi-info-circle me-1"></i> Field Unavailability Reasons
             </div>
             <div class="card-body">
                 <div class="row g-3">
+                    @foreach($coreUnavailabilityReasons as $fieldLabel => $reason)
+                        <div class="col-md-6">
+                            <div class="text-muted small">{{ $fieldLabel }}</div>
+                            <div class="fw-semibold">{{ $reason }}</div>
+                        </div>
+                    @endforeach
+
                     @foreach($customFieldUnavailabilityReasons as $fieldName => $reason)
                         <div class="col-md-6">
                             <div class="text-muted small">{{ Str::title(str_replace('_', ' ', $fieldName)) }}</div>
                             <div class="fw-semibold">{{ $reason }}</div>
+                        </div>
+                    @endforeach
+
+                    @foreach($agencyDynamicUnavailabilityReasons as $entry)
+                        <div class="col-md-6">
+                            <div class="text-muted small">{{ $entry['agency_name'] }} &middot; {{ $entry['field_label'] }}</div>
+                            <div class="fw-semibold">{{ $entry['reason'] }}</div>
                         </div>
                     @endforeach
                 </div>

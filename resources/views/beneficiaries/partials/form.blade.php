@@ -118,6 +118,12 @@
         'Others',
     ]);
     $ownershipSchemeOptions = $normalizeFieldOptions($fo['ownership_scheme'] ?? [], ['Individual', 'Collective', 'Cooperative']);
+    $cloaAvailabilityStatus = old(
+        'cloa_ep_availability_status',
+        filled($beneficiary->cloa_ep_number ?? null)
+            ? 'provided'
+            : (filled($beneficiary->cloa_ep_unavailability_reason ?? null) ? 'not_available_yet' : 'provided')
+    );
 
     $firstNameValue = old('first_name', $beneficiary->first_name ?? '');
     $middleNameValue = old('middle_name', $beneficiary->middle_name ?? '');
@@ -513,11 +519,38 @@
     <div class="card-body">
         <div class="row g-3">
             <div class="col-12 col-md-6">
+                <label for="cloa_ep_availability_status" class="form-label">CLOA/EP Availability Status <span class="text-danger">*</span></label>
+                <select class="form-select @error('cloa_ep_availability_status') is-invalid @enderror"
+                        id="cloa_ep_availability_status"
+                        name="cloa_ep_availability_status">
+                    <option value="provided" {{ $cloaAvailabilityStatus === 'provided' ? 'selected' : '' }}>Provided</option>
+                    <option value="not_available_yet" {{ $cloaAvailabilityStatus === 'not_available_yet' ? 'selected' : '' }}>Not available yet</option>
+                    <option value="not_applicable" {{ $cloaAvailabilityStatus === 'not_applicable' ? 'selected' : '' }}>Not applicable</option>
+                    <option value="to_be_verified" {{ $cloaAvailabilityStatus === 'to_be_verified' ? 'selected' : '' }}>To be verified</option>
+                </select>
+                @error('cloa_ep_availability_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-12 col-md-6 {{ $cloaAvailabilityStatus === 'provided' ? '' : 'd-none' }}" id="cloa-ep-number-wrapper">
                 <label for="cloa_ep_number" class="form-label">CLOA/EP Number <span class="text-danger">*</span></label>
-                <input type="text" class="form-control @error('cloa_ep_number') is-invalid @enderror"
-                       id="cloa_ep_number" name="cloa_ep_number" maxlength="100"
-                       value="{{ old('cloa_ep_number', $beneficiary->cloa_ep_number ?? '') }}">
+                <input type="text"
+                       class="form-control @error('cloa_ep_number') is-invalid @enderror"
+                       id="cloa_ep_number"
+                       name="cloa_ep_number"
+                       maxlength="100"
+                       value="{{ old('cloa_ep_number', $beneficiary->cloa_ep_number ?? '') }}"
+                       {{ $cloaAvailabilityStatus === 'provided' ? 'required' : '' }}>
                 @error('cloa_ep_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-12 {{ $cloaAvailabilityStatus === 'provided' ? 'd-none' : '' }}" id="cloa-ep-reason-wrapper">
+                <label for="cloa_ep_unavailability_reason" class="form-label">Reason for Unavailability <span class="text-danger">*</span></label>
+                <textarea class="form-control @error('cloa_ep_unavailability_reason') is-invalid @enderror"
+                          id="cloa_ep_unavailability_reason"
+                          name="cloa_ep_unavailability_reason"
+                          rows="3"
+                          maxlength="500"
+                          placeholder="Explain why CLOA/EP Number is unavailable..."
+                          {{ $cloaAvailabilityStatus !== 'provided' ? 'required' : '' }}>{{ old('cloa_ep_unavailability_reason', $beneficiary->cloa_ep_unavailability_reason ?? '') }}</textarea>
+                @error('cloa_ep_unavailability_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             <div class="col-12 col-md-6">
                 <label for="arb_classification" class="form-label">ARB Classification</label>
@@ -653,6 +686,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const hasVesselCheckbox = document.getElementById('has_fishing_vessel');
     const vesselTypeWrapper = document.getElementById('vessel-type-wrapper');
     const vesselTonnageWrapper = document.getElementById('vessel-tonnage-wrapper');
+    const cloaAvailabilitySelect = document.getElementById('cloa_ep_availability_status');
+    const cloaNumberWrapper = document.getElementById('cloa-ep-number-wrapper');
+    const cloaReasonWrapper = document.getElementById('cloa-ep-reason-wrapper');
+    const cloaNumberField = document.getElementById('cloa_ep_number');
+    const cloaReasonField = document.getElementById('cloa_ep_unavailability_reason');
 
     function updateSections() {
         const classification = classificationSelect.value;
@@ -702,6 +740,24 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function toggleCloaAvailability() {
+        if (!cloaAvailabilitySelect || !cloaNumberWrapper || !cloaReasonWrapper) {
+            return;
+        }
+
+        const isProvided = cloaAvailabilitySelect.value === 'provided';
+        cloaNumberWrapper.style.display = isProvided ? '' : 'none';
+        cloaReasonWrapper.style.display = isProvided ? 'none' : '';
+
+        if (cloaNumberField) {
+            cloaNumberField.required = isProvided;
+        }
+
+        if (cloaReasonField) {
+            cloaReasonField.required = !isProvided;
+        }
+    }
+
     // Event listeners
     if (classificationSelect) {
         classificationSelect.addEventListener('change', updateSections);
@@ -719,10 +775,15 @@ document.addEventListener('DOMContentLoaded', function () {
         hasVesselCheckbox.addEventListener('change', toggleVesselFields);
     }
 
+    if (cloaAvailabilitySelect) {
+        cloaAvailabilitySelect.addEventListener('change', toggleCloaAvailability);
+    }
+
     // Initial setup
     updateSections();
     toggleAssociation();
     toggleVesselFields();
+    toggleCloaAvailability();
 });
 </script>
 @endpush

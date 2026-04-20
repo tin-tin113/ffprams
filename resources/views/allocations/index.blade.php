@@ -7,11 +7,11 @@
 @endsection
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid module-page">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
         <div>
             <h1 class="h3 mb-0">Assistance Allocations</h1>
-            <p class="text-muted mb-0">Record direct/personal assistance without creating an event</p>
+            <p class="text-muted mb-0">Record and monitor direct assistance allocations</p>
         </div>
     </div>
 
@@ -61,7 +61,7 @@
     {{-- ADD DIRECT ASSISTANCE BUTTON                                 --}}
     {{-- ============================================================ --}}
     <div class="mb-4">
-        <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#addDirectAssistanceModal">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDirectAssistanceModal">
             <i class="bi bi-plus-circle me-2"></i> Add Direct Assistance
         </button>
     </div>
@@ -108,12 +108,12 @@
                                 @csrf
                                 <input type="hidden" name="release_method" value="direct">
                                 <div class="col-12">
-                    <div class="card border-light bg-light">
+                    <div class="card border-light bg-light modern-filter-card">
                         <div class="card-body">
                             <h6 class="card-title mb-3">
                                 <i class="bi bi-search me-2"></i> Find Beneficiary
                             </h6>
-                            <div class="row g-2 mb-3">
+                            <div class="row g-2 mb-3 modern-filter-grid">
                                 <div class="col-md-3">
                                     <label class="form-label form-label-sm">Barangay</label>
                                     <select id="beneficiary_barangay" class="form-select form-select-sm" data-beneficiary-filter="barangay">
@@ -151,7 +151,7 @@
                                 <div class="small text-muted mb-2">
                                     Found <span id="results_count">0</span> beneficiary(ies)
                                 </div>
-                                <div id="results_list" class="list-group list-group-sm" style="max-height: 300px; overflow-y: auto;">
+                                <div id="results_list" class="list-group list-group-sm modern-filter-list" style="max-height: 300px; overflow-y: auto;">
                                     {{-- Populated via JS --}}
                                 </div>
                             </div>
@@ -266,12 +266,12 @@
                                 </div>
 
                                 {{-- Batch Beneficiary Finder --}}
-                                <div class="card border-light bg-light mb-3">
+                                <div class="card border-light bg-light mb-3 modern-filter-card">
                                     <div class="card-body py-3">
                                         <h6 class="card-title mb-2">
                                             <i class="bi bi-search me-1"></i> Find Beneficiary (Batch)
                                         </h6>
-                                        <div class="row g-2 mb-2">
+                                        <div class="row g-2 mb-2 modern-filter-grid">
                                             <div class="col-md-3">
                                                 <select id="batch_beneficiary_barangay" class="form-select form-select-sm">
                                                     <option value="">All Barangays</option>
@@ -296,7 +296,7 @@
                                                 </button>
                                             </div>
                                         </div>
-                                        <div id="batch_beneficiary_results" class="list-group list-group-sm" style="max-height: 180px; overflow-y: auto; display:none;"></div>
+                                        <div id="batch_beneficiary_results" class="list-group list-group-sm modern-filter-list" style="max-height: 180px; overflow-y: auto; display:none;"></div>
                                         <small id="batch_beneficiary_hint" class="text-muted">Search and click <strong>Add</strong> to append a beneficiary row quickly.</small>
                                     </div>
                                 </div>
@@ -381,10 +381,10 @@
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm mb-4">
+    <div class="card border-0 shadow-sm mb-4 modern-filter-card">
         <div class="card-body">
             <form method="GET" action="{{ route('allocations.index') }}">
-                <div class="row g-2 align-items-end">
+                <div class="row g-2 align-items-end modern-filter-grid">
                     <div class="col-xl-3 col-lg-3 col-md-6">
                         <label class="form-label">Program</label>
                         <select class="form-select" name="program_name_id">
@@ -428,7 +428,7 @@
                             <option value="status_desc" {{ request('sort') === 'status_desc' ? 'selected' : '' }}>Status: Z-A</option>
                         </select>
                     </div>
-                    <div class="col-xl-3 col-lg-3 col-md-12 d-flex gap-2">
+                    <div class="col-xl-3 col-lg-3 col-md-12 modern-filter-actions">
                         <button type="submit" class="btn btn-success">
                             <i class="bi bi-funnel me-1"></i> Apply
                         </button>
@@ -552,6 +552,54 @@
     </div>
 </div>
 @endsection
+
+@push('styles')
+<style>
+.module-page .h3 {
+    font-size: 1.5rem;
+    font-weight: 650;
+}
+
+.module-page .card {
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+}
+
+.module-page .card.shadow-sm {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+.module-page .form-control,
+.module-page .form-select,
+.module-page .btn {
+    border-radius: 10px;
+}
+
+.module-page .btn {
+    font-size: 0.875rem;
+}
+
+.module-page .table thead th {
+    font-size: 0.78rem;
+    letter-spacing: 0.2px;
+    color: #4b5563;
+}
+
+.module-page .table tbody td {
+    font-size: 0.9rem;
+}
+
+.module-page .row.g-0 .h3 {
+    font-size: 1.4rem;
+}
+
+@media (min-width: 768px) {
+    .module-page .border-end-md {
+        border-right: 1px solid #e5e7eb !important;
+    }
+}
+</style>
+@endpush
 
 @push('scripts')
 <script>
@@ -1233,12 +1281,4 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
-
-<style>
-    @media (min-width: 768px) {
-        .border-end-md {
-            border-right: 1px solid #dee2e6 !important;
-        }
-    }
-</style>
 @endpush

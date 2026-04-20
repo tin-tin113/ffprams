@@ -834,6 +834,198 @@
             }
         }
 
+        /* Shared modern search and filter UI */
+        .modern-filter-card {
+            border: 1px solid #dbe3ef;
+            border-radius: 0.9rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+            overflow: hidden;
+        }
+
+        .modern-filter-card .card-header {
+            background: transparent;
+            border-bottom: 1px solid #e6edf5;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            color: #0f172a;
+            padding-top: 0.78rem;
+            padding-bottom: 0.78rem;
+        }
+
+        .modern-filter-card .card-header i {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+
+        .modern-filter-card .card-body {
+            padding: 1rem 1rem 0.95rem;
+        }
+
+        .modern-filter-grid {
+            row-gap: 0.85rem;
+            column-gap: 0.1rem;
+        }
+
+        @media (min-width: 1200px) {
+            .modern-filter-grid {
+                flex-wrap: nowrap;
+                align-items: flex-end;
+            }
+
+            .modern-filter-grid > [class*="col-"] {
+                flex: 1 1 0;
+                width: auto;
+                min-width: 0;
+            }
+
+            .modern-filter-grid > .modern-filter-actions {
+                flex: 0 0 auto;
+                width: auto;
+                min-width: 220px;
+                justify-content: flex-end;
+            }
+        }
+
+        .modern-filter-label {
+            font-size: 0.74rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #475569;
+            margin-bottom: 0.32rem;
+        }
+
+        .modern-filter-input,
+        .modern-filter-select {
+            border: 1px solid #cfd8e3;
+            border-radius: 0.65rem;
+            background-color: #fff;
+            min-height: 2.45rem;
+            box-shadow: none;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+        }
+
+        .modern-filter-grid .form-label {
+            font-size: 0.74rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #475569;
+            margin-bottom: 0.32rem;
+        }
+
+        .modern-filter-grid .form-control,
+        .modern-filter-grid .form-select {
+            border: 1px solid #cfd8e3;
+            border-radius: 0.65rem;
+            background-color: #fff;
+            min-height: 2.45rem;
+            font-size: 0.9rem;
+            padding-top: 0.45rem;
+            padding-bottom: 0.45rem;
+            box-shadow: none;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+        }
+
+        .modern-filter-grid .form-control::placeholder {
+            color: #94a3b8;
+        }
+
+        .modern-filter-grid .form-control:focus,
+        .modern-filter-grid .form-select:focus {
+            border-color: #22c55e;
+            box-shadow: 0 0 0 0.18rem rgba(34, 197, 94, 0.12);
+            transform: translateY(-1px);
+        }
+
+        .modern-filter-input::placeholder {
+            color: #94a3b8;
+        }
+
+        .modern-filter-input:focus,
+        .modern-filter-select:focus {
+            border-color: #22c55e;
+            box-shadow: 0 0 0 0.18rem rgba(34, 197, 94, 0.12);
+            transform: translateY(-1px);
+        }
+
+        .modern-filter-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .modern-filter-actions .btn {
+            border-radius: 0.65rem;
+            min-width: 108px;
+            font-weight: 600;
+            min-height: 2.45rem;
+            padding: 0.44rem 0.9rem;
+        }
+
+        .modern-filter-actions .btn i {
+            font-size: 0.88rem;
+            vertical-align: 0.02em;
+        }
+
+        .modern-filter-chip-list {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.45rem;
+        }
+
+        .modern-filter-chip {
+            border: 1px solid #d7e2ed;
+            border-radius: 999px;
+            background: #fff;
+            color: #334155;
+            padding: 0.28rem 0.62rem;
+            font-size: 0.78rem;
+            font-weight: 500;
+            line-height: 1.2;
+        }
+
+        .modern-filter-list {
+            border: 1px solid #dbe4ef;
+            border-radius: 0.7rem;
+            background: #fff;
+        }
+
+        @media (max-width: 767.98px) {
+            .modern-filter-card .card-body {
+                padding: 0.85rem 0.82rem 0.82rem;
+            }
+
+            .modern-filter-grid {
+                row-gap: 0.65rem;
+            }
+
+            .modern-filter-grid .form-label {
+                font-size: 0.69rem;
+                margin-bottom: 0.28rem;
+            }
+
+            .modern-filter-grid .form-control,
+            .modern-filter-grid .form-select,
+            .modern-filter-actions .btn {
+                min-height: 2.28rem;
+                font-size: 0.88rem;
+            }
+
+            .modern-filter-actions .btn {
+                flex: 1 1 auto;
+                min-width: 0;
+            }
+
+            .modern-filter-chip {
+                font-size: 0.74rem;
+                padding: 0.25rem 0.56rem;
+            }
+        }
+
         @media (max-width: 991.98px) {
             .table-responsive-cards thead {
                 display: none;

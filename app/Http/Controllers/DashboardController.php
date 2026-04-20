@@ -118,6 +118,8 @@ class DashboardController extends Controller
         $assistancePurposeDistribution = $this->getAssistancePurposeDistribution();
         $barangayDistribution = $this->getBarangayDistribution();
         $monthlyTrendData = $this->getMonthlyTrendData();
+        $programDisbursementChart = $this->getProgramDisbursementChartData();
+        $monthlyReleaseMethodTrend = $this->getMonthlyReleaseMethodTrendData();
 
         return view('dashboard', [
             'totalBeneficiaries' => $totalBeneficiaries,
@@ -152,6 +154,8 @@ class DashboardController extends Controller
             'assistancePurposeDistribution' => $assistancePurposeDistribution,
             'barangayDistribution' => $barangayDistribution,
             'monthlyTrendData' => $monthlyTrendData,
+            'programDisbursementChart' => $programDisbursementChart,
+            'monthlyReleaseMethodTrend' => $monthlyReleaseMethodTrend,
         ]);
     }
 
@@ -247,7 +251,7 @@ class DashboardController extends Controller
         $both = DB::table('beneficiaries')->whereNull('deleted_at')->where('classification', 'Both')->count();
 
         return [
-            'labels' => ['🌾 Farmers', '🐟 Fisherfolk', '👥 Both'],
+            'labels' => ['Farmers', 'Fisherfolk', 'Both'],
             'data' => [$farmers, $fisherfolk, $both],
             'colors' => ['#198754', '#0dcaf0', '#6f42c1'],
             'total' => $total,
@@ -385,6 +389,63 @@ class DashboardController extends Controller
         return [
             'labels' => $months,
             'data' => $data,
+        ];
+    }
+
+    private function getProgramDisbursementChartData(): array
+    {
+        $programs = DB::table('allocations')
+            ->select('program_names.name', DB::raw('SUM(allocations.amount) as total_amount'))
+            ->join('program_names', 'allocations.program_name_id', '=', 'program_names.id')
+            ->whereNull('allocations.deleted_at')
+            ->whereNotNull('allocations.distributed_at')
+            ->groupBy('program_names.id', 'program_names.name')
+            ->orderByDesc('total_amount')
+            ->limit(7)
+            ->get();
+
+        return [
+            'labels' => $programs->pluck('name')->toArray(),
+            'data' => $programs->pluck('total_amount')->map(function ($value) {
+                return (float) $value;
+            })->toArray(),
+        ];
+    }
+
+    private function getMonthlyReleaseMethodTrendData(): array
+    {
+        $months = [];
+        $eventSeries = [];
+        $directSeries = [];
+
+        for ($i = 5; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $months[] = $date->format('M Y');
+
+            $eventCount = DB::table('allocations')
+                ->whereNull('deleted_at')
+                ->where('release_method', 'event')
+                ->whereNotNull('distributed_at')
+                ->whereYear('distributed_at', $date->year)
+                ->whereMonth('distributed_at', $date->month)
+                ->count();
+
+            $directCount = DB::table('allocations')
+                ->whereNull('deleted_at')
+                ->where('release_method', 'direct')
+                ->whereNotNull('distributed_at')
+                ->whereYear('distributed_at', $date->year)
+                ->whereMonth('distributed_at', $date->month)
+                ->count();
+
+            $eventSeries[] = $eventCount;
+            $directSeries[] = $directCount;
+        }
+
+        return [
+            'labels' => $months,
+            'event' => $eventSeries,
+            'direct' => $directSeries,
         ];
     }
 }

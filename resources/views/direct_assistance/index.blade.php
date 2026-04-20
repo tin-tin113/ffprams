@@ -77,12 +77,12 @@
     </div>
 
     <!-- Filters -->
-    <div class="card border-0 shadow-sm mb-4">
+    <div class="card border-0 shadow-sm mb-4 modern-filter-card">
         <div class="card-header bg-white fw-semibold">
             <i class="bi bi-funnel me-1"></i> Filters
         </div>
         <div class="card-body">
-            <form method="GET" action="{{ route('direct-assistance.index') }}" class="row g-2 align-items-end">
+            <form method="GET" action="{{ route('direct-assistance.index') }}" class="row g-2 align-items-end modern-filter-grid">
                 <div class="col-xl-3 col-lg-3 col-md-6">
                     <label class="form-label">Program</label>
                     <select class="form-select" name="program_id">
@@ -126,7 +126,7 @@
                         <option value="status_desc" {{ request('sort') === 'status_desc' ? 'selected' : '' }}>Status: Z-A</option>
                     </select>
                 </div>
-                <div class="col-xl-3 col-lg-3 col-md-12 d-flex gap-2">
+                <div class="col-xl-3 col-lg-3 col-md-12 modern-filter-actions">
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-funnel me-1"></i> Apply
                     </button>

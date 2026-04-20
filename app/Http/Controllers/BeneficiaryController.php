@@ -298,7 +298,20 @@ class BeneficiaryController extends Controller
             'smsLogs' => fn ($q) => $q->latest('sent_at')->limit(5),
         ]);
 
-        return view('beneficiaries.show', compact('beneficiary'));
+        $agencyFieldLabels = AgencyFormField::query()
+            ->whereIn('agency_id', $beneficiary->agencies->pluck('id')->all())
+            ->get(['agency_id', 'field_name', 'display_label'])
+            ->groupBy('agency_id')
+            ->map(function ($fields): array {
+                return $fields
+                    ->mapWithKeys(fn (AgencyFormField $field): array => [
+                        (string) $field->field_name => (string) $field->display_label,
+                    ])
+                    ->toArray();
+            })
+            ->toArray();
+
+        return view('beneficiaries.show', compact('beneficiary', 'agencyFieldLabels'));
     }
 
     /**

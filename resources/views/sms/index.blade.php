@@ -246,7 +246,7 @@
             </div>
 
             {{-- Filter Dropdowns --}}
-            <div id="programFilter" class="mb-3" style="display:none;">
+            <div id="programFilter" class="mb-3 modern-filter-grid" style="display:none;">
                 <label for="programSelect" class="form-label fw-semibold small">Select Program</label>
                 <select class="form-select form-select-sm" id="programSelect">
                     <option value="" disabled selected>Choose program...</option>
@@ -256,7 +256,7 @@
                 </select>
             </div>
 
-            <div id="eventFilter" class="mb-3" style="display:none;">
+            <div id="eventFilter" class="mb-3 modern-filter-grid" style="display:none;">
                 <label for="eventSelect" class="form-label fw-semibold small">Select Event</label>
                 <select class="form-select form-select-sm" id="eventSelect">
                     <option value="" disabled selected>Choose event...</option>
@@ -268,7 +268,7 @@
                 </select>
             </div>
 
-            <div id="barangayFilter" class="mb-3" style="display:none;">
+            <div id="barangayFilter" class="mb-3 modern-filter-grid" style="display:none;">
                 <label for="barangaySelect" class="form-label fw-semibold small">Select Barangay</label>
                 <select class="form-select form-select-sm" id="barangaySelect">
                     <option value="" disabled selected>Choose barangay...</option>
@@ -278,7 +278,7 @@
                 </select>
             </div>
 
-            <div id="resourceTypeFilter" class="mb-3" style="display:none;">
+            <div id="resourceTypeFilter" class="mb-3 modern-filter-grid" style="display:none;">
                 <label for="resourceTypeSelect" class="form-label fw-semibold small">Select Resource Type</label>
                 <select class="form-select form-select-sm" id="resourceTypeSelect">
                     <option value="" disabled selected>Choose resource type...</option>
@@ -288,7 +288,7 @@
                 </select>
             </div>
 
-            <div id="assistancePurposeFilter" class="mb-3" style="display:none;">
+            <div id="assistancePurposeFilter" class="mb-3 modern-filter-grid" style="display:none;">
                 <label for="assistancePurposeSelect" class="form-label fw-semibold small">Select Assistance Purpose</label>
                 <select class="form-select form-select-sm" id="assistancePurposeSelect">
                     <option value="" disabled selected>Choose assistance purpose...</option>
@@ -299,7 +299,7 @@
             </div>
 
             {{-- Secondary Beneficiary Refinement --}}
-            <div id="secondaryBeneficiaryFilter" class="mb-3" style="display:none;">
+            <div id="secondaryBeneficiaryFilter" class="mb-3 modern-filter-grid" style="display:none;">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <label class="form-label fw-semibold small mb-0">Refine Selection</label>
                     <div class="d-flex gap-1">
@@ -310,7 +310,7 @@
                     </div>
                 </div>
                 <input type="text" class="form-control form-control-sm mb-2" id="beneficiaryFilterSearch" placeholder="Search...">
-                <div class="border rounded sms-beneficiary-list" id="beneficiaryFilterList">
+                <div class="border rounded sms-beneficiary-list modern-filter-list" id="beneficiaryFilterList">
                     <div class="text-center text-muted py-4">
                         <span class="spinner-border spinner-border-sm me-1"></span> Loading...
                     </div>
@@ -318,7 +318,7 @@
             </div>
 
             {{-- Select Specific Beneficiary Selector --}}
-            <div id="specificSelector" class="mb-3" style="display:none;">
+            <div id="specificSelector" class="mb-3 modern-filter-grid" style="display:none;">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <label class="form-label fw-semibold small mb-0">Select Beneficiaries</label>
                     <div class="d-flex gap-1">
@@ -330,7 +330,7 @@
                     </div>
                 </div>
                 <input type="text" class="form-control form-control-sm mb-2" id="beneficiarySearch" placeholder="Search by name...">
-                <div class="border rounded sms-beneficiary-list" id="beneficiaryList">
+                <div class="border rounded sms-beneficiary-list modern-filter-list" id="beneficiaryList">
                     <div class="text-center text-muted py-4">
                         <span class="spinner-border spinner-border-sm me-1"></span> Loading...
                     </div>
@@ -385,7 +385,7 @@
             <h5 class="mb-3"><i class="bi bi-clock-history me-2"></i>SMS History</h5>
 
             {{-- Filter Bar --}}
-            <div class="row g-2 mb-3">
+            <div class="row g-2 mb-3 modern-filter-grid">
                 <div class="col-md-3">
                     <input type="text" class="form-control form-control-sm" id="historySearch" placeholder="Search..." value="{{ request('search') }}">
                 </div>
@@ -402,7 +402,7 @@
                 <div class="col-md-2">
                     <input type="date" class="form-control form-control-sm" id="historyDateTo" value="{{ request('date_to') }}">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-3 modern-filter-actions">
                     <button type="button" class="btn btn-sm btn-primary" id="historyFilterBtn"><i class="bi bi-search me-1"></i>Filter</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary" id="historyClearBtn">Reset</button>
                 </div>

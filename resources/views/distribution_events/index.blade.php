@@ -7,16 +7,16 @@
 @endsection
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid module-page">
 
     {{-- Page Header --}}
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-1">
         <div>
             <h1 class="h3 mb-0">Distribution Events</h1>
-            <p class="text-muted mb-0">Manage resource distribution events across barangays</p>
+            <p class="text-muted mb-0">Manage distribution schedules and release progress by barangay</p>
         </div>
         @if(in_array(Auth::user()->role, ['admin', 'staff']))
-            <a href="{{ route('distribution-events.create') }}" class="btn btn-success">
+            <a href="{{ route('distribution-events.create') }}" class="btn btn-success btn-sm">
                 <i class="bi bi-plus-lg me-1"></i> Create New Event
             </a>
         @endif
@@ -32,7 +32,7 @@
                     </div>
                     <div>
                         <div class="text-muted small">Total Events</div>
-                        <div class="fs-4 fw-bold">{{ number_format($total) }}</div>
+                        <div class="fs-5 fw-bold">{{ number_format($total) }}</div>
                     </div>
                 </div>
             </div>
@@ -45,7 +45,7 @@
                     </div>
                     <div>
                         <div class="text-muted small">Pending</div>
-                        <div class="fs-4 fw-bold">{{ number_format($pending) }}</div>
+                        <div class="fs-5 fw-bold">{{ number_format($pending) }}</div>
                     </div>
                 </div>
             </div>
@@ -58,7 +58,7 @@
                     </div>
                     <div>
                         <div class="text-muted small">Ongoing</div>
-                        <div class="fs-4 fw-bold">{{ number_format($ongoing) }}</div>
+                        <div class="fs-5 fw-bold">{{ number_format($ongoing) }}</div>
                     </div>
                 </div>
             </div>
@@ -71,7 +71,7 @@
                     </div>
                     <div>
                         <div class="text-muted small">Completed</div>
-                        <div class="fs-4 fw-bold">{{ number_format($completed) }}</div>
+                        <div class="fs-5 fw-bold">{{ number_format($completed) }}</div>
                     </div>
                 </div>
             </div>
@@ -84,7 +84,7 @@
                     </div>
                     <div>
                         <div class="text-muted small">Financial Events</div>
-                        <div class="fs-4 fw-bold">{{ number_format($totalFinancialEvents) }}</div>
+                        <div class="fs-5 fw-bold">{{ number_format($totalFinancialEvents) }}</div>
                     </div>
                 </div>
             </div>
@@ -105,10 +105,10 @@
     </div>
 
     {{-- Filter Bar --}}
-    <div class="card border-0 shadow-sm mb-4">
+    <div class="card border-0 shadow-sm mb-4 modern-filter-card">
         <div class="card-body">
             <form method="GET" action="{{ route('distribution-events.index') }}">
-                <div class="row g-2 align-items-end">
+                <div class="row g-2 align-items-end modern-filter-grid">
                     <div class="col-xl-3 col-lg-3 col-md-6">
                         <label class="form-label">Program</label>
                         <select class="form-select" name="program_name_id">
@@ -155,7 +155,7 @@
                             <option value="status_desc" {{ request('sort') === 'status_desc' ? 'selected' : '' }}>Status: Z-A</option>
                         </select>
                     </div>
-                    <div class="col-xl-3 col-lg-3 col-md-12 d-flex gap-2">
+                    <div class="col-xl-3 col-lg-3 col-md-12 modern-filter-actions">
                         <button type="submit" class="btn btn-success">
                             <i class="bi bi-funnel me-1"></i> Apply
                         </button>
@@ -274,3 +274,41 @@
 </div>
 
 @endsection
+
+@push('styles')
+<style>
+.module-page .h3 {
+    font-size: 1.5rem;
+    font-weight: 650;
+}
+
+.module-page .card {
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+}
+
+.module-page .card.shadow-sm {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+.module-page .form-control,
+.module-page .form-select,
+.module-page .btn {
+    border-radius: 10px;
+}
+
+.module-page .btn {
+    font-size: 0.875rem;
+}
+
+.module-page .table thead th {
+    font-size: 0.78rem;
+    letter-spacing: 0.2px;
+    color: #4b5563;
+}
+
+.module-page .table tbody td {
+    font-size: 0.9rem;
+}
+</style>
+@endpush

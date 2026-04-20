@@ -12,97 +12,87 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 32px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 24px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #e5e7eb;
         }
 
         .dashboard-header h1 {
-            font-size: 32px;
-            font-weight: 700;
+            font-size: 28px;
+            font-weight: 650;
             margin: 0;
             color: #1a1d29;
         }
 
         .dashboard-date {
-            font-size: 13px;
+            font-size: 12px;
             color: #6c757d;
             font-weight: 500;
             background: #f8f9fa;
-            padding: 8px 16px;
+            padding: 6px 12px;
             border-radius: 8px;
+            border: 1px solid #e5e7eb;
         }
 
         .section-header {
             display: flex;
             align-items: center;
-            margin: 32px 0 20px 0;
+            margin: 24px 0 14px 0;
             gap: 8px;
         }
 
         .section-header h6 {
             margin: 0;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #6c757d;
+            letter-spacing: 0.2px;
+            color: #4b5563;
         }
 
         .section-header i {
-            color: #0d6efd;
-            font-size: 16px;
+            color: #6b7280;
+            font-size: 14px;
         }
 
         /* Main KPI Cards */
         .kpi-master {
             background: white;
-            border-radius: 14px;
-            padding: 24px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e9ecef;
-            transition: all 0.3s ease;
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s ease;
             position: relative;
             overflow: hidden;
         }
 
-        .kpi-master::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--gradient, linear-gradient(90deg, #0d6efd, #0a58ca));
-        }
-
         .kpi-master:hover {
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
-            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            transform: translateY(-1px);
         }
 
         .kpi-content {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
         }
 
         .kpi-icon {
-            width: 64px;
-            height: 64px;
-            border-radius: 14px;
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 32px;
-            background: var(--icon-bg, rgba(13, 110, 253, 0.1));
-            color: var(--icon-color, #0d6efd);
+            font-size: 22px;
+            background: #f3f4f6;
+            color: #374151;
             flex-shrink: 0;
         }
 
         .kpi-text h3 {
             margin: 0;
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 700;
             color: #1a1d29;
             line-height: 1;
@@ -118,10 +108,10 @@
         /* Progress Bar Cards */
         .progress-card {
             background: white;
-            border-radius: 14px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e7eb;
         }
 
         .progress-card-header {
@@ -140,7 +130,7 @@
         }
 
         .progress-value {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 700;
             color: var(--color, #0d6efd);
         }
@@ -168,33 +158,32 @@
         /* Chart Cards */
         .chart-card {
             background: white;
-            border-radius: 14px;
-            padding: 24px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e7eb;
         }
 
         .chart-card-title {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             color: #1a1d29;
-            margin-bottom: 20px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            letter-spacing: 0.2px;
         }
 
         /* Mini Cards */
         .mini-stat {
             background: white;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 14px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e7eb;
             text-align: center;
         }
 
         .mini-stat-value {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 700;
             color: #1a1d29;
             line-height: 1;
@@ -245,11 +234,6 @@
                 gap: 12px;
             }
 
-            .kpi-content {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
             .section-header {
                 margin-top: 24px;
             }
@@ -259,7 +243,7 @@
     {{-- HEADER --}}
     <div class="dashboard-header">
         <h1>Dashboard</h1>
-        <span class="dashboard-date">📅 {{ now()->format('F d, Y • l') }}</span>
+        <span class="dashboard-date">{{ now()->format('F d, Y • l') }}</span>
     </div>
 
     {{-- SECTION 1: CRITICAL METRICS --}}
@@ -270,7 +254,7 @@
     <div class="row g-3 mb-4">
         {{-- Completion Rate --}}
         <div class="col-lg-3 col-md-6">
-            <div class="kpi-master" style="--gradient: linear-gradient(135deg, #198754, #146c43); --icon-bg: rgba(25, 135, 84, 0.1); --icon-color: #198754;">
+            <div class="kpi-master">
                 <div class="kpi-content">
                     <div class="kpi-icon">
                         <i class="bi bi-check-circle-fill"></i>
@@ -285,7 +269,7 @@
 
         {{-- Coverage Reached --}}
         <div class="col-lg-3 col-md-6">
-            <div class="kpi-master" style="--gradient: linear-gradient(135deg, #0dcaf0, #0aa2c0); --icon-bg: rgba(13, 202, 240, 0.1); --icon-color: #0dcaf0;">
+            <div class="kpi-master">
                 <div class="kpi-content">
                     <div class="kpi-icon">
                         <i class="bi bi-people-check"></i>
@@ -300,7 +284,7 @@
 
         {{-- Total Disbursed --}}
         <div class="col-lg-3 col-md-6">
-            <div class="kpi-master" style="--gradient: linear-gradient(135deg, #0d6efd, #0a58ca); --icon-bg: rgba(13, 110, 253, 0.1); --icon-color: #0d6efd;">
+            <div class="kpi-master">
                 <div class="kpi-content">
                     <div class="kpi-icon">
                         <i class="bi bi-cash-stack"></i>
@@ -315,7 +299,7 @@
 
         {{-- Events Completed --}}
         <div class="col-lg-3 col-md-6">
-            <div class="kpi-master" style="--gradient: linear-gradient(135deg, #fd7e14, #dc6b13); --icon-bg: rgba(253, 126, 20, 0.1); --icon-color: #fd7e14;">
+            <div class="kpi-master">
                 <div class="kpi-content">
                     <div class="kpi-icon">
                         <i class="bi bi-calendar-check"></i>
@@ -339,7 +323,7 @@
         <div class="col-lg-4">
             <div class="progress-card">
                 <div class="progress-card-header">
-                    <span class="progress-card-label">💰 Financial Utilization</span>
+                    <span class="progress-card-label">Financial Utilization</span>
                     <span class="progress-value" style="--color: #0d6efd;">{{ number_format($financialUtilizationRate, 1) }}%</span>
                 </div>
                 <div class="progress-bar-custom">
@@ -353,7 +337,7 @@
         <div class="col-lg-4">
             <div class="progress-card">
                 <div class="progress-card-header">
-                    <span class="progress-card-label">📍 Coverage Gap</span>
+                    <span class="progress-card-label">Coverage Gap</span>
                     <span class="progress-value" style="--color: #dc3545;">{{ number_format($coverageGap['percentage'], 1) }}%</span>
                 </div>
                 <div class="progress-bar-custom">
@@ -367,7 +351,7 @@
         <div class="col-lg-4">
             <div class="progress-card">
                 <div class="progress-card-header">
-                    <span class="progress-card-label">📋 Allocation Rate</span>
+                    <span class="progress-card-label">Allocation Rate</span>
                     <span class="progress-value" style="--color: #198754;">{{ number_format(($totalEventAllocations + $totalDirectAllocations) > 0 ? (($eventDistributed + $directReleased) / ($totalEventAllocations + $totalDirectAllocations)) * 100 : 0, 1) }}%</span>
                 </div>
                 <div class="progress-bar-custom">
@@ -387,8 +371,8 @@
         {{-- Beneficiary Breakdown --}}
         <div class="col-lg-4 col-md-6">
             <div class="chart-card">
-                <div class="chart-card-title">👥 Beneficiary Classification</div>
-                <div style="position: relative; height: 200px;">
+                <div class="chart-card-title">Beneficiary Classification</div>
+                <div style="position: relative; height: 180px;">
                     <canvas id="beneficiaryChart"></canvas>
                 </div>
             </div>
@@ -397,8 +381,8 @@
         {{-- Allocation Method --}}
         <div class="col-lg-4 col-md-6">
             <div class="chart-card">
-                <div class="chart-card-title">📊 Allocation Method</div>
-                <div style="position: relative; height: 200px;">
+                <div class="chart-card-title">Allocation Method</div>
+                <div style="position: relative; height: 180px;">
                     <canvas id="allocationMethodChart"></canvas>
                 </div>
             </div>
@@ -407,8 +391,8 @@
         {{-- Event Status --}}
         <div class="col-lg-4 col-md-6">
             <div class="chart-card">
-                <div class="chart-card-title">📅 Event Status</div>
-                <div style="position: relative; height: 200px;">
+                <div class="chart-card-title">Event Status</div>
+                <div style="position: relative; height: 180px;">
                     <canvas id="eventStatusChart"></canvas>
                 </div>
             </div>
@@ -456,8 +440,8 @@
         {{-- Resource Type Distribution --}}
         <div class="col-lg-6">
             <div class="chart-card">
-                <div class="chart-card-title">🏭 Resource Type Distribution</div>
-                <div style="position: relative; height: 280px;">
+                <div class="chart-card-title">Resource Type Distribution</div>
+                <div style="position: relative; height: 240px;">
                     <canvas id="resourceTypeChart"></canvas>
                 </div>
             </div>
@@ -466,8 +450,8 @@
         {{-- Assistance Purpose Distribution --}}
         <div class="col-lg-6">
             <div class="chart-card">
-                <div class="chart-card-title">🎯 Assistance Purpose</div>
-                <div style="position: relative; height: 280px;">
+                <div class="chart-card-title">Assistance Purpose</div>
+                <div style="position: relative; height: 240px;">
                     <canvas id="assistancePurposeChart"></canvas>
                 </div>
             </div>
@@ -479,8 +463,8 @@
         {{-- Geographic Coverage --}}
         <div class="col-lg-6">
             <div class="chart-card">
-                <div class="chart-card-title">📍 Coverage by Barangay</div>
-                <div style="position: relative; height: 280px;">
+                <div class="chart-card-title">Coverage by Barangay</div>
+                <div style="position: relative; height: 240px;">
                     <canvas id="barangayChart"></canvas>
                 </div>
             </div>
@@ -489,8 +473,8 @@
         {{-- Monthly Trend --}}
         <div class="col-lg-6">
             <div class="chart-card">
-                <div class="chart-card-title">📈 Distribution Trend (Last 6 Months)</div>
-                <div style="position: relative; height: 280px;">
+                <div class="chart-card-title">Distribution Trend (Last 6 Months)</div>
+                <div style="position: relative; height: 240px;">
                     <canvas id="monthlyTrendChart"></canvas>
                 </div>
             </div>
@@ -502,9 +486,33 @@
         <i class="bi bi-bar-chart-line"></i>
         <h6>Top Programs by Reach</h6>
     </div>
-    <div class="chart-card">
-        <div style="position: relative; height: 360px;">
+    <div class="chart-card mb-4">
+        <div style="position: relative; height: 300px;">
             <canvas id="topProgramsChart"></canvas>
+        </div>
+    </div>
+
+    {{-- SECTION 7: ADDITIONAL IMPORTANT VISUALIZATIONS --}}
+    <div class="section-header">
+        <i class="bi bi-graph-up-arrow"></i>
+        <h6>Additional Important Visualizations</h6>
+    </div>
+    <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+            <div class="chart-card">
+                <div class="chart-card-title">Program Disbursement Amount (Top 7)</div>
+                <div style="position: relative; height: 260px;">
+                    <canvas id="programDisbursementChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="chart-card">
+                <div class="chart-card-title">Monthly Release Method Trend</div>
+                <div style="position: relative; height: 260px;">
+                    <canvas id="methodTrendChart"></canvas>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -737,7 +745,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         intersect: false,
                         callbacks: {
                             title: function(context) {
-                                return '📊 ' + (context[0]?.label || 'Program');
+                                return context[0]?.label || 'Program';
                             },
                             label: function(context) {
                                 const value = context.parsed.x;
@@ -904,7 +912,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         ...tooltipConfig,
                         callbacks: {
                             title: function(context) {
-                                return '📍 ' + (context[0]?.label || 'Barangay');
+                                return context[0]?.label || 'Barangay';
                             },
                             label: function(context) {
                                 const value = context.parsed.x;
@@ -970,7 +978,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         ...tooltipConfig,
                         callbacks: {
                             title: function(context) {
-                                return '📅 ' + (context[0]?.label || 'Month');
+                                return context[0]?.label || 'Month';
                             },
                             label: function(context) {
                                 const value = context.parsed.y;
@@ -983,6 +991,138 @@ document.addEventListener('DOMContentLoaded', function () {
                     y: {
                         beginAtZero: true,
                         ticks: { font: { size: 11 }, color: '#6c757d', callback: function(value) { return value.toLocaleString(); } },
+                        grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false }
+                    },
+                    x: {
+                        ticks: { font: { size: 11, weight: '500' }, color: '#1a1d29' },
+                        grid: { display: false, drawBorder: false }
+                    }
+                }
+            }
+        });
+    }
+});
+
+// 9. PROGRAM DISBURSEMENT AMOUNT
+document.addEventListener('DOMContentLoaded', function () {
+    const disbursementData = @json($programDisbursementChart ?? ['labels' => [], 'data' => []]);
+    if (disbursementData.data && disbursementData.data.length > 0) {
+        const ctx = document.getElementById('programDisbursementChart');
+        const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, 'rgba(111, 66, 193, 0.85)');
+        gradient.addColorStop(1, 'rgba(111, 66, 193, 0.25)');
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: disbursementData.labels,
+                datasets: [{
+                    label: 'Disbursed Amount',
+                    data: disbursementData.data,
+                    backgroundColor: gradient,
+                    borderColor: 'rgba(111, 66, 193, 1)',
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        ...tooltipConfig,
+                        callbacks: {
+                            title: function(context) {
+                                return 'Program: ' + (context[0]?.label || 'N/A');
+                            },
+                            label: function(context) {
+                                return 'Amount: ₱' + Number(context.parsed.x || 0).toLocaleString();
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            font: { size: 11 },
+                            color: '#6c757d',
+                            callback: function(value) { return '₱' + Number(value).toLocaleString(); }
+                        },
+                        grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false }
+                    },
+                    y: {
+                        ticks: { font: { size: 11, weight: '500' }, color: '#1a1d29' },
+                        grid: { display: false, drawBorder: false }
+                    }
+                }
+            }
+        });
+    }
+});
+
+// 10. MONTHLY RELEASE METHOD TREND
+document.addEventListener('DOMContentLoaded', function () {
+    const methodTrend = @json($monthlyReleaseMethodTrend ?? ['labels' => [], 'event' => [], 'direct' => []]);
+    if (methodTrend.labels && methodTrend.labels.length > 0) {
+        new Chart(document.getElementById('methodTrendChart'), {
+            type: 'line',
+            data: {
+                labels: methodTrend.labels,
+                datasets: [
+                    {
+                        label: 'Event-Based',
+                        data: methodTrend.event,
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, 0.15)',
+                        borderWidth: 3,
+                        tension: 0.35,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: false,
+                    },
+                    {
+                        label: 'Direct',
+                        data: methodTrend.direct,
+                        borderColor: '#198754',
+                        backgroundColor: 'rgba(25, 135, 84, 0.15)',
+                        borderWidth: 3,
+                        tension: 0.35,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: false,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { size: 11, weight: '500' }, padding: 14, color: '#6c757d' }
+                    },
+                    tooltip: {
+                        ...tooltipConfig,
+                        callbacks: {
+                            title: function(context) {
+                                return 'Month: ' + (context[0]?.label || 'N/A');
+                            },
+                            label: function(context) {
+                                return (context.dataset.label || 'Series') + ': ' + Number(context.parsed.y || 0).toLocaleString() + ' allocations';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { font: { size: 11 }, color: '#6c757d', callback: function(value) { return Number(value).toLocaleString(); } },
                         grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false }
                     },
                     x: {

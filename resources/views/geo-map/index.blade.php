@@ -71,10 +71,10 @@
             <p class="text-muted small mb-0">E.B. Magalona, Negros Occidental - Interactive Geo-Located Resource Allocation Overview</p>
         </div>
         <div class="filters-bar">
-            <div class="filter-group">
+            <div class="filter-group modern-filter-grid">
                 <div class="filter-item" style="flex: 1; min-width: 150px;">
                     <label for="agencyFilter">Agency</label>
-                    <select id="agencyFilter" class="form-select form-select-sm">
+                    <select id="agencyFilter" class="form-select form-select-sm modern-filter-select">
                         <option value="">All Agencies</option>
                         @foreach($agencies as $agency)
                             <option value="{{ $agency->id }}">{{ $agency->name }}</option>
@@ -83,7 +83,7 @@
                 </div>
                 <div class="filter-item" style="flex: 1; min-width: 150px;">
                     <label for="statusFilter">Status</label>
-                    <select id="statusFilter" class="form-select form-select-sm">
+                    <select id="statusFilter" class="form-select form-select-sm modern-filter-select">
                         <option value="">All Statuses</option>
                         <option value="completed">Completed</option>
                         <option value="ongoing">Ongoing</option>
@@ -93,7 +93,7 @@
                 </div>
                 <div class="filter-item" style="flex: 1; min-width: 150px;">
                     <label for="sectorFilter">Beneficiary Type</label>
-                    <select id="sectorFilter" class="form-select form-select-sm">
+                    <select id="sectorFilter" class="form-select form-select-sm modern-filter-select">
                         <option value="">All Types</option>
                         <option value="farmer">Farmer</option>
                         <option value="fisherfolk">Fisherfolk</option>

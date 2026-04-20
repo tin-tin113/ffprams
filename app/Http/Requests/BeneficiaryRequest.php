@@ -178,6 +178,8 @@ class BeneficiaryRequest extends FormRequest
                 },
             ],
             'custom_fields'    => ['nullable', 'array'],
+            'cloa_ep_availability_status' => ['nullable', 'in:provided,not_available_yet,not_applicable,to_be_verified'],
+            'cloa_ep_unavailability_reason' => ['nullable', 'string', 'max:500'],
 
             // Association membership (common to all)
             'association_member' => ['required', 'boolean'],
@@ -222,7 +224,9 @@ class BeneficiaryRequest extends FormRequest
 
             // DAR with Farmer classification
             if ($agencyName === 'DAR' && $classification === 'Farmer') {
-                $rules['cloa_ep_number'] = ['required', 'string', 'max:100', Rule::unique('beneficiaries', 'cloa_ep_number')->ignore($beneficiaryId)];
+                $rules['cloa_ep_number'] = ['nullable', 'string', 'max:100', Rule::unique('beneficiaries', 'cloa_ep_number')->ignore($beneficiaryId)];
+                $rules['cloa_ep_availability_status'] = ['required', 'in:provided,not_available_yet,not_applicable,to_be_verified'];
+                $rules['cloa_ep_unavailability_reason'] = ['nullable', 'string', 'max:500'];
                 $rules['arb_classification'] = [$arbClassificationRequired ? 'required' : 'nullable', Rule::in($arbClassificationValues)];
                 $rules['landholding_description'] = ['required', 'string', 'max:1000'];
                 $rules['land_area_awarded_hectares'] = ['required', 'numeric', 'min:0.01'];
@@ -725,6 +729,33 @@ class BeneficiaryRequest extends FormRequest
             $selectedAgencies = \App\Models\Agency::whereIn('id', $selectedAgencyIds)->get();
             $classification = (string) $this->input('classification', '');
             $allowedAgencySections = $this->allowedAgencyFormSections($classification);
+
+            $hasDarForFarmer = strtolower($classification) === 'farmer'
+                && $selectedAgencies->contains(fn ($agency) => strtoupper((string) $agency->name) === 'DAR');
+
+            if ($hasDarForFarmer) {
+                $status = (string) $this->input('cloa_ep_availability_status', '');
+                $cloaNumber = $this->input('cloa_ep_number');
+                $cloaReason = $this->input('cloa_ep_unavailability_reason');
+                $validStatuses = ['provided', 'not_available_yet', 'not_applicable', 'to_be_verified'];
+
+                if (! in_array($status, $validStatuses, true)) {
+                    $validator->errors()->add(
+                        'cloa_ep_availability_status',
+                        'Please select CLOA/EP availability status.'
+                    );
+                } elseif ($status === 'provided' && empty($cloaNumber)) {
+                    $validator->errors()->add(
+                        'cloa_ep_number',
+                        'CLOA/EP number is required when status is set to Provided.'
+                    );
+                } elseif ($status !== 'provided' && empty($cloaReason)) {
+                    $validator->errors()->add(
+                        'cloa_ep_unavailability_reason',
+                        'Please provide a reason when CLOA/EP number is not marked as Provided.'
+                    );
+                }
+            }
 
             foreach ($selectedAgencies as $agency) {
                 $agencyFormFields = $agency->formFields()

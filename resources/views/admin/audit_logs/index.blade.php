@@ -117,12 +117,12 @@
         <div class="small mt-1">Examples: login, logout, profile updated, beneficiary created, event status updated.</div>
     </div>
 
-    <div class="card border-0 shadow-sm mb-4">
+    <div class="card border-0 shadow-sm mb-4 modern-filter-card">
         <div class="card-header bg-white fw-semibold">
             <i class="bi bi-funnel me-1"></i> Find Activity
         </div>
         <div class="card-body">
-            <form method="GET" action="{{ route('admin.audit-logs.index') }}" class="row g-3">
+            <form method="GET" action="{{ route('admin.audit-logs.index') }}" class="row g-3 modern-filter-grid">
                 <div class="col-md-3">
                     <label class="form-label">Person</label>
                     <select name="user_id" class="form-select">
@@ -169,7 +169,7 @@
                     <input type="date" class="form-control" name="to" value="{{ request('to') }}">
                 </div>
 
-                <div class="col-12 d-flex gap-2">
+                <div class="col-12 col-md-2 modern-filter-actions">
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-search me-1"></i> Search
                     </button>
