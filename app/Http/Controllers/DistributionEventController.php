@@ -222,6 +222,8 @@ class DistributionEventController extends Controller
             : [];
 
         $completionComplianceReady = empty($completionComplianceIssues);
+        $unmarkedBeneficiariesCount = $event->unmarkedAllocationsCount();
+        $allBeneficiariesMarked = $unmarkedBeneficiariesCount === 0;
 
         return view('distribution_events.show', compact(
             'event',
@@ -230,6 +232,8 @@ class DistributionEventController extends Controller
             'availableBeneficiaries',
             'completionComplianceIssues',
             'completionComplianceReady',
+            'unmarkedBeneficiariesCount',
+            'allBeneficiariesMarked',
         ));
     }
 
@@ -456,6 +460,13 @@ class DistributionEventController extends Controller
         if ($newStatus === 'Ongoing' && ! $event->isBeneficiaryListApproved()) {
             return redirect()->back()
                 ->with('error', 'Approve the beneficiary list before starting this event.');
+        }
+
+        if ($newStatus === 'Completed' && ! $event->hasAllBeneficiariesMarked()) {
+            $remainingUnmarked = $event->unmarkedAllocationsCount();
+
+            return redirect()->back()
+                ->with('error', "Event cannot be marked as Completed until all beneficiaries are marked as Released or Not Received. Remaining unmarked beneficiaries: {$remainingUnmarked}.");
         }
 
         if ($newStatus === 'Completed' && $event->isFinancial()) {

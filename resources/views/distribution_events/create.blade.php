@@ -444,16 +444,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function toggleType() {
         const isFinancial = document.querySelector('input[name="type"]:checked').value === 'financial';
+        const financialFields = financialComplianceFields
+            ? financialComplianceFields.querySelectorAll('input, select, textarea')
+            : [];
 
         // Show/hide total fund amount
         if (isFinancial) {
             totalFundGroup.classList.remove('d-none');
             totalFundInput.required = true;
+            totalFundInput.disabled = false;
             financialComplianceFields.classList.remove('d-none');
+            financialFields.forEach(function (field) {
+                field.disabled = false;
+            });
         } else {
             totalFundGroup.classList.add('d-none');
             totalFundInput.required = false;
+            totalFundInput.disabled = true;
             financialComplianceFields.classList.add('d-none');
+            financialFields.forEach(function (field) {
+                field.disabled = true;
+                field.required = false;
+            });
         }
 
         updateComplianceDependencies();
@@ -507,9 +519,11 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        const showReason = overallComplianceStatus.value !== 'provided';
+        const isFinancial = document.querySelector('input[name="type"]:checked').value === 'financial';
+        const showReason = isFinancial && overallComplianceStatus.value !== 'provided';
         overallComplianceReasonGroup.classList.toggle('d-none', !showReason);
         if (overallComplianceReason) {
+            overallComplianceReason.disabled = !isFinancial;
             overallComplianceReason.required = showReason;
         }
     }

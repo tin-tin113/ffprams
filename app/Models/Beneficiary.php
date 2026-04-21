@@ -42,6 +42,7 @@ class Beneficiary extends Model
         'civil_status',
         'highest_education',
         'id_type',
+        'id_number',
         'association_member',
         'association_name',
 

@@ -224,7 +224,9 @@ class BeneficiaryRequest extends FormRequest
             'photo_path'       => ['nullable', 'string', 'max:255'],
             'civil_status'     => [$civilStatusRequired ? 'required' : 'nullable', Rule::in($civilStatusValues)],
             'highest_education'=> [$highestEducationRequired ? 'required' : 'nullable', Rule::in($highestEducationValues)],
-            'id_type'          => ['nullable', 'string', 'max:100'],
+            'government_id_availability_status' => ['nullable', 'in:available,not_available'],
+            'id_type'          => ['nullable', 'required_if:government_id_availability_status,available', 'string', 'max:100'],
+            'id_number'        => ['nullable', 'required_if:government_id_availability_status,available', 'string', 'max:100'],
             'status'           => ['required', Rule::in(['Active', 'Inactive'])],
             'registered_at'    => ['required', 'date', 'before_or_equal:today'],
             'classification'   => [

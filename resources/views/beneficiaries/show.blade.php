@@ -92,6 +92,7 @@
                 <i class="bi bi-arrow-left"></i>
             </a>
             <div>
+                <h1 class="h3 mb-1">{{ $beneficiary->full_name }}</h1>
                 <div class="d-flex flex-wrap gap-2">
                     @php
                         $classBadge = match($beneficiary->classification) {
@@ -177,6 +178,10 @@
                 <div class="col-md-4">
                     <div class="text-muted small">ID Type</div>
                     <div class="fw-semibold">{{ $beneficiary->id_type ?? '—' }}</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted small">ID Number</div>
+                    <div class="fw-semibold">{{ $beneficiary->id_number ?? '—' }}</div>
                 </div>
                 <div class="col-md-4">
                     <div class="text-muted small">Contact Number</div>

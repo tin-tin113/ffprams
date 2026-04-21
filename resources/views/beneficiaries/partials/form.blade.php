@@ -135,6 +135,16 @@
         'College',
         'Post Graduate',
     ]);
+    $idTypeOptions = $normalizeFieldOptions($fo['id_type'] ?? [], [
+        'PhilSys ID',
+        "Voter's ID",
+        "Driver's License",
+        'Passport',
+        'Senior Citizen ID',
+        'PWD ID',
+        'Postal ID',
+        'TIN ID',
+    ]);
     $farmOwnershipOptions = $normalizeFieldOptions($fo['farm_ownership'] ?? [], ['Registered Owner', 'Tenant', 'Lessee']);
     $farmTypeOptions = $normalizeFieldOptions($fo['farm_type'] ?? [], ['Irrigated', 'Rainfed Upland', 'Rainfed Lowland']);
     $fisherfolkTypeOptions = $normalizeFieldOptions($fo['fisherfolk_type'] ?? [], ['Capture Fishing', 'Aquaculture', 'Post-Harvest']);
@@ -161,6 +171,10 @@
         filled($beneficiary->cloa_ep_number ?? null)
             ? 'provided'
             : (filled($beneficiary->cloa_ep_unavailability_reason ?? null) ? 'not_available_yet' : 'provided')
+    );
+    $governmentIdAvailabilityStatus = old(
+        'government_id_availability_status',
+        (filled($beneficiary->id_type ?? null) || filled($beneficiary->id_number ?? null)) ? 'available' : 'not_available'
     );
 
     $firstNameValue = old('first_name', $beneficiary->first_name ?? '');
@@ -321,6 +335,39 @@
                     @endforeach
                 </select>
                 @error('highest_education')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+
+            <div class="col-12 col-md-3">
+                <label for="government_id_availability_status" class="form-label">Government ID Availability</label>
+                <select class="form-select @error('government_id_availability_status') is-invalid @enderror"
+                        id="government_id_availability_status"
+                        name="government_id_availability_status">
+                    <option value="available" {{ $governmentIdAvailabilityStatus === 'available' ? 'selected' : '' }}>Available</option>
+                    <option value="not_available" {{ $governmentIdAvailabilityStatus === 'not_available' ? 'selected' : '' }}>Not Available</option>
+                </select>
+                @error('government_id_availability_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+
+            <div id="government-id-fields-wrapper" class="contents {{ $governmentIdAvailabilityStatus === 'available' ? '' : 'd-none' }}">
+                <div class="col-12 col-md-3">
+                    <label for="id_type" class="form-label">Government ID Type</label>
+                    <select class="form-select @error('id_type') is-invalid @enderror" id="id_type" name="id_type">
+                        <option value="" {{ old('id_type', $beneficiary->id_type ?? '') === '' ? 'selected' : '' }}>Select ID type...</option>
+                        @foreach($idTypeOptions as $opt)
+                            <option value="{{ $opt->value }}" {{ old('id_type', $beneficiary->id_type ?? '') === $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
+                        @endforeach
+                    </select>
+                    @error('id_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label for="id_number" class="form-label">ID Number</label>
+                    <input type="text" class="form-control @error('id_number') is-invalid @enderror"
+                           id="id_number" name="id_number" maxlength="100"
+                           value="{{ old('id_number', $beneficiary->id_number ?? '') }}"
+                           placeholder="Enter ID number">
+                    @error('id_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
             </div>
 
             {{-- Contact Number --}}
@@ -789,6 +836,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const cloaReasonWrapper = document.getElementById('cloa-ep-reason-wrapper');
     const cloaNumberField = document.getElementById('cloa_ep_number');
     const cloaReasonField = document.getElementById('cloa_ep_unavailability_reason');
+    const governmentIdAvailabilitySelect = document.getElementById('government_id_availability_status');
+    const governmentIdFieldsWrapper = document.getElementById('government-id-fields-wrapper');
+    const idTypeField = document.getElementById('id_type');
+    const idNumberField = document.getElementById('id_number');
 
     function getSelectedAgencyNames() {
         return Array.from(document.querySelectorAll('#agency-checkboxes .agency-checkbox:checked'))
@@ -991,6 +1042,29 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function toggleGovernmentIdFields() {
+        if (!governmentIdAvailabilitySelect || !governmentIdFieldsWrapper) {
+            return;
+        }
+
+        const isAvailable = governmentIdAvailabilitySelect.value === 'available';
+        governmentIdFieldsWrapper.classList.toggle('d-none', !isAvailable);
+
+        if (idTypeField) {
+            idTypeField.required = isAvailable;
+            if (!isAvailable) {
+                idTypeField.setCustomValidity('');
+            }
+        }
+
+        if (idNumberField) {
+            idNumberField.required = isAvailable;
+            if (!isAvailable) {
+                idNumberField.setCustomValidity('');
+            }
+        }
+    }
+
     // Event listeners
     if (classificationSelect) {
         classificationSelect.addEventListener('change', updateSections);
@@ -1020,6 +1094,10 @@ document.addEventListener('DOMContentLoaded', function () {
         cloaAvailabilitySelect.addEventListener('change', toggleCloaAvailability);
     }
 
+    if (governmentIdAvailabilitySelect) {
+        governmentIdAvailabilitySelect.addEventListener('change', toggleGovernmentIdFields);
+    }
+
     // Initial setup
     updateSections();
     toggleAssociation();
@@ -1027,6 +1105,7 @@ document.addEventListener('DOMContentLoaded', function () {
     toggleRsbsaAvailability();
     toggleFishrAvailability();
     toggleCloaAvailability();
+    toggleGovernmentIdFields();
 });
 </script>
 @endpush

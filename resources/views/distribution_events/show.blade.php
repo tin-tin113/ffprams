@@ -56,6 +56,7 @@
                 <i class="bi bi-arrow-left"></i>
             </a>
             <div>
+                <h1 class="h3 mb-1">{{ $event->barangay->name }}</h1>
                 <div class="d-flex gap-2 align-items-center">
                     <span class="badge {{ $statusBadge }}">{{ $event->status }}</span>
                     <span class="badge {{ $agencyBadge }}">{{ $agencyName }}</span>
@@ -106,7 +107,9 @@
                         data-bs-target="#statusModal"
                         data-status="Completed"
                         data-title="Mark as Completed"
-                        data-message="Are you sure you want to mark this event as Completed? This action cannot be reversed.">
+                        data-message="Are you sure you want to mark this event as Completed? This action cannot be reversed."
+                        title="{{ ! $allBeneficiariesMarked ? 'Mark all beneficiaries as Released or Not Received first.' : (! $completionComplianceReady ? 'Complete all required compliance items first.' : '') }}"
+                        {{ ($allBeneficiariesMarked && $completionComplianceReady) ? '' : 'disabled' }}>
                     <i class="bi bi-check-circle me-1"></i> Mark as Completed
                 </button>
             @endif
@@ -213,6 +216,19 @@
             </div>
         </div>
     </div>
+
+    @if($event->status === 'Ongoing' && ! $allBeneficiariesMarked)
+        <div class="alert alert-warning d-flex align-items-start gap-2 mb-4">
+            <i class="bi bi-exclamation-triangle-fill mt-1"></i>
+            <div>
+                <strong>Completion Readiness:</strong>
+                Mark all beneficiaries as <em>Released</em> or <em>Not Received</em> before setting this event to Completed.
+                <div class="small text-muted mt-1">
+                    Remaining unmarked beneficiaries: {{ number_format($unmarkedBeneficiariesCount) }}
+                </div>
+            </div>
+        </div>
+    @endif
 
     @if($event->isFinancial())
         <div class="card border-0 shadow-sm mb-4">
@@ -661,7 +677,7 @@
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
                     <button type="button" class="btn btn-outline-success btn-sm" data-bulk-release-action="distributed">
-                        <i class="bi bi-check2-all me-1"></i> Mark Selected as {{ $event->isFinancial() ? 'Claimed' : 'Distributed' }}
+                        <i class="bi bi-check2-all me-1"></i> Mark Selected as Released
                     </button>
                     <button type="button" class="btn btn-outline-danger btn-sm" data-bulk-release-action="not_received">
                         <i class="bi bi-x-circle me-1"></i> Mark Selected as Not Received
@@ -704,7 +720,7 @@
                             @else
                                 <th>Quantity</th>
                             @endif
-                            <th>Distributed At</th>
+                            <th>Released At</th>
                             <th>Remarks</th>
                             <th class="text-end">Actions</th>
                         </tr>
@@ -757,7 +773,7 @@
                                             Not Received
                                         </span>
                                     @else
-                                        <span class="text-muted">Not yet {{ $event->isFinancial() ? 'claimed' : 'distributed' }}</span>
+                                        <span class="text-muted">Not yet released</span>
                                     @endif
                                 </td>
                                 <td>{{ $allocation->remarks ?? '—' }}</td>
@@ -781,11 +797,11 @@
                                         <form method="POST"
                                               action="{{ route('allocations.markDistributed', $allocation) }}"
                                               class="d-inline"
-                                              data-confirm-title="Confirm Distribution"
-                                              data-confirm-message="Mark this allocation as {{ $event->isFinancial() ? 'claimed' : 'distributed' }}? This will timestamp the transaction.">
+                                                                                            data-confirm-title="Confirm Release"
+                                                                                            data-confirm-message="Mark this allocation as Released? This will timestamp the transaction.">
                                             @csrf
                                             <button type="submit" class="btn btn-sm btn-outline-success me-1">
-                                                <i class="bi bi-check2"></i> {{ $event->isFinancial() ? 'Mark as Claimed' : 'Distribute' }}
+                                                                                                <i class="bi bi-check2"></i> Mark Released
                                             </button>
                                         </form>
 
@@ -1270,7 +1286,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const bulkReleaseIds = document.getElementById('bulkReleaseIds');
     const bulkButtons = document.querySelectorAll('[data-bulk-release-action]');
     const bulkCheckboxes = Array.from(document.querySelectorAll('.bulk-allocation-checkbox'));
-    const bulkDistributedLabel = @json($event->isFinancial() ? 'claimed' : 'distributed');
+    const bulkDistributedLabel = @json('released');
 
     function syncBulkSelectAllState() {
         if (!bulkSelectAll || bulkCheckboxes.length === 0) {
@@ -1328,7 +1344,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             const title = isDistributedAction
-                ? 'Confirm Bulk Distribution'
+                ? 'Confirm Bulk Release'
                 : 'Confirm Bulk Not Received';
 
             const message = isDistributedAction

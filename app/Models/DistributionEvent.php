@@ -178,6 +178,21 @@ class DistributionEvent extends Model
         return $this->type === 'physical';
     }
 
+    public function unmarkedAllocationsCount(): int
+    {
+        return $this->allocations()
+            ->where(function ($query) {
+                $query->whereNull('release_outcome')
+                    ->orWhereNotIn('release_outcome', ['received', 'not_received']);
+            })
+            ->count();
+    }
+
+    public function hasAllBeneficiariesMarked(): bool
+    {
+        return $this->unmarkedAllocationsCount() === 0;
+    }
+
     public function barangay(): BelongsTo
     {
         return $this->belongsTo(Barangay::class);
