@@ -53,6 +53,31 @@ class BeneficiarySectionAvailabilityTest extends TestCase
         $response->assertSessionHasErrors(['rsbsa_unavailability_reason']);
     }
 
+    public function test_sets_default_reason_for_not_applicable_status_when_agency_or_classification_context_is_missing(): void
+    {
+        [$admin, $agency, $barangay] = $this->createContext();
+
+        $response = $this->actingAs($admin)->post(route('beneficiaries.store'), $this->beneficiaryPayload($agency, $barangay, [
+            'classification' => 'Fisherfolk',
+            'rsbsa_availability_status' => 'not_applicable',
+            'rsbsa_unavailability_reason' => '',
+            'fishr_availability_status' => 'provided',
+            'fisherfolk_type' => 'Capture Fishing',
+            'length_of_residency_months' => '24',
+        ]));
+
+        $response
+            ->assertRedirect(route('beneficiaries.index'))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('beneficiaries', [
+            'first_name' => 'General',
+            'last_name' => 'Unavailable',
+            'classification' => 'Fisherfolk',
+            'rsbsa_unavailability_reason' => 'Specific agency or classification is missing for this section.',
+        ]);
+    }
+
     /**
      * @return array{0: User, 1: Agency, 2: Barangay}
      */

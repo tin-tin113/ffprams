@@ -38,6 +38,7 @@ class BeneficiaryRequest extends FormRequest
 
         $normalizedNativeFieldInputs = $this->normalizeNativeFieldInputs();
         $agencyCoreFieldInputs = $this->extractAgencyCoreFieldInputsForValidation();
+        $defaultAvailabilityReasons = $this->defaultAvailabilityReasonsForMissingContext();
 
         $this->merge(array_merge([
             'first_name' => $first,
@@ -46,7 +47,59 @@ class BeneficiaryRequest extends FormRequest
             'name_suffix' => $suffix,
             'full_name' => $fullName,
             'contact_number' => $normalizedContactNumber ?? $contactNumber,
-        ], $normalizedNativeFieldInputs, $agencyCoreFieldInputs));
+        ], $normalizedNativeFieldInputs, $agencyCoreFieldInputs, $defaultAvailabilityReasons));
+    }
+
+    /**
+     * Provide a sensible default reason when status is Not applicable because
+     * required agency/classification context is missing.
+     *
+     * @return array<string, string>
+     */
+    private function defaultAvailabilityReasonsForMissingContext(): array
+    {
+        $classification = strtolower(trim((string) $this->input('classification', '')));
+        $agencyIds = $this->extractAgencyIds((array) $this->input('agencies', []));
+        $selectedAgencyNames = Agency::query()
+            ->whereIn('id', $agencyIds)
+            ->pluck('name')
+            ->map(fn ($name) => strtoupper(trim((string) $name)))
+            ->all();
+
+        $hasDa = in_array('DA', $selectedAgencyNames, true);
+        $hasBfar = in_array('BFAR', $selectedAgencyNames, true);
+        $hasDar = in_array('DAR', $selectedAgencyNames, true);
+
+        $defaultReason = 'Specific agency or classification is missing for this section.';
+        $updates = [];
+
+        $contextRules = [
+            'rsbsa_unavailability_reason' => [
+                'status' => 'rsbsa_availability_status',
+                'is_applicable' => $classification === 'farmer' && $hasDa,
+            ],
+            'fishr_unavailability_reason' => [
+                'status' => 'fishr_availability_status',
+                'is_applicable' => $classification === 'fisherfolk' && ($hasDa || $hasBfar),
+            ],
+            'cloa_ep_unavailability_reason' => [
+                'status' => 'cloa_ep_availability_status',
+                'is_applicable' => $classification === 'farmer' && $hasDar,
+            ],
+        ];
+
+        foreach ($contextRules as $reasonKey => $rule) {
+            $status = (string) $this->input($rule['status'], '');
+            $reason = trim((string) $this->input($reasonKey, ''));
+
+            if ($rule['is_applicable'] || $status !== 'not_applicable' || $reason !== '') {
+                continue;
+            }
+
+            $updates[$reasonKey] = $defaultReason;
+        }
+
+        return $updates;
     }
 
     public function authorize(): bool

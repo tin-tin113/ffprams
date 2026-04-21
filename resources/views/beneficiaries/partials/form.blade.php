@@ -405,7 +405,7 @@
                           name="rsbsa_unavailability_reason"
                           rows="3"
                           maxlength="500"
-                          placeholder="Explain why farmer fields are unavailable..."
+                          placeholder="Explain why farmer fields are unavailable (e.g., specific agency or classification is missing)..."
                           {{ $rsbsaAvailabilityStatus !== 'provided' ? 'required' : '' }}>{{ old('rsbsa_unavailability_reason', $beneficiary->rsbsa_unavailability_reason ?? '') }}</textarea>
                 @error('rsbsa_unavailability_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
@@ -512,7 +512,7 @@
                           name="fishr_unavailability_reason"
                           rows="3"
                           maxlength="500"
-                          placeholder="Explain why fisherfolk fields are unavailable..."
+                          placeholder="Explain why fisherfolk fields are unavailable (e.g., specific agency or classification is missing)..."
                           {{ $fishrAvailabilityStatus !== 'provided' ? 'required' : '' }}>{{ old('fishr_unavailability_reason', $beneficiary->fishr_unavailability_reason ?? '') }}</textarea>
                 @error('fishr_unavailability_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
@@ -637,7 +637,7 @@
                           name="cloa_ep_unavailability_reason"
                           rows="3"
                           maxlength="500"
-                          placeholder="Explain why CLOA/EP Number is unavailable..."
+                          placeholder="Explain why CLOA/EP Number is unavailable (e.g., specific agency or classification is missing)..."
                           {{ $cloaAvailabilityStatus !== 'provided' ? 'required' : '' }}>{{ old('cloa_ep_unavailability_reason', $beneficiary->cloa_ep_unavailability_reason ?? '') }}</textarea>
                 @error('cloa_ep_unavailability_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
@@ -772,6 +772,8 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const MISSING_CONTEXT_REASON = 'Specific agency or classification is missing for this section.';
+
     const classificationSelect = document.getElementById('classification');
     const agencyCheckboxes = document.getElementById('agency-checkboxes');
     const farmerSection = document.getElementById('farmer-info-section');
@@ -878,6 +880,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (reasonField) {
             reasonField.required = !isProvided;
+
+            if (!isProvided && statusSelect.value === 'not_applicable' && !reasonField.value.trim()) {
+                reasonField.value = MISSING_CONTEXT_REASON;
+            }
         }
 
         requiredFieldIds.forEach((fieldId) => {
