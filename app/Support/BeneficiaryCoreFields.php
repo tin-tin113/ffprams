@@ -33,7 +33,7 @@ final class BeneficiaryCoreFields
      * Core beneficiary fields that are managed by the static schema/flows.
      * These must never be duplicated in agency-specific dynamic field definitions.
      */
-    private const RESERVED_AGENCY_FORM_FIELD_NAMES = [
+    private const AGENCY_SPECIFIC_CORE_FIELD_NAMES = [
         'rsbsa_number',
         'farm_ownership',
         'farm_size_hectares',
@@ -53,6 +53,42 @@ final class BeneficiaryCoreFields
         'land_area_awarded_hectares',
         'ownership_scheme',
         'barc_membership_status',
+    ];
+
+    /**
+     * Locked core fields that cannot be edited via Agencies > Manage Fields.
+     * Note: Some agency-specific fields are intentionally unlocked and managed per agency.
+     */
+    private const RESERVED_AGENCY_FORM_FIELD_NAMES = [
+        'farm_ownership',
+        'farm_size_hectares',
+        'primary_commodity',
+        'farm_type',
+        'organization_membership',
+        'fisherfolk_type',
+        'main_fishing_gear',
+        'has_fishing_vessel',
+        'fishing_vessel_type',
+        'fishing_vessel_tonnage',
+        'length_of_residency_months',
+    ];
+
+    /**
+     * Classification-core fields rendered in static beneficiary sections.
+     * These should not be duplicated in dynamic agency fields.
+     */
+    private const CLASSIFICATION_CORE_FIELD_NAMES = [
+        'farm_ownership',
+        'farm_size_hectares',
+        'primary_commodity',
+        'farm_type',
+        'organization_membership',
+        'fisherfolk_type',
+        'main_fishing_gear',
+        'has_fishing_vessel',
+        'fishing_vessel_type',
+        'fishing_vessel_tonnage',
+        'length_of_residency_months',
     ];
 
     /**
@@ -124,7 +160,7 @@ final class BeneficiaryCoreFields
      */
     public static function agencySpecificCoreFieldNames(): array
     {
-        return self::RESERVED_AGENCY_FORM_FIELD_NAMES;
+        return self::AGENCY_SPECIFIC_CORE_FIELD_NAMES;
     }
 
     /**
@@ -135,6 +171,14 @@ final class BeneficiaryCoreFields
         return self::PERSONAL_INFORMATION_CORE_FIELD_NAMES;
     }
 
+    /**
+     * @return array<int, string>
+     */
+    public static function classificationCoreFieldNames(): array
+    {
+        return self::CLASSIFICATION_CORE_FIELD_NAMES;
+    }
+
     public static function isReservedAgencyFormFieldName(string $fieldName): bool
     {
         return in_array(strtolower(trim($fieldName)), self::RESERVED_AGENCY_FORM_FIELD_NAMES, true);
@@ -142,12 +186,17 @@ final class BeneficiaryCoreFields
 
     public static function isAgencySpecificCoreFieldName(string $fieldName): bool
     {
-        return self::isReservedAgencyFormFieldName($fieldName);
+        return in_array(strtolower(trim($fieldName)), self::AGENCY_SPECIFIC_CORE_FIELD_NAMES, true);
     }
 
     public static function isPersonalInformationCoreFieldName(string $fieldName): bool
     {
         return in_array(strtolower(trim($fieldName)), self::PERSONAL_INFORMATION_CORE_FIELD_NAMES, true);
+    }
+
+    public static function isClassificationCoreFieldName(string $fieldName): bool
+    {
+        return in_array(strtolower(trim($fieldName)), self::CLASSIFICATION_CORE_FIELD_NAMES, true);
     }
 
     public static function reservedAgencyFormFieldSection(string $fieldName): ?string

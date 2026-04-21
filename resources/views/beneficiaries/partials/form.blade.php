@@ -7,11 +7,36 @@
     $beneficiaryDynamicAgencyValues = (array) ($beneficiaryCustomFields['agency_dynamic'] ?? []);
     $beneficiaryReasonMap = $editing ? (array) (($beneficiary->custom_field_unavailability_reasons ?? []) ?: []) : [];
     $beneficiaryDynamicAgencyReasons = (array) ($beneficiaryReasonMap['agency_dynamic'] ?? []);
+    $selectedAgencyRaw = old('agencies');
+    if ($selectedAgencyRaw === null && $editing) {
+        $selectedAgencyRaw = $beneficiary->agencies->pluck('id')->all();
+    }
+    $selectedAgencyIds = collect((array) ($selectedAgencyRaw ?? []))
+        ->flatMap(function ($value, $key) {
+            $results = [];
+
+            if (is_numeric($key)) {
+                if (is_array($value)) {
+                    $results[] = $key;
+                } else {
+                    $results[] = $value;
+                }
+            } else {
+                $results[] = $key;
+            }
+
+            return $results;
+        })
+        ->map(fn ($id) => (int) $id)
+        ->filter(fn ($id) => $id > 0)
+        ->unique()
+        ->values()
+        ->all();
 
     $placementLabels = [
         'personal_information' => 'Agency & Personal Information',
-        'farmer_information' => 'DA/RSBSA Information (Farmer)',
-        'fisherfolk_information' => 'BFAR/FishR Information (Fisherfolk)',
+        'farmer_information' => 'Farmer Information',
+        'fisherfolk_information' => 'Fisherfolk Information',
         'dar_information' => 'DAR/ARB Information',
     ];
 
@@ -25,6 +50,8 @@
         'arb_classification',
         'ownership_scheme',
     ];
+
+    $agencySpecificCoreGroups = \App\Support\BeneficiaryCoreFields::agencySpecificCoreFieldNames();
 
     $getGroupSetting = function (string $fieldGroup, string $setting, $fallback = null) use ($fieldGroupSettings) {
         if (! array_key_exists($fieldGroup, $fieldGroupSettings)) {
@@ -62,6 +89,7 @@
 
     $customFieldGroups = collect($fo)
         ->filter(fn ($items, $group) => ! in_array($group, $nativeFieldGroups, true))
+        ->filter(fn ($items, $group) => ! in_array((string) $group, $agencySpecificCoreGroups, true))
         ->map(function ($items, $group) use ($normalizeFieldOptions, $getGroupSetting) {
             $placement = $getGroupSetting($group, 'placement_section', 'personal_information');
             $fieldType = strtolower((string) $getGroupSetting($group, 'field_type', \App\Models\FormFieldOption::FIELD_TYPE_DROPDOWN));
@@ -76,8 +104,8 @@
                 'placement_section' => $placement,
                 'placement_label' => [
                     'personal_information' => 'Agency & Personal Information',
-                    'farmer_information' => 'DA/RSBSA Information (Farmer)',
-                    'fisherfolk_information' => 'BFAR/FishR Information (Fisherfolk)',
+                    'farmer_information' => 'Farmer Information',
+                    'fisherfolk_information' => 'Fisherfolk Information',
                     'dar_information' => 'DAR/ARB Information',
                 ][$placement] ?? Str::title(str_replace('_', ' ', $placement)),
                 'is_required' => (bool) $getGroupSetting($group, 'is_required', false),
@@ -118,6 +146,14 @@
         'Others',
     ]);
     $ownershipSchemeOptions = $normalizeFieldOptions($fo['ownership_scheme'] ?? [], ['Individual', 'Collective', 'Cooperative']);
+    $rsbsaAvailabilityStatus = old(
+        'rsbsa_availability_status',
+        filled($beneficiary->rsbsa_unavailability_reason ?? null) ? 'not_available_yet' : 'provided'
+    );
+    $fishrAvailabilityStatus = old(
+        'fishr_availability_status',
+        filled($beneficiary->fishr_unavailability_reason ?? null) ? 'not_available_yet' : 'provided'
+    );
     $cloaAvailabilityStatus = old(
         'cloa_ep_availability_status',
         filled($beneficiary->cloa_ep_number ?? null)
@@ -345,18 +381,35 @@
 
 {{-- SECTION 3 — Farmer Information (DA/RSBSA) --}}
 <div class="card border-0 shadow-sm mb-4" id="farmer-info-section" style="display: none;">
-    <div class="card-header bg-white fw-semibold"><i class="bi bi-leaf me-1"></i> DA/RSBSA Information (Farmer)</div>
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-leaf me-1"></i> Farmer Information</div>
     <div class="card-body">
         <div class="row g-3">
             <div class="col-12 col-md-6">
-                <label for="rsbsa_number" class="form-label">RSBSA Number</label>
-                <input type="text" class="form-control @error('rsbsa_number') is-invalid @enderror"
-                       id="rsbsa_number" name="rsbsa_number" maxlength="50"
-                       value="{{ old('rsbsa_number', $beneficiary->rsbsa_number ?? '') }}">
-                @error('rsbsa_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                <label for="rsbsa_availability_status" class="form-label">Farmer Availability Status <span class="text-danger">*</span></label>
+                <select class="form-select @error('rsbsa_availability_status') is-invalid @enderror"
+                        id="rsbsa_availability_status"
+                        name="rsbsa_availability_status">
+                    <option value="provided" {{ $rsbsaAvailabilityStatus === 'provided' ? 'selected' : '' }}>Provided</option>
+                    <option value="not_available_yet" {{ $rsbsaAvailabilityStatus === 'not_available_yet' ? 'selected' : '' }}>Not available yet</option>
+                    <option value="not_applicable" {{ $rsbsaAvailabilityStatus === 'not_applicable' ? 'selected' : '' }}>Not applicable</option>
+                    <option value="to_be_verified" {{ $rsbsaAvailabilityStatus === 'to_be_verified' ? 'selected' : '' }}>To be verified</option>
+                </select>
+                @error('rsbsa_availability_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
+            <div class="col-12 {{ $rsbsaAvailabilityStatus === 'provided' ? 'd-none' : '' }}" id="rsbsa-reason-wrapper">
+                <label for="rsbsa_unavailability_reason" class="form-label">Reason for Unavailability <span class="text-danger">*</span></label>
+                <textarea class="form-control @error('rsbsa_unavailability_reason') is-invalid @enderror"
+                          id="rsbsa_unavailability_reason"
+                          name="rsbsa_unavailability_reason"
+                          rows="3"
+                          maxlength="500"
+                          placeholder="Explain why farmer fields are unavailable..."
+                          {{ $rsbsaAvailabilityStatus !== 'provided' ? 'required' : '' }}>{{ old('rsbsa_unavailability_reason', $beneficiary->rsbsa_unavailability_reason ?? '') }}</textarea>
+                @error('rsbsa_unavailability_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div id="rsbsa-fields-wrapper" class="contents {{ $rsbsaAvailabilityStatus === 'provided' ? '' : 'd-none' }}">
             <div class="col-12 col-md-6">
-                <label for="farm_ownership" class="form-label">Farm Ownership</label>
+                <label for="farm_ownership" class="form-label">Farm Ownership {!! $farmOwnershipRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('farm_ownership') is-invalid @enderror" id="farm_ownership" name="farm_ownership">
                     <option value="">Select...</option>
                     @foreach($fieldOptions['farm_ownership'] ?? ['Registered Owner', 'Tenant', 'Lessee', 'Owner', 'Share Tenant'] as $option)
@@ -380,21 +433,21 @@
                 @error('farm_ownership')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             <div class="col-12 col-md-6">
-                <label for="farm_size_hectares" class="form-label">Farm Size (Hectares)</label>
+                <label for="farm_size_hectares" class="form-label">Farm Size (Hectares) <span class="text-danger">*</span></label>
                 <input type="number" class="form-control @error('farm_size_hectares') is-invalid @enderror"
                        id="farm_size_hectares" name="farm_size_hectares" step="0.01" min="0"
                        value="{{ old('farm_size_hectares', $beneficiary->farm_size_hectares ?? '') }}">
                 @error('farm_size_hectares')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             <div class="col-12 col-md-6">
-                <label for="primary_commodity" class="form-label">Primary Commodity</label>
+                <label for="primary_commodity" class="form-label">Primary Commodity <span class="text-danger">*</span></label>
                 <input type="text" class="form-control @error('primary_commodity') is-invalid @enderror"
                        id="primary_commodity" name="primary_commodity" maxlength="255"
                        value="{{ old('primary_commodity', $beneficiary->primary_commodity ?? '') }}">
                 @error('primary_commodity')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             <div class="col-12 col-md-6">
-                <label for="farm_type" class="form-label">Farm Type</label>
+                <label for="farm_type" class="form-label">Farm Type {!! $farmTypeRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('farm_type') is-invalid @enderror" id="farm_type" name="farm_type">
                     <option value="">Select...</option>
                     @foreach($fieldOptions['farm_type'] ?? ['Irrigated', 'Rainfed Upland', 'Rainfed Lowland', 'Upland'] as $option)
@@ -428,6 +481,7 @@
             @foreach($customFieldGroups->get('farmer_information', collect()) as $customField)
                 @include('beneficiaries.partials.custom-field-input', ['customField' => $customField, 'beneficiaryCustomFields' => $beneficiaryCustomFields])
             @endforeach
+            </div>
         </div>
     </div>
 </div>
@@ -438,6 +492,37 @@
     <div class="card-body">
         <div class="row g-3">
             <div class="col-12 col-md-6">
+                <label for="fishr_availability_status" class="form-label">Fisherfolk Availability Status <span class="text-danger">*</span></label>
+                <select class="form-select @error('fishr_availability_status') is-invalid @enderror"
+                        id="fishr_availability_status"
+                        name="fishr_availability_status">
+                    <option value="provided" {{ $fishrAvailabilityStatus === 'provided' ? 'selected' : '' }}>Provided</option>
+                    <option value="not_available_yet" {{ $fishrAvailabilityStatus === 'not_available_yet' ? 'selected' : '' }}>Not available yet</option>
+                    <option value="not_applicable" {{ $fishrAvailabilityStatus === 'not_applicable' ? 'selected' : '' }}>Not applicable</option>
+                    <option value="to_be_verified" {{ $fishrAvailabilityStatus === 'to_be_verified' ? 'selected' : '' }}>To be verified</option>
+                </select>
+                @error('fishr_availability_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div class="col-12 {{ $fishrAvailabilityStatus === 'provided' ? 'd-none' : '' }}" id="fishr-reason-wrapper">
+                <label for="fishr_unavailability_reason" class="form-label">Reason for Unavailability <span class="text-danger">*</span></label>
+                <textarea class="form-control @error('fishr_unavailability_reason') is-invalid @enderror"
+                          id="fishr_unavailability_reason"
+                          name="fishr_unavailability_reason"
+                          rows="3"
+                          maxlength="500"
+                          placeholder="Explain why fisherfolk fields are unavailable..."
+                          {{ $fishrAvailabilityStatus !== 'provided' ? 'required' : '' }}>{{ old('fishr_unavailability_reason', $beneficiary->fishr_unavailability_reason ?? '') }}</textarea>
+                @error('fishr_unavailability_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            <div id="fishr-fields-wrapper" class="contents {{ $fishrAvailabilityStatus === 'provided' ? '' : 'd-none' }}">
+                 <div class="col-12 col-md-6" id="da-fisherfolk-rsbsa-wrapper" style="display: none;">
+                  <label for="fisherfolk_rsbsa_number" class="form-label">RSBSA Number (DA)</label>
+                  <input type="text" class="form-control @error('rsbsa_number') is-invalid @enderror"
+                      id="fisherfolk_rsbsa_number" name="rsbsa_number" maxlength="50"
+                      value="{{ old('rsbsa_number', $beneficiary->rsbsa_number ?? '') }}">
+                  @error('rsbsa_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                 </div>
+                 <div class="col-12 col-md-6" id="bfar-fishr-number-wrapper" style="display: none;">
                 <label for="fishr_number" class="form-label">FishR Number</label>
                 <input type="text" class="form-control @error('fishr_number') is-invalid @enderror"
                        id="fishr_number" name="fishr_number" maxlength="50"
@@ -445,7 +530,7 @@
                 @error('fishr_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             <div class="col-12 col-md-6">
-                <label for="fisherfolk_type" class="form-label">Fisherfolk Type</label>
+                <label for="fisherfolk_type" class="form-label">Fisherfolk Type {!! $fisherfolkTypeRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('fisherfolk_type') is-invalid @enderror" id="fisherfolk_type" name="fisherfolk_type">
                     <option value="">Select...</option>
                     @foreach($fieldOptions['fisherfolk_type'] ?? ['Capture Fishing', 'Aquaculture', 'Post-Harvest', 'Fish Farming', 'Fish Vendor', 'Fish Worker'] as $option)
@@ -509,6 +594,7 @@
             @foreach($customFieldGroups->get('fisherfolk_information', collect()) as $customField)
                 @include('beneficiaries.partials.custom-field-input', ['customField' => $customField, 'beneficiaryCustomFields' => $beneficiaryCustomFields])
             @endforeach
+            </div>
         </div>
     </div>
 </div>
@@ -519,7 +605,7 @@
     <div class="card-body">
         <div class="row g-3">
             <div class="col-12 col-md-6">
-                <label for="cloa_ep_availability_status" class="form-label">CLOA/EP Availability Status <span class="text-danger">*</span></label>
+                <label for="cloa_ep_availability_status" class="form-label">DAR/ARB Availability Status <span class="text-danger">*</span></label>
                 <select class="form-select @error('cloa_ep_availability_status') is-invalid @enderror"
                         id="cloa_ep_availability_status"
                         name="cloa_ep_availability_status">
@@ -530,6 +616,7 @@
                 </select>
                 @error('cloa_ep_availability_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
+            <div id="dar-fields-wrapper" class="contents {{ $cloaAvailabilityStatus === 'provided' ? '' : 'd-none' }}">
             <div class="col-12 col-md-6 {{ $cloaAvailabilityStatus === 'provided' ? '' : 'd-none' }}" id="cloa-ep-number-wrapper">
                 <label for="cloa_ep_number" class="form-label">CLOA/EP Number <span class="text-danger">*</span></label>
                 <input type="text"
@@ -553,7 +640,7 @@
                 @error('cloa_ep_unavailability_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             <div class="col-12 col-md-6">
-                <label for="arb_classification" class="form-label">ARB Classification</label>
+                <label for="arb_classification" class="form-label">ARB Classification {!! $arbClassificationRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('arb_classification') is-invalid @enderror" id="arb_classification" name="arb_classification">
                     <option value="">Select...</option>
                     @foreach($fieldOptions['arb_classification'] ?? ['Agricultural Lessee', 'Regular Farmworker', 'Seasonal Farmworker', 'Other Farmworker', 'Actual Tiller', 'Collective/Cooperative', 'Others'] as $option)
@@ -591,7 +678,7 @@
                 @error('land_area_awarded_hectares')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             <div class="col-12 col-md-6">
-                <label for="ownership_scheme" class="form-label">Ownership Scheme</label>
+                <label for="ownership_scheme" class="form-label">Ownership Scheme {!! $ownershipSchemeRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('ownership_scheme') is-invalid @enderror" id="ownership_scheme" name="ownership_scheme">
                     <option value="">Select...</option>
                     @foreach($fieldOptions['ownership_scheme'] ?? ['Individual', 'Collective', 'Cooperative'] as $option)
@@ -625,13 +712,19 @@
             @foreach($customFieldGroups->get('dar_information', collect()) as $customField)
                 @include('beneficiaries.partials.custom-field-input', ['customField' => $customField, 'beneficiaryCustomFields' => $beneficiaryCustomFields])
             @endforeach
+            </div>
         </div>
     </div>
 </div>
 
 {{-- SECTION 6 — Dynamic Agency Form Fields --}}
-<div id="dynamic-agencies-container">
-    {{-- Will be populated by JavaScript based on selected agencies --}}
+<div class="card border-0 shadow-sm mb-4" id="agency-dynamic-fields-section">
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-sliders me-1"></i> Agency-Specific Dynamic Fields</div>
+    <div class="card-body">
+        <div id="dynamic-agencies-container">
+            {{-- Will be populated by JavaScript based on selected agencies --}}
+        </div>
+    </div>
 </div>
 
 <div
@@ -639,6 +732,7 @@
     class="d-none"
     data-values='@json($beneficiaryDynamicAgencyValues)'
     data-reasons='@json($beneficiaryDynamicAgencyReasons)'
+    data-selected-agencies='@json($selectedAgencyIds)'
 ></div>
 
 {{-- SECTION 8 — Association Membership --}}
@@ -686,16 +780,31 @@ document.addEventListener('DOMContentLoaded', function () {
     const hasVesselCheckbox = document.getElementById('has_fishing_vessel');
     const vesselTypeWrapper = document.getElementById('vessel-type-wrapper');
     const vesselTonnageWrapper = document.getElementById('vessel-tonnage-wrapper');
+    const rsbsaAvailabilitySelect = document.getElementById('rsbsa_availability_status');
+    const rsbsaFieldsWrapper = document.getElementById('rsbsa-fields-wrapper');
+    const rsbsaReasonWrapper = document.getElementById('rsbsa-reason-wrapper');
+    const rsbsaReasonField = document.getElementById('rsbsa_unavailability_reason');
+    const fishrAvailabilitySelect = document.getElementById('fishr_availability_status');
+    const fishrFieldsWrapper = document.getElementById('fishr-fields-wrapper');
+    const fishrReasonWrapper = document.getElementById('fishr-reason-wrapper');
+    const fishrReasonField = document.getElementById('fishr_unavailability_reason');
+    const daFisherfolkRsbsaWrapper = document.getElementById('da-fisherfolk-rsbsa-wrapper');
+    const bfarFishrNumberWrapper = document.getElementById('bfar-fishr-number-wrapper');
     const cloaAvailabilitySelect = document.getElementById('cloa_ep_availability_status');
+    const darFieldsWrapper = document.getElementById('dar-fields-wrapper');
     const cloaNumberWrapper = document.getElementById('cloa-ep-number-wrapper');
     const cloaReasonWrapper = document.getElementById('cloa-ep-reason-wrapper');
     const cloaNumberField = document.getElementById('cloa_ep_number');
     const cloaReasonField = document.getElementById('cloa_ep_unavailability_reason');
 
+    function getSelectedAgencyNames() {
+        return Array.from(document.querySelectorAll('#agency-checkboxes .agency-checkbox:checked'))
+            .map(cb => cb.dataset.agencyName.toUpperCase());
+    }
+
     function updateSections() {
         const classification = classificationSelect.value;
-        const selectedAgencies = Array.from(document.querySelectorAll('#agency-checkboxes .agency-checkbox:checked'))
-            .map(cb => cb.dataset.agencyName.toUpperCase());
+        const selectedAgencies = getSelectedAgencyNames();
 
         // Hide all sections first
         farmerSection.style.display = 'none';
@@ -704,17 +813,33 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Show sections based on classification and selected agencies
         if (classification === 'Farmer') {
-            if (selectedAgencies.includes('DA')) {
-                farmerSection.style.display = 'block';
-            }
+            farmerSection.style.display = 'block';
             if (selectedAgencies.includes('DAR')) {
                 darSection.style.display = 'block';
             }
         } else if (classification === 'Fisherfolk') {
-            if (selectedAgencies.includes('DA') || selectedAgencies.includes('BFAR')) {
-                fisherfolkSection.style.display = 'block';
+            fisherfolkSection.style.display = 'block';
+
+            if (daFisherfolkRsbsaWrapper) {
+                daFisherfolkRsbsaWrapper.style.display = selectedAgencies.includes('DA') ? '' : 'none';
+            }
+
+            if (bfarFishrNumberWrapper) {
+                bfarFishrNumberWrapper.style.display = selectedAgencies.includes('BFAR') ? '' : 'none';
+            }
+        } else {
+            if (daFisherfolkRsbsaWrapper) {
+                daFisherfolkRsbsaWrapper.style.display = 'none';
+            }
+
+            if (bfarFishrNumberWrapper) {
+                bfarFishrNumberWrapper.style.display = 'none';
             }
         }
+
+        toggleRsbsaAvailability();
+        toggleFishrAvailability();
+        toggleCloaAvailability();
 
         console.log('Updated sections - Classification:', classification, 'Agencies:', selectedAgencies);
     }
@@ -740,21 +865,112 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function toggleCloaAvailability() {
-        if (!cloaAvailabilitySelect || !cloaNumberWrapper || !cloaReasonWrapper) {
+    function toggleSectionAvailability(statusSelect, fieldsWrapper, reasonWrapper, reasonField, requiredFieldIds = []) {
+        if (!statusSelect || !fieldsWrapper || !reasonWrapper) {
             return;
         }
 
-        const isProvided = cloaAvailabilitySelect.value === 'provided';
-        cloaNumberWrapper.style.display = isProvided ? '' : 'none';
-        cloaReasonWrapper.style.display = isProvided ? 'none' : '';
+        const isProvided = statusSelect.value === 'provided';
+        fieldsWrapper.classList.toggle('d-none', !isProvided);
+        reasonWrapper.classList.toggle('d-none', isProvided);
 
-        if (cloaNumberField) {
-            cloaNumberField.required = isProvided;
+        if (reasonField) {
+            reasonField.required = !isProvided;
         }
 
-        if (cloaReasonField) {
-            cloaReasonField.required = !isProvided;
+        requiredFieldIds.forEach((fieldId) => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.required = isProvided;
+            }
+        });
+    }
+
+    function toggleRsbsaAvailability() {
+        const isApplicable = classificationSelect && classificationSelect.value === 'Farmer';
+
+        toggleSectionAvailability(
+            rsbsaAvailabilitySelect,
+            rsbsaFieldsWrapper,
+            rsbsaReasonWrapper,
+            rsbsaReasonField,
+            isApplicable ? ['farm_ownership', 'farm_size_hectares', 'primary_commodity', 'farm_type'] : []
+        );
+
+        if (rsbsaAvailabilitySelect) {
+            rsbsaAvailabilitySelect.disabled = !isApplicable;
+        }
+
+        if (!isApplicable) {
+            if (rsbsaFieldsWrapper) {
+                rsbsaFieldsWrapper.classList.add('d-none');
+            }
+            if (rsbsaReasonWrapper) {
+                rsbsaReasonWrapper.classList.add('d-none');
+            }
+            if (rsbsaReasonField) {
+                rsbsaReasonField.required = false;
+            }
+
+            ['farm_ownership', 'farm_size_hectares', 'primary_commodity', 'farm_type'].forEach((fieldId) => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.required = false;
+                }
+            });
+        }
+    }
+
+    function toggleFishrAvailability() {
+        const isApplicable = classificationSelect && classificationSelect.value === 'Fisherfolk';
+
+        toggleSectionAvailability(
+            fishrAvailabilitySelect,
+            fishrFieldsWrapper,
+            fishrReasonWrapper,
+            fishrReasonField,
+            isApplicable ? ['fisherfolk_type', 'length_of_residency_months'] : []
+        );
+
+        if (fishrAvailabilitySelect) {
+            fishrAvailabilitySelect.disabled = !isApplicable;
+        }
+
+        if (!isApplicable) {
+            if (fishrFieldsWrapper) {
+                fishrFieldsWrapper.classList.add('d-none');
+            }
+            if (fishrReasonWrapper) {
+                fishrReasonWrapper.classList.add('d-none');
+            }
+            if (fishrReasonField) {
+                fishrReasonField.required = false;
+            }
+
+            ['fisherfolk_type', 'length_of_residency_months'].forEach((fieldId) => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.required = false;
+                }
+            });
+        }
+    }
+
+    function toggleCloaAvailability() {
+        toggleSectionAvailability(
+            cloaAvailabilitySelect,
+            darFieldsWrapper,
+            cloaReasonWrapper,
+            cloaReasonField,
+            ['cloa_ep_number', 'arb_classification', 'landholding_description', 'land_area_awarded_hectares', 'ownership_scheme']
+        );
+
+        if (cloaAvailabilitySelect && cloaNumberWrapper) {
+            cloaNumberWrapper.style.display = cloaAvailabilitySelect.value === 'provided' ? '' : 'none';
+        }
+
+        if (cloaNumberField && cloaAvailabilitySelect) {
+            cloaNumberField.required = cloaAvailabilitySelect.value === 'provided';
         }
     }
 
@@ -775,6 +991,14 @@ document.addEventListener('DOMContentLoaded', function () {
         hasVesselCheckbox.addEventListener('change', toggleVesselFields);
     }
 
+    if (rsbsaAvailabilitySelect) {
+        rsbsaAvailabilitySelect.addEventListener('change', toggleRsbsaAvailability);
+    }
+
+    if (fishrAvailabilitySelect) {
+        fishrAvailabilitySelect.addEventListener('change', toggleFishrAvailability);
+    }
+
     if (cloaAvailabilitySelect) {
         cloaAvailabilitySelect.addEventListener('change', toggleCloaAvailability);
     }
@@ -783,6 +1007,8 @@ document.addEventListener('DOMContentLoaded', function () {
     updateSections();
     toggleAssociation();
     toggleVesselFields();
+    toggleRsbsaAvailability();
+    toggleFishrAvailability();
     toggleCloaAvailability();
 });
 </script>

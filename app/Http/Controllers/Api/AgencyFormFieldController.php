@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Agency;
+use App\Support\BeneficiaryCoreFields;
 use Illuminate\Http\Request;
 
 class AgencyFormFieldController extends Controller
@@ -14,17 +15,30 @@ class AgencyFormFieldController extends Controller
      */
     public function getByClassification(Request $request)
     {
-        $classification = $request->query('classification');
+        $classification = trim((string) $request->query('classification', ''));
+        $normalizedClassification = strtolower($classification);
 
-        if (blank($classification)) {
+        if ($normalizedClassification === '') {
+            return response()->json([]);
+        }
+
+        $classificationName = match ($normalizedClassification) {
+            'farmer' => 'Farmer',
+            'fisherfolk' => 'Fisherfolk',
+            default => null,
+        };
+
+        if ($classificationName === null) {
             return response()->json([]);
         }
 
         $agencies = Agency::whereHas('classifications', fn ($q) =>
-            $q->where('name', $classification)
+            $q->whereRaw('LOWER(name) = ?', [strtolower($classificationName)])
         )
         ->where('is_active', true)
         ->select('id', 'name', 'full_name')
+        ->orderByRaw("CASE UPPER(name) WHEN 'DA' THEN 1 WHEN 'BFAR' THEN 2 WHEN 'DAR' THEN 3 ELSE 100 END")
+        ->orderBy('name')
         ->get();
 
         return response()->json($agencies);
@@ -47,11 +61,14 @@ class AgencyFormFieldController extends Controller
             return response()->json([]);
         }
 
+        $classificationCoreFieldNames = BeneficiaryCoreFields::classificationCoreFieldNames();
+
         $agencies = Agency::whereIn('id', $agencyIds)
             ->where('is_active', true)
             ->with([
                 'formFields' => fn ($q) => $q
                     ->where('is_active', true)
+                    ->whereNotIn('field_name', $classificationCoreFieldNames)
                     ->orderBy('sort_order'),
                 'formFields.options' => fn ($q) => $q->orderBy('sort_order')
             ])

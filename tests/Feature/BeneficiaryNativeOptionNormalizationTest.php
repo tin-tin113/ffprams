@@ -162,6 +162,7 @@ class BeneficiaryNativeOptionNormalizationTest extends TestCase
             'classification' => 'Farmer',
             'association_member' => 0,
             'association_name' => null,
+            'rsbsa_availability_status' => 'provided',
             'rsbsa_number' => 'RSBSA-TEST-DEFAULT',
             'farm_ownership' => 'Owner',
             'farm_size_hectares' => '2.50',

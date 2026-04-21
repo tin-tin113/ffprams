@@ -15,6 +15,7 @@ use App\Support\BeneficiaryCoreFields;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -157,110 +158,132 @@ class BeneficiaryController extends Controller
                 ->with('warning', $message.' Please verify and update this existing record if needed.');
         }
 
-        // No duplicates - proceed with registration
-        $beneficiary = DB::transaction(function () use ($validated) {
-            [$agencyIds, $agencyFieldsData] = $this->extractAgencyData($validated['agencies'] ?? []);
-            $validated['agency_id'] = $agencyIds[0] ?? null;
-            $beneficiaryFillable = (new Beneficiary())->getFillable();
+        try {
+            // No duplicates - proceed with registration
+            $beneficiary = DB::transaction(function () use ($validated) {
+                [$agencyIds, $agencyFieldsData] = $this->extractAgencyData($validated['agencies'] ?? []);
+                $validated['agency_id'] = $agencyIds[0] ?? null;
+                $beneficiaryFillable = (new Beneficiary())->getFillable();
 
-            unset($validated['agencies']);
+                unset($validated['agencies']);
+                unset($validated['rsbsa_availability_status'], $validated['fishr_availability_status'], $validated['cloa_ep_availability_status']);
 
-            // Store unavailability reasons from dynamic fields
-            $customFieldReasons = (array) ($validated['custom_field_unavailability_reasons'] ?? []);
-            $agencyDynamicReasons = [];
-            foreach ($agencyFieldsData as $agencyId => $fieldData) {
-                if (! is_array($fieldData)) {
-                    continue;
-                }
-
-                foreach ($fieldData as $key => $value) {
-                    if (strpos($key, '_unavailability_reason') !== false) {
-                        $fieldName = str_replace('_unavailability_reason', '', $key);
-
-                        $reasonColumn = BeneficiaryCoreFields::unavailabilityReasonColumnFor($fieldName);
-                        if ($reasonColumn !== null) {
-                            $validated[$reasonColumn] = $value;
-                        } elseif ($value !== null && $value !== '') {
-                            $agencyDynamicReasons[(string) $agencyId][$fieldName] = $value;
-                        }
-
-                        unset($agencyFieldsData[$agencyId][$key]);
-                    }
-                }
-            }
-
-            if (! empty($agencyDynamicReasons)) {
-                $customFieldReasons['agency_dynamic'] = $agencyDynamicReasons;
-            }
-
-            if (! empty($customFieldReasons)) {
-                $validated['custom_field_unavailability_reasons'] = $customFieldReasons;
-            }
-
-            // Store dynamic field values directly in beneficiary record
-            $customFields = (array) ($validated['custom_fields'] ?? []);
-            $agencyDynamicValues = [];
-            foreach ($agencyFieldsData as $agencyId => $fieldData) {
-                if (! is_array($fieldData)) {
-                    continue;
-                }
-
-                foreach ($fieldData as $key => $value) {
-                    if ($this->isAgencyMetaFieldKey((string) $key)) {
+                // Store unavailability reasons from dynamic fields
+                $customFieldReasons = (array) ($validated['custom_field_unavailability_reasons'] ?? []);
+                $agencyDynamicReasons = [];
+                foreach ($agencyFieldsData as $agencyId => $fieldData) {
+                    if (! is_array($fieldData)) {
                         continue;
                     }
 
-                    if (in_array($key, $beneficiaryFillable, true)) {
-                        $validated[$key] = $value;
-                    } else {
-                        $agencyDynamicValues[(string) $agencyId][$key] = $value;
+                    foreach ($fieldData as $key => $value) {
+                        if (strpos($key, '_unavailability_reason') !== false) {
+                            $fieldName = str_replace('_unavailability_reason', '', $key);
+
+                            $reasonColumn = BeneficiaryCoreFields::unavailabilityReasonColumnFor($fieldName);
+                            if ($reasonColumn !== null) {
+                                $validated[$reasonColumn] = $value;
+                            } elseif ($value !== null && $value !== '') {
+                                $agencyDynamicReasons[(string) $agencyId][$fieldName] = $value;
+                            }
+
+                            unset($agencyFieldsData[$agencyId][$key]);
+                        }
                     }
                 }
-            }
 
-            if (! empty($agencyDynamicValues)) {
-                $customFields['agency_dynamic'] = $agencyDynamicValues;
-            }
-
-            if (! empty($customFields)) {
-                $validated['custom_fields'] = $customFields;
-            }
-
-            $beneficiary = Beneficiary::create(array_merge($validated, ['status' => 'Active']));
-
-            // Sync all selected agencies to pivot table with their identifiers
-            $agencies = Agency::whereIn('id', $agencyIds)->get();
-            foreach ($agencies as $agency) {
-                $agencyName = strtoupper($agency->name);
-                $identifier = null;
-
-                // Extract the correct identifier for this agency from beneficiary data
-                if ($agencyName === 'DA') {
-                    $identifier = $beneficiary->rsbsa_number ?? null;
-                } elseif ($agencyName === 'BFAR') {
-                    $identifier = $beneficiary->fishr_number ?? null;
-                } elseif ($agencyName === 'DAR') {
-                    $identifier = $beneficiary->cloa_ep_number ?? null;
+                if (! empty($agencyDynamicReasons)) {
+                    $customFieldReasons['agency_dynamic'] = $agencyDynamicReasons;
                 }
 
-                // Attach agency with identifier and registration date
-                $beneficiary->agencies()->attach($agency->id, [
-                    'identifier' => $identifier,
-                    'registered_at' => now()->toDateString(),
+                if (! empty($customFieldReasons)) {
+                    $validated['custom_field_unavailability_reasons'] = $customFieldReasons;
+                }
+
+                // Store dynamic field values directly in beneficiary record
+                $customFields = (array) ($validated['custom_fields'] ?? []);
+                $agencyDynamicValues = [];
+                foreach ($agencyFieldsData as $agencyId => $fieldData) {
+                    if (! is_array($fieldData)) {
+                        continue;
+                    }
+
+                    foreach ($fieldData as $key => $value) {
+                        if ($this->isAgencyMetaFieldKey((string) $key)) {
+                            continue;
+                        }
+
+                        if (in_array($key, $beneficiaryFillable, true)) {
+                            $validated[$key] = $value;
+                        } else {
+                            $agencyDynamicValues[(string) $agencyId][$key] = $value;
+                        }
+                    }
+                }
+
+                if (! empty($agencyDynamicValues)) {
+                    $customFields['agency_dynamic'] = $agencyDynamicValues;
+                }
+
+                if (! empty($customFields)) {
+                    $validated['custom_fields'] = $customFields;
+                }
+
+                $beneficiary = Beneficiary::create(array_merge($validated, ['status' => 'Active']));
+
+                // Sync all selected agencies to pivot table with their identifiers
+                $agencies = Agency::whereIn('id', $agencyIds)->get();
+                foreach ($agencies as $agency) {
+                    $agencyName = strtoupper($agency->name);
+                    $identifier = null;
+
+                    // Extract the correct identifier for this agency from beneficiary data
+                    if ($agencyName === 'DA') {
+                        $identifier = $beneficiary->rsbsa_number ?? null;
+                    } elseif ($agencyName === 'BFAR') {
+                        $identifier = $beneficiary->fishr_number ?? null;
+                    } elseif ($agencyName === 'DAR') {
+                        $identifier = $beneficiary->cloa_ep_number ?? null;
+                    }
+
+                    // Attach agency with identifier and registration date
+                    $beneficiary->agencies()->attach($agency->id, [
+                        'identifier' => $identifier,
+                        'registered_at' => now()->toDateString(),
+                    ]);
+                }
+
+                $this->audit->log(
+                    (int) Auth::id(),
+                    'created',
+                    'beneficiaries',
+                    $beneficiary->id,
+                    [],
+                    $beneficiary->toArray(),
+                );
+
+                return $beneficiary;
+            });
+        } catch (QueryException $e) {
+            $duplicateError = $this->resolveBeneficiaryUniqueConstraintError($e);
+
+            if ($duplicateError !== null) {
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'message' => 'The given data was invalid.',
+                        'errors' => [
+                            $duplicateError['field'] => [$duplicateError['message']],
+                        ],
+                    ], 422);
+                }
+
+                return back()->withInput()->withErrors([
+                    $duplicateError['field'] => $duplicateError['message'],
                 ]);
             }
 
-            $this->audit->log(
-                (int) Auth::id(),
-                'created',
-                'beneficiaries',
-                $beneficiary->id,
-                [],
-                $beneficiary->toArray(),
-            );
-
-            return $beneficiary;
-        });
+            throw $e;
+        }
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -362,14 +385,16 @@ class BeneficiaryController extends Controller
                 ->with('warning', $message.' Please review the existing record before updating.');
         }
 
-        DB::transaction(function () use ($beneficiary, $validated) {
-            $oldValues = $beneficiary->toArray();
+        try {
+            DB::transaction(function () use ($beneficiary, $validated) {
+                $oldValues = $beneficiary->toArray();
 
             [$agencyIds, $agencyFieldsData] = $this->extractAgencyData($validated['agencies'] ?? []);
             $validated['agency_id'] = $agencyIds[0] ?? null;
             $beneficiaryFillable = (new Beneficiary())->getFillable();
 
             unset($validated['agencies']);
+            unset($validated['rsbsa_availability_status'], $validated['fishr_availability_status'], $validated['cloa_ep_availability_status']);
 
             // Store unavailability reasons from dynamic fields
             $customFieldReasons = (array) ($validated['custom_field_unavailability_reasons'] ?? []);
@@ -466,15 +491,35 @@ class BeneficiaryController extends Controller
             // Sync pivot table (adds new agencies, removes old ones)
             $beneficiary->agencies()->sync($agencyPivotData);
 
-            $this->audit->log(
-                (int) Auth::id(),
-                'updated',
-                'beneficiaries',
-                $beneficiary->id,
-                $oldValues,
-                $beneficiary->fresh()->toArray(),
-            );
-        });
+                $this->audit->log(
+                    (int) Auth::id(),
+                    'updated',
+                    'beneficiaries',
+                    $beneficiary->id,
+                    $oldValues,
+                    $beneficiary->fresh()->toArray(),
+                );
+            });
+        } catch (QueryException $e) {
+            $duplicateError = $this->resolveBeneficiaryUniqueConstraintError($e);
+
+            if ($duplicateError !== null) {
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'message' => 'The given data was invalid.',
+                        'errors' => [
+                            $duplicateError['field'] => [$duplicateError['message']],
+                        ],
+                    ], 422);
+                }
+
+                return back()->withInput()->withErrors([
+                    $duplicateError['field'] => $duplicateError['message'],
+                ]);
+            }
+
+            throw $e;
+        }
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -536,6 +581,40 @@ class BeneficiaryController extends Controller
             || str_ends_with($key, '_has_value')
             || str_ends_with($key, '_availability_status')
             || str_ends_with($key, '_unavailability_reason');
+    }
+
+    /**
+     * @return array{field: string, message: string}|null
+     */
+    private function resolveBeneficiaryUniqueConstraintError(QueryException $e): ?array
+    {
+        $message = $e->getMessage();
+        if (! str_contains($message, '1062')) {
+            return null;
+        }
+
+        $indexToField = [
+            'beneficiaries_rsbsa_number_unique' => [
+                'field' => 'rsbsa_number',
+                'message' => 'A beneficiary with this RSBSA number already exists.',
+            ],
+            'beneficiaries_fishr_number_unique' => [
+                'field' => 'fishr_number',
+                'message' => 'A beneficiary with this FishR number already exists.',
+            ],
+            'beneficiaries_cloa_ep_number_unique' => [
+                'field' => 'cloa_ep_number',
+                'message' => 'A beneficiary with this CLOA/EP number already exists.',
+            ],
+        ];
+
+        foreach ($indexToField as $indexName => $error) {
+            if (str_contains($message, $indexName)) {
+                return $error;
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -278,6 +278,14 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('settings/form-fields', [SystemSettingsController::class, 'storeFormField'])->name('settings.form-fields.store');
     Route::put('settings/form-fields/{formFieldOption}', [SystemSettingsController::class, 'updateFormField'])->name('settings.form-fields.update');
     Route::delete('settings/form-fields/{formFieldOption}', [SystemSettingsController::class, 'destroyFormField'])->name('settings.form-fields.destroy');
+
+    // Settings — Classification Core Fields (Farmer/Fisherfolk, DAR under Farmer)
+    Route::get('settings/classification-core-fields/list', [SystemSettingsController::class, 'listClassificationCoreFields'])
+        ->name('settings.classification-core-fields.list');
+    Route::put('settings/classification-core-fields/{fieldName}', [SystemSettingsController::class, 'updateClassificationCoreField'])
+        ->name('settings.classification-core-fields.update');
+    Route::patch('settings/classification-core-fields/{fieldName}/required', [SystemSettingsController::class, 'updateClassificationCoreFieldRequired'])
+        ->name('settings.classification-core-fields.required');
     Route::post('settings/form-fields/reorder', [SystemSettingsController::class, 'reorderFormFields'])->name('settings.form-fields.reorder');
 });
 

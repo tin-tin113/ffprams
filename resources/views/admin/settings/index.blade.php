@@ -75,7 +75,7 @@
                                         </td>
                                         <td>
                                             <span class="badge bg-secondary">
-                                                {{ $agency->formFields()->where('is_active', true)->count() }} fields
+                                                {{ $agency->formFields()->where('is_active', true)->whereNotIn('field_name', \App\Support\BeneficiaryCoreFields::reservedAgencyFormFieldNames())->count() }} fields
                                             </span>
                                         </td>
                                         <td>
@@ -293,7 +293,7 @@
                     <div class="px-3 py-2 border-bottom bg-white">
                         <small class="text-muted">
                             These fields are shared across agencies and appear in beneficiary forms by placement section.
-                            Agency/classification core fields are managed under Agencies > Manage Fields.
+                            Agency-specific fields are managed under Agencies > Manage Fields.
                         </small>
                     </div>
                     <div class="table-responsive">
@@ -433,8 +433,126 @@
                     </div>
                 </div>
             </div>
+
+            <div class="card mt-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-diagram-3"></i> Classification Core Fields
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="px-3 py-2 border-bottom bg-white">
+                        <small class="text-muted">
+                            Manage required/optional behavior of core fields by classification.
+                            Only two classifications are used: <strong>Farmer</strong> and <strong>Fisherfolk</strong>.
+                            DAR fields are grouped under <strong>Farmer</strong>.
+                        </small>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Classification</th>
+                                    <th>Field</th>
+                                    <th>Section</th>
+                                    <th>Required</th>
+                                    <th class="text-center" style="width: 120px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse(($classificationCoreFields ?? collect())->flatten(1) as $coreField)
+                                    <tr data-core-field-name="{{ $coreField['field_name'] }}">
+                                        <td>
+                                            <span class="badge {{ $coreField['classification'] === 'Farmer' ? 'bg-primary' : 'bg-info text-dark' }}">
+                                                {{ $coreField['classification'] }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold classification-core-field-label">{{ $coreField['label'] }}</div>
+                                            <small class="text-muted">{{ $coreField['field_name'] }}</small>
+                                        </td>
+                                        <td><small class="text-muted">{{ Str::title(str_replace('_', ' ', $coreField['placement_section'])) }}</small></td>
+                                        <td>
+                                            <span class="badge {{ $coreField['is_required'] ? 'bg-danger' : 'bg-secondary' }} core-required-badge">
+                                                {{ $coreField['is_required'] ? 'Required' : 'Optional' }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm" role="group" aria-label="Classification core field actions">
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-outline-secondary edit-classification-core-btn"
+                                                    data-field-name="{{ $coreField['field_name'] }}"
+                                                    data-label="{{ $coreField['label'] }}"
+                                                    data-required="{{ $coreField['is_required'] ? '1' : '0' }}"
+                                                    data-placement="{{ Str::title(str_replace('_', ' ', $coreField['placement_section'])) }}"
+                                                    title="Edit"
+                                                >
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-outline-primary toggle-core-required-btn"
+                                                    data-field-name="{{ $coreField['field_name'] }}"
+                                                    data-next-required="{{ $coreField['is_required'] ? '0' : '1' }}"
+                                                >
+                                                    {{ $coreField['is_required'] ? 'Set Optional' : 'Set Required' }}
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-4">No classification core fields configured.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
 
+    </div>
+</div>
+
+<!-- Edit Classification Core Field Modal -->
+<div class="modal fade" id="editClassificationCoreFieldModal" tabindex="-1" aria-labelledby="editClassificationCoreFieldModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editClassificationCoreFieldModalLabel">Edit Classification Core Field</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="classificationCoreFieldForm">
+                    <input type="hidden" id="classificationCoreFieldName">
+
+                    <div class="mb-3">
+                        <label for="classificationCoreFieldLabel" class="form-label">Field Label <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="classificationCoreFieldLabel" maxlength="255" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="classificationCoreFieldSection" class="form-label">Section</label>
+                        <input type="text" class="form-control" id="classificationCoreFieldSection" readonly>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="classificationCoreFieldRequired">
+                        <label class="form-check-label" for="classificationCoreFieldRequired">
+                            Required
+                        </label>
+                    </div>
+
+                    <div id="classificationCoreFieldErrors" class="alert alert-danger d-none mb-0"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveClassificationCoreFieldBtn">Save Changes</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1110,6 +1228,180 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    document.querySelectorAll('.toggle-core-required-btn').forEach((button) => {
+        button.addEventListener('click', async function() {
+            const row = this.closest('tr');
+            const fieldName = this.dataset.fieldName;
+            const nextRequired = this.dataset.nextRequired === '1';
+
+            if (!fieldName || !row) {
+                return;
+            }
+
+            this.disabled = true;
+
+            try {
+                const response = await fetch(`/admin/settings/classification-core-fields/${encodeURIComponent(fieldName)}/required`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ is_required: nextRequired ? 1 : 0 })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || 'Failed to update field requirement.');
+                }
+
+                const isRequired = typeof result.is_required !== 'undefined'
+                    ? !!result.is_required
+                    : !!result.data?.is_required;
+                const badge = row.querySelector('.core-required-badge');
+
+                if (badge) {
+                    badge.textContent = isRequired ? 'Required' : 'Optional';
+                    badge.classList.toggle('bg-danger', isRequired);
+                    badge.classList.toggle('bg-secondary', !isRequired);
+                }
+
+                this.dataset.nextRequired = isRequired ? '0' : '1';
+                this.textContent = isRequired ? 'Set Optional' : 'Set Required';
+            } catch (error) {
+                alert(error.message || 'Error updating classification core field.');
+            } finally {
+                this.disabled = false;
+            }
+        });
+    });
+
+    const classificationCoreFieldModalElement = document.getElementById('editClassificationCoreFieldModal');
+    const classificationCoreFieldModal = classificationCoreFieldModalElement
+        ? bootstrap.Modal.getOrCreateInstance(classificationCoreFieldModalElement)
+        : null;
+    const classificationCoreFieldForm = document.getElementById('classificationCoreFieldForm');
+    const classificationCoreFieldNameInput = document.getElementById('classificationCoreFieldName');
+    const classificationCoreFieldLabelInput = document.getElementById('classificationCoreFieldLabel');
+    const classificationCoreFieldSectionInput = document.getElementById('classificationCoreFieldSection');
+    const classificationCoreFieldRequiredInput = document.getElementById('classificationCoreFieldRequired');
+    const classificationCoreFieldErrors = document.getElementById('classificationCoreFieldErrors');
+    const saveClassificationCoreFieldBtn = document.getElementById('saveClassificationCoreFieldBtn');
+
+    function clearClassificationCoreFieldErrors() {
+        if (!classificationCoreFieldErrors) {
+            return;
+        }
+
+        classificationCoreFieldErrors.classList.add('d-none');
+        classificationCoreFieldErrors.textContent = '';
+    }
+
+    document.querySelectorAll('.edit-classification-core-btn').forEach((button) => {
+        button.addEventListener('click', function() {
+            if (!classificationCoreFieldModal || !classificationCoreFieldNameInput || !classificationCoreFieldLabelInput) {
+                return;
+            }
+
+            classificationCoreFieldNameInput.value = this.dataset.fieldName || '';
+            classificationCoreFieldLabelInput.value = this.dataset.label || '';
+            if (classificationCoreFieldSectionInput) {
+                classificationCoreFieldSectionInput.value = this.dataset.placement || '';
+            }
+            if (classificationCoreFieldRequiredInput) {
+                classificationCoreFieldRequiredInput.checked = this.dataset.required === '1';
+            }
+            clearClassificationCoreFieldErrors();
+            classificationCoreFieldModal.show();
+        });
+    });
+
+    if (saveClassificationCoreFieldBtn) {
+        saveClassificationCoreFieldBtn.addEventListener('click', async function() {
+            if (!classificationCoreFieldForm || !classificationCoreFieldNameInput || !classificationCoreFieldLabelInput) {
+                return;
+            }
+
+            if (!classificationCoreFieldForm.checkValidity()) {
+                classificationCoreFieldForm.reportValidity();
+                return;
+            }
+
+            clearClassificationCoreFieldErrors();
+
+            const fieldName = classificationCoreFieldNameInput.value;
+            const payload = {
+                label: classificationCoreFieldLabelInput.value,
+                is_required: classificationCoreFieldRequiredInput && classificationCoreFieldRequiredInput.checked ? 1 : 0,
+            };
+
+            saveClassificationCoreFieldBtn.disabled = true;
+
+            try {
+                const response = await fetch(`/admin/settings/classification-core-fields/${encodeURIComponent(fieldName)}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    const validationErrors = result.errors
+                        ? Object.values(result.errors).flat().join('\n')
+                        : null;
+                    throw new Error(validationErrors || result.message || 'Failed to update classification field.');
+                }
+
+                const row = document.querySelector(`tr[data-core-field-name="${fieldName}"]`);
+                if (row) {
+                    const labelNode = row.querySelector('.classification-core-field-label');
+                    const badge = row.querySelector('.core-required-badge');
+                    const toggleBtn = row.querySelector('.toggle-core-required-btn');
+                    const editBtn = row.querySelector('.edit-classification-core-btn');
+                    const isRequired = !!result.is_required;
+
+                    if (labelNode) {
+                        labelNode.textContent = result.label || payload.label;
+                    }
+
+                    if (badge) {
+                        badge.textContent = isRequired ? 'Required' : 'Optional';
+                        badge.classList.toggle('bg-danger', isRequired);
+                        badge.classList.toggle('bg-secondary', !isRequired);
+                    }
+
+                    if (toggleBtn) {
+                        toggleBtn.dataset.nextRequired = isRequired ? '0' : '1';
+                        toggleBtn.textContent = isRequired ? 'Set Optional' : 'Set Required';
+                    }
+
+                    if (editBtn) {
+                        editBtn.dataset.label = result.label || payload.label;
+                        editBtn.dataset.required = isRequired ? '1' : '0';
+                    }
+                }
+
+                classificationCoreFieldModal.hide();
+            } catch (error) {
+                if (classificationCoreFieldErrors) {
+                    classificationCoreFieldErrors.textContent = error.message || 'Error updating classification core field.';
+                    classificationCoreFieldErrors.classList.remove('d-none');
+                }
+            } finally {
+                saveClassificationCoreFieldBtn.disabled = false;
+            }
+        });
+    }
+
     function populatePurposeTypeSelect(typeSelectId, category, selectedType = '') {
         const typeSelect = document.getElementById(typeSelectId);
         const types = purposeCategoryOptions[category]?.types ?? [];
@@ -1456,7 +1748,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Fields received:', fields);
 
             if (!fields || fields.length === 0) {
-                container.innerHTML = '<p class="text-muted p-3">No agency fields configured yet. Click "Add Agency Field" to create one.</p>';
+                container.innerHTML = '<p class="text-muted p-3">No agency-specific fields configured yet. Click "Add Agency Field" to create one. Classification core fields are managed in Form Fields > Classification Core Fields.</p>';
             } else {
                 let html = '<div class="list-group">';
                 fields.forEach(field => {

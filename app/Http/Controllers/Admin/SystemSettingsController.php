@@ -77,7 +77,23 @@ class SystemSettingsController extends Controller
             ];
         })->unique('group');
 
-        return view('admin.settings.index', compact('agencies', 'activeAgencies', 'resourceTypes', 'resourceUnitOptions', 'purposes', 'purposeCategoryOptions', 'formFields', 'fieldGroupMeta'));
+        $classificationCoreFields = collect($this->classificationCoreFieldDefinitions())
+            ->map(function (array $definition): array {
+                return [
+                    ...$definition,
+                    'label' => $this->classificationCoreFieldLabel(
+                        $definition['field_name'],
+                        (string) $definition['label'],
+                    ),
+                    'is_required' => $this->classificationCoreFieldRequiredStatus(
+                        $definition['field_name'],
+                        (bool) $definition['default_required'],
+                    ),
+                ];
+            })
+            ->groupBy('classification');
+
+        return view('admin.settings.index', compact('agencies', 'activeAgencies', 'resourceTypes', 'resourceUnitOptions', 'purposes', 'purposeCategoryOptions', 'formFields', 'fieldGroupMeta', 'classificationCoreFields'));
     }
 
     public function indexProgramNames(): View
@@ -964,6 +980,108 @@ class SystemSettingsController extends Controller
         );
     }
 
+    public function listClassificationCoreFields(): JsonResponse
+    {
+        $rows = collect($this->classificationCoreFieldDefinitions())
+            ->map(function (array $definition): array {
+                return [
+                    ...$definition,
+                    'label' => $this->classificationCoreFieldLabel(
+                        $definition['field_name'],
+                        (string) $definition['label'],
+                    ),
+                    'is_required' => $this->classificationCoreFieldRequiredStatus(
+                        $definition['field_name'],
+                        (bool) $definition['default_required'],
+                    ),
+                ];
+            })
+            ->values();
+
+        return response()->json($rows);
+    }
+
+    public function updateClassificationCoreField(Request $request, string $fieldName): JsonResponse
+    {
+        $fieldName = strtolower(trim($fieldName));
+        $definitions = collect($this->classificationCoreFieldDefinitions())
+            ->keyBy(fn (array $definition) => $definition['field_name']);
+
+        if (! $definitions->has($fieldName)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unknown classification core field.',
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'label' => ['required', 'string', 'max:255'],
+            'is_required' => ['required', 'boolean'],
+        ]);
+
+        $definition = $definitions->get($fieldName);
+
+        DB::transaction(function () use ($fieldName, $validated, $definition): void {
+            FormFieldOption::query()
+                ->where('field_group', $fieldName)
+                ->update([
+                    'is_required' => (bool) $validated['is_required'],
+                ]);
+
+            $configRow = $this->findOrCreateClassificationCoreConfigRow($fieldName, $definition);
+            $configRow->label = trim((string) $validated['label']);
+            $configRow->is_required = (bool) $validated['is_required'];
+            $configRow->is_active = true;
+            $configRow->save();
+        });
+
+        return response()->json([
+            'success' => true,
+            'field_name' => $fieldName,
+            'label' => trim((string) $validated['label']),
+            'is_required' => (bool) $validated['is_required'],
+        ]);
+    }
+
+    public function updateClassificationCoreFieldRequired(Request $request, string $fieldName): JsonResponse
+    {
+        $fieldName = strtolower(trim($fieldName));
+        $definitions = collect($this->classificationCoreFieldDefinitions())
+            ->keyBy(fn (array $definition) => $definition['field_name']);
+
+        if (! $definitions->has($fieldName)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unknown classification core field.',
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'is_required' => ['required', 'boolean'],
+        ]);
+
+        $definition = $definitions->get($fieldName);
+
+        DB::transaction(function () use ($fieldName, $validated, $definition): void {
+            FormFieldOption::query()
+                ->where('field_group', $fieldName)
+                ->update([
+                    'is_required' => (bool) $validated['is_required'],
+                ]);
+
+            $configRow = $this->findOrCreateClassificationCoreConfigRow($fieldName, $definition);
+            $configRow->is_required = (bool) $validated['is_required'];
+            $configRow->is_active = true;
+            $configRow->save();
+        });
+
+        return response()->json([
+            'success' => true,
+            'field_name' => $fieldName,
+            'is_required' => (bool) $validated['is_required'],
+        ]);
+    }
+
     public function storeFormField(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -1499,9 +1617,11 @@ class SystemSettingsController extends Controller
     {
         try {
             $this->bootstrapAgencyCoreFields($agency);
+            $this->cleanupClassificationAgencyFieldOverlap($agency);
 
             $fields = $agency->formFields()
                 ->where('is_active', true)
+                ->whereNotIn('field_name', $this->classificationCoreFieldNames())
                 ->with('options')
                 ->orderBy('sort_order')
                 ->get()
@@ -1594,6 +1714,17 @@ class SystemSettingsController extends Controller
                     'errors' => [
                         'field_name' => [
                             "Core personal-information field '{$validated['field_name']}' is schema-managed and cannot be added as a dynamic agency field.",
+                        ],
+                    ],
+                ], 422);
+            }
+
+            if ($this->isReservedAgencyFormFieldName($validated['field_name'])) {
+                return response()->json([
+                    'message' => 'Validation error',
+                    'errors' => [
+                        'field_name' => [
+                            "Classification core field '{$validated['field_name']}' is managed in the Classification Core Fields settings.",
                         ],
                     ],
                 ], 422);
@@ -1705,6 +1836,17 @@ class SystemSettingsController extends Controller
             $field = $agency->formFields()->findOrFail($fieldId);
             $effectiveFieldName = (string) ($validated['field_name'] ?? $field->field_name);
 
+            if ($this->isReservedAgencyFormFieldName($effectiveFieldName)) {
+                return response()->json([
+                    'message' => 'Validation error',
+                    'errors' => [
+                        'field_name' => [
+                            "Classification core field '{$effectiveFieldName}' is managed in the Classification Core Fields settings.",
+                        ],
+                    ],
+                ], 422);
+            }
+
             if ($this->isPersonalInformationCoreFieldName($effectiveFieldName)) {
                 return response()->json([
                     'message' => 'Validation error',
@@ -1802,6 +1944,17 @@ class SystemSettingsController extends Controller
     {
         try {
             $field = $agency->formFields()->findOrFail($fieldId);
+
+            if ($this->isReservedAgencyFormFieldName((string) $field->field_name)) {
+                return response()->json([
+                    'message' => 'Validation error',
+                    'errors' => [
+                        'field_name' => [
+                            "Classification core field '{$field->field_name}' is managed in the Classification Core Fields settings.",
+                        ],
+                    ],
+                ], 422);
+            }
 
             DB::transaction(function () use ($field) {
                 // Delete associated options first
@@ -1960,29 +2113,12 @@ class SystemSettingsController extends Controller
         if ($agencyName === 'DA') {
             return [
                 ['field_name' => 'rsbsa_number', 'display_label' => 'RSBSA Number', 'field_type' => 'text', 'form_section' => 'farmer_information', 'sort_order' => 10],
-                ['field_name' => 'farm_ownership', 'display_label' => 'Farm Ownership', 'field_type' => 'dropdown', 'form_section' => 'farmer_information', 'sort_order' => 20, 'option_group' => 'farm_ownership'],
-                ['field_name' => 'farm_size_hectares', 'display_label' => 'Farm Size (Hectares)', 'field_type' => 'decimal', 'form_section' => 'farmer_information', 'sort_order' => 30],
-                ['field_name' => 'primary_commodity', 'display_label' => 'Primary Commodity', 'field_type' => 'text', 'form_section' => 'farmer_information', 'sort_order' => 40],
-                ['field_name' => 'farm_type', 'display_label' => 'Farm Type', 'field_type' => 'dropdown', 'form_section' => 'farmer_information', 'sort_order' => 50, 'option_group' => 'farm_type'],
-                ['field_name' => 'organization_membership', 'display_label' => 'Organization Membership', 'field_type' => 'text', 'form_section' => 'farmer_information', 'sort_order' => 60],
-                ['field_name' => 'fisherfolk_type', 'display_label' => 'Fisherfolk Type', 'field_type' => 'dropdown', 'form_section' => 'fisherfolk_information', 'sort_order' => 70, 'option_group' => 'fisherfolk_type'],
-                ['field_name' => 'main_fishing_gear', 'display_label' => 'Main Fishing Gear', 'field_type' => 'text', 'form_section' => 'fisherfolk_information', 'sort_order' => 80],
-                ['field_name' => 'has_fishing_vessel', 'display_label' => 'Has Fishing Vessel', 'field_type' => 'text', 'form_section' => 'fisherfolk_information', 'sort_order' => 90],
-                ['field_name' => 'fishing_vessel_type', 'display_label' => 'Fishing Vessel Type', 'field_type' => 'text', 'form_section' => 'fisherfolk_information', 'sort_order' => 100],
-                ['field_name' => 'fishing_vessel_tonnage', 'display_label' => 'Fishing Vessel Tonnage', 'field_type' => 'decimal', 'form_section' => 'fisherfolk_information', 'sort_order' => 110],
-                ['field_name' => 'length_of_residency_months', 'display_label' => 'Length of Residency (Months)', 'field_type' => 'number', 'form_section' => 'fisherfolk_information', 'sort_order' => 120],
             ];
         }
 
         if ($agencyName === 'BFAR') {
             return [
                 ['field_name' => 'fishr_number', 'display_label' => 'FishR Number', 'field_type' => 'text', 'form_section' => 'fisherfolk_information', 'sort_order' => 10],
-                ['field_name' => 'fisherfolk_type', 'display_label' => 'Fisherfolk Type', 'field_type' => 'dropdown', 'form_section' => 'fisherfolk_information', 'sort_order' => 20, 'option_group' => 'fisherfolk_type'],
-                ['field_name' => 'main_fishing_gear', 'display_label' => 'Main Fishing Gear', 'field_type' => 'text', 'form_section' => 'fisherfolk_information', 'sort_order' => 30],
-                ['field_name' => 'has_fishing_vessel', 'display_label' => 'Has Fishing Vessel', 'field_type' => 'text', 'form_section' => 'fisherfolk_information', 'sort_order' => 40],
-                ['field_name' => 'fishing_vessel_type', 'display_label' => 'Fishing Vessel Type', 'field_type' => 'text', 'form_section' => 'fisherfolk_information', 'sort_order' => 50],
-                ['field_name' => 'fishing_vessel_tonnage', 'display_label' => 'Fishing Vessel Tonnage', 'field_type' => 'decimal', 'form_section' => 'fisherfolk_information', 'sort_order' => 60],
-                ['field_name' => 'length_of_residency_months', 'display_label' => 'Length of Residency (Months)', 'field_type' => 'number', 'form_section' => 'fisherfolk_information', 'sort_order' => 70],
             ];
         }
 
@@ -1998,6 +2134,40 @@ class SystemSettingsController extends Controller
         }
 
         return [];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function classificationCoreFieldNames(): array
+    {
+        return collect($this->classificationCoreFieldDefinitions())
+            ->pluck('field_name')
+            ->map(fn ($fieldName) => strtolower(trim((string) $fieldName)))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function cleanupClassificationAgencyFieldOverlap(Agency $agency): void
+    {
+        $classificationFieldNames = $this->classificationCoreFieldNames();
+        if (empty($classificationFieldNames)) {
+            return;
+        }
+
+        DB::transaction(function () use ($agency, $classificationFieldNames): void {
+            $overlapFields = $agency->formFields()
+                ->whereIn('field_name', $classificationFieldNames)
+                ->with('options:id,agency_form_field_id')
+                ->get();
+
+            foreach ($overlapFields as $field) {
+                $field->options()->delete();
+                $field->delete();
+            }
+        });
     }
 
     private function normalizeAgencyFieldType(string $fieldType): string
@@ -2070,5 +2240,84 @@ class SystemSettingsController extends Controller
 
             $sortOrder += 10;
         }
+    }
+
+    /**
+     * @return array<int, array{field_name: string, label: string, classification: string, placement_section: string, default_required: bool}>
+     */
+    private function classificationCoreFieldDefinitions(): array
+    {
+        return [
+            // Farmer (DA)
+            ['field_name' => 'farm_ownership', 'label' => 'Farm Ownership', 'classification' => 'Farmer', 'placement_section' => 'farmer_information', 'default_required' => true],
+            ['field_name' => 'farm_size_hectares', 'label' => 'Farm Size (Hectares)', 'classification' => 'Farmer', 'placement_section' => 'farmer_information', 'default_required' => true],
+            ['field_name' => 'primary_commodity', 'label' => 'Primary Commodity', 'classification' => 'Farmer', 'placement_section' => 'farmer_information', 'default_required' => true],
+            ['field_name' => 'farm_type', 'label' => 'Farm Type', 'classification' => 'Farmer', 'placement_section' => 'farmer_information', 'default_required' => true],
+            ['field_name' => 'organization_membership', 'label' => 'Organization Membership', 'classification' => 'Farmer', 'placement_section' => 'farmer_information', 'default_required' => false],
+
+            // Fisherfolk
+            ['field_name' => 'fisherfolk_type', 'label' => 'Fisherfolk Type', 'classification' => 'Fisherfolk', 'placement_section' => 'fisherfolk_information', 'default_required' => true],
+            ['field_name' => 'main_fishing_gear', 'label' => 'Main Fishing Gear', 'classification' => 'Fisherfolk', 'placement_section' => 'fisherfolk_information', 'default_required' => false],
+            ['field_name' => 'has_fishing_vessel', 'label' => 'Has Fishing Vessel', 'classification' => 'Fisherfolk', 'placement_section' => 'fisherfolk_information', 'default_required' => false],
+            ['field_name' => 'fishing_vessel_type', 'label' => 'Fishing Vessel Type', 'classification' => 'Fisherfolk', 'placement_section' => 'fisherfolk_information', 'default_required' => false],
+            ['field_name' => 'fishing_vessel_tonnage', 'label' => 'Fishing Vessel Tonnage', 'classification' => 'Fisherfolk', 'placement_section' => 'fisherfolk_information', 'default_required' => false],
+            ['field_name' => 'length_of_residency_months', 'label' => 'Length of Residency (Months)', 'classification' => 'Fisherfolk', 'placement_section' => 'fisherfolk_information', 'default_required' => true],
+        ];
+    }
+
+    private function classificationCoreFieldRequiredStatus(string $fieldName, bool $default): bool
+    {
+        $row = FormFieldOption::query()
+            ->where('field_group', $fieldName)
+            ->orderByDesc('id')
+            ->first(['is_required']);
+
+        if (! $row) {
+            return $default;
+        }
+
+        return (bool) $row->is_required;
+    }
+
+    private function classificationCoreFieldLabel(string $fieldName, string $default): string
+    {
+        $configRow = FormFieldOption::query()
+            ->where('field_group', $fieldName)
+            ->where('value', $fieldName)
+            ->orderByDesc('id')
+            ->first(['label']);
+
+        if (! $configRow || trim((string) $configRow->label) === '') {
+            return $default;
+        }
+
+        return trim((string) $configRow->label);
+    }
+
+    /**
+     * @param array{field_name: string, label: string, classification: string, placement_section: string, default_required: bool} $definition
+     */
+    private function findOrCreateClassificationCoreConfigRow(string $fieldName, array $definition): FormFieldOption
+    {
+        $configRow = FormFieldOption::query()
+            ->where('field_group', $fieldName)
+            ->where('value', $fieldName)
+            ->orderByDesc('id')
+            ->first();
+
+        if ($configRow) {
+            return $configRow;
+        }
+
+        return FormFieldOption::query()->create([
+            'field_group' => $fieldName,
+            'field_type' => FormFieldOption::FIELD_TYPE_TEXT,
+            'placement_section' => (string) ($definition['placement_section'] ?? FormFieldOption::PLACEMENT_PERSONAL_INFORMATION),
+            'label' => (string) ($definition['label'] ?? Str::title(str_replace('_', ' ', $fieldName))),
+            'value' => $fieldName,
+            'sort_order' => 0,
+            'is_required' => (bool) ($definition['default_required'] ?? false),
+            'is_active' => true,
+        ]);
     }
 }

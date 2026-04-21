@@ -176,6 +176,10 @@
                     <div class="fw-semibold">{{ $beneficiary->highest_education ?? '—' }}</div>
                 </div>
                 <div class="col-md-4">
+                    <div class="text-muted small">ID Type</div>
+                    <div class="fw-semibold">{{ $beneficiary->id_type ?? '—' }}</div>
+                </div>
+                <div class="col-md-4">
                     <div class="text-muted small">Contact Number</div>
                     <div class="fw-semibold">{{ $beneficiary->contact_number }}</div>
                 </div>

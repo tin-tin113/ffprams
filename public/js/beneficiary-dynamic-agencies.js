@@ -17,6 +17,8 @@ class DynamicAgencyForm {
         this.agenciesData = {};
         this.formFieldsData = {};
         this.cachedExistingAgencyData = null;
+        this.initialSelectedAgencyIds = this.getInitialSelectedAgencyIds();
+        this.selectedAgencies = new Set(this.initialSelectedAgencyIds);
 
         this.init();
     }
@@ -94,6 +96,9 @@ class DynamicAgencyForm {
         this.agencyCheckboxesContainer.querySelectorAll('.agency-checkbox').forEach(checkbox => {
             checkbox.addEventListener('change', () => this.onAgencyCheckboxChange());
         });
+
+        this.onAgencyCheckboxChange();
+        this.agencyCheckboxesContainer.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
     async onAgencyCheckboxChange() {
@@ -166,25 +171,18 @@ class DynamicAgencyForm {
         const normalizeSection = (value) => String(value || 'general_information').trim().toLowerCase();
         // Core beneficiary fields are rendered in static form sections; skip them in dynamic cards to avoid duplicates.
         const reservedCoreFieldNames = new Set([
-            'rsbsa_number',
+            // Classification-core fields rendered in static sections
             'farm_ownership',
             'farm_size_hectares',
             'primary_commodity',
             'farm_type',
             'organization_membership',
-            'fishr_number',
             'fisherfolk_type',
             'main_fishing_gear',
             'length_of_residency_months',
             'has_fishing_vessel',
             'fishing_vessel_type',
             'fishing_vessel_tonnage',
-            'cloa_ep_number',
-            'arb_classification',
-            'landholding_description',
-            'land_area_awarded_hectares',
-            'ownership_scheme',
-            'barc_membership_status',
         ]);
         const allowedSections = (() => {
             if (classification === 'Farmer') {
@@ -217,18 +215,6 @@ class DynamicAgencyForm {
 
             if (visibleFields.length === 0) {
                 console.log(`Agency ${agency.name} has no form fields for classification ${classification}`);
-                html += `
-                    <div class="card border-0 shadow-sm mb-4">
-                        <div class="card-header bg-light fw-semibold">
-                            <i class="bi bi-file-earmark-text me-1"></i> ${agency.name} - ${agency.full_name}
-                        </div>
-                        <div class="card-body">
-                            <p class="text-muted mb-0">
-                                No additional agency-specific fields for this classification. Core farmer/fisherfolk fields are shown in the main section above.
-                            </p>
-                        </div>
-                    </div>
-                `;
                 return;
             }
 
@@ -491,6 +477,26 @@ class DynamicAgencyForm {
         };
 
         return this.cachedExistingAgencyData;
+    }
+
+    getInitialSelectedAgencyIds() {
+        const dataEl = document.getElementById('existingAgencyDynamicData');
+        if (!dataEl) {
+            return [];
+        }
+
+        try {
+            const selected = JSON.parse(dataEl.dataset.selectedAgencies || '[]');
+            if (!Array.isArray(selected)) {
+                return [];
+            }
+
+            return selected
+                .map((value) => parseInt(value, 10))
+                .filter((value) => Number.isInteger(value) && value > 0);
+        } catch (error) {
+            return [];
+        }
     }
 
     getOldInputValue(fieldName) {
