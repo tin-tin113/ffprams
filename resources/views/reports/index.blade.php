@@ -604,6 +604,10 @@
         display: none;
     }
 
+    .print-only-beneficiary-table {
+        display: none;
+    }
+
     @media print {
         @page {
             size: A4 portrait;
@@ -620,7 +624,8 @@
             display: none !important;
         }
 
-        .print-only {
+        .print-only,
+        .print-only-beneficiary-table {
             display: block !important;
         }
 
@@ -785,6 +790,11 @@
 
         body.print-compact-mode .report-card:not(:has(table)) {
             display: none !important;
+        }
+
+        /* Show beneficiary table in compact print mode */
+        body.print-compact-mode .print-only-beneficiary-table {
+            display: block !important;
         }
     }
 </style>
@@ -1355,6 +1365,62 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Beneficiaries List - Print Only -->
+            <div class="card report-card border-0 mb-4 print-only-beneficiary-table" style="display: none;">
+                <div class="card-header report-card-header">
+                    <span class="report-card-title"><i class="bi bi-person-x me-1"></i> Beneficiaries Not Yet Reached</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 report-data-table beneficiary-clean-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Full Name</th>
+                                    <th>Barangay</th>
+                                    <th>Classification</th>
+                                    <th>Contact Number</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($unreachedBeneficiaries as $beneficiary)
+                                    <tr>
+                                        <td class="text-muted">{{ $loop->iteration }}</td>
+                                        <td>{{ $beneficiary->full_name }}</td>
+                                        <td>{{ $beneficiary->barangay->name }}</td>
+                                        <td>
+                                            @php
+                                                $classBadge = match($beneficiary->classification) {
+                                                    'Farmer' => 'bg-success',
+                                                    'Fisherfolk' => 'bg-primary',
+                                                    'Both' => 'bg-info',
+                                                    default => 'bg-secondary',
+                                                };
+                                            @endphp
+                                            <span class="badge {{ $classBadge }}">{{ $beneficiary->classification }}</span>
+                                        </td>
+                                        <td>{{ $beneficiary->contact_number ?? '-' }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="empty-state">
+                                            <i class="bi bi-check-circle fs-3 d-block mb-2 text-success"></i>
+                                            All beneficiaries have been reached.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                @if($unreachedBeneficiaries->count())
+                    <div class="card-footer bg-white text-muted small">
+                        {{ $unreachedBeneficiaries->count() }} {{ Str::plural('beneficiary', $unreachedBeneficiaries->count()) }} with no allocations
+                    </div>
+                @endif
             </div>
         </div>
 
