@@ -3,7 +3,6 @@
 @section('title', 'Direct Assistance Details')
 
 @section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('direct-assistance.index') }}">Direct Assistance</a></li>
     <li class="breadcrumb-item active">{{ $directAssistance->beneficiary->full_name }}</li>
 @endsection
 

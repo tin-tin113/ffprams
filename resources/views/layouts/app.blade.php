@@ -1206,11 +1206,12 @@
             <button class="header-toggle" id="sidebarToggle" type="button" aria-label="Toggle sidebar">
                 <i class="bi bi-list"></i>
             </button>
-            <h1 class="header-title">@yield('title', 'Dashboard')</h1>
             @hasSection('breadcrumb')
                 <div class="header-breadcrumb">
                     @yield('breadcrumb')
                 </div>
+            @else
+                <h1 class="header-title">@yield('title', 'Dashboard')</h1>
             @endif
         </div>
 

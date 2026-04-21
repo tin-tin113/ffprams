@@ -3,7 +3,6 @@
 @section('title', 'Allocation Details')
 
 @section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('allocations.index') }}">Assistance Allocations</a></li>
     <li class="breadcrumb-item active">Allocation #{{ $allocation->id }}</li>
 @endsection
 

@@ -3,7 +3,6 @@
 @section('title', 'Distribution Event Details')
 
 @section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('distribution-events.index') }}">Distribution Events</a></li>
     <li class="breadcrumb-item active">Event #{{ $event->id }}</li>
 @endsection
 
