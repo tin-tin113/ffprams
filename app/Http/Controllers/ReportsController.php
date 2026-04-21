@@ -587,6 +587,79 @@ class ReportsController extends Controller
             })->sortByDesc('amount');
         }
 
+        // NEW ALLOCATION ANALYTICS — Top resources by beneficiary reach & efficiency metrics
+        $topResourcesByReach = ResourceType::query()
+            ->select('resource_types.name', 'resource_types.unit')
+            ->selectRaw('COALESCE(event_agg.event_beneficiaries_reached, 0) as event_reached')
+            ->selectRaw('COALESCE(direct_agg.direct_beneficiaries_reached, 0) as direct_reached')
+            ->selectRaw('(COALESCE(event_agg.event_beneficiaries_reached, 0) + COALESCE(direct_agg.direct_beneficiaries_reached, 0)) as total_reached')
+            ->selectRaw('COALESCE(event_agg.event_quantity_distributed, 0) as event_qty')
+            ->selectRaw('COALESCE(direct_agg.direct_quantity_distributed, 0) as direct_qty')
+            ->leftJoinSub($eventResourceAgg, 'event_agg', function ($join) {
+                $join->on('event_agg.resource_type_id', '=', 'resource_types.id');
+            })
+            ->leftJoinSub($directResourceAgg, 'direct_agg', function ($join) {
+                $join->on('direct_agg.resource_type_id', '=', 'resource_types.id');
+            })
+            ->where(function ($q) {
+                $q->whereNotNull('event_agg.resource_type_id')
+                    ->orWhereNotNull('direct_agg.resource_type_id');
+            })
+            ->orderByDesc('total_reached')
+            ->limit(8)
+            ->get();
+
+        // Barangay Efficiency: Resources per capita
+        $barangayEfficiency = Barangay::query()
+            ->select('barangays.id', 'barangays.name')
+            ->selectRaw('COUNT(DISTINCT b.id) as total_beneficiaries')
+            ->selectRaw('COUNT(DISTINCT CASE WHEN da.beneficiary_id IS NOT NULL THEN b.id END) as reached_beneficiaries')
+            ->selectRaw('ROUND(100 * COUNT(DISTINCT CASE WHEN da.beneficiary_id IS NOT NULL THEN b.id END) / NULLIF(COUNT(DISTINCT b.id), 0), 1) as reach_percentage')
+            ->selectRaw('COUNT(DISTINCT de.id) as total_events')
+            ->selectRaw('COALESCE(SUM(a.quantity), 0) as total_quantity_distributed')
+            ->leftJoin('beneficiaries as b', 'b.barangay_id', '=', 'barangays.id')
+            ->leftJoin('distribution_events as de', function ($join) use ($selectedYear) {
+                $join->on('de.barangay_id', '=', 'barangays.id')
+                    ->whereNull('de.deleted_at')
+                    ->where('de.status', 'Completed')
+                    ->whereYear('de.distribution_date', $selectedYear);
+            })
+            ->leftJoin('allocations as a', function ($join) {
+                $join->on('a.distribution_event_id', '=', 'de.id')
+                    ->whereNull('a.deleted_at')
+                    ->whereNotNull('a.distributed_at');
+            })
+            ->leftJoin('direct_assistance as da', function ($join) use ($selectedYear) {
+                $join->on('da.beneficiary_id', '=', 'b.id')
+                    ->whereNull('da.deleted_at')
+                    ->where(function ($q) {
+                        $q->whereNotNull('da.distributed_at')
+                            ->orWhereIn('da.status', ['released', 'completed']);
+                    })
+                    ->whereYear(DB::raw('COALESCE(da.distributed_at, da.created_at)'), $selectedYear);
+            })
+            ->groupBy('barangays.id', 'barangays.name')
+            ->orderByDesc('reach_percentage')
+            ->get();
+
+        // Monthly allocation trend line (for line chart)
+        $allocationMonthlyTrend = collect(range(1, 12))
+            ->map(function (int $month) use ($monthlyDistribution) {
+                $data = $monthlyDistribution->firstWhere('month_number', $month);
+                if (!$data) {
+                    return (object) [
+                        'month' => $month,
+                        'total_reached' => 0,
+                        'completion_rate' => 0,
+                    ];
+                }
+                return (object) [
+                    'month' => $month,
+                    'total_reached' => $data->total_beneficiaries,
+                    'completion_rate' => 100,
+                ];
+            });
+
         return view('reports.index', compact(
             'complianceOverview',
             'beneficiariesPerBarangay',
@@ -605,6 +678,9 @@ class ReportsController extends Controller
             'barangayInsights',
             'agencySummary',
             'programCategorySummary',
+            'topResourcesByReach',
+            'barangayEfficiency',
+            'allocationMonthlyTrend',
         ));
     }
 }

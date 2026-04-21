@@ -1495,11 +1495,60 @@
             @if($resourceDistribution->count())
                 <div class="card report-card border-0 mb-4">
                     <div class="card-header report-card-header">
-                        <span class="report-card-title"><i class="bi bi-people-fill me-1"></i> Resource Reach by Type (Event vs Direct)</span>
+                        <span class="report-card-title"><i class="bi bi-star me-1"></i> Top 8 Most Impactful Resources (by Beneficiary Reach)</span>
                     </div>
                     <div class="card-body">
-                        <div class="report-chart-wrap">
-                            <canvas id="allocationReachByResourceChart"></canvas>
+                        <div class="report-chart-wrap" style="height: 300px;">
+                            <canvas id="topResourcesByReachChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            @if($barangayEfficiency->count())
+                <div class="card report-card border-0 mb-4">
+                    <div class="card-header report-card-header">
+                        <span class="report-card-title"><i class="bi bi-activity me-1"></i> Barangay Efficiency Performance</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0 report-data-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Barangay</th>
+                                        <th class="text-center">Total Beneficiaries</th>
+                                        <th class="text-center">Reached</th>
+                                        <th class="text-center">Reach %</th>
+                                        <th class="text-center">Events</th>
+                                        <th class="text-center">Quantity Dist.</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($barangayEfficiency as $row)
+                                        <tr>
+                                            <td class="text-muted">{{ $loop->iteration }}</td>
+                                            <td>{{ $row->name }}</td>
+                                            <td class="text-center">{{ number_format($row->total_beneficiaries) }}</td>
+                                            <td class="text-center">{{ number_format($row->reached_beneficiaries) }}</td>
+                                            <td class="text-center">
+                                                <span class="badge" style="background-color: {{ $row->reach_percentage >= 80 ? '#10b981' : ($row->reach_percentage >= 50 ? '#f59e0b' : '#ef4444') }};">
+                                                    {{ number_format($row->reach_percentage, 1) }}%
+                                                </span>
+                                            </td>
+                                            <td class="text-center">{{ number_format($row->total_events) }}</td>
+                                            <td class="text-center">{{ number_format($row->total_quantity_distributed, 2) }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="7" class="empty-state">
+                                                <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                                                No barangay efficiency data available.
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -2331,6 +2380,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const beneficiariesByBarangayData = @json($beneficiariesPerBarangay->values());
     const resourceDistributionData = @json($resourceDistribution->values());
     const statusPerBarangayData = @json($statusPerBarangay->values());
+    const topResourcesByReachData = @json($topResourcesByReach->values());
     const totalBeneficiaries = {{ $totalBeneficiaries ?? 0 }};
     const unreachedCount = @json($unreachedBeneficiaries->count());
     const financialSummaryData = @json($financialSummary->values());
@@ -3007,6 +3057,62 @@ document.addEventListener('DOMContentLoaded', function () {
                         y: {
                             stacked: true,
                             beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    function initializeTopResourcesByReachChart() {
+        if (!topResourcesByReachData || !topResourcesByReachData.length) {
+            return;
+        }
+
+        createChartIfNeeded('topResourcesByReachChart', function (canvas) {
+            const labels = topResourcesByReachData.map(function (row) {
+                return row.name;
+            });
+
+            return new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Event Beneficiaries',
+                            data: topResourcesByReachData.map(function (row) { return toNumber(row.event_reached); }),
+                            backgroundColor: 'rgba(22, 163, 74, 0.72)',
+                            borderColor: 'rgba(22, 163, 74, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Direct Beneficiaries',
+                            data: topResourcesByReachData.map(function (row) { return toNumber(row.direct_reached); }),
+                            backgroundColor: 'rgba(37, 99, 235, 0.72)',
+                            borderColor: 'rgba(37, 99, 235, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        title: {
+                            display: true,
+                            text: 'Beneficiary Reach by Resource Type'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            beginAtZero: true
+                        },
+                        y: {
+                            stacked: true
                         }
                     }
                 }
@@ -3829,7 +3935,7 @@ document.addEventListener('DOMContentLoaded', function () {
             initializeMonthlyChart
         ],
         beneficiary: [initializeBeneficiariesChart, initializeBeneficiaryCompositionByBarangayChart, initializeUnreachedChart, initializeBeneficiaryMixChart, initializeBeneficiaryPriorityChart],
-        allocation: [initializeResourceDistributionChart, initializeAllocationReachByResourceChart, initializeAllocationMonthlyReachChart, initializeAllocationMonthlyQuantityChart, initializeStatusPerBarangayChart],
+        allocation: [initializeResourceDistributionChart, initializeAllocationMonthlyReachChart, initializeAllocationMonthlyQuantityChart, initializeTopResourcesByReachChart, initializeStatusPerBarangayChart],
         financial: [initializeFinancialSummaryChart, initializeFinancialChannelMixChart, initializeFinancialPerBarangayChart],
         barangay: [initializeBarangayPerformanceChart, initializeBarangayEventMixChart],
         agency: [initializeAgencyContributionChart, initializeAgencyFinancialShareChart, initializeAgencyOperationsMixChart],
