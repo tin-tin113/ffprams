@@ -25,7 +25,7 @@
 
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white fw-semibold">
-            <i class="bi bi-upload me-1"></i> Upload New Document
+            <i class="bi bi-upload me-1"></i> Upload Supporting Document
         </div>
         <div class="card-body">
             <form action="{{ route('beneficiaries.attachments.store', $beneficiary) }}"
