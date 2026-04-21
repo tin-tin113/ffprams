@@ -2,11 +2,6 @@
 
 @section('title', 'Audit Log')
 
-@section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-    <li class="breadcrumb-item active">Audit Log</li>
-@endsection
-
 @section('content')
 <div class="container-fluid">
     @php
@@ -107,7 +102,6 @@
 
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
         <div>
-            <h1 class="h3 mb-0">Audit Log</h1>
             <p class="text-muted mb-0">See who did what, when it happened, and what changed.</p>
         </div>
     </div>

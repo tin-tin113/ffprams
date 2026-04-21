@@ -2,9 +2,8 @@
 
 @section('title', 'Geo-Map - E.B. Magalona')
 
-@section('breadcrumb')
-    <li class="breadcrumb-item active">Geo-Map</li>
-@endsection
+
+
 
 @push('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />

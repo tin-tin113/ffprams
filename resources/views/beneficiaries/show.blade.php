@@ -92,7 +92,6 @@
                 <i class="bi bi-arrow-left"></i>
             </a>
             <div>
-                <h1 class="h3 mb-1">{{ $beneficiary->full_name }}</h1>
                 <div class="d-flex flex-wrap gap-2">
                     @php
                         $classBadge = match($beneficiary->classification) {

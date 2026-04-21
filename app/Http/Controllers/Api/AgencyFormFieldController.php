@@ -70,7 +70,9 @@ class AgencyFormFieldController extends Controller
                     ->where('is_active', true)
                     ->whereNotIn('field_name', $classificationCoreFieldNames)
                     ->orderBy('sort_order'),
-                'formFields.options' => fn ($q) => $q->orderBy('sort_order')
+                'formFields.options' => fn ($q) => $q
+                    ->where('is_active', true)
+                    ->orderBy('sort_order')
             ])
             ->get()
             ->map(fn ($agency) => [

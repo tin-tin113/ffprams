@@ -284,7 +284,6 @@
 
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-3 no-print">
         <div>
-            <h1 class="h4 mb-1">Printable Distribution List</h1>
             <p class="text-muted mb-0">Formatted release sheet with signatures and remarks tracking.</p>
         </div>
         <div class="d-flex gap-2 flex-wrap justify-content-end">

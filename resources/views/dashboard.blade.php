@@ -2,9 +2,7 @@
 
 @section('title', 'Dashboard')
 
-@section('breadcrumb')
-    <li class="breadcrumb-item active">Dashboard</li>
-@endsection
+
 
 @section('content')
     <style>
@@ -242,7 +240,6 @@
 
     {{-- HEADER --}}
     <div class="dashboard-header">
-        <h1>Dashboard</h1>
         <span class="dashboard-date">{{ now()->format('F d, Y • l') }}</span>
     </div>
 
@@ -252,16 +249,16 @@
         <h6>Critical Metrics</h6>
     </div>
     <div class="row g-3 mb-4">
-        {{-- Completion Rate --}}
+        {{-- Total Beneficiaries --}}
         <div class="col-lg-3 col-md-6">
             <div class="kpi-master">
                 <div class="kpi-content">
                     <div class="kpi-icon">
-                        <i class="bi bi-check-circle-fill"></i>
+                        <i class="bi bi-people"></i>
                     </div>
                     <div class="kpi-text">
-                        <h3>{{ number_format($completionRate, 1) }}%</h3>
-                        <p>Completion Rate</p>
+                        <h3>{{ number_format($totalBeneficiaries) }}</h3>
+                        <p>Registered Beneficiaries</p>
                     </div>
                 </div>
             </div>
@@ -272,7 +269,7 @@
             <div class="kpi-master">
                 <div class="kpi-content">
                     <div class="kpi-icon">
-                        <i class="bi bi-people-check"></i>
+                        <i class="bi bi-person-check"></i>
                     </div>
                     <div class="kpi-text">
                         <h3>{{ number_format($reachedBeneficiaries) }}</h3>

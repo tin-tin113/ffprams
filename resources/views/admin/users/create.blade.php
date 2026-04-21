@@ -13,7 +13,6 @@
         <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary btn-sm me-3">
             <i class="bi bi-arrow-left"></i>
         </a>
-        <h1 class="h3 mb-0">Add New User</h1>
     </div>
 
     <div class="card border-0 shadow-sm">

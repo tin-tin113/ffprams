@@ -2,15 +2,10 @@
 
 @section('title', 'Beneficiary Management')
 
-@section('breadcrumb')
-    <li class="breadcrumb-item active">Beneficiaries</li>
-@endsection
-
 @section('content')
     <div class="module-page">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-1">
         <div>
-            <h1 class="h3 mb-0">Beneficiary Management</h1>
             <p class="text-muted mb-0">Registry view with barangay-level filters and quick actions</p>
         </div>
         @if(in_array(Auth::user()->role, ['admin', 'staff']))

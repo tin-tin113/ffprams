@@ -1,22 +1,16 @@
 @extends('layouts.app')
 
+@section('title', 'Programs')
 @section('content')
 <div class="container-fluid py-4">
 
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-3">
-                <h3 class="mb-0">
-                    <i class="bi bi-list"></i> Programs
-                </h3>
-                @if(Auth::user()->isAdmin())
-                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#pnModal">
-                    <i class="bi bi-plus"></i> Add Program
-                </button>
-                @endif
-            </div>
-            <p class="text-muted small">Manage assistance programs by agency</p>
-        </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div></div>
+        @if(Auth::user()->isAdmin())
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#pnModal">
+            <i class="bi bi-plus"></i> Add Program
+        </button>
+        @endif
     </div>
 
     {{-- Summary Dashboard (One Column Design) --}}

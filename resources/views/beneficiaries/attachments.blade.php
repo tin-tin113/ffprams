@@ -11,7 +11,6 @@
 @section('content')
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
         <div>
-            <h1 class="h3 mb-1">Upload Supporting Document</h1>
             <p class="text-muted mb-0">
                 Beneficiary: <span class="fw-semibold">{{ $beneficiary->full_name }}</span>
                 @if($beneficiary->barangay)

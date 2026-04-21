@@ -2,17 +2,14 @@
 
 @section('title', 'Resource Types')
 
-@section('breadcrumb')
-    <li class="breadcrumb-item active">Resource Types</li>
-@endsection
+
+
 
 @section('content')
 <div class="container-fluid">
 
-    {{-- Page Header --}}
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
-        <h1 class="h3 mb-0">Resource Types</h1>
-    </div>
+
+
 
     @if(Auth::user()->isAdmin())
         <div class="alert alert-info d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2" role="alert">

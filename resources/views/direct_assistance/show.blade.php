@@ -11,7 +11,6 @@
 <div class="container-fluid">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
         <div class="d-flex flex-wrap gap-2 justify-content-md-end">
-            <h1 class="h3 mb-0">{{ $directAssistance->beneficiary->full_name }}</h1>
             <p class="text-muted mb-0">Direct Assistance Record</p>
         </div>
         <div>

@@ -2,16 +2,7 @@
 
 @section('content')
 <div class="container py-4">
-    <!-- Header -->
-    <div class="mb-4">
-        <h1 class="h2">
-            @if (isset($agency))
-                Edit Agency: {{ $agency->name }}
-            @else
-                Create New Agency
-            @endif
-        </h1>
-    </div>
+
 
     <!-- Errors -->
     @if ($errors->any())

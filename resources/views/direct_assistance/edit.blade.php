@@ -12,7 +12,6 @@
 <div class="container-fluid">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
         <div>
-            <h1 class="h3 mb-0">Edit Direct Assistance</h1>
             <p class="text-muted mb-0">Update direct assistance record for {{ $directAssistance->beneficiary->full_name }}</p>
         </div>
     </div>

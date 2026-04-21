@@ -90,7 +90,7 @@
                                 id="resourceTypeSelect"
                                 required>
                             <option value="" selected disabled>Select Resource Type</option>
-                            @foreach($resourceTypes ?? collected([]) as $resource)
+                            @foreach($resourceTypes ?? collect([]) as $resource)
                                 <option value="{{ $resource->id }}"
                                         data-unit="{{ $resource->unit }}"
                                         {{ old('resource_type_id', $isEdit ? $directAssistance->resource_type_id : '') == $resource->id ? 'selected' : '' }}>

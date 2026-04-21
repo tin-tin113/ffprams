@@ -24,7 +24,6 @@
         <a href="{{ route('distribution-events.index') }}" class="btn btn-outline-secondary btn-sm me-3">
             <i class="bi bi-arrow-left"></i>
         </a>
-        <h1 class="h3 mb-0">Create Distribution Event</h1>
     </div>
 
     <div id="distributionEventCreateAjaxNotice" class="alert d-none" role="alert"></div>

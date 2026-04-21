@@ -25,7 +25,6 @@
         <a href="{{ route('distribution-events.index') }}" class="btn btn-outline-secondary btn-sm me-3">
             <i class="bi bi-arrow-left"></i>
         </a>
-        <h1 class="h3 mb-0">Edit Distribution Event</h1>
     </div>
 
     {{-- Warning Banner --}}

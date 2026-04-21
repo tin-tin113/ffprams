@@ -2,9 +2,8 @@
 
 @section('title', 'Reports & Analytics')
 
-@section('breadcrumb')
-    <li class="breadcrumb-item active">Reports & Analytics</li>
-@endsection
+
+
 
 @push('styles')
 <style>
@@ -947,7 +946,6 @@
         <div class="card-body">
             <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3">
                 <div>
-                    <h1 class="reports-title">Reports & Analytics</h1>
                     <p class="reports-subtitle">Municipality of Enrique B. Magalona - Farmer-Fisherfolk Resource Allocation</p>
                 </div>
 

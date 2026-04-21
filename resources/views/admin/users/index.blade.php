@@ -2,14 +2,8 @@
 
 @section('title', 'User Management')
 
-@section('breadcrumb')
-    <li class="breadcrumb-item">Admin</li>
-    <li class="breadcrumb-item active">Users</li>
-@endsection
-
 @section('content')
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
-        <h1 class="h3 mb-0">User Management</h1>
         <a href="{{ route('admin.users.create') }}" class="btn btn-success">
             <i class="bi bi-plus-lg me-1"></i> Add New User
         </a>

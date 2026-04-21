@@ -325,6 +325,7 @@ class BeneficiaryRequest extends FormRequest
         $allowedAgencySections = $this->allowedAgencyFormSections((string) $classification);
 
         foreach ($selectedAgencies as $agency) {
+            /** @var \App\Models\Agency $agency */
             $agencyFormFields = $agency->formFields()
                 ->where('is_active', true)
             ->whereIn('form_section', $allowedAgencySections)
@@ -775,7 +776,7 @@ class BeneficiaryRequest extends FormRequest
             'number' => 'integer',
             'decimal' => 'numeric',
             'date' => 'date',
-            'datetime' => 'date_time',
+            'datetime' => 'date',
             'dropdown' => 'string',
             'checkbox' => 'array',
             default => 'string',
@@ -864,6 +865,7 @@ class BeneficiaryRequest extends FormRequest
             }
 
             foreach ($selectedAgencies as $agency) {
+                /** @var \App\Models\Agency $agency */
                 $agencyFormFields = $agency->formFields()
                     ->where('is_active', true)
                     ->where('is_required', true)
@@ -910,9 +912,25 @@ class BeneficiaryRequest extends FormRequest
         $agencyIds = [];
 
         foreach ($agencyData as $key => $value) {
+            if (is_numeric($key)) {
+                $keyId = (int) $key;
+                if ($keyId > 0) {
+                    $agencyIds[] = $keyId;
+                }
+
+                if (! is_array($value) && is_numeric($value)) {
+                    $valueId = (int) $value;
+                    if ($valueId > 0) {
+                        $agencyIds[] = $valueId;
+                    }
+                }
+
+                continue;
+            }
+
             if (is_array($value)) {
-                if (is_numeric($key)) {
-                    $agencyId = (int) $key;
+                if (isset($value['id']) && is_numeric($value['id'])) {
+                    $agencyId = (int) $value['id'];
                     if ($agencyId > 0) {
                         $agencyIds[] = $agencyId;
                     }

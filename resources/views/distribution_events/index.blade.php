@@ -2,9 +2,8 @@
 
 @section('title', 'Distribution Events')
 
-@section('breadcrumb')
-    <li class="breadcrumb-item active">Distribution Events</li>
-@endsection
+
+
 
 @section('content')
 <div class="container-fluid module-page">
@@ -12,7 +11,6 @@
     {{-- Page Header --}}
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-1">
         <div>
-            <h1 class="h3 mb-0">Distribution Events</h1>
             <p class="text-muted mb-0">Manage distribution schedules and release progress by barangay</p>
         </div>
         @if(in_array(Auth::user()->role, ['admin', 'staff']))

@@ -11,7 +11,6 @@
 <div class="container-fluid">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
         <div>
-            <h1 class="h3 mb-0">Barangay Direct Assistance Analytics</h1>
             <p class="text-muted mb-0">Summary of direct assistance by barangay</p>
         </div>
         <a href="{{ route('direct-assistance.index') }}" class="btn btn-outline-secondary">

@@ -16,13 +16,15 @@
             $results = [];
 
             if (is_numeric($key)) {
-                if (is_array($value)) {
-                    $results[] = $key;
-                } else {
+                $results[] = $key;
+
+                if (! is_array($value) && is_numeric($value)) {
                     $results[] = $value;
                 }
             } else {
-                $results[] = $key;
+                if (is_numeric($value)) {
+                    $results[] = $value;
+                }
             }
 
             return $results;

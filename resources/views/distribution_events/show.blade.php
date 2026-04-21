@@ -56,7 +56,6 @@
                 <i class="bi bi-arrow-left"></i>
             </a>
             <div>
-                <h1 class="h3 mb-1">{{ $event->barangay->name }}</h1>
                 <div class="d-flex gap-2 align-items-center">
                     <span class="badge {{ $statusBadge }}">{{ $event->status }}</span>
                     <span class="badge {{ $agencyBadge }}">{{ $agencyName }}</span>

@@ -2,9 +2,8 @@
 
 @section('title', 'SMS Broadcast')
 
-@section('breadcrumb')
-    <li class="breadcrumb-item active">SMS Broadcast</li>
-@endsection
+
+
 
 @push('styles')
 <style>
@@ -102,7 +101,6 @@
 @section('content')
 {{-- Page Header --}}
 <div class="mb-4">
-    <h1 class="h3 mb-1">SMS Broadcast</h1>
     <p class="text-muted mb-0">Send messages directly to beneficiaries</p>
 </div>
 
