@@ -160,8 +160,8 @@ class BeneficiaryController extends Controller
 
         try {
             // No duplicates - proceed with registration
-            $beneficiary = DB::transaction(function () use ($validated) {
-                [$agencyIds, $agencyFieldsData] = $this->extractAgencyData($validated['agencies'] ?? []);
+            $beneficiary = DB::transaction(function () use ($validated, $request) {
+                [$agencyIds, $agencyFieldsData] = $this->extractAgencyData($request->input('agencies', $validated['agencies'] ?? []));
                 $validated['agency_id'] = $agencyIds[0] ?? null;
                 $beneficiaryFillable = (new Beneficiary())->getFillable();
 
@@ -386,10 +386,10 @@ class BeneficiaryController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($beneficiary, $validated) {
+            DB::transaction(function () use ($beneficiary, $validated, $request) {
                 $oldValues = $beneficiary->toArray();
 
-            [$agencyIds, $agencyFieldsData] = $this->extractAgencyData($validated['agencies'] ?? []);
+            [$agencyIds, $agencyFieldsData] = $this->extractAgencyData($request->input('agencies', $validated['agencies'] ?? []));
             $validated['agency_id'] = $agencyIds[0] ?? null;
             $beneficiaryFillable = (new Beneficiary())->getFillable();
 
@@ -555,6 +555,22 @@ class BeneficiaryController extends Controller
                     if ($agencyId > 0) {
                         $agencyIds[] = $agencyId;
                         $agencyFieldsData[$agencyId] = $value;
+                    }
+                }
+
+                continue;
+            }
+
+            if (is_numeric($key)) {
+                $agencyId = (int) $key;
+                if ($agencyId > 0) {
+                    $agencyIds[] = $agencyId;
+                }
+
+                if (is_numeric($value)) {
+                    $valueAgencyId = (int) $value;
+                    if ($valueAgencyId > 0 && $valueAgencyId !== $agencyId) {
+                        $agencyIds[] = $valueAgencyId;
                     }
                 }
 

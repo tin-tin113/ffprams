@@ -377,6 +377,8 @@ class BeneficiaryRequest extends FormRequest
         // Validate custom fields defined by each selected agency
         $allowedAgencySections = $this->allowedAgencyFormSections((string) $classification);
 
+        $dynamicAvailabilityExemptFieldNames = ['rsbsa_number', 'fishr_number', 'cloa_ep_number'];
+
         foreach ($selectedAgencies as $agency) {
             /** @var \App\Models\Agency $agency */
             $agencyFormFields = $agency->formFields()
@@ -393,7 +395,10 @@ class BeneficiaryRequest extends FormRequest
                 $statusKey = "agencies.{$agencyId}.{$fieldName}_availability_status";
                 $reasonKey = "agencies.{$agencyId}.{$fieldName}_unavailability_reason";
 
-                if ($field->is_required) {
+                $requiresDynamicAvailability = $field->is_required
+                    && ! in_array($fieldName, $dynamicAvailabilityExemptFieldNames, true);
+
+                if ($requiresDynamicAvailability) {
                     // Required field: must have value OR unavailability reason
                     $rules[$inputKey] = ['nullable', $this->getFieldTypeValidation($field)];
                     $rules[$reasonKey] = ['nullable', 'string', 'max:500'];
@@ -917,6 +922,8 @@ class BeneficiaryRequest extends FormRequest
                 }
             }
 
+            $dynamicAvailabilityExemptFieldNames = ['rsbsa_number', 'fishr_number', 'cloa_ep_number'];
+
             foreach ($selectedAgencies as $agency) {
                 /** @var \App\Models\Agency $agency */
                 $agencyFormFields = $agency->formFields()
@@ -927,6 +934,10 @@ class BeneficiaryRequest extends FormRequest
 
                 foreach ($agencyFormFields as $field) {
                     $fieldName = $field->field_name;
+                    if (in_array($fieldName, $dynamicAvailabilityExemptFieldNames, true)) {
+                        continue;
+                    }
+
                     $agencyId = $agency->id;
 
                     $fieldValue = $this->input("agencies.{$agencyId}.{$fieldName}");

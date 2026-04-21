@@ -328,7 +328,12 @@
                 <label for="contact_number" class="form-label">Contact Number <span class="text-danger">*</span></label>
                 <input type="text" class="form-control @error('contact_number') is-invalid @enderror"
                        id="contact_number" name="contact_number" placeholder="09XXXXXXXXX or +639XXXXXXXXX"
-                       value="{{ old('contact_number', $beneficiary->contact_number ?? '') }}" required>
+                       value="{{ old('contact_number', $beneficiary->contact_number ?? '') }}"
+                       inputmode="numeric"
+                       maxlength="13"
+                       pattern="^(\+639\d{9}|639\d{9}|09\d{9}|9\d{9})$"
+                       title="Use one of: 09XXXXXXXXX, 9XXXXXXXXX, 639XXXXXXXXX, +639XXXXXXXXX"
+                       required>
                 @error('contact_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 <small class="text-muted">Accepted: 09XXXXXXXXX, 9XXXXXXXXX, 639XXXXXXXXX, +639XXXXXXXXX</small>
             </div>
@@ -517,20 +522,6 @@
                 @error('fishr_unavailability_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             <div id="fishr-fields-wrapper" class="contents {{ $fishrAvailabilityStatus === 'provided' ? '' : 'd-none' }}">
-                 <div class="col-12 col-md-6" id="da-fisherfolk-rsbsa-wrapper" style="display: none;">
-                  <label for="fisherfolk_rsbsa_number" class="form-label">RSBSA Number (DA)</label>
-                  <input type="text" class="form-control @error('rsbsa_number') is-invalid @enderror"
-                      id="fisherfolk_rsbsa_number" name="rsbsa_number" maxlength="50"
-                      value="{{ old('rsbsa_number', $beneficiary->rsbsa_number ?? '') }}">
-                  @error('rsbsa_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                 </div>
-                 <div class="col-12 col-md-6" id="bfar-fishr-number-wrapper" style="display: none;">
-                <label for="fishr_number" class="form-label">FishR Number</label>
-                <input type="text" class="form-control @error('fishr_number') is-invalid @enderror"
-                       id="fishr_number" name="fishr_number" maxlength="50"
-                       value="{{ old('fishr_number', $beneficiary->fishr_number ?? '') }}">
-                @error('fishr_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
-            </div>
             <div class="col-12 col-md-6">
                 <label for="fisherfolk_type" class="form-label">Fisherfolk Type {!! $fisherfolkTypeRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('fisherfolk_type') is-invalid @enderror" id="fisherfolk_type" name="fisherfolk_type">
@@ -792,8 +783,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const fishrFieldsWrapper = document.getElementById('fishr-fields-wrapper');
     const fishrReasonWrapper = document.getElementById('fishr-reason-wrapper');
     const fishrReasonField = document.getElementById('fishr_unavailability_reason');
-    const daFisherfolkRsbsaWrapper = document.getElementById('da-fisherfolk-rsbsa-wrapper');
-    const bfarFishrNumberWrapper = document.getElementById('bfar-fishr-number-wrapper');
     const cloaAvailabilitySelect = document.getElementById('cloa_ep_availability_status');
     const darFieldsWrapper = document.getElementById('dar-fields-wrapper');
     const cloaNumberWrapper = document.getElementById('cloa-ep-number-wrapper');
@@ -823,22 +812,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         } else if (classification === 'Fisherfolk') {
             fisherfolkSection.style.display = 'block';
-
-            if (daFisherfolkRsbsaWrapper) {
-                daFisherfolkRsbsaWrapper.style.display = selectedAgencies.includes('DA') ? '' : 'none';
-            }
-
-            if (bfarFishrNumberWrapper) {
-                bfarFishrNumberWrapper.style.display = selectedAgencies.includes('BFAR') ? '' : 'none';
-            }
-        } else {
-            if (daFisherfolkRsbsaWrapper) {
-                daFisherfolkRsbsaWrapper.style.display = 'none';
-            }
-
-            if (bfarFishrNumberWrapper) {
-                bfarFishrNumberWrapper.style.display = 'none';
-            }
         }
 
         toggleRsbsaAvailability();
@@ -965,13 +938,49 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function toggleCloaAvailability() {
+        const selectedAgencies = getSelectedAgencyNames();
+        const isApplicable = classificationSelect
+            && classificationSelect.value === 'Farmer'
+            && selectedAgencies.includes('DAR');
+
         toggleSectionAvailability(
             cloaAvailabilitySelect,
             darFieldsWrapper,
             cloaReasonWrapper,
             cloaReasonField,
-            ['cloa_ep_number', 'arb_classification', 'landholding_description', 'land_area_awarded_hectares', 'ownership_scheme']
+            isApplicable ? ['cloa_ep_number', 'arb_classification', 'landholding_description', 'land_area_awarded_hectares', 'ownership_scheme'] : []
         );
+
+        if (cloaAvailabilitySelect) {
+            cloaAvailabilitySelect.disabled = !isApplicable;
+        }
+
+        if (!isApplicable) {
+            if (darFieldsWrapper) {
+                darFieldsWrapper.classList.add('d-none');
+            }
+            if (cloaReasonWrapper) {
+                cloaReasonWrapper.classList.add('d-none');
+            }
+            if (cloaNumberWrapper) {
+                cloaNumberWrapper.style.display = 'none';
+            }
+            if (cloaNumberField) {
+                cloaNumberField.required = false;
+            }
+            if (cloaReasonField) {
+                cloaReasonField.required = false;
+            }
+
+            ['cloa_ep_number', 'arb_classification', 'landholding_description', 'land_area_awarded_hectares', 'ownership_scheme'].forEach((fieldId) => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.required = false;
+                }
+            });
+
+            return;
+        }
 
         if (cloaAvailabilitySelect && cloaNumberWrapper) {
             cloaNumberWrapper.style.display = cloaAvailabilitySelect.value === 'provided' ? '' : 'none';
