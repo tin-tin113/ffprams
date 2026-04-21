@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Agency;
 use App\Models\Allocation;
 use App\Models\AssistancePurpose;
 use App\Models\Barangay;
@@ -18,13 +19,42 @@ class ReportsController extends Controller
     public function index(Request $request): View
     {
         $currentCalendarYear = now()->year;
-        $selectedYear = (int) $request->query('year', $currentCalendarYear);
+        $activityYears = DistributionEvent::query()
+            ->whereNull('deleted_at')
+            ->whereNotNull('distribution_date')
+            ->selectRaw('DISTINCT YEAR(distribution_date) as year_value')
+            ->pluck('year_value')
+            ->merge(
+                DirectAssistance::query()
+                    ->whereNull('deleted_at')
+                    ->selectRaw('DISTINCT YEAR(COALESCE(distributed_at, created_at)) as year_value')
+                    ->pluck('year_value')
+            )
+            ->merge(
+                Allocation::query()
+                    ->whereNull('deleted_at')
+                    ->whereNotNull('distributed_at')
+                    ->selectRaw('DISTINCT YEAR(distributed_at) as year_value')
+                    ->pluck('year_value')
+            )
+            ->filter(fn ($year) => is_numeric($year) && (int) $year >= 2000)
+            ->map(fn ($year) => (int) $year)
+            ->unique()
+            ->sortDesc()
+            ->values();
+
+        $defaultYear = (int) ($activityYears->first() ?? $currentCalendarYear);
+        $selectedYear = (int) $request->query('year', $defaultYear);
 
         if ($selectedYear < 2000 || $selectedYear > ($currentCalendarYear + 1)) {
             $selectedYear = $currentCalendarYear;
         }
 
-        $availableYears = collect(range($currentCalendarYear, $currentCalendarYear - 4));
+        $availableYears = $activityYears
+            ->merge(collect(range($currentCalendarYear, $currentCalendarYear - 4)))
+            ->unique()
+            ->sortDesc()
+            ->values();
 
         if (! $availableYears->contains($selectedYear)) {
             $availableYears = $availableYears
@@ -421,6 +451,142 @@ class ReportsController extends Controller
             ->orderByDesc('total_amount')
             ->get();
 
+        // BENEFICIARY MIX DATA — Classification breakdown
+        $beneficiaryMixRows = collect([
+            (object) ['label' => 'Farmers', 'value' => (int) Beneficiary::where('classification', 'Farmer')->whereNull('deleted_at')->count(), 'color' => '#10b981'],
+            (object) ['label' => 'Fisherfolk', 'value' => (int) Beneficiary::where('classification', 'Fisherfolk')->whereNull('deleted_at')->count(), 'color' => '#3b82f6'],
+            (object) ['label' => 'Both', 'value' => (int) Beneficiary::where('classification', 'Both')->whereNull('deleted_at')->count(), 'color' => '#f59e0b'],
+        ])->filter(fn ($row) => $row->value > 0);
+
+        // UNREACHED BY BARANGAY — Top barangays with unreached beneficiaries
+        $unreachedByBarangay = Beneficiary::with('barangay')
+            ->whereDoesntHave('allocations', function ($q) {
+                $q->where(function ($q2) {
+                    $q2->whereNotNull('distributed_at')
+                        ->orWhere('release_outcome', 'received');
+                });
+            })
+            ->whereDoesntHave('directAssistance', function ($q) {
+                $q->where(function ($q2) {
+                    $q2->whereNotNull('distributed_at')
+                        ->orWhereIn('status', ['released', 'completed'])
+                        ->orWhere('release_outcome', 'accepted');
+                });
+            })
+            ->whereNull('deleted_at')
+            ->get()
+            ->groupBy('barangay_id')
+            ->map(function ($group) {
+                return (object) [
+                    'label' => $group->first()->barangay->name ?? 'Unknown',
+                    'value' => count($group),
+                ];
+            })
+            ->sortByDesc('value')
+            ->values();
+
+        // BARANGAY INSIGHTS — Aggregated performance metrics
+        $barangayInsights = Barangay::query()
+            ->select('barangays.id', 'barangays.name as barangay_name')
+            ->selectRaw('COUNT(DISTINCT de.id) as total_events')
+            ->selectRaw('SUM(CASE WHEN de.type = "physical" THEN 1 ELSE 0 END) as event_distribution')
+            ->selectRaw('SUM(CASE WHEN de.type = "financial" THEN 1 ELSE 0 END) as financial_events')
+            ->selectRaw('COALESCE(SUM(a.amount), 0) as financial_amount')
+            ->selectRaw('COUNT(DISTINCT da.id) as direct_operations')
+            ->selectRaw('COALESCE(SUM(da.amount), 0) as direct_amount')
+            ->leftJoin('distribution_events as de', function ($join) use ($selectedYear) {
+                $join->on('de.barangay_id', '=', 'barangays.id')
+                    ->whereNull('de.deleted_at')
+                    ->where('de.status', 'Completed')
+                    ->whereYear('de.distribution_date', $selectedYear);
+            })
+            ->leftJoin('allocations as a', function ($join) {
+                $join->on('de.id', '=', 'a.distribution_event_id')
+                    ->whereNull('a.deleted_at')
+                    ->whereNotNull('a.distributed_at');
+            })
+            ->leftJoin('beneficiaries as b', 'b.barangay_id', '=', 'barangays.id')
+            ->leftJoin('direct_assistance as da', function ($join) use ($selectedYear) {
+                $join->on('b.id', '=', 'da.beneficiary_id')
+                    ->whereNull('da.deleted_at')
+                    ->where(function ($q) {
+                        $q->whereNotNull('da.distributed_at')
+                            ->orWhereIn('da.status', ['released', 'completed']);
+                    })
+                    ->whereYear(DB::raw('COALESCE(da.distributed_at, da.created_at)'), $selectedYear);
+            })
+            ->groupBy('barangays.id', 'barangays.name')
+            ->having(DB::raw('COUNT(DISTINCT de.id) + COUNT(DISTINCT da.id)'), '>', 0)
+            ->orderByDesc('financial_amount')
+            ->get();
+
+        // AGENCY SUMMARY — Aggregated contribution metrics
+        $agencySummary = Agency::query()
+            ->select('agencies.id', 'agencies.name as agency_name')
+            ->selectRaw('COUNT(DISTINCT de.id) as total_events')
+            ->selectRaw('SUM(CASE WHEN de.status = "Completed" THEN 1 ELSE 0 END) as completed_events')
+            ->selectRaw('COALESCE(SUM(a.amount), 0) as financial_amount')
+            ->selectRaw('COUNT(DISTINCT da.id) as direct_operations')
+            ->selectRaw('COALESCE(SUM(a.quantity), 0) as total_items_distributed')
+            ->leftJoin('resource_types as rt', 'rt.agency_id', '=', 'agencies.id')
+            ->leftJoin('allocations as a', function ($join) {
+                $join->on('rt.id', '=', 'a.resource_type_id')
+                    ->whereNull('a.deleted_at')
+                    ->whereNotNull('a.distributed_at');
+            })
+            ->leftJoin('distribution_events as de', 'de.id', '=', 'a.distribution_event_id')
+            ->leftJoin('direct_assistance as da', function ($join) use ($selectedYear) {
+                $join->on('rt.id', '=', 'da.resource_type_id')
+                    ->whereNull('da.deleted_at')
+                    ->where(function ($q) {
+                        $q->whereNotNull('da.distributed_at')
+                            ->orWhereIn('da.status', ['released', 'completed']);
+                    })
+                    ->whereYear(DB::raw('COALESCE(da.distributed_at, da.created_at)'), $selectedYear);
+            })
+            ->groupBy('agencies.id', 'agencies.name')
+            ->having(DB::raw('COUNT(DISTINCT de.id) + COUNT(DISTINCT da.id)'), '>', 0)
+            ->orderByDesc('financial_amount')
+            ->get();
+
+        // PROGRAM CATEGORY SUMMARY — Aggregation by program category
+        $programCategorySummary = collect();
+        if (true) {
+            $eventByCategory = Allocation::query()
+                ->select('assistance_purposes.category')
+                ->selectRaw('COALESCE(SUM(allocations.amount), 0) as amount')
+                ->join('distribution_events', 'distribution_events.id', '=', 'allocations.distribution_event_id')
+                ->join('assistance_purposes', 'assistance_purposes.id', '=', 'allocations.assistance_purpose_id')
+                ->whereNull('allocations.deleted_at')
+                ->whereNotNull('allocations.distributed_at')
+                ->where('distribution_events.status', 'Completed')
+                ->whereYear('distribution_events.distribution_date', $selectedYear)
+                ->groupBy('assistance_purposes.category')
+                ->pluck('amount', 'category');
+
+            $directByCategory = DirectAssistance::query()
+                ->select('assistance_purposes.category')
+                ->selectRaw('COALESCE(SUM(direct_assistance.amount), 0) as amount')
+                ->join('assistance_purposes', 'assistance_purposes.id', '=', 'direct_assistance.assistance_purpose_id')
+                ->whereNull('direct_assistance.deleted_at')
+                ->whereNotNull('direct_assistance.assistance_purpose_id')
+                ->where(function ($q) {
+                    $q->whereNotNull('direct_assistance.distributed_at')
+                        ->orWhereIn('direct_assistance.status', ['released', 'completed']);
+                })
+                ->whereYear(DB::raw('COALESCE(direct_assistance.distributed_at, direct_assistance.created_at)'), $selectedYear)
+                ->groupBy('assistance_purposes.category')
+                ->pluck('amount', 'category');
+
+            $allCategories = collect($eventByCategory->keys()->merge($directByCategory->keys()))->unique();
+            $programCategorySummary = $allCategories->map(function ($category) use ($eventByCategory, $directByCategory) {
+                return (object) [
+                    'category_name' => $category,
+                    'amount' => $eventByCategory->get($category, 0) + $directByCategory->get($category, 0),
+                ];
+            })->sortByDesc('amount');
+        }
+
         return view('reports.index', compact(
             'complianceOverview',
             'beneficiariesPerBarangay',
@@ -434,6 +600,11 @@ class ReportsController extends Controller
             'financialSummary',
             'financialPerBarangay',
             'assistanceByPurpose',
+            'beneficiaryMixRows',
+            'unreachedByBarangay',
+            'barangayInsights',
+            'agencySummary',
+            'programCategorySummary',
         ));
     }
 }
