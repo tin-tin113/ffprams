@@ -5,6 +5,17 @@
 @section('content')
 <div class="container-fluid">
     @php
+        $activeFilters = collect([
+            'user_id' => request('user_id'),
+            'action' => request('action'),
+            'table_name' => request('table_name'),
+            'record_id' => request('record_id'),
+            'from' => request('from'),
+            'to' => request('to'),
+        ])->filter(fn ($value) => filled($value));
+
+        $activeFilterCount = $activeFilters->count();
+
         $actionLabelMap = [
             'created' => 'Added',
             'updated' => 'Edited',
@@ -14,6 +25,17 @@
             'profile_updated' => 'Profile Updated',
             'password_updated' => 'Password Changed',
             'account_deleted' => 'Account Deleted',
+        ];
+
+        $actionBadgeClassMap = [
+            'created' => 'text-bg-success',
+            'updated' => 'text-bg-primary',
+            'deleted' => 'text-bg-danger',
+            'login' => 'text-bg-info',
+            'logout' => 'text-bg-secondary',
+            'profile_updated' => 'text-bg-primary',
+            'password_updated' => 'text-bg-warning',
+            'account_deleted' => 'text-bg-danger',
         ];
 
         $tableLabelMap = [
@@ -83,10 +105,85 @@
             '_user_agent',
         ];
 
-        $formatValue = function ($value): string {
+        $booleanFields = [
+            'is_active',
+            'requires_farmc_endorsement',
+            'is_required',
+            'is_financial',
+        ];
+
+        $enumValueMap = [
+            'release_method' => [
+                'direct' => 'Direct Assistance',
+                'event' => 'Event Allocation',
+            ],
+            'release_status' => [
+                'planned' => 'Planned',
+                'ready_for_release' => 'Ready for Release',
+                'released' => 'Released',
+                'not_received' => 'Not Received',
+            ],
+            'status' => [
+                'pending' => 'Pending',
+                'ongoing' => 'Ongoing',
+                'completed' => 'Completed',
+                'active' => 'Active',
+                'inactive' => 'Inactive',
+            ],
+            'type' => [
+                'financial' => 'Financial',
+                'physical' => 'Physical',
+            ],
+            'liquidation_status' => [
+                'pending' => 'Pending',
+                'submitted' => 'Submitted',
+                'verified' => 'Verified',
+            ],
+            'fund_source' => [
+                'lgu_trust_fund' => 'LGU Trust Fund',
+                'nga_transfer' => 'NGA Transfer',
+                'local_program' => 'Local Program',
+                'other' => 'Other',
+            ],
+            'legal_basis_type' => [
+                'resolution' => 'Resolution',
+                'ordinance' => 'Ordinance',
+                'memo' => 'Memo',
+                'special_order' => 'Special Order',
+                'other' => 'Other',
+            ],
+        ];
+
+        $formatValue = function (string $fieldKey, $value) use ($booleanFields, $enumValueMap, $referenceMaps): string {
             if ($value === null) {
                 return 'None';
             }
+
+            if (in_array($fieldKey, $booleanFields, true)) {
+                if ($value === true || $value === 1 || $value === '1') {
+                    return 'Yes';
+                }
+
+                if ($value === false || $value === 0 || $value === '0') {
+                    return 'No';
+                }
+            }
+
+            if (isset($referenceMaps[$fieldKey]) && is_numeric($value) && (int) $value > 0) {
+                $id = (int) $value;
+                $label = $referenceMaps[$fieldKey][$id] ?? null;
+                if ($label !== null && $label !== '') {
+                    return $label . ' (#' . $id . ')';
+                }
+            }
+
+            if (isset($enumValueMap[$fieldKey])) {
+                $normalized = strtolower((string) $value);
+                if (isset($enumValueMap[$fieldKey][$normalized])) {
+                    return $enumValueMap[$fieldKey][$normalized];
+                }
+            }
+
             if ($value === true || $value === 1 || $value === '1') {
                 return 'Yes';
             }
@@ -96,6 +193,7 @@
             if (is_array($value)) {
                 return json_encode($value, JSON_UNESCAPED_UNICODE);
             }
+
             return (string) $value;
         };
     @endphp
@@ -104,14 +202,16 @@
         <div>
             <p class="text-muted mb-0">See who did what, when it happened, and what changed.</p>
         </div>
+        <div class="d-flex flex-wrap gap-2">
+            <span class="badge rounded-pill text-bg-light border px-3 py-2">Total Records: {{ number_format($logs->total()) }}</span>
+            <span class="badge rounded-pill text-bg-light border px-3 py-2">Showing: {{ number_format($logs->count()) }}</span>
+            <span class="badge rounded-pill {{ $activeFilterCount ? 'text-bg-primary' : 'text-bg-light border' }} px-3 py-2">
+                Filters Applied: {{ $activeFilterCount }}
+            </span>
+        </div>
     </div>
 
-    <div class="alert alert-info" role="alert">
-        <strong>Quick guide:</strong> This page is your system timeline. Use filters to find activities faster.
-        <div class="small mt-1">Examples: login, logout, profile updated, beneficiary created, event status updated.</div>
-    </div>
-
-    <div class="card border-0 shadow-sm mb-4 modern-filter-card">
+    <div class="card border-0 shadow-sm mb-4 modern-filter-card audit-filter-card">
         <div class="card-header bg-white fw-semibold">
             <i class="bi bi-funnel me-1"></i> Find Activity
         </div>
@@ -163,23 +263,39 @@
                     <input type="date" class="form-control" name="to" value="{{ request('to') }}">
                 </div>
 
-                <div class="col-12 col-md-2 modern-filter-actions">
+                <div class="col-md-2">
+                    <label class="form-label">Reference ID</label>
+                    <input type="number" min="1" class="form-control" name="record_id" value="{{ request('record_id') }}" placeholder="e.g. 60">
+                </div>
+
+                <div class="col-12 col-md-3 modern-filter-actions d-flex align-items-end gap-2">
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-search me-1"></i> Search
                     </button>
                     <a href="{{ route('admin.audit-logs.index') }}" class="btn btn-outline-secondary">Clear</a>
                 </div>
             </form>
+
+            @if($activeFilterCount)
+                <div class="mt-3 d-flex flex-wrap gap-2">
+                    @foreach($activeFilters as $key => $value)
+                        <span class="badge rounded-pill text-bg-light border px-3 py-2">
+                            {{ $fieldLabelMap[$key] ?? ucwords(str_replace('_', ' ', $key)) }}: {{ $value }}
+                        </span>
+                    @endforeach
+                </div>
+            @endif
         </div>
     </div>
 
     <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white fw-semibold">
-            <i class="bi bi-journal-text me-1"></i> Activity List
+        <div class="card-header bg-white fw-semibold d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div><i class="bi bi-journal-text me-1"></i> Activity List</div>
+            <div class="small text-muted">Newest first</div>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0 table-responsive-cards">
+                <table class="table table-hover align-middle mb-0 table-responsive-cards audit-log-table">
                     <thead class="table-light">
                         <tr>
                             <th>Date and Time</th>
@@ -193,18 +309,31 @@
                     <tbody>
                         @forelse($logs as $log)
                             <tr>
-                                <td class="text-muted small" data-label="Date and Time">{{ $log->created_at->format('M d, Y h:i:s A') }}</td>
+                                <td class="text-muted small" data-label="Date and Time">
+                                    <div class="fw-semibold text-dark">{{ $log->created_at->format('M d, Y') }}</div>
+                                    <div>{{ $log->created_at->format('h:i:s A') }}</div>
+                                </td>
                                 <td data-label="Person">
                                     <div class="fw-semibold">{{ $log->user->name ?? 'Unknown User' }}</div>
                                     <div class="small text-muted">{{ $log->user->email ?? 'N/A' }}</div>
                                 </td>
-                                <td data-label="Activity"><span class="badge bg-secondary">{{ $actionLabelMap[$log->action] ?? ucwords(str_replace('_', ' ', $log->action)) }}</span></td>
+                                <td data-label="Activity">
+                                    <span class="badge {{ $actionBadgeClassMap[$log->action] ?? 'text-bg-secondary' }}">
+                                        {{ $actionLabelMap[$log->action] ?? ucwords(str_replace('_', ' ', $log->action)) }}
+                                    </span>
+                                </td>
                                 <td data-label="Section">{{ $tableLabelMap[$log->table_name] ?? ucwords(str_replace('_', ' ', $log->table_name)) }}</td>
-                                <td data-label="Reference ID">{{ $log->record_id }}</td>
+                                <td data-label="Reference ID">{{ $log->record_id ?: 'N/A' }}</td>
                                 <td data-label="Details">
                                     @php
                                         $oldValues = is_array($log->old_values) ? $log->old_values : [];
                                         $newValues = is_array($log->new_values) ? $log->new_values : [];
+
+                                        $requestMeta = [
+                                            'IP Address' => $newValues['_ip'] ?? null,
+                                            'HTTP Method' => $newValues['_method'] ?? null,
+                                            'Route' => $newValues['_route'] ?? null,
+                                        ];
 
                                         foreach ($ignoredFields as $ignoredField) {
                                             unset($oldValues[$ignoredField], $newValues[$ignoredField]);
@@ -218,13 +347,18 @@
                                             })
                                             ->values();
                                     @endphp
-                                    <details>
-                                        <summary class="small text-primary" style="cursor: pointer;">Show Details</summary>
+                                    <details class="audit-details">
+                                        <summary class="small text-primary" style="cursor: pointer;">
+                                            View Details
+                                            @if($changedKeys->count())
+                                                <span class="badge text-bg-light border ms-1">{{ $changedKeys->count() }} change(s)</span>
+                                            @endif
+                                        </summary>
                                         <div class="mt-2">
                                             @if($changedKeys->count())
                                                 <div class="small fw-semibold mb-2">What Changed</div>
                                                 <div class="table-responsive">
-                                                    <table class="table table-sm table-bordered mb-0">
+                                                    <table class="table table-sm table-bordered mb-2 audit-changes-table">
                                                         <thead class="table-light">
                                                             <tr>
                                                                 <th>Field</th>
@@ -236,8 +370,8 @@
                                                             @foreach($changedKeys as $key)
                                                                 <tr>
                                                                     <td>{{ $fieldLabelMap[$key] ?? ucwords(str_replace('_', ' ', $key)) }}</td>
-                                                                    <td>{{ $formatValue($oldValues[$key] ?? null) }}</td>
-                                                                    <td>{{ $formatValue($newValues[$key] ?? null) }}</td>
+                                                                    <td>{{ $formatValue((string) $key, $oldValues[$key] ?? null) }}</td>
+                                                                    <td>{{ $formatValue((string) $key, $newValues[$key] ?? null) }}</td>
                                                                 </tr>
                                                             @endforeach
                                                         </tbody>
@@ -245,6 +379,17 @@
                                                 </div>
                                             @else
                                                 <div class="small text-muted">No user-visible field changes were found for this item.</div>
+                                            @endif
+
+                                            @if(collect($requestMeta)->filter()->isNotEmpty())
+                                                <div class="small fw-semibold mb-1 mt-2">Request Context</div>
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    @foreach($requestMeta as $metaLabel => $metaValue)
+                                                        @if(filled($metaValue))
+                                                            <span class="badge rounded-pill text-bg-light border">{{ $metaLabel }}: {{ $metaValue }}</span>
+                                                        @endif
+                                                    @endforeach
+                                                </div>
                                             @endif
                                         </div>
                                     </details>
@@ -271,3 +416,82 @@
     </div>
 </div>
 @endsection
+
+@push('styles')
+<style>
+    .audit-filter-card {
+        border-left: 4px solid #0d6efd;
+    }
+
+    .audit-log-table thead th {
+        white-space: nowrap;
+        font-size: 0.84rem;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
+
+    .audit-log-table tbody td {
+        vertical-align: top;
+    }
+
+    .audit-details summary {
+        list-style: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-weight: 600;
+    }
+
+    .audit-details summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .audit-details summary::before {
+        content: '\25B8';
+        font-size: 0.7rem;
+        color: #64748b;
+        transition: transform 0.15s ease;
+    }
+
+    .audit-details[open] summary::before {
+        transform: rotate(90deg);
+    }
+
+    .audit-changes-table td:nth-child(2) {
+        background-color: #fff5f5;
+    }
+
+    .audit-changes-table td:nth-child(3) {
+        background-color: #f0fff4;
+    }
+
+    @media (max-width: 991.98px) {
+        .audit-log-table thead {
+            display: none;
+        }
+
+        .audit-log-table tr {
+            display: block;
+            border-bottom: 1px solid #e9ecef;
+            padding: 0.65rem 0;
+        }
+
+        .audit-log-table td {
+            display: grid;
+            grid-template-columns: 130px 1fr;
+            gap: 0.5rem;
+            border: 0;
+            padding: 0.35rem 0.75rem;
+        }
+
+        .audit-log-table td::before {
+            content: attr(data-label);
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.01em;
+        }
+    }
+</style>
+@endpush

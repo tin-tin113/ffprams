@@ -2,8 +2,9 @@
 
 @section('title', 'Reports & Analytics')
 
-
-
+@section('breadcrumb')
+    <li class="breadcrumb-item active">Reports & Analytics</li>
+@endsection
 
 @push('styles')
 <style>
@@ -946,6 +947,7 @@
         <div class="card-body">
             <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3">
                 <div>
+                    <h1 class="reports-title">Reports & Analytics</h1>
                     <p class="reports-subtitle">Municipality of Enrique B. Magalona - Farmer-Fisherfolk Resource Allocation</p>
                 </div>
 
@@ -1515,6 +1517,28 @@
                     <div class="insight-note">{{ number_format($topBarangayByEventsTotal) }} recorded events</div>
                 </div>
             </div>
+
+            @if($monthlyDistribution->count())
+                <div class="card report-card border-0 mb-4">
+                    <div class="card-header report-card-header">
+                        <span class="report-card-title"><i class="bi bi-graph-up me-1"></i> Monthly Allocation Analytics ({{ $currentYear }})</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12 col-xl-6">
+                                <div class="report-chart-wrap">
+                                    <canvas id="allocationMonthlyReachChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-12 col-xl-6">
+                                <div class="report-chart-wrap">
+                                    <canvas id="allocationMonthlyQuantityChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             @if($resourceDistribution->count())
                 <div class="card report-card border-0 mb-4">
@@ -2611,6 +2635,117 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function initializeAllocationMonthlyReachChart() {
+        if (!monthlyData.length) {
+            return;
+        }
+
+        createChartIfNeeded('allocationMonthlyReachChart', function (canvas) {
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const labels = monthlyData.map(function (row) {
+                return monthNames[(row.month_number || 1) - 1];
+            });
+
+            return new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Event Beneficiaries',
+                            data: monthlyData.map(function (row) { return toNumber(row.event_beneficiaries); }),
+                            borderColor: 'rgba(22, 163, 74, 1)',
+                            backgroundColor: 'rgba(22, 163, 74, 0.18)',
+                            pointBackgroundColor: 'rgba(22, 163, 74, 1)',
+                            fill: true,
+                            tension: 0.35
+                        },
+                        {
+                            label: 'Direct Beneficiaries',
+                            data: monthlyData.map(function (row) { return toNumber(row.direct_beneficiaries); }),
+                            borderColor: 'rgba(37, 99, 235, 1)',
+                            backgroundColor: 'rgba(37, 99, 235, 0.16)',
+                            pointBackgroundColor: 'rgba(37, 99, 235, 1)',
+                            fill: true,
+                            tension: 0.35
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        title: {
+                            display: true,
+                            text: 'Beneficiary Reach by Channel'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    function initializeAllocationMonthlyQuantityChart() {
+        if (!monthlyData.length) {
+            return;
+        }
+
+        createChartIfNeeded('allocationMonthlyQuantityChart', function (canvas) {
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const labels = monthlyData.map(function (row) {
+                return monthNames[(row.month_number || 1) - 1];
+            });
+
+            return new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Event Quantity',
+                            data: monthlyData.map(function (row) { return toNumber(row.event_quantity); }),
+                            backgroundColor: 'rgba(22, 163, 74, 0.72)',
+                            borderColor: 'rgba(22, 163, 74, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Direct Quantity',
+                            data: monthlyData.map(function (row) { return toNumber(row.direct_quantity); }),
+                            backgroundColor: 'rgba(37, 99, 235, 0.72)',
+                            borderColor: 'rgba(37, 99, 235, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        title: {
+                            display: true,
+                            text: 'Allocation Quantity by Channel'
+                        }
+                    },
+                    scales: {
+                        x: { stacked: true },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+    }
+
     function initializeStatusPerBarangayChart() {
         if (!statusPerBarangayData.length) {
             return;
@@ -3419,7 +3554,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const tabChartInitializers = {
         overview: [initializeMonthlyChart, initializeOverviewComplianceRiskChart],
         beneficiary: [initializeBeneficiariesChart, initializeBeneficiaryCompositionByBarangayChart, initializeUnreachedChart, initializeBeneficiaryMixChart, initializeBeneficiaryPriorityChart],
-        allocation: [initializeResourceDistributionChart, initializeAllocationReachByResourceChart, initializeStatusPerBarangayChart],
+        allocation: [initializeResourceDistributionChart, initializeAllocationReachByResourceChart, initializeAllocationMonthlyReachChart, initializeAllocationMonthlyQuantityChart, initializeStatusPerBarangayChart],
         financial: [initializeFinancialSummaryChart, initializeFinancialChannelMixChart, initializeFinancialPerBarangayChart],
         barangay: [initializeBarangayPerformanceChart, initializeBarangayEventMixChart],
         agency: [initializeAgencyContributionChart, initializeAgencyFinancialShareChart, initializeAgencyOperationsMixChart],
