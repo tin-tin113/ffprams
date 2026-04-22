@@ -2,13 +2,16 @@
 
 @section('title', 'System Settings')
 
-
-
+@section('breadcrumb')
+    <li class="breadcrumb-item active">System Settings</li>
+@endsection
 
 @section('content')
 <div class="container-fluid py-4">
-
-
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">System Settings</h1>
+    </div>
 
     <!-- Tab Navigation -->
     <ul class="nav nav-tabs mb-4" role="tablist" id="settingsTabs">

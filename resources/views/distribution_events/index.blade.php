@@ -2,8 +2,9 @@
 
 @section('title', 'Distribution Events')
 
-
-
+@section('breadcrumb')
+    <li class="breadcrumb-item active">Distribution Events</li>
+@endsection
 
 @section('content')
 <div class="container-fluid module-page">
@@ -11,6 +12,7 @@
     {{-- Page Header --}}
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-1">
         <div>
+            <h1 class="h3 mb-0">Distribution Events</h1>
             <p class="text-muted mb-0">Manage distribution schedules and release progress by barangay</p>
         </div>
         @if(in_array(Auth::user()->role, ['admin', 'staff']))
@@ -18,6 +20,88 @@
                 <i class="bi bi-plus-lg me-1"></i> Create New Event
             </a>
         @endif
+    </div>
+
+    {{-- Summary Cards --}}
+    <div class="row g-3 mb-4 mt-2">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-3 bg-primary bg-opacity-10 p-3 me-3">
+                        <i class="bi bi-calendar-event text-primary fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Total Events</div>
+                        <div class="fs-5 fw-bold">{{ number_format($total) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-3 bg-info bg-opacity-10 p-3 me-3">
+                        <i class="bi bi-hourglass-split text-info fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Pending</div>
+                        <div class="fs-5 fw-bold">{{ number_format($pending) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-3 bg-warning bg-opacity-10 p-3 me-3">
+                        <i class="bi bi-arrow-repeat text-warning fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Ongoing</div>
+                        <div class="fs-5 fw-bold">{{ number_format($ongoing) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3">
+                        <i class="bi bi-check-circle text-success fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Completed</div>
+                        <div class="fs-5 fw-bold">{{ number_format($completed) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3">
+                        <i class="bi bi-cash-stack text-success fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Financial Events</div>
+                        <div class="fs-5 fw-bold">{{ number_format($totalFinancialEvents) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-3 p-3 me-3" style="background-color: rgba(25, 135, 84, 0.1);">
+                        <i class="bi bi-currency-exchange text-success fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Cash Disbursed</div>
+                        <div class="fs-5 fw-bold">&#8369;{{ number_format($totalCashDisbursed, 2) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     {{-- Filter Bar --}}

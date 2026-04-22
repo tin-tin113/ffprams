@@ -2,13 +2,15 @@
 
 @section('title', 'Direct Assistance Management')
 
-
-
+@section('breadcrumb')
+    <li class="breadcrumb-item active">Direct Assistance</li>
+@endsection
 
 @section('content')
 <div class="container-fluid">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
         <div>
+            <h1 class="h3 mb-0">Direct Assistance Management</h1>
             <p class="text-muted mb-0">Manage direct assistance records to beneficiaries</p>
         </div>
         <a href="{{ route('direct-assistance.create') }}" class="btn btn-primary">
@@ -212,7 +214,7 @@
                                               action="{{ route('direct-assistance.mark-ready-for-release', $assistance) }}"
                                                 class="direct-assistance-action-form"
                                               data-confirm-title="Set Ready for Release"
-                                              data-confirm-message="Set this assistance to Ready for Release?">
+                                              data-confirm-message="Set this assistance to Ready for Release? If SMS automation is enabled, this will send an automatic SMS to the beneficiary.">
                                             @csrf
                                             <button type="submit" class="btn btn-sm btn-outline-primary">
                                                 <i class="bi bi-bell"></i> Ready for Release

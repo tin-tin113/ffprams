@@ -2,13 +2,15 @@
 
 @section('title', 'Assistance Allocations')
 
-
-
+@section('breadcrumb')
+    <li class="breadcrumb-item active">Assistance Allocations</li>
+@endsection
 
 @section('content')
 <div class="container-fluid module-page">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
         <div>
+            <h1 class="h3 mb-0">Assistance Allocations</h1>
             <p class="text-muted mb-0">Record and monitor direct assistance allocations</p>
         </div>
     </div>
@@ -499,7 +501,7 @@
                                                   action="{{ route('allocations.mark-ready-for-release', $allocation) }}"
                                                   class="allocation-action-form d-inline"
                                                   data-confirm-title="Set Ready for Release"
-                                                  data-confirm-message="Set this direct allocation to Ready for Release?">
+                                                  data-confirm-message="Set this direct allocation to Ready for Release? If SMS automation is enabled, this will send an automatic SMS to the beneficiary.">
                                                 @csrf
                                                 <button type="submit" class="btn btn-sm btn-outline-primary">
                                                     <i class="bi bi-bell"></i> Ready for Release
@@ -774,13 +776,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const barangayId = barangayFilter.value;
         const classification = document.querySelector('[data-beneficiary-filter="classification"]:checked')?.value || '';
 
-        // Show search hint if query is empty
-        if (!query && !barangayId && !classification) {
-            resultsGroup.style.display = 'none';
-            noResultsMsg.style.display = 'block';
-            return;
-        }
-
         try {
             const params = new URLSearchParams();
             if (query) params.append('q', query);
@@ -1051,14 +1046,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const query = batchFinderSearchInput.value.trim();
         const barangayId = batchFinderBarangay ? batchFinderBarangay.value : '';
         const classification = batchFinderClassification ? batchFinderClassification.value : '';
-
-        if (!query && !barangayId && !classification) {
-            batchFinderResults.style.display = 'none';
-            if (batchFinderHint) {
-                batchFinderHint.innerHTML = 'Search and click <strong>Add</strong> to append a beneficiary row quickly.';
-            }
-            return;
-        }
 
         try {
             const params = new URLSearchParams();

@@ -19,6 +19,11 @@ class DatabaseSeeder extends Seeder
             ResourceTypeSeeder::class,
             AssistancePurposeSeeder::class,
             FormFieldOptionSeeder::class,
+            BeneficiaryPerBarangaySeeder::class,
+            DistributionEventSeeder::class,
+            EventAllocationSeeder::class,
+            DirectAssistanceSeeder::class,
+            DirectAssistanceEventBackfillSeeder::class,
         ]);
     }
 }

@@ -89,11 +89,32 @@ class DistributionEventController extends Controller
             ->paginate(15)
             ->withQueryString();
 
+        $total = DistributionEvent::count();
+        $pending = DistributionEvent::where('status', 'Pending')->count();
+        $ongoing = DistributionEvent::where('status', 'Ongoing')->count();
+        $completed = DistributionEvent::where('status', 'Completed')->count();
+
+        $totalFinancialEvents = DistributionEvent::where('type', 'financial')->count();
+        $totalCashDisbursed = DB::table('allocations')
+            ->join('distribution_events', function ($join) {
+                $join->on('allocations.distribution_event_id', '=', 'distribution_events.id')
+                    ->where('distribution_events.type', '=', 'financial')
+                    ->where('distribution_events.status', '=', 'Completed');
+            })
+            ->whereNull('allocations.deleted_at')
+            ->sum('allocations.amount');
+
         $agencies = Agency::active()->orderBy('name')->get(['id', 'name']);
         $programNames = ProgramName::with('agency')->active()->orderBy('name')->get();
 
         return view('distribution_events.index', compact(
             'events',
+            'total',
+            'pending',
+            'ongoing',
+            'completed',
+            'totalFinancialEvents',
+            'totalCashDisbursed',
             'agencies',
             'programNames',
         ));

@@ -162,7 +162,7 @@ class DirectAssistance extends Model
 
     public function distributionEvent(): BelongsTo
     {
-        return $this->belongsTo(DistributionEvent::class)->nullable();
+        return $this->belongsTo(DistributionEvent::class);
     }
 
     public function attachments(): MorphMany

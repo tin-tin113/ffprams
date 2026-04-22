@@ -604,10 +604,6 @@
         display: none;
     }
 
-    .print-only-beneficiary-table {
-        display: none;
-    }
-
     @media print {
         @page {
             size: A4 portrait;
@@ -624,8 +620,7 @@
             display: none !important;
         }
 
-        .print-only,
-        .print-only-beneficiary-table {
+        .print-only {
             display: block !important;
         }
 
@@ -790,11 +785,6 @@
 
         body.print-compact-mode .report-card:not(:has(table)) {
             display: none !important;
-        }
-
-        /* Show beneficiary table in compact print mode */
-        body.print-compact-mode .print-only-beneficiary-table {
-            display: block !important;
         }
     }
 </style>
@@ -1287,91 +1277,214 @@
             aria-labelledby="reports-tab-beneficiary"
             data-report-pane="beneficiary"
         >
-            <!-- Slim KPI Overview -->
             <div class="insight-grid mb-4">
                 <div class="insight-card">
                     <div class="insight-label">Coverage Rate</div>
                     <div class="insight-value">{{ number_format($coverageRate, 1) }}%</div>
+                    <div class="insight-note">{{ number_format($reachedCount) }} reached out of {{ number_format($totalBeneficiaries) }}</div>
                 </div>
                 <div class="insight-card">
-                    <div class="insight-label">Total Beneficiaries</div>
-                    <div class="insight-value">{{ number_format($totalBeneficiaries) }}</div>
-                </div>
-                <div class="insight-card">
-                    <div class="insight-label">Reached</div>
-                    <div class="insight-value">{{ number_format($reachedCount) }}</div>
-                </div>
-                <div class="insight-card">
-                    <div class="insight-label">Unreached</div>
+                    <div class="insight-label">Unreached Beneficiaries</div>
                     <div class="insight-value">{{ number_format($unreachedTotal) }}</div>
+                    <div class="insight-note">Priority outreach required for remaining records</div>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-label">Top Outreach Priority</div>
+                    <div class="insight-value">{{ $topPriorityOutreachBarangay }}</div>
+                    <div class="insight-note">{{ number_format($topPriorityOutreachCount) }} unreached ({{ number_format($topPriorityOutreachShare, 1) }}%)</div>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-label">Top 3 Concentration</div>
+                    <div class="insight-value">{{ number_format($topThreeBarangayConcentrationPct, 1) }}%</div>
+                    <div class="insight-note">Share of beneficiaries in top 3 barangays</div>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-label">Average Per Covered Barangay</div>
+                    <div class="insight-value">{{ number_format($avgBeneficiariesPerCoveredBarangay, 1) }}</div>
+                    <div class="insight-note">Across {{ number_format($kpiBarangaysCovered) }} covered barangays</div>
                 </div>
             </div>
 
-            <!-- Chart Grid - Focus on Visualizations -->
+            <div class="beneficiary-kpi-grid mb-4">
+                <div class="beneficiary-kpi-card">
+                    <div class="beneficiary-kpi-label">Coverage Rate</div>
+                    <div class="beneficiary-kpi-value">{{ number_format($coverageRate, 1) }}%</div>
+                    <div class="beneficiary-kpi-meta">{{ number_format($reachedCount) }} reached out of {{ number_format($totalBeneficiaries) }}</div>
+                </div>
+                <div class="beneficiary-kpi-card">
+                    <div class="beneficiary-kpi-label">Top 3 Concentration</div>
+                    <div class="beneficiary-kpi-value">{{ number_format($topThreeBarangayConcentrationPct, 1) }}%</div>
+                    <div class="beneficiary-kpi-meta">Share of beneficiaries in the 3 most served barangays</div>
+                </div>
+                <div class="beneficiary-kpi-card">
+                    <div class="beneficiary-kpi-label">Average Per Covered Barangay</div>
+                    <div class="beneficiary-kpi-value">{{ number_format($avgBeneficiariesPerCoveredBarangay, 1) }}</div>
+                    <div class="beneficiary-kpi-meta">Across {{ number_format($kpiBarangaysCovered) }} barangays with beneficiaries</div>
+                </div>
+                <div class="beneficiary-kpi-card">
+                    <div class="beneficiary-kpi-label">Dominant Classification</div>
+                    <div class="beneficiary-kpi-value">{{ $dominantBeneficiaryMixLabel }}</div>
+                    <div class="beneficiary-kpi-meta">{{ number_format($dominantBeneficiaryMixPercent, 1) }}% of all registered beneficiaries</div>
+                </div>
+            </div>
+
             <div class="beneficiary-analytics-grid mb-4">
-                <!-- Classification Mix Chart -->
                 <div class="card report-card border-0 beneficiary-analytics-card">
                     <div class="card-header report-card-header">
-                        <span class="report-card-title"><i class="bi bi-pie-chart me-1"></i> Beneficiary Classification Mix</span>
+                        <span class="report-card-title"><i class="bi bi-pie-chart me-1"></i> Classification Mix</span>
                     </div>
                     <div class="card-body">
                         @if($beneficiaryMixTotal > 0)
-                            <div class="report-chart-wrap" style="height: 300px;">
-                                <canvas id="beneficiaryMixChart"></canvas>
+                            <div class="beneficiary-mix-layout">
+                                <div class="report-chart-wrap beneficiary-mix-chart-wrap">
+                                    <canvas id="beneficiaryMixChart"></canvas>
+                                </div>
+                                <div class="beneficiary-mix-legend">
+                                    @foreach($beneficiaryMixRows as $mixRow)
+                                        @php
+                                            $mixColorClass = match($mixRow['label']) {
+                                                'Farmers' => 'mix-farmers',
+                                                'Fisherfolk' => 'mix-fisherfolk',
+                                                'Both' => 'mix-both',
+                                                default => 'mix-default',
+                                            };
+                                        @endphp
+                                        <div class="beneficiary-mix-item">
+                                            <span class="beneficiary-mix-dot {{ $mixColorClass }}"></span>
+                                            <div>
+                                                <div class="fw-semibold text-dark small">{{ $mixRow['label'] }}</div>
+                                                <div class="text-muted small">{{ number_format($mixRow['value']) }} beneficiaries · {{ number_format($mixRow['percent'], 1) }}%</div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
                             </div>
                         @else
-                            <div class="beneficiary-empty">No classification data available.</div>
+                            <div class="beneficiary-empty">No beneficiary classification data available.</div>
                         @endif
                     </div>
                 </div>
 
-                <!-- Geographic Distribution Chart -->
                 <div class="card report-card border-0 beneficiary-analytics-card">
                     <div class="card-header report-card-header">
-                        <span class="report-card-title"><i class="bi bi-geo-alt me-1"></i> Beneficiaries by Barangay (Top 10)</span>
+                        <span class="report-card-title"><i class="bi bi-flag me-1"></i> Outreach Priority by Barangay</span>
                     </div>
                     <div class="card-body">
-                        <div class="report-chart-wrap" style="height: 300px;">
-                            <canvas id="barangayBeneficiariesChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                        <p class="beneficiary-priority-note mb-2">
+                            Highest priority: <strong>{{ $topPriorityOutreachBarangay }}</strong>
+                            <span class="text-muted">({{ number_format($topPriorityOutreachCount) }} unreached · {{ number_format($topPriorityOutreachShare, 1) }}%)</span>
+                        </p>
 
-            <!-- Second Row of Charts -->
-            <div class="beneficiary-analytics-grid mb-4">
-                <!-- Composition by Barangay -->
-                @if($beneficiariesPerBarangay->count())
-                    <div class="card report-card border-0 beneficiary-analytics-card">
-                        <div class="card-header report-card-header">
-                            <span class="report-card-title"><i class="bi bi-bar-chart-stacked me-1"></i> Classification by Barangay</span>
-                        </div>
-                        <div class="card-body">
-                            <div class="report-chart-wrap" style="height: 350px;">
-                                <canvas id="beneficiaryCompositionByBarangayChart"></canvas>
+                        @if($priorityOutreachBarangays->count())
+                            @php
+                                $maxPriorityCount = max(1, (int) $priorityOutreachBarangays->max('count'));
+                            @endphp
+                            <div class="priority-list mb-3">
+                                @foreach($priorityOutreachBarangays as $priorityRow)
+                                    <div class="priority-item">
+                                        <div class="priority-meta">
+                                            <span class="priority-rank">{{ $loop->iteration }}</span>
+                                            <span class="priority-name">{{ $priorityRow->barangay_name }}</span>
+                                            <span class="priority-stat">{{ number_format($priorityRow->count) }} · {{ number_format($priorityRow->share, 1) }}%</span>
+                                        </div>
+                                        <progress class="priority-progress" value="{{ $priorityRow->count }}" max="{{ $maxPriorityCount }}"></progress>
+                                    </div>
+                                @endforeach
                             </div>
-                        </div>
-                    </div>
-                @endif
+                        @else
+                            <div class="beneficiary-empty mb-3">No unreached beneficiary records by barangay.</div>
+                        @endif
 
-                <!-- Priority Outreach Chart -->
-                <div class="card report-card border-0 beneficiary-analytics-card">
-                    <div class="card-header report-card-header">
-                        <span class="report-card-title"><i class="bi bi-exclamation-triangle me-1"></i> Unreached by Barangay (Top 10)</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="report-chart-wrap" style="height: 300px;">
+                        <div class="report-chart-wrap beneficiary-priority-chart-wrap">
                             <canvas id="beneficiaryPriorityChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Beneficiaries List - Print Only -->
-            <div class="card report-card border-0 mb-4 print-only-beneficiary-table" style="display: none;">
+            @if($beneficiariesPerBarangay->count())
+                <div class="card report-card border-0 mb-4">
+                    <div class="card-header report-card-header">
+                        <span class="report-card-title"><i class="bi bi-bar-chart-stacked me-1"></i> Beneficiary Composition by Barangay (Top 10)</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-chart-wrap">
+                            <canvas id="beneficiaryCompositionByBarangayChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <div class="card report-card border-0 mb-4">
+                <div class="card-header report-card-header">
+                    <span class="report-card-title"><i class="bi bi-people me-1"></i> Beneficiaries per Barangay</span>
+                </div>
+                @if($beneficiariesPerBarangay->count())
+                    <div class="card-body border-bottom pb-3">
+                        <div class="report-chart-wrap">
+                            <canvas id="barangayBeneficiariesChart"></canvas>
+                        </div>
+                    </div>
+                @endif
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 report-data-table beneficiary-clean-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Barangay</th>
+                                    <th class="text-center">Farmers</th>
+                                    <th class="text-center">Fisherfolk</th>
+                                    <th class="text-center">Both</th>
+                                    <th class="text-center">Grand Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($beneficiariesPerBarangay as $row)
+                                    <tr>
+                                        <td class="text-muted">{{ $loop->iteration }}</td>
+                                        <td>{{ $row->barangay->name }}</td>
+                                        <td class="text-center">{{ number_format($row->total_farmers) }}</td>
+                                        <td class="text-center">{{ number_format($row->total_fisherfolk) }}</td>
+                                        <td class="text-center">{{ number_format($row->total_both) }}</td>
+                                        <td class="text-center fw-bold">{{ number_format($row->grand_total) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="empty-state">
+                                            <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                                            No beneficiary data available.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                            @if($beneficiariesPerBarangay->count())
+                                <tfoot class="table-light">
+                                    <tr class="fw-bold">
+                                        <td colspan="2">Total</td>
+                                        <td class="text-center">{{ number_format($beneficiariesPerBarangay->sum('total_farmers')) }}</td>
+                                        <td class="text-center">{{ number_format($beneficiariesPerBarangay->sum('total_fisherfolk')) }}</td>
+                                        <td class="text-center">{{ number_format($beneficiariesPerBarangay->sum('total_both')) }}</td>
+                                        <td class="text-center">{{ number_format($beneficiariesPerBarangay->sum('grand_total')) }}</td>
+                                    </tr>
+                                </tfoot>
+                            @endif
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card report-card border-0 mb-4">
                 <div class="card-header report-card-header">
                     <span class="report-card-title"><i class="bi bi-person-x me-1"></i> Beneficiaries Not Yet Reached</span>
                 </div>
+
+                <div class="card-body border-bottom pb-3">
+                    <div class="report-chart-wrap compact-donut">
+                        <canvas id="unreachedBeneficiariesChart"></canvas>
+                    </div>
+                </div>
+
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0 report-data-table beneficiary-clean-table">
@@ -1423,7 +1536,6 @@
                 @endif
             </div>
         </div>
-
 
         <div
             class="tab-pane fade @if($activeTab === 'allocation') show active @endif"
@@ -1495,60 +1607,11 @@
             @if($resourceDistribution->count())
                 <div class="card report-card border-0 mb-4">
                     <div class="card-header report-card-header">
-                        <span class="report-card-title"><i class="bi bi-star me-1"></i> Top 8 Most Impactful Resources (by Beneficiary Reach)</span>
+                        <span class="report-card-title"><i class="bi bi-people-fill me-1"></i> Resource Reach by Type (Event vs Direct)</span>
                     </div>
                     <div class="card-body">
-                        <div class="report-chart-wrap" style="height: 300px;">
-                            <canvas id="topResourcesByReachChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            @if($barangayEfficiency->count())
-                <div class="card report-card border-0 mb-4">
-                    <div class="card-header report-card-header">
-                        <span class="report-card-title"><i class="bi bi-activity me-1"></i> Barangay Efficiency Performance</span>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0 report-data-table">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Barangay</th>
-                                        <th class="text-center">Total Beneficiaries</th>
-                                        <th class="text-center">Reached</th>
-                                        <th class="text-center">Reach %</th>
-                                        <th class="text-center">Events</th>
-                                        <th class="text-center">Quantity Dist.</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($barangayEfficiency as $row)
-                                        <tr>
-                                            <td class="text-muted">{{ $loop->iteration }}</td>
-                                            <td>{{ $row->name }}</td>
-                                            <td class="text-center">{{ number_format($row->total_beneficiaries) }}</td>
-                                            <td class="text-center">{{ number_format($row->reached_beneficiaries) }}</td>
-                                            <td class="text-center">
-                                                <span class="badge" style="background-color: {{ $row->reach_percentage >= 80 ? '#10b981' : ($row->reach_percentage >= 50 ? '#f59e0b' : '#ef4444') }};">
-                                                    {{ number_format($row->reach_percentage, 1) }}%
-                                                </span>
-                                            </td>
-                                            <td class="text-center">{{ number_format($row->total_events) }}</td>
-                                            <td class="text-center">{{ number_format($row->total_quantity_distributed, 2) }}</td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="7" class="empty-state">
-                                                <i class="bi bi-inbox fs-3 d-block mb-2"></i>
-                                                No barangay efficiency data available.
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
+                        <div class="report-chart-wrap">
+                            <canvas id="allocationReachByResourceChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -2380,7 +2443,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const beneficiariesByBarangayData = @json($beneficiariesPerBarangay->values());
     const resourceDistributionData = @json($resourceDistribution->values());
     const statusPerBarangayData = @json($statusPerBarangay->values());
-    const topResourcesByReachData = @json($topResourcesByReach->values());
     const totalBeneficiaries = {{ $totalBeneficiaries ?? 0 }};
     const unreachedCount = @json($unreachedBeneficiaries->count());
     const financialSummaryData = @json($financialSummary->values());
@@ -3057,62 +3119,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         y: {
                             stacked: true,
                             beginAtZero: true
-                        }
-                    }
-                }
-            });
-        });
-    }
-
-    function initializeTopResourcesByReachChart() {
-        if (!topResourcesByReachData || !topResourcesByReachData.length) {
-            return;
-        }
-
-        createChartIfNeeded('topResourcesByReachChart', function (canvas) {
-            const labels = topResourcesByReachData.map(function (row) {
-                return row.name;
-            });
-
-            return new Chart(canvas, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Event Beneficiaries',
-                            data: topResourcesByReachData.map(function (row) { return toNumber(row.event_reached); }),
-                            backgroundColor: 'rgba(22, 163, 74, 0.72)',
-                            borderColor: 'rgba(22, 163, 74, 1)',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Direct Beneficiaries',
-                            data: topResourcesByReachData.map(function (row) { return toNumber(row.direct_reached); }),
-                            backgroundColor: 'rgba(37, 99, 235, 0.72)',
-                            borderColor: 'rgba(37, 99, 235, 1)',
-                            borderWidth: 1
-                        }
-                    ]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom' },
-                        title: {
-                            display: true,
-                            text: 'Beneficiary Reach by Resource Type'
-                        }
-                    },
-                    scales: {
-                        x: {
-                            stacked: true,
-                            beginAtZero: true
-                        },
-                        y: {
-                            stacked: true
                         }
                     }
                 }
@@ -3935,7 +3941,7 @@ document.addEventListener('DOMContentLoaded', function () {
             initializeMonthlyChart
         ],
         beneficiary: [initializeBeneficiariesChart, initializeBeneficiaryCompositionByBarangayChart, initializeUnreachedChart, initializeBeneficiaryMixChart, initializeBeneficiaryPriorityChart],
-        allocation: [initializeResourceDistributionChart, initializeAllocationMonthlyReachChart, initializeAllocationMonthlyQuantityChart, initializeTopResourcesByReachChart, initializeStatusPerBarangayChart],
+        allocation: [initializeResourceDistributionChart, initializeAllocationReachByResourceChart, initializeAllocationMonthlyReachChart, initializeAllocationMonthlyQuantityChart, initializeStatusPerBarangayChart],
         financial: [initializeFinancialSummaryChart, initializeFinancialChannelMixChart, initializeFinancialPerBarangayChart],
         barangay: [initializeBarangayPerformanceChart, initializeBarangayEventMixChart],
         agency: [initializeAgencyContributionChart, initializeAgencyFinancialShareChart, initializeAgencyOperationsMixChart],

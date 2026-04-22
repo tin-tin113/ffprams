@@ -121,6 +121,7 @@ class GeoMapController extends Controller
                 $allocationsByBarangay = DB::table('allocations')
                     ->join('beneficiaries', 'allocations.beneficiary_id', '=', 'beneficiaries.id')
                     ->whereNull('allocations.deleted_at')
+                    ->where('allocations.release_method', '=', 'event')
                     ->whereNull('beneficiaries.deleted_at')
                     ->when($lineAgencyFilter, function ($query) use ($lineAgencyFilter) {
                         $query->where(function ($q) use ($lineAgencyFilter) {
@@ -212,6 +213,7 @@ class GeoMapController extends Controller
                     })
                     ->leftJoin('program_names', 'distribution_events.program_name_id', '=', 'program_names.id')
                     ->whereNull('allocations.deleted_at')
+                    ->where('allocations.release_method', '=', 'event')
                     ->whereNotNull('allocations.distributed_at')
                     ->where('distribution_events.type', '=', 'financial')
                     ->where('distribution_events.status', '=', 'Completed')
