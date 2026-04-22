@@ -499,7 +499,7 @@
                                                   action="{{ route('allocations.mark-ready-for-release', $allocation) }}"
                                                   class="allocation-action-form d-inline"
                                                   data-confirm-title="Set Ready for Release"
-                                                  data-confirm-message="Set this direct allocation to Ready for Release? If SMS automation is enabled, this will send an automatic SMS to the beneficiary.">
+                                                  data-confirm-message="Set this direct allocation to Ready for Release?">
                                                 @csrf
                                                 <button type="submit" class="btn btn-sm btn-outline-primary">
                                                     <i class="bi bi-bell"></i> Ready for Release

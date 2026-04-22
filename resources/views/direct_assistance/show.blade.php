@@ -19,7 +19,7 @@
                       action="{{ route('direct-assistance.mark-ready-for-release', $directAssistance) }}"
                       class="d-inline"
                       data-confirm-title="Set Ready for Release"
-                      data-confirm-message="Set this assistance to Ready for Release? If SMS automation is enabled, this will send an automatic SMS to the beneficiary.">
+                      data-confirm-message="Set this assistance to Ready for Release?">
                     @csrf
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-bell me-1"></i> Ready for Release

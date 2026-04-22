@@ -89,6 +89,7 @@
             'requires_farmc_endorsement' => 'FARMC Endorsement Required',
             'farmc_endorsed_at' => 'FARMC Endorsed Date',
             'farmc_reference_no' => 'FARMC Reference Number',
+            'beneficiary_list_override_reason' => 'Override Reason',
         ];
 
         $ignoredFields = [
@@ -335,6 +336,19 @@
                                             'Route' => $newValues['_route'] ?? null,
                                         ];
 
+                                        // Check for special fields that should be highlighted
+                                        $specialFields = ['beneficiary_list_override_reason'];
+                                        $hasSpecialField = false;
+                                        $specialFieldValue = null;
+
+                                        foreach ($specialFields as $field) {
+                                            if (isset($newValues[$field]) && !empty($newValues[$field])) {
+                                                $hasSpecialField = true;
+                                                $specialFieldValue = $newValues[$field];
+                                                break;
+                                            }
+                                        }
+
                                         foreach ($ignoredFields as $ignoredField) {
                                             unset($oldValues[$ignoredField], $newValues[$ignoredField]);
                                         }
@@ -347,46 +361,69 @@
                                             })
                                             ->values();
                                     @endphp
+
+                                    @if($hasSpecialField)
+                                        <div class="mb-2 p-2 rounded bg-warning bg-opacity-10 border border-warning-subtle">
+                                            <div class="small text-dark" style="max-width: 300px; word-wrap: break-word;">
+                                                {{ $specialFieldValue }}
+                                            </div>
+                                        </div>
+                                    @endif
+
                                     <details class="audit-details">
                                         <summary class="small text-primary" style="cursor: pointer;">
-                                            View Details
+                                            <i class="bi bi-chevron-right me-1"></i>View Details
                                             @if($changedKeys->count())
                                                 <span class="badge text-bg-light border ms-1">{{ $changedKeys->count() }} change(s)</span>
                                             @endif
                                         </summary>
-                                        <div class="mt-2">
+                                        <div class="mt-3 pt-2 border-top">
                                             @if($changedKeys->count())
-                                                <div class="small fw-semibold mb-2">What Changed</div>
+                                                <div class="small fw-semibold mb-3">
+                                                    <i class="bi bi-arrow-left-right me-1"></i> Changes Summary
+                                                </div>
                                                 <div class="table-responsive">
-                                                    <table class="table table-sm table-bordered mb-2 audit-changes-table">
+                                                    <table class="table table-sm table-bordered mb-0 audit-changes-table">
                                                         <thead class="table-light">
                                                             <tr>
-                                                                <th>Field</th>
-                                                                <th>Before</th>
-                                                                <th>After</th>
+                                                                <th class="col-3">Field</th>
+                                                                <th class="col-3">Before</th>
+                                                                <th class="col-3">After</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
                                                             @foreach($changedKeys as $key)
                                                                 <tr>
-                                                                    <td>{{ $fieldLabelMap[$key] ?? ucwords(str_replace('_', ' ', $key)) }}</td>
-                                                                    <td>{{ $formatValue((string) $key, $oldValues[$key] ?? null) }}</td>
-                                                                    <td>{{ $formatValue((string) $key, $newValues[$key] ?? null) }}</td>
+                                                                    <td class="fw-semibold text-dark">
+                                                                        {{ $fieldLabelMap[$key] ?? ucwords(str_replace('_', ' ', $key)) }}
+                                                                    </td>
+                                                                    <td class="text-muted small">
+                                                                        {{ $formatValue((string) $key, $oldValues[$key] ?? null) }}
+                                                                    </td>
+                                                                    <td class="fw-semibold">
+                                                                        {{ $formatValue((string) $key, $newValues[$key] ?? null) }}
+                                                                    </td>
                                                                 </tr>
                                                             @endforeach
                                                         </tbody>
                                                     </table>
                                                 </div>
                                             @else
-                                                <div class="small text-muted">No user-visible field changes were found for this item.</div>
+                                                <div class="small text-muted py-2">
+                                                    <i class="bi bi-info-circle me-1"></i> No user-visible changes recorded.
+                                                </div>
                                             @endif
 
                                             @if(collect($requestMeta)->filter()->isNotEmpty())
-                                                <div class="small fw-semibold mb-1 mt-2">Request Context</div>
+                                                <div class="small fw-semibold mb-2 mt-3 pt-2 border-top">
+                                                    <i class="bi bi-server me-1"></i> Request Context
+                                                </div>
                                                 <div class="d-flex flex-wrap gap-2">
                                                     @foreach($requestMeta as $metaLabel => $metaValue)
                                                         @if(filled($metaValue))
-                                                            <span class="badge rounded-pill text-bg-light border">{{ $metaLabel }}: {{ $metaValue }}</span>
+                                                            <span class="badge rounded-pill text-bg-light border small">
+                                                                {{ $metaLabel }}: <code class="text-dark">{{ $metaValue }}</code>
+                                                            </span>
                                                         @endif
                                                     @endforeach
                                                 </div>

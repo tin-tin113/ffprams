@@ -30,7 +30,7 @@
             <li>Select a program - programs are automatically filtered based on the beneficiary's agency and classification</li>
             <li>Choose the resource type and enter the quantity or amount</li>
             <li>Optionally link to a distribution event for batch tracking</li>
-            <li>Submit to create the record - the beneficiary will receive an SMS notification</li>
+            <li>Submit to create the record</li>
         </ul>
     </div>
 </div>

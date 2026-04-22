@@ -20,6 +20,9 @@ class ResourceType extends Model
         'packs' => 'Packs',
         'pieces' => 'Pieces',
         'sets' => 'Sets',
+        'hectares' => 'Hectares (ha)',
+        'sq_meters' => 'Square Meters (m²)',
+        'acres' => 'Acres (ac)',
     ];
 
     protected $fillable = [
