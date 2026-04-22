@@ -76,6 +76,25 @@
                         @enderror
                     </div>
 
+                    {{-- Program Name --}}
+                    <div class="col-12 col-md-6">
+                        <label for="program_name_id" class="form-label">Program Name <span class="text-danger">*</span></label>
+                        <select class="form-select @error('program_name_id') is-invalid @enderror"
+                                id="program_name_id" name="program_name_id" required>
+                            <option value="" disabled {{ old('program_name_id') ? '' : 'selected' }}>Select Program Name</option>
+                            @foreach($programNames as $program)
+                                <option value="{{ $program->id }}"
+                                        data-agency-id="{{ $program->agency_id }}"
+                                        {{ old('program_name_id') == $program->id ? 'selected' : '' }}>
+                                    {{ $program->name }} — {{ $program->agency->name ?? 'N/A' }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('program_name_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
                     {{-- Resource Type --}}
                     <div class="col-12 col-md-6">
                         <label for="resource_type_id" class="form-label">Resource Type <span class="text-danger">*</span></label>
@@ -97,26 +116,7 @@
                         @error('resource_type_id')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
-                    </div>
-
-                    {{-- Program Name --}}
-                    <div class="col-12 col-md-6">
-                        <label for="program_name_id" class="form-label">Program Name <span class="text-danger">*</span></label>
-                        <select class="form-select @error('program_name_id') is-invalid @enderror"
-                                id="program_name_id" name="program_name_id" required>
-                            <option value="" disabled {{ old('program_name_id') ? '' : 'selected' }}>Select Program Name</option>
-                            @foreach($programNames as $program)
-                                <option value="{{ $program->id }}"
-                                        data-agency-id="{{ $program->agency_id }}"
-                                        {{ old('program_name_id') == $program->id ? 'selected' : '' }}>
-                                    {{ $program->name }} — {{ $program->agency->name ?? 'N/A' }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('program_name_id')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                        <small class="text-muted">Filtered by resource type's agency</small>
+                        <small class="text-muted">Filtered by program's agency</small>
                     </div>
 
                     {{-- Distribution Date --}}
@@ -418,27 +418,27 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function filterProgramsByAgency() {
-        const selected = resourceSelect.options[resourceSelect.selectedIndex];
+    function filterResourcesByAgency() {
+        const selected = programSelect.options[programSelect.selectedIndex];
         const agencyId = selected ? selected.dataset.agencyId : '';
-        const currentValue = programSelect.value;
+        const currentValue = resourceSelect.value;
 
-        programSelect.innerHTML = '';
+        resourceSelect.innerHTML = '';
 
-        allProgramOptions.forEach(function (opt) {
+        allResourceOptions.forEach(function (opt) {
             if (opt.value === '') {
-                programSelect.appendChild(opt.cloneNode(true));
+                resourceSelect.appendChild(opt.cloneNode(true));
             } else if (!agencyId || opt.dataset.agencyId === agencyId) {
-                programSelect.appendChild(opt.cloneNode(true));
+                resourceSelect.appendChild(opt.cloneNode(true));
             }
         });
 
         // Restore selection if still valid
-        const exists = Array.from(programSelect.options).some(o => o.value === currentValue);
+        const exists = Array.from(resourceSelect.options).some(o => o.value === currentValue);
         if (exists) {
-            programSelect.value = currentValue;
+            resourceSelect.value = currentValue;
         } else {
-            programSelect.selectedIndex = 0;
+            resourceSelect.selectedIndex = 0;
         }
     }
 
@@ -493,7 +493,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         updateUnit();
-        filterProgramsByAgency();
+        filterResourcesByAgency();
     }
 
     typeRadios.forEach(function (radio) {
@@ -502,7 +502,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     resourceSelect.addEventListener('change', function () {
         updateUnit();
-        filterProgramsByAgency();
+    });
+
+    programSelect.addEventListener('change', function () {
+        filterResourcesByAgency();
+        updateUnit();
     });
 
     legalBasisType?.addEventListener('change', updateComplianceDependencies);
