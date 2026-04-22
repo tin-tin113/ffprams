@@ -36,6 +36,11 @@ class DirectAssistanceController extends Controller
             $sort = 'created_desc';
         }
 
+        $perPage = (int) $request->input('per_page', 25);
+        if (! in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 25;
+        }
+
         $query = DirectAssistance::with([
             'beneficiary.barangay',
             'beneficiary.agency',
@@ -81,7 +86,7 @@ class DirectAssistanceController extends Controller
             ->when($sort === 'status_asc', fn ($q) => $q->orderBy('status'))
             ->when($sort === 'status_desc', fn ($q) => $q->orderByDesc('status'));
 
-        $directAssistance = $query->paginate(15)->withQueryString();
+        $directAssistance = $query->paginate($perPage)->withQueryString();
 
         // Load filter options
         $agencies = Agency::active()->orderBy('name')->get();

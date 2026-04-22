@@ -68,6 +68,11 @@ class AllocationController extends Controller
             $sort = 'date_desc';
         }
 
+        $perPage = (int) $request->input('per_page', 25);
+        if (! in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 25;
+        }
+
         $summary = [
             'total' => Allocation::where('release_method', 'direct')->count(),
             'planned' => Allocation::where('release_method', 'direct')->whereReleaseStatus('planned')->count(),
@@ -108,7 +113,7 @@ class AllocationController extends Controller
             ->when($sort === 'status_desc', fn ($query) => $query->orderByRaw(
                 "CASE WHEN release_outcome = 'not_received' THEN 4 WHEN distributed_at IS NOT NULL OR release_outcome = 'received' THEN 3 WHEN is_ready_for_release = 1 THEN 2 ELSE 1 END DESC"
             ))
-            ->paginate(30)
+            ->paginate($perPage)
             ->withQueryString();
 
         return view('allocations.index', compact(
@@ -270,6 +275,53 @@ class AllocationController extends Controller
                 'resourceTypes' => [],
             ], 500);
         }
+    }
+
+    /**
+     * Check if a beneficiary already has allocations in the last 30 days (soft warning, non-blocking).
+     */
+    public function checkRecentAllocations(Beneficiary $beneficiary)
+    {
+        $thirtyDaysAgo = Carbon::now()->subDays(30);
+
+        $eventAllocations = Allocation::with(['programName', 'resourceType', 'distributionEvent'])
+            ->where('beneficiary_id', $beneficiary->id)
+            ->where('created_at', '>=', $thirtyDaysAgo)
+            ->get()
+            ->map(fn (Allocation $a) => [
+                'id'        => $a->id,
+                'type'      => $a->release_method === 'direct' ? 'Direct Allocation' : 'Event Allocation',
+                'program'   => $a->programName?->name ?? 'N/A',
+                'resource'  => $a->resourceType?->name ?? 'N/A',
+                'value'     => $a->getDisplayValue(),
+                'status'    => $a->release_status_label,
+                'event'     => $a->distributionEvent?->resourceType?->name ?? null,
+                'date'      => $a->created_at->format('M d, Y'),
+            ]);
+
+        $directAssistance = \App\Models\DirectAssistance::with(['programName', 'resourceType'])
+            ->where('beneficiary_id', $beneficiary->id)
+            ->where('created_at', '>=', $thirtyDaysAgo)
+            ->get()
+            ->map(fn (\App\Models\DirectAssistance $da) => [
+                'id'        => $da->id,
+                'type'      => 'Direct Assistance',
+                'program'   => $da->programName?->name ?? 'N/A',
+                'resource'  => $da->resourceType?->name ?? 'N/A',
+                'value'     => $da->getDisplayValue(),
+                'status'    => $da->status_label,
+                'event'     => null,
+                'date'      => $da->created_at->format('M d, Y'),
+            ]);
+
+        $allRecent = $eventAllocations->merge($directAssistance)->sortByDesc('date')->values();
+
+        return response()->json([
+            'success'     => true,
+            'has_recent'  => $allRecent->isNotEmpty(),
+            'count'       => $allRecent->count(),
+            'allocations' => $allRecent,
+        ]);
     }
 
     public function store(AllocationRequest $request): RedirectResponse

@@ -152,6 +152,8 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
         ->name('api.beneficiaries.search');
     Route::get('api/programs/{program}/resource-types', [AllocationController::class, 'getResourceTypesByAgency'])
         ->name('api.programs.resource-types');
+    Route::get('api/beneficiaries/{beneficiary}/recent-allocations', [AllocationController::class, 'checkRecentAllocations'])
+        ->name('api.beneficiaries.recent-allocations');
     Route::get('api/agencies/by-classification', [AgencyFormFieldController::class, 'getByClassification'])
         ->name('api.agencies.by-classification');
     Route::get('api/agencies/form-fields', [AgencyFormFieldController::class, 'getFormFields'])

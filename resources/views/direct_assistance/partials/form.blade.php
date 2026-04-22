@@ -43,6 +43,22 @@
         @error('beneficiary_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
 
+    {{-- Today's Allocation Warning (non-blocking) --}}
+    <div class="col-12" id="today_allocation_warning" style="display: none;">
+        <div class="alert alert-warning py-2 px-3 mb-0 border-warning">
+            <div class="d-flex align-items-start gap-2">
+                <i class="bi bi-exclamation-triangle-fill mt-1 text-warning"></i>
+                <div>
+                    <strong>Heads up:</strong> This beneficiary already has
+                    <span id="today_allocation_count" class="fw-bold">0</span>
+                    allocation(s) recorded in the last 30 days.
+                    <small class="text-muted d-block mt-1">You may still proceed — this is an informational notice only.</small>
+                    <div id="today_allocation_list" class="mt-2 small"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Program Selection Section (Collapsible) -->
     <div class="col-12">
         <div class="card border-0 bg-light">
@@ -238,8 +254,43 @@
 
         resourceTypeSelect.addEventListener('change', updateAmountQuantityDisplay);
 
+        // ===== TODAY'S ALLOCATION WARNING (SOFT, NON-BLOCKING) =====
+        const todayWarningEl = document.getElementById('today_allocation_warning');
+        const todayCountEl = document.getElementById('today_allocation_count');
+        const todayListEl = document.getElementById('today_allocation_list');
+
+        async function checkTodayAllocations(beneficiaryId) {
+            if (!todayWarningEl) return;
+            todayWarningEl.style.display = 'none';
+
+            if (!beneficiaryId) return;
+
+            try {
+                const response = await fetch(`/api/beneficiaries/${beneficiaryId}/recent-allocations`);
+                if (!response.ok) return;
+                const data = await response.json();
+
+                if (data.success && data.has_recent) {
+                    todayCountEl.textContent = data.count;
+                    todayListEl.innerHTML = data.allocations.map(a =>
+                        `<div class="d-flex align-items-center gap-2 py-1 border-bottom">
+                            <span class="badge bg-secondary">${a.type}</span>
+                            <span>${a.program} — ${a.resource}</span>
+                            <span class="text-muted">(${a.value})</span>
+                            <span class="text-muted small ms-auto">${a.date}</span>
+                        </div>`
+                    ).join('');
+                    todayWarningEl.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error checking today allocations:', error);
+            }
+        }
+
         // Load eligible programs when beneficiary changes
         beneficiarySelect.addEventListener('change', async function() {
+            // Check for today's existing allocations (non-blocking warning)
+            checkTodayAllocations(this.value);
             if (!this.value) {
                 programSelect.innerHTML = '<option value="" selected disabled>Select Program</option>';
                 updateAmountQuantityDisplay();

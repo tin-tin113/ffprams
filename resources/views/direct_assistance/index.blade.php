@@ -126,7 +126,16 @@
                         <option value="status_desc" {{ request('sort') === 'status_desc' ? 'selected' : '' }}>Status: Z-A</option>
                     </select>
                 </div>
-                <div class="col-xl-3 col-lg-3 col-md-12 modern-filter-actions">
+                <div class="col-xl-1 col-lg-2 col-md-6">
+                    <label class="form-label">Rows</label>
+                    <select class="form-select" name="per_page" id="da_per_page">
+                        <option value="10"  {{ request('per_page', '25') == '10'  ? 'selected' : '' }}>10</option>
+                        <option value="25"  {{ request('per_page', '25') == '25'  ? 'selected' : '' }}>25</option>
+                        <option value="50"  {{ request('per_page', '25') == '50'  ? 'selected' : '' }}>50</option>
+                        <option value="100" {{ request('per_page', '25') == '100' ? 'selected' : '' }}>100</option>
+                    </select>
+                </div>
+                <div class="col-xl-2 col-lg-3 col-md-12 modern-filter-actions">
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-funnel me-1"></i> Apply
                     </button>
@@ -140,8 +149,16 @@
 
     <!-- Direct Assistance List -->
     <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white fw-semibold">
-            <i class="bi bi-list-check me-1"></i> Direct Assistance Records
+        <div class="card-header bg-white d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-1">
+            <span class="fw-semibold"><i class="bi bi-list-check me-1"></i> Direct Assistance Records</span>
+            <span class="text-muted small">
+                @if($directAssistance->total() > 0)
+                    Showing {{ number_format($directAssistance->firstItem()) }}–{{ number_format($directAssistance->lastItem()) }}
+                    of {{ number_format($directAssistance->total()) }} records
+                @else
+                    No records found
+                @endif
+            </span>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -258,11 +275,15 @@
                 </table>
             </div>
         </div>
-        @if($directAssistance->hasPages())
-            <div class="card-footer bg-white">
-                {{ $directAssistance->links() }}
-            </div>
-        @endif
+        <div class="card-footer bg-white d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 px-3 py-2">
+            <small class="text-muted">
+                Page {{ $directAssistance->currentPage() }} of {{ $directAssistance->lastPage() }}
+                &mdash; {{ number_format($directAssistance->total()) }} total {{ Str::plural('record', $directAssistance->total()) }}
+            </small>
+            @if($directAssistance->hasPages())
+                <div>{{ $directAssistance->links() }}</div>
+            @endif
+        </div>
     </div>
 </div>
 @endsection

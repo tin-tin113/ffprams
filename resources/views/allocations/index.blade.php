@@ -172,6 +172,22 @@
                     </div>
                 </div>
 
+                {{-- Today's Allocation Warning (non-blocking) --}}
+                <div class="col-12" id="today_allocation_warning" style="display: none;">
+                    <div class="alert alert-warning py-2 px-3 mb-0 border-warning">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-exclamation-triangle-fill mt-1 text-warning"></i>
+                            <div>
+                                <strong>Heads up:</strong> This beneficiary already has
+                                <span id="today_allocation_count" class="fw-bold">0</span>
+                                allocation(s) recorded in the last 30 days.
+                                <small class="text-muted d-block mt-1">You may still proceed — this is an informational notice only.</small>
+                                <div id="today_allocation_list" class="mt-2 small"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="col-md-4">
                     <label class="form-label">Beneficiary <span class="text-danger">*</span></label>
                     <select class="form-select @error('beneficiary_id') is-invalid @enderror" name="beneficiary_id" id="beneficiary_id_field" required>
@@ -428,7 +444,16 @@
                             <option value="status_desc" {{ request('sort') === 'status_desc' ? 'selected' : '' }}>Status: Z-A</option>
                         </select>
                     </div>
-                    <div class="col-xl-3 col-lg-3 col-md-12 modern-filter-actions">
+                    <div class="col-xl-1 col-lg-2 col-md-6">
+                        <label class="form-label">Rows</label>
+                        <select class="form-select" name="per_page">
+                            <option value="10"  {{ request('per_page', '25') == '10'  ? 'selected' : '' }}>10</option>
+                            <option value="25"  {{ request('per_page', '25') == '25'  ? 'selected' : '' }}>25</option>
+                            <option value="50"  {{ request('per_page', '25') == '50'  ? 'selected' : '' }}>50</option>
+                            <option value="100" {{ request('per_page', '25') == '100' ? 'selected' : '' }}>100</option>
+                        </select>
+                    </div>
+                    <div class="col-xl-2 col-lg-3 col-md-12 modern-filter-actions">
                         <button type="submit" class="btn btn-success">
                             <i class="bi bi-funnel me-1"></i> Apply
                         </button>
@@ -440,11 +465,16 @@
     </div>
 
     <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white fw-semibold">
-            <i class="bi bi-list-check me-1"></i> Direct Allocations
-        </div>
-        <div class="card-body pb-0">
-            <p class="text-muted mb-2">{{ $directAllocations->total() }} {{ Str::plural('record', $directAllocations->total()) }} found</p>
+        <div class="card-header bg-white d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-1">
+            <span class="fw-semibold"><i class="bi bi-list-check me-1"></i> Direct Allocations</span>
+            <span class="text-muted small">
+                @if($directAllocations->total() > 0)
+                    Showing {{ number_format($directAllocations->firstItem()) }}&ndash;{{ number_format($directAllocations->lastItem()) }}
+                    of {{ number_format($directAllocations->total()) }} records
+                @else
+                    No records found
+                @endif
+            </span>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -544,11 +574,15 @@
                 </table>
             </div>
         </div>
-        @if($directAllocations->hasPages())
-            <div class="card-footer bg-white">
-                {{ $directAllocations->links() }}
-            </div>
-        @endif
+        <div class="card-footer bg-white d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 px-3 py-2">
+            <small class="text-muted">
+                Page {{ $directAllocations->currentPage() }} of {{ $directAllocations->lastPage() }}
+                &mdash; {{ number_format($directAllocations->total()) }} total {{ Str::plural('record', $directAllocations->total()) }}
+            </small>
+            @if($directAllocations->hasPages())
+                <div>{{ $directAllocations->links() }}</div>
+            @endif
+        </div>
     </div>
 </div>
 @endsection
@@ -830,6 +864,39 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // ===== TODAY'S ALLOCATION WARNING (SOFT, NON-BLOCKING) =====
+    const todayWarningEl = document.getElementById('today_allocation_warning');
+    const todayCountEl = document.getElementById('today_allocation_count');
+    const todayListEl = document.getElementById('today_allocation_list');
+
+    async function checkTodayAllocations(beneficiaryId) {
+        if (!todayWarningEl) return;
+        todayWarningEl.style.display = 'none';
+
+        if (!beneficiaryId) return;
+
+        try {
+            const response = await fetch(`/api/beneficiaries/${beneficiaryId}/recent-allocations`);
+            const data = await response.json();
+
+            if (data.success && data.has_recent) {
+                todayCountEl.textContent = data.count;
+                todayListEl.innerHTML = data.allocations.map(a =>
+                    `<div class="d-flex align-items-center gap-2 py-1 border-bottom">
+                        <span class="badge bg-secondary">${a.type}</span>
+                        <span>${a.program} — ${a.resource}</span>
+                        <span class="text-muted">(${a.value})</span>
+                        <span class="badge bg-outline-secondary">${a.status}</span>
+                        <span class="text-muted small ms-auto">${a.date}</span>
+                    </div>`
+                ).join('');
+                todayWarningEl.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Error checking today allocations:', error);
+        }
+    }
+
     function selectBeneficiary(beneficiary) {
         // Set the hidden field value
         beneficiaryIdField.value = beneficiary.id;
@@ -848,6 +915,9 @@ document.addEventListener('DOMContentLoaded', function () {
         // Show selected confirmation
         selectedBeneficiaryDisplay.textContent = `${beneficiary.name} (${beneficiary.classification}) - ${beneficiary.barangay}`;
         selectedBeneficiaryGroup.style.display = 'block';
+
+        // Check for today's existing allocations (non-blocking warning)
+        checkTodayAllocations(beneficiary.id);
 
         // Hide search results
         resultsGroup.style.display = 'none';
@@ -872,6 +942,7 @@ document.addEventListener('DOMContentLoaded', function () {
         beneficiaryIdField.value = '';
         beneficiaryIdField.innerHTML = '<option value="" selected disabled>Use search above to select</option>';
         selectedBeneficiaryGroup.style.display = 'none';
+        if (todayWarningEl) todayWarningEl.style.display = 'none';
         loadEligiblePrograms('');
         searchInput.focus();
         performSearch();

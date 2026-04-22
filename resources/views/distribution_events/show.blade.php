@@ -921,6 +921,22 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
+
+                    {{-- Today's Allocation Warning (non-blocking) --}}
+                    <div id="today_allocation_warning" class="mb-3" style="display: none;">
+                        <div class="alert alert-warning py-2 px-3 mb-0 border-warning">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-exclamation-triangle-fill mt-1 text-warning"></i>
+                                <div>
+                                    <strong>Heads up:</strong> This beneficiary already has
+                                    <span id="today_allocation_count" class="fw-bold">0</span>
+                                    allocation(s) recorded in the last 30 days.
+                                    <small class="text-muted d-block mt-1">You may still proceed — this is an informational notice only.</small>
+                                    <div id="today_allocation_list" class="mt-2 small"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     @if($event->isFinancial())
                         <div class="mb-3">
                             <label for="amount" class="form-label">
@@ -1143,6 +1159,39 @@ document.addEventListener('DOMContentLoaded', function () {
             option.value = b.id;
             option.textContent = `${b.full_name} (${b.classification})`;
             select.appendChild(option);
+        });
+
+        // ===== TODAY'S ALLOCATION WARNING (SOFT, NON-BLOCKING) =====
+        const todayWarningEl = document.getElementById('today_allocation_warning');
+        const todayCountEl = document.getElementById('today_allocation_count');
+        const todayListEl = document.getElementById('today_allocation_list');
+
+        select.addEventListener('change', async function() {
+            if (!todayWarningEl) return;
+            todayWarningEl.style.display = 'none';
+
+            if (!this.value) return;
+
+            try {
+                const response = await fetch(`/api/beneficiaries/${this.value}/recent-allocations`);
+                if (!response.ok) return;
+                const data = await response.json();
+
+                if (data.success && data.has_recent) {
+                    todayCountEl.textContent = data.count;
+                    todayListEl.innerHTML = data.allocations.map(a =>
+                        `<div class="d-flex align-items-center gap-2 py-1 border-bottom">
+                            <span class="badge bg-secondary">${a.type}</span>
+                            <span>${a.program} — ${a.resource}</span>
+                            <span class="text-muted">(${a.value})</span>
+                            <span class="text-muted small ms-auto">${a.date}</span>
+                        </div>`
+                    ).join('');
+                    todayWarningEl.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error checking today allocations:', error);
+            }
         });
     })();
 
