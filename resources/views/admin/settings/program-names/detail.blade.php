@@ -8,45 +8,130 @@
             <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
                 <div>
                     <h2 class="mb-1">
-                        <i class="bi bi-file-text"></i> {{ $programName->name }}
+                        <i class="bi bi-file-text text-primary"></i> {{ $programName->name }}
                     </h2>
                     <p class="text-muted mb-0">
                         <small>
-                            <span class="badge bg-secondary">{{ $programName->agency->name }}</span>
-                            <span class="badge bg-info">{{ $programName->classification }}</span>
+                            <span class="badge bg-secondary"><i class="bi bi-building"></i> {{ $programName->agency->name }}</span>
+                            <span class="badge bg-info text-dark"><i class="bi bi-tags"></i> {{ $programName->classification }}</span>
                         </small>
                     </p>
                 </div>
                 <div class="d-flex gap-2">
                     <a href="{{ route('admin.settings.program-names.index') }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-arrow-left"></i> Back
+                        <i class="bi bi-arrow-left"></i> Back to Programs
                     </a>
                 </div>
             </div>
             @if($programName->description)
-            <p class="text-muted mb-0">{{ $programName->description }}</p>
+            <div class="card bg-light border-0">
+                <div class="card-body">
+                    <p class="text-muted mb-0"><i class="bi bi-info-circle me-1"></i> {{ $programName->description }}</p>
+                </div>
+            </div>
             @endif
         </div>
     </div>
 
-    {{-- Legal Requirements Section --}}
-    <div class="row mb-4">
-        <div class="col-12">
+    {{-- Tabs Navigation --}}
+    <ul class="nav nav-tabs mb-4 px-2" id="programTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-semibold" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="true">
+                <i class="bi bi-speedometer2"></i> Overview
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-semibold" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab" aria-controls="documents" aria-selected="false">
+                <i class="bi bi-folder2-open"></i> Documents <span class="badge rounded-pill bg-secondary bg-opacity-25 text-dark ms-1">{{ $programName->legalRequirements->count() }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-semibold" id="events-tab" data-bs-toggle="tab" data-bs-target="#events" type="button" role="tab" aria-controls="events" aria-selected="false">
+                <i class="bi bi-calendar-event"></i> Events <span class="badge rounded-pill bg-secondary bg-opacity-25 text-dark ms-1">{{ $events->total() }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-semibold" id="allocations-tab" data-bs-toggle="tab" data-bs-target="#allocations" type="button" role="tab" aria-controls="allocations" aria-selected="false">
+                <i class="bi bi-box-seam"></i> Allocations <span class="badge rounded-pill bg-secondary bg-opacity-25 text-dark ms-1">{{ $allocations->total() }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-semibold" id="assistance-tab" data-bs-toggle="tab" data-bs-target="#assistance" type="button" role="tab" aria-controls="assistance" aria-selected="false">
+                <i class="bi bi-heart-pulse"></i> Direct Assistance <span class="badge rounded-pill bg-secondary bg-opacity-25 text-dark ms-1">{{ $directAssistanceRecords->total() }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-semibold" id="beneficiaries-tab" data-bs-toggle="tab" data-bs-target="#beneficiaries" type="button" role="tab" aria-controls="beneficiaries" aria-selected="false">
+                <i class="bi bi-people"></i> Beneficiaries <span class="badge rounded-pill bg-secondary bg-opacity-25 text-dark ms-1">{{ $totalBeneficiaries }}</span>
+            </button>
+        </li>
+    </ul>
+
+    {{-- Tabs Content --}}
+    <div class="tab-content" id="programTabsContent">
+        
+        {{-- Overview TAB --}}
+        <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h6 class="text-muted fw-bold text-uppercase mb-0">Total Distribution Events</h6>
+                                <div class="bg-primary bg-opacity-10 text-primary p-2 rounded">
+                                    <i class="bi bi-calendar-check fs-4"></i>
+                                </div>
+                            </div>
+                            <div class="display-5 fw-bold text-dark">{{ number_format($totalEvents) }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h6 class="text-muted fw-bold text-uppercase mb-0">Total Allocated Amount</h6>
+                                <div class="bg-success bg-opacity-10 text-success p-2 rounded">
+                                    <i class="bi bi-cash-stack fs-4"></i>
+                                </div>
+                            </div>
+                            <div class="display-5 fw-bold text-dark">₱{{ number_format($totalAllocatedAmount, 2) }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h6 class="text-muted fw-bold text-uppercase mb-0">Total Beneficiaries</h6>
+                                <div class="bg-info bg-opacity-10 text-info p-2 rounded">
+                                    <i class="bi bi-people-fill fs-4"></i>
+                                </div>
+                            </div>
+                            <div class="display-5 fw-bold text-dark">{{ number_format($totalBeneficiaries) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Documents TAB --}}
+        <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
                     <h5 class="card-title mb-0">
-                        <i class="bi bi-file-earmark-pdf"></i> Legal Requirements / Supporting Documents
+                        <i class="bi bi-file-earmark-pdf text-primary gap-2"></i> Legal Requirements & Documents
                     </h5>
                     @if(Auth::user()->isAdmin())
                     <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadDocModal">
-                        <i class="bi bi-plus-circle"></i> Upload Document
+                        <i class="bi bi-cloud-upload"></i> Upload Document
                     </button>
                     @endif
                 </div>
                 <div class="card-body">
                     @if($programName->legalRequirements->count() > 0)
                     <div class="table-responsive">
-                        <table class="table table-sm table-hover mb-0">
+                        <table class="table table-sm table-hover align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
                                     <th>Document Type</th>
@@ -55,7 +140,7 @@
                                     <th>Size</th>
                                     <th>Uploaded Date</th>
                                     <th>Remarks</th>
-                                    <th class="text-center" style="width: 100px;">Actions</th>
+                                    <th class="text-center" style="width: 140px;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -63,43 +148,35 @@
                                 <tr>
                                     <td>
                                         @if($req->document_type)
-                                        <span class="badge bg-light text-dark">{{ $req->document_type }}</span>
+                                        <span class="badge bg-light border text-dark">{{ $req->document_type }}</span>
                                         @else
                                         <span class="text-muted">-</span>
                                         @endif
                                     </td>
                                     <td>
-                                        <small>{{ Str::limit($req->original_name, 40) }}</small>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-file-earmark-text text-secondary me-2"></i>
+                                            <small class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ $req->original_name }}">{{ $req->original_name }}</small>
+                                        </div>
                                     </td>
-                                    <td>
-                                        <small>{{ $req->uploader?->name ?? 'Unknown' }}</small>
-                                    </td>
-                                    <td>
-                                        <small>{{ number_format($req->size_bytes / 1024, 1) }} KB</small>
-                                    </td>
-                                    <td>
-                                        <small>{{ $req->created_at->format('Y-m-d H:i') }}</small>
-                                    </td>
-                                    <td>
-                                        <small class="text-muted">{{ $req->remarks ? Str::limit($req->remarks, 30) : '-' }}</small>
-                                    </td>
+                                    <td><small>{{ $req->uploader?->name ?? 'Unknown' }}</small></td>
+                                    <td><small>{{ number_format($req->size_bytes / 1024, 1) }} KB</small></td>
+                                    <td><small>{{ $req->created_at->format('M d, Y H:i') }}</small></td>
+                                    <td><small class="text-muted text-truncate d-inline-block" style="max-width: 150px;" title="{{ $req->remarks }}">{{ $req->remarks ?: '-' }}</small></td>
                                     <td class="text-center">
                                         <div class="btn-group">
                                             <a href="{{ route('admin.settings.program-names.legal-requirements.view', [$programName, $req]) }}"
                                                class="btn btn-sm btn-outline-primary"
-                                               target="_blank"
-                                               title="View document">
+                                               target="_blank" title="View document">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                             <a href="{{ route('admin.settings.program-names.legal-requirements.download', [$programName, $req]) }}"
-                                               class="btn btn-sm btn-outline-info"
-                                               title="Download document">
+                                               class="btn btn-sm btn-outline-info" title="Download document">
                                                 <i class="bi bi-download"></i>
                                             </a>
                                             <button class="btn btn-sm btn-outline-danger delete-req"
                                                     data-id="{{ $req->id }}"
-                                                    data-program-id="{{ $programName->id }}"
-                                                    title="Delete document">
+                                                    data-program-id="{{ $programName->id }}" title="Delete document">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </div>
@@ -110,177 +187,92 @@
                         </table>
                     </div>
                     @else
-                    <div class="alert alert-warning mb-0">
-                        <i class="bi bi-exclamation-triangle"></i> No legal requirement documents uploaded yet.
+                    <div class="text-center py-5">
+                        <div class="display-1 text-muted mb-3"><i class="bi bi-folder-x border border-2 border-light rounded-circle p-4 bg-light"></i></div>
+                        <h5>No Documents Mapped</h5>
+                        <p class="text-muted">There are no legal requirement or supporting documents for this program yet.</p>
+                        @if(Auth::user()->isAdmin())
+                        <button class="btn btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#uploadDocModal">
+                            <i class="bi bi-plus-circle"></i> Upload First Document
+                        </button>
+                        @endif
                     </div>
                     @endif
                 </div>
             </div>
         </div>
-    </div>
 
-    {{-- Summary Counters --}}
-    <div class="row mb-4">
-        <div class="col-md-4">
+        {{-- Events TAB --}}
+        <div class="tab-pane fade" id="events" role="tabpanel" aria-labelledby="events-tab">
             <div class="card shadow-sm border-0">
-                <div class="card-body text-center">
-                    <div class="display-4 text-primary">{{ $totalEvents }}</div>
-                    <p class="text-muted mb-0">Total Distribution Events</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card shadow-sm border-0">
-                <div class="card-body text-center">
-                    <div class="display-4 text-success">₱{{ number_format($totalAllocatedAmount, 2) }}</div>
-                    <p class="text-muted mb-0">Total Allocated Amount</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card shadow-sm border-0">
-                <div class="card-body text-center">
-                    <div class="display-4 text-info">{{ $totalBeneficiaries }}</div>
-                    <p class="text-muted mb-0">Total Beneficiaries</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Distribution Events Accordion --}}
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-light">
+                <div class="card-header bg-white py-3">
                     <h5 class="card-title mb-0">
-                        <i class="bi bi-calendar-event"></i> Distribution Events ({{ $events->count() }})
+                        <i class="bi bi-calendar-event text-primary"></i> Distribution Events
                     </h5>
                 </div>
                 <div class="card-body">
                     @if($events->count() > 0)
-                    <div class="accordion" id="eventsAccordion">
-                        @foreach($events as $index => $event)
-                        <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#event{{ $event->id }}" aria-expanded="false" aria-controls="event{{ $event->id }}">
-                                    <div class="d-flex align-items-center gap-3 flex-grow-1">
-                                        <span class="badge bg-secondary">{{ $event->distribution_date?->format('Y-m-d') ?? 'N/A' }}</span>
-                                        <span><strong>{{ $event->barangay?->name ?? 'N/A' }}</strong></span>
-                                        <span class="text-muted">{{ $event->resourceType?->name ?? 'N/A' }}</span>
-                                        <span class="ms-auto badge bg-light text-dark">{{ $event->allocations->count() }} allocations</span>
-                                    </div>
-                                </button>
-                            </h2>
-                            <div id="event{{ $event->id }}" class="accordion-collapse collapse" data-bs-parent="#eventsAccordion">
-                                <div class="accordion-body">
-                                    {{-- Event Metadata --}}
-                                    <div class="row mb-3">
-                                        <div class="col-md-3">
-                                            <small class="text-muted">Event Date</small>
-                                            <p class="mb-0"><strong>{{ $event->distribution_date?->format('Y-m-d') ?? 'N/A' }}</strong></p>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <small class="text-muted">Barangay</small>
-                                            <p class="mb-0"><strong>{{ $event->barangay?->name ?? 'N/A' }}</strong></p>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <small class="text-muted">Resource Type</small>
-                                            <p class="mb-0"><strong>{{ $event->resourceType?->name ?? 'N/A' }}</strong></p>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <small class="text-muted">Event Status</small>
-                                            <p class="mb-0"><strong>{{ $event->status ?? '-' }}</strong></p>
-                                        </div>
-                                    </div>
-
-                                    <hr class="my-3">
-
-                                    {{-- Associated Allocations --}}
-                                    @if($event->allocations->count() > 0)
-                                    <h6 class="mb-3">
-                                        <i class="bi bi-box-seam"></i> Associated Allocations ({{ $event->allocations->count() }})
-                                    </h6>
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-hover mb-0">
-                                            <thead class="table-light">
-                                                <tr>
-                                                    <th>Beneficiary</th>
-                                                    <th>Resource Type</th>
-                                                    <th class="text-end">Quantity</th>
-                                                    <th class="text-end">Amount (₱)</th>
-                                                    <th>Date</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @foreach($event->allocations as $allocation)
-                                                <tr>
-                                                    <td>
-                                                        <small>{{ $allocation->beneficiary?->name ?? 'N/A' }}</small>
-                                                    </td>
-                                                    <td>
-                                                        <small>{{ $allocation->resourceType?->name ?? 'N/A' }}</small>
-                                                    </td>
-                                                    <td class="text-end">
-                                                        <small>{{ $allocation->quantity }}</small>
-                                                    </td>
-                                                    <td class="text-end">
-                                                        <small>{{ number_format($allocation->amount, 2) }}</small>
-                                                    </td>
-                                                    <td>
-                                                        <small>{{ $allocation->created_at?->format('Y-m-d') ?? 'N/A' }}</small>
-                                                    </td>
-                                                </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    @else
-                                    <p class="text-muted mb-0">No allocations for this event.</p>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                        @endforeach
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Barangay</th>
+                                    <th>Resource Type</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Allocations</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($events as $event)
+                                <tr>
+                                    <td><small class="fw-medium">{{ $event->distribution_date?->format('F d, Y') ?? 'N/A' }}</small></td>
+                                    <td><small>{{ $event->barangay?->name ?? 'N/A' }}</small></td>
+                                    <td><small>{{ $event->resourceType?->name ?? 'N/A' }}</small></td>
+                                    <td>
+                                        @if($event->status === 'Completed')
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle">Completed</span>
+                                        @elseif($event->status === 'Planned')
+                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Planned</span>
+                                        @else
+                                            <span class="badge bg-light text-dark border">{{ $event->status ?? '-' }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end"><span class="badge bg-secondary rounded-pill">{{ $event->allocations_count }}</span></td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-3">
+                        {{ $events->links() }}
                     </div>
                     @else
-                    <p class="text-muted mb-0">No distribution events found.</p>
+                    <div class="text-center py-5">
+                        <div class="display-1 text-muted mb-3"><i class="bi bi-calendar-x border border-2 border-light rounded-circle p-4 bg-light"></i></div>
+                        <h5>No Distribution Events Found</h5>
+                        <p class="text-muted">No distribution events have been created under this program yet.</p>
+                    </div>
                     @endif
                 </div>
             </div>
         </div>
-    </div>
 
-    {{-- Complete Allocations List for this Program --}}
-    <div class="row mb-4">
-        <div class="col-12">
+        {{-- Allocations TAB --}}
+        <div class="tab-pane fade" id="allocations" role="tabpanel" aria-labelledby="allocations-tab">
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-light">
+                <div class="card-header bg-white py-3">
                     <h5 class="card-title mb-0">
-                        <i class="bi bi-list-check"></i> All Allocations Under This Program ({{ $allocations->count() }})
+                        <i class="bi bi-box-seam text-primary"></i> Event Allocations
                     </h5>
                 </div>
                 <div class="card-body">
                     @if($allocations->count() > 0)
-                    <div class="table-tools mb-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <label for="allocationsSearch" class="small text-muted mb-0">Search</label>
-                            <input id="allocationsSearch" type="search" class="form-control form-control-sm" placeholder="Beneficiary, barangay, resource, status..." style="min-width: 260px;">
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <label for="allocationsPageSize" class="small text-muted mb-0">Rows</label>
-                            <select id="allocationsPageSize" class="form-select form-select-sm" style="width: 90px;">
-                                <option value="10">10</option>
-                                <option value="25" selected>25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                        </div>
-                    </div>
                     <div class="table-responsive">
-                        <table id="allocationsTable" class="table table-sm table-hover mb-0">
+                        <table class="table table-sm table-hover align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Created</th>
+                                    <th>Date</th>
                                     <th>Beneficiary</th>
                                     <th>Barangay</th>
                                     <th>Resource Type</th>
@@ -290,66 +282,62 @@
                                     <th>Status</th>
                                 </tr>
                             </thead>
-                            <tbody id="allocationsTableBody">
+                            <tbody>
                                 @foreach($allocations as $allocation)
                                 <tr>
-                                    <td><small>{{ $allocation->created_at?->format('Y-m-d H:i') ?? 'N/A' }}</small></td>
-                                    <td><small>{{ $allocation->beneficiary?->full_name ?? $allocation->beneficiary?->name ?? 'N/A' }}</small></td>
+                                    <td><small class="text-muted">{{ $allocation->created_at?->format('M d, Y') ?? 'N/A' }}</small></td>
+                                    <td><small class="fw-medium">{{ $allocation->beneficiary?->full_name ?? $allocation->beneficiary?->name ?? 'N/A' }}</small></td>
                                     <td><small>{{ $allocation->distributionEvent?->barangay?->name ?? $allocation->beneficiary?->barangay?->name ?? 'N/A' }}</small></td>
                                     <td><small>{{ $allocation->resourceType?->name ?? $allocation->distributionEvent?->resourceType?->name ?? 'N/A' }}</small></td>
                                     <td class="text-end"><small>{{ $allocation->quantity !== null ? number_format((float) $allocation->quantity, 2) : '-' }}</small></td>
                                     <td class="text-end"><small>{{ $allocation->amount !== null ? number_format((float) $allocation->amount, 2) : '-' }}</small></td>
-                                    <td><small>{{ $allocation->release_method ? ucfirst($allocation->release_method) : 'N/A' }}</small></td>
-                                    <td><small><span class="badge bg-light text-dark">{{ $allocation->release_status_label ?? 'Planned' }}</span></small></td>
+                                    <td>
+                                        @if($allocation->release_method === 'cash')
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-cash"></i> Cash</span>
+                                        @elseif($allocation->release_method === 'voucher')
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle"><i class="bi bi-ticket-detailed"></i> Voucher</span>
+                                        @else
+                                            <span class="badge bg-light text-dark border">{{ $allocation->release_method ? ucfirst($allocation->release_method) : 'N/A' }}</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if(($allocation->release_status_label ?? 'Planned') === 'Released')
+                                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Released</span>
+                                        @else
+                                            <span class="badge bg-secondary">{{ $allocation->release_status_label ?? 'Planned' }}</span>
+                                        @endif
+                                    </td>
                                 </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
-                    <div class="table-tools mt-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
-                        <small id="allocationsInfo" class="text-muted"></small>
-                        <div class="d-flex align-items-center gap-1">
-                            <button id="allocationsPrev" type="button" class="btn btn-sm btn-outline-secondary">Prev</button>
-                            <small id="allocationsPage" class="text-muted px-2"></small>
-                            <button id="allocationsNext" type="button" class="btn btn-sm btn-outline-secondary">Next</button>
-                        </div>
+                    <div class="mt-3">
+                        {{ $allocations->links() }}
                     </div>
                     @else
-                    <p class="text-muted mb-0">No allocations found for this program.</p>
+                    <div class="text-center py-5">
+                        <div class="display-1 text-muted mb-3"><i class="bi bi-inbox border border-2 border-light rounded-circle p-4 bg-light"></i></div>
+                        <h5>No Allocations Found</h5>
+                        <p class="text-muted">There are no individual allocations tied to events for this program.</p>
+                    </div>
                     @endif
                 </div>
             </div>
         </div>
-    </div>
 
-    {{-- Complete Direct Assistance List for this Program --}}
-    <div class="row mb-4">
-        <div class="col-12">
+        {{-- Direct Assistance TAB --}}
+        <div class="tab-pane fade" id="assistance" role="tabpanel" aria-labelledby="assistance-tab">
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-light">
+                <div class="card-header bg-white py-3">
                     <h5 class="card-title mb-0">
-                        <i class="bi bi-heart-pulse"></i> All Direct Assistance Under This Program ({{ $directAssistanceRecords->count() }})
+                        <i class="bi bi-heart-pulse text-primary"></i> Direct Assistance Records
                     </h5>
                 </div>
                 <div class="card-body">
                     @if($directAssistanceRecords->count() > 0)
-                    <div class="table-tools mb-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <label for="directAssistanceSearch" class="small text-muted mb-0">Search</label>
-                            <input id="directAssistanceSearch" type="search" class="form-control form-control-sm" placeholder="Beneficiary, resource, status..." style="min-width: 260px;">
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <label for="directAssistancePageSize" class="small text-muted mb-0">Rows</label>
-                            <select id="directAssistancePageSize" class="form-select form-select-sm" style="width: 90px;">
-                                <option value="10">10</option>
-                                <option value="25" selected>25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                        </div>
-                    </div>
                     <div class="table-responsive">
-                        <table id="directAssistanceTable" class="table table-sm table-hover mb-0">
+                        <table class="table table-sm table-hover align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
                                     <th>Recorded</th>
@@ -361,88 +349,100 @@
                                     <th>Distributed At</th>
                                 </tr>
                             </thead>
-                            <tbody id="directAssistanceTableBody">
+                            <tbody>
                                 @foreach($directAssistanceRecords as $record)
                                 <tr>
-                                    <td><small>{{ $record->created_at?->format('Y-m-d H:i') ?? 'N/A' }}</small></td>
-                                    <td><small>{{ $record->beneficiary?->full_name ?? $record->beneficiary?->name ?? 'N/A' }}</small></td>
+                                    <td><small class="text-muted">{{ $record->created_at?->format('M d, Y H:i') ?? 'N/A' }}</small></td>
+                                    <td><small class="fw-medium">{{ $record->beneficiary?->full_name ?? $record->beneficiary?->name ?? 'N/A' }}</small></td>
                                     <td><small>{{ $record->resourceType?->name ?? 'N/A' }}</small></td>
                                     <td class="text-end"><small>{{ $record->quantity !== null ? number_format((float) $record->quantity, 2) : '-' }}</small></td>
                                     <td class="text-end"><small>{{ $record->amount !== null ? number_format((float) $record->amount, 2) : '-' }}</small></td>
-                                    <td><small><span class="badge bg-light text-dark">{{ $record->status_label ?? 'Planned' }}</span></small></td>
-                                    <td><small>{{ $record->distributed_at?->format('Y-m-d H:i') ?? 'N/A' }}</small></td>
+                                    <td>
+                                        @if(($record->status_label ?? 'Planned') === 'Completed')
+                                            <span class="badge bg-success">Completed</span>
+                                        @else
+                                            <span class="badge bg-secondary">{{ $record->status_label ?? 'Planned' }}</span>
+                                        @endif
+                                    </td>
+                                    <td><small>{{ $record->distributed_at?->format('M d, Y') ?? 'N/A' }}</small></td>
                                 </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
-                    <div class="table-tools mt-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
-                        <small id="directAssistanceInfo" class="text-muted"></small>
-                        <div class="d-flex align-items-center gap-1">
-                            <button id="directAssistancePrev" type="button" class="btn btn-sm btn-outline-secondary">Prev</button>
-                            <small id="directAssistancePage" class="text-muted px-2"></small>
-                            <button id="directAssistanceNext" type="button" class="btn btn-sm btn-outline-secondary">Next</button>
-                        </div>
+                    <div class="mt-3">
+                        {{ $directAssistanceRecords->links() }}
                     </div>
                     @else
-                    <p class="text-muted mb-0">No direct assistance records found for this program.</p>
+                    <div class="text-center py-5">
+                        <div class="display-1 text-muted mb-3"><i class="bi bi-clipboard-x border border-2 border-light rounded-circle p-4 bg-light"></i></div>
+                        <h5>No Direct Assistance Records</h5>
+                        <p class="text-muted">No direct assistance has been recorded under this program.</p>
+                    </div>
                     @endif
                 </div>
             </div>
         </div>
-    </div>
 
-    {{-- Beneficiaries Table --}}
-    <div class="row mb-4">
-        <div class="col-12">
+        {{-- Beneficiaries TAB --}}
+        <div class="tab-pane fade" id="beneficiaries" role="tabpanel" aria-labelledby="beneficiaries-tab">
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-light">
+                <div class="card-header bg-white py-3">
                     <h5 class="card-title mb-0">
-                        <i class="bi bi-people"></i> Beneficiaries ({{ $beneficiaries->count() }})
+                        <i class="bi bi-people text-primary"></i> Unique Beneficiaries
                     </h5>
                 </div>
                 <div class="card-body">
                     @if($beneficiaries->count() > 0)
                     <div class="table-responsive">
-                        <table class="table table-sm table-hover mb-0">
+                        <table class="table table-sm table-hover align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
                                     <th>Name</th>
                                     <th>Classification</th>
-                                    <th class="text-end">Allocations</th>
+                                    <th class="text-end">Program Allocations</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($beneficiaries as $beneficiary)
                                 <tr>
                                     <td>
-                                        <small>{{ $beneficiary->name ?? 'N/A' }}</small>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar bg-light text-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px">
+                                                <i class="bi bi-person"></i>
+                                            </div>
+                                            <span class="fw-medium">{{ $beneficiary->full_name ?? $beneficiary->name ?? 'N/A' }}</span>
+                                        </div>
                                     </td>
                                     <td>
-                                        <small>
-                                            @if(isset($beneficiary->classification))
-                                            <span class="badge bg-light text-dark">{{ $beneficiary->classification }}</span>
-                                            @else
-                                            <span class="text-muted">-</span>
-                                            @endif
-                                        </small>
+                                        @if(isset($beneficiary->classification))
+                                        <span class="badge bg-light border text-dark">{{ $beneficiary->classification }}</span>
+                                        @else
+                                        <span class="text-muted">-</span>
+                                        @endif
                                     </td>
                                     <td class="text-end">
-                                        <small>
-                                            {{ $allocations->where('beneficiary_id', $beneficiary->id)->count() }}
-                                        </small>
+                                        <span class="badge bg-primary rounded-pill">{{ $beneficiaryAllocationCounts[$beneficiary->id] ?? 0 }}</span>
                                     </td>
                                 </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
+                    <div class="mt-3">
+                        {{ $beneficiaries->links() }}
+                    </div>
                     @else
-                    <p class="text-muted mb-0">No beneficiaries found.</p>
+                    <div class="text-center py-5">
+                        <div class="display-1 text-muted mb-3"><i class="bi bi-people border border-2 border-light rounded-circle p-4 bg-light opacity-50"></i></div>
+                        <h5>No Beneficiaries Reached</h5>
+                        <p class="text-muted">No beneficiaries have received allocations or assistance under this program yet.</p>
+                    </div>
                     @endif
                 </div>
             </div>
         </div>
+
     </div>
 </div>
 
@@ -450,17 +450,17 @@
 @if(Auth::user()->isAdmin())
 <div class="modal fade" id="uploadDocModal" tabindex="-1" aria-labelledby="uploadDocModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content">
+        <div class="modal-content border-0 shadow">
             <form id="uploadDocForm" enctype="multipart/form-data">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="uploadDocModalLabel">Upload Supporting Document</h5>
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title" id="uploadDocModalLabel"><i class="bi bi-cloud-upload me-2 text-primary"></i>Upload Supporting Document</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="docFile" class="form-label fw-semibold">Select File <span class="text-danger">*</span></label>
                         <input type="file" id="docFile" name="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
-                        <small class="text-muted">Max size: 5MB. PDF, JPG, PNG allowed.</small>
+                        <small class="text-muted"><i class="bi bi-info-circle"></i> Max size: 5MB. PDF, JPG, PNG allowed.</small>
                     </div>
 
                     <div class="mb-3">
@@ -482,11 +482,11 @@
                         <textarea id="docRemarks" name="remarks" class="form-control" rows="3" placeholder="Optional notes..."></textarea>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="uploadSubmitBtn">
                         <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-                        <i class="bi bi-cloud-arrow-up"></i> Upload
+                        <i class="bi bi-upload"></i> Upload
                     </button>
                 </div>
             </form>
@@ -495,130 +495,34 @@
 </div>
 @endif
 
-
-<style>
-    .display-4 {
-        font-size: 2.5rem;
-        font-weight: bold;
-    }
-
-    .card {
-        border-radius: 0.5rem;
-    }
-
-    .table-tools .form-control,
-    .table-tools .form-select {
-        max-width: 300px;
-    }
-</style>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const csrftoken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-    const setupTable = ({
-        bodyId,
-        searchId,
-        pageSizeId,
-        prevId,
-        nextId,
-        pageId,
-        infoId,
-    }) => {
-        const tbody = document.getElementById(bodyId);
-        const searchInput = document.getElementById(searchId);
-        const pageSizeSelect = document.getElementById(pageSizeId);
-        const prevBtn = document.getElementById(prevId);
-        const nextBtn = document.getElementById(nextId);
-        const pageText = document.getElementById(pageId);
-        const infoText = document.getElementById(infoId);
-
-        if (!tbody || !searchInput || !pageSizeSelect || !prevBtn || !nextBtn || !pageText || !infoText) {
-            return;
+    // Restore active tab based on URL param
+    const urlParams = new URLSearchParams(window.location.search);
+    const activeTab = urlParams.get('tab');
+    if (activeTab) {
+        const tabTrigger = document.querySelector(`#${activeTab}-tab`);
+        if (tabTrigger) {
+            const tab = new bootstrap.Tab(tabTrigger);
+            tab.show();
         }
+    }
 
-        const rows = Array.from(tbody.querySelectorAll('tr'));
-        let currentPage = 1;
-
-        const refresh = () => {
-            const query = searchInput.value.trim().toLowerCase();
-            const pageSize = parseInt(pageSizeSelect.value, 10) || 25;
-
-            const filteredRows = rows.filter((row) => row.textContent.toLowerCase().includes(query));
-            const totalRows = filteredRows.length;
-            const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
-
-            if (currentPage > totalPages) {
-                currentPage = totalPages;
-            }
-
-            const start = (currentPage - 1) * pageSize;
-            const end = start + pageSize;
-
-            rows.forEach((row) => {
-                row.style.display = 'none';
-            });
-
-            filteredRows.slice(start, end).forEach((row) => {
-                row.style.display = '';
-            });
-
-            if (totalRows === 0) {
-                pageText.textContent = 'No results';
-                infoText.textContent = 'Showing 0 results';
-            } else {
-                pageText.textContent = `Page ${currentPage} of ${totalPages}`;
-                infoText.textContent = `Showing ${start + 1}-${Math.min(end, totalRows)} of ${totalRows}`;
-            }
-
-            prevBtn.disabled = currentPage <= 1 || totalRows === 0;
-            nextBtn.disabled = currentPage >= totalPages || totalRows === 0;
-        };
-
-        searchInput.addEventListener('input', () => {
-            currentPage = 1;
-            refresh();
+    // Update URL when switching tabs
+    const tabEls = document.querySelectorAll('button[data-bs-toggle="tab"]');
+    tabEls.forEach(tabEl => {
+        tabEl.addEventListener('shown.bs.tab', function (event) {
+            const targetId = event.target.id.replace('-tab', '');
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('tab', targetId);
+            window.history.replaceState({}, '', currentUrl);
         });
-
-        pageSizeSelect.addEventListener('change', () => {
-            currentPage = 1;
-            refresh();
-        });
-
-        prevBtn.addEventListener('click', () => {
-            if (currentPage > 1) {
-                currentPage -= 1;
-                refresh();
-            }
-        });
-
-        nextBtn.addEventListener('click', () => {
-            currentPage += 1;
-            refresh();
-        });
-
-        refresh();
-    };
-
-    setupTable({
-        bodyId: 'allocationsTableBody',
-        searchId: 'allocationsSearch',
-        pageSizeId: 'allocationsPageSize',
-        prevId: 'allocationsPrev',
-        nextId: 'allocationsNext',
-        pageId: 'allocationsPage',
-        infoId: 'allocationsInfo',
     });
-
-    setupTable({
-        bodyId: 'directAssistanceTableBody',
-        searchId: 'directAssistanceSearch',
-        pageSizeId: 'directAssistancePageSize',
-        prevId: 'directAssistancePrev',
-        nextId: 'directAssistanceNext',
-        pageId: 'directAssistancePage',
-        infoId: 'directAssistanceInfo',
-    });
+    
+    // Auto-select tab if pagination is clicked inside it
+    // Note: this logic runs gracefully when page restarts, setting the active tab based on ?tab=xxx in the URL that pagination append.
 
     // Delete legal requirement
     document.querySelectorAll('.delete-req').forEach(btn => {
@@ -640,7 +544,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     .then(r => r.json())
                     .then(data => {
                         if (data.success) {
-                            location.reload();
+                            // Ensure we stay on the documents tab on reload
+                            const currentUrl = new URL(window.location.href);
+                            currentUrl.searchParams.set('tab', 'documents');
+                            window.location.href = currentUrl.href;
                         } else {
                             alert(data.message || 'Failed to delete document');
                         }
@@ -661,7 +568,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const submitBtn = document.getElementById('uploadSubmitBtn');
             const spinner = submitBtn.querySelector('.spinner-border');
-            const icon = submitBtn.querySelector('.bi-cloud-arrow-up');
+            const icon = submitBtn.querySelector('.bi-upload');
             
             const formData = new FormData(this);
             const programId = '{{ $programName->id }}';
@@ -681,7 +588,9 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    location.reload();
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.set('tab', 'documents');
+                    window.location.href = currentUrl.href;
                 } else {
                     alert(data.message || 'Failed to upload document');
                     submitBtn.disabled = false;

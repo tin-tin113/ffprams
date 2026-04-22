@@ -870,7 +870,7 @@ class SystemSettingsController extends Controller
         ]);
     }
 
-    public function viewProgramLegalRequirement(ProgramLegalRequirement $requirement): BinaryFileResponse
+    public function viewProgramLegalRequirement(ProgramName $programName, ProgramLegalRequirement $requirement): BinaryFileResponse
     {
         if (! Storage::disk('program_documents')->exists($requirement->path)) {
             abort(404, 'File not found');
@@ -890,7 +890,7 @@ class SystemSettingsController extends Controller
         );
     }
 
-    public function downloadProgramLegalRequirement(ProgramLegalRequirement $requirement): BinaryFileResponse|StreamedResponse
+    public function downloadProgramLegalRequirement(ProgramName $programName, ProgramLegalRequirement $requirement): BinaryFileResponse|StreamedResponse
     {
         if (! Storage::disk('program_documents')->exists($requirement->path)) {
             abort(404, 'File not found');
@@ -910,7 +910,7 @@ class SystemSettingsController extends Controller
         );
     }
 
-    public function deleteProgramLegalRequirement(ProgramLegalRequirement $requirement): JsonResponse
+    public function deleteProgramLegalRequirement(ProgramName $programName, ProgramLegalRequirement $requirement): JsonResponse
     {
         try {
             DB::transaction(function () use ($requirement) {
@@ -957,17 +957,34 @@ class SystemSettingsController extends Controller
             'legalRequirements.uploader',
         ]);
 
+        // Aggregate statistics
+        $totalEvents = DistributionEvent::where('program_name_id', $programName->id)->count();
+        $totalAllocatedAmount = (float) Allocation::where('program_name_id', $programName->id)->sum('amount');
+        
+        $allocationBeneficiaryIds = Allocation::where('program_name_id', $programName->id)
+            ->select('beneficiary_id')
+            ->distinct()
+            ->pluck('beneficiary_id');
+            
+        $daBeneficiaryIds = DirectAssistance::where('program_name_id', $programName->id)
+            ->select('beneficiary_id')
+            ->distinct()
+            ->pluck('beneficiary_id');
+            
+        $beneficiaryIds = $allocationBeneficiaryIds->concat($daBeneficiaryIds)->unique()->values();
+        $totalBeneficiaries = $beneficiaryIds->count();
+
+        // Paginated datasets
         $events = DistributionEvent::query()
             ->where('program_name_id', $programName->id)
             ->with([
-                'allocations.beneficiary',
-                'allocations.resourceType',
-                'allocations.assistancePurpose',
                 'resourceType',
                 'barangay',
             ])
+            ->withCount('allocations')
             ->orderByDesc('distribution_date')
-            ->get();
+            ->paginate(15, ['*'], 'events_page')
+            ->appends(request()->query());
 
         // Include both event-based and direct allocations under this specific program.
         $allocations = Allocation::query()
@@ -979,7 +996,8 @@ class SystemSettingsController extends Controller
                 'distributionEvent.barangay',
             ])
             ->orderByDesc('created_at')
-            ->get();
+            ->paginate(25, ['*'], 'allocations_page')
+            ->appends(request()->query());
 
         $directAssistanceRecords = DirectAssistance::query()
             ->where('program_name_id', $programName->id)
@@ -990,24 +1008,20 @@ class SystemSettingsController extends Controller
                 'distributionEvent.barangay',
             ])
             ->orderByDesc('created_at')
-            ->get();
-
-        $beneficiaryIds = collect()
-            ->merge($allocations->pluck('beneficiary_id'))
-            ->merge($directAssistanceRecords->pluck('beneficiary_id'))
-            ->unique()
-            ->values();
+            ->paginate(25, ['*'], 'da_page')
+            ->appends(request()->query());
 
         $beneficiaries = Beneficiary::query()
             ->whereIn('id', $beneficiaryIds)
             ->orderBy('full_name')
-            ->get();
-
-        $totalEvents = $events->count();
-        $totalAllocatedAmount = (float) $allocations->sum(function ($allocation) {
-            return (float) ($allocation->amount ?? 0);
-        });
-        $totalBeneficiaries = $beneficiaries->count();
+            ->paginate(25, ['*'], 'beneficiaries_page')
+            ->appends(request()->query());
+            
+        $beneficiaryAllocationCounts = Allocation::where('program_name_id', $programName->id)
+            ->whereIn('beneficiary_id', $beneficiaries->pluck('id'))
+            ->selectRaw('beneficiary_id, count(*) as count')
+            ->groupBy('beneficiary_id')
+            ->pluck('count', 'beneficiary_id');
 
         return view('admin.settings.program-names.detail', compact(
             'programName',
@@ -1018,6 +1032,7 @@ class SystemSettingsController extends Controller
             'totalEvents',
             'totalAllocatedAmount',
             'totalBeneficiaries',
+            'beneficiaryAllocationCounts'
         ));
     }
 

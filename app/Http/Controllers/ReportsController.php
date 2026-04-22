@@ -49,6 +49,7 @@ class ReportsController extends Controller
         if ($selectedYear < 2000 || $selectedYear > ($currentCalendarYear + 1)) {
             $selectedYear = $currentCalendarYear;
         }
+        $currentYear = $selectedYear;
 
         $availableYears = $activityYears
             ->merge(collect(range($currentCalendarYear, $currentCalendarYear - 4)))
@@ -62,6 +63,16 @@ class ReportsController extends Controller
                 ->sortDesc()
                 ->values();
         }
+
+        $reportTabs = [
+            ['id' => 'overview', 'label' => 'Overview', 'icon' => 'bi-speedometer2'],
+            ['id' => 'beneficiary', 'label' => 'Beneficiaries', 'icon' => 'bi-people'],
+            ['id' => 'allocation', 'label' => 'Allocations', 'icon' => 'bi-box-seam'],
+            ['id' => 'financial', 'label' => 'Financials', 'icon' => 'bi-cash-coin'],
+            ['id' => 'barangay', 'label' => 'Barangay Metrics', 'icon' => 'bi-geo-alt'],
+            ['id' => 'agency', 'label' => 'Agencies', 'icon' => 'bi-building'],
+            ['id' => 'program', 'label' => 'Program Analysis', 'icon' => 'bi-journal-check'],
+        ];
 
         // COMPLIANCE SNAPSHOT — Legal basis, liquidation, and FARMC checks
         $financialEvents = DistributionEvent::query()
@@ -97,8 +108,7 @@ class ReportsController extends Controller
         $beneficiariesPerBarangay = Beneficiary::select('barangay_id')
             ->selectRaw("SUM(CASE WHEN classification = 'Farmer' THEN 1 ELSE 0 END) as total_farmers")
             ->selectRaw("SUM(CASE WHEN classification = 'Fisherfolk' THEN 1 ELSE 0 END) as total_fisherfolk")
-            ->selectRaw("SUM(CASE WHEN classification = 'Both' THEN 1 ELSE 0 END) as total_both")
-            ->selectRaw('COUNT(*) as grand_total')
+            ->selectRaw("SUM(CASE WHEN classification IN ('Farmer', 'Fisherfolk') THEN 1 ELSE 0 END) as grand_total")
             ->with('barangay')
             ->groupBy('barangay_id')
             ->orderBy('barangay_id')
@@ -193,20 +203,24 @@ class ReportsController extends Controller
             ->orderBy('barangay_id')
             ->get();
 
-        // REPORT 4 — Beneficiaries Not Yet Reached
+        // REPORT 4 — Beneficiaries Not Yet Reached (In Selected Year)
         $unreachedBeneficiaries = Beneficiary::with('barangay')
-            ->whereDoesntHave('allocations', function ($q) {
-                $q->where(function ($q2) {
-                    $q2->whereNotNull('distributed_at')
-                        ->orWhere('release_outcome', 'received');
-                });
+            ->whereDoesntHave('allocations', function ($q) use ($selectedYear) {
+                $q->join('distribution_events', 'distribution_events.id', '=', 'allocations.distribution_event_id')
+                    ->whereNull('distribution_events.deleted_at')
+                    ->whereYear('distribution_events.distribution_date', $selectedYear)
+                    ->where(function ($q2) {
+                        $q2->whereNotNull('allocations.distributed_at')
+                            ->orWhere('allocations.release_outcome', 'received');
+                    });
             })
-            ->whereDoesntHave('directAssistance', function ($q) {
-                $q->where(function ($q2) {
-                    $q2->whereNotNull('distributed_at')
-                        ->orWhereIn('status', ['released', 'completed'])
-                        ->orWhere('release_outcome', 'accepted');
-                });
+            ->whereDoesntHave('directAssistance', function ($q) use ($selectedYear) {
+                $q->whereYear(DB::raw('COALESCE(distributed_at, created_at)'), $selectedYear)
+                    ->where(function ($q2) {
+                        $q2->whereNotNull('distributed_at')
+                            ->orWhereIn('status', ['released', 'completed'])
+                            ->orWhere('release_outcome', 'accepted');
+                    });
             })
             ->orderBy(
                 Barangay::select('name')
@@ -451,12 +465,90 @@ class ReportsController extends Controller
             ->orderByDesc('total_amount')
             ->get();
 
-        // BENEFICIARY MIX DATA — Classification breakdown
-        $beneficiaryMixRows = collect([
-            (object) ['label' => 'Farmers', 'value' => (int) Beneficiary::where('classification', 'Farmer')->whereNull('deleted_at')->count(), 'color' => '#10b981'],
-            (object) ['label' => 'Fisherfolk', 'value' => (int) Beneficiary::where('classification', 'Fisherfolk')->whereNull('deleted_at')->count(), 'color' => '#3b82f6'],
-            (object) ['label' => 'Both', 'value' => (int) Beneficiary::where('classification', 'Both')->whereNull('deleted_at')->count(), 'color' => '#f59e0b'],
-        ])->filter(fn ($row) => $row->value > 0);
+        // BENEFICIARY MIX & REACH DATA — Classification breakdown and outreach sensitivity
+        $reachedBeneficiaryIds = DB::table('allocations')
+            ->join('distribution_events', 'distribution_events.id', '=', 'allocations.distribution_event_id')
+            ->whereNull('allocations.deleted_at')
+            ->whereNull('distribution_events.deleted_at')
+            ->where('distribution_events.status', 'Completed')
+            ->whereYear('distribution_events.distribution_date', $selectedYear)
+            ->pluck('beneficiary_id')
+            ->merge(
+                DB::table('direct_assistance')
+                    ->whereNull('deleted_at')
+                    ->whereYear(DB::raw('COALESCE(distributed_at, created_at)'), $selectedYear)
+                    ->where(function ($q) {
+                        $q->whereNotNull('distributed_at')
+                            ->orWhereIn('status', ['released', 'completed']);
+                    })
+                    ->pluck('beneficiary_id')
+            )
+            ->unique();
+
+        $beneficiaryClassificationReach = Beneficiary::query()
+            ->select('classification')
+            ->selectRaw('COUNT(*) as total_count')
+            ->whereNull('deleted_at')
+            ->whereIn('classification', ['Farmer', 'Fisherfolk'])
+            ->groupBy('classification')
+            ->get()
+            ->map(function ($item) use ($reachedBeneficiaryIds) {
+                $reachedCount = Beneficiary::where('classification', $item->classification)
+                    ->whereIn('id', $reachedBeneficiaryIds)
+                    ->count();
+                
+                return (object) [
+                    'label' => $item->classification ?: 'Uncategorized',
+                    'total' => (int) $item->total_count,
+                    'reached' => $reachedCount,
+                    'unreached' => max(0, (int) $item->total_count - $reachedCount),
+                    'reach_rate' => $item->total_count > 0 ? ($reachedCount / $item->total_count) * 100 : 0
+                ];
+            });
+
+        $beneficiaryMixTotal = $beneficiaryClassificationReach->sum('total');
+        $dominantBeneficiaryMix = $beneficiaryClassificationReach->sortByDesc('total')->first();
+        $dominantBeneficiaryMixLabel = $dominantBeneficiaryMix->label ?? 'N/A';
+        $dominantBeneficiaryMixPercent = $beneficiaryMixTotal > 0 ? ($dominantBeneficiaryMix->total / $beneficiaryMixTotal) * 100 : 0;
+
+        $totalBeneficiaries = Beneficiary::whereIn('classification', ['Farmer', 'Fisherfolk'])->count();
+        
+        $reachedCount = Beneficiary::whereIn('id', $reachedBeneficiaryIds)
+            ->whereIn('classification', ['Farmer', 'Fisherfolk'])
+            ->count();
+            
+        $unreachedTotal = max(0, $totalBeneficiaries - $reachedCount);
+        $coverageRate = $totalBeneficiaries > 0 ? ($reachedCount / $totalBeneficiaries) * 100 : 0;
+
+        $beneficiaryMixRows = $beneficiaryClassificationReach->map(function($item) use ($beneficiaryMixTotal) {
+            return (object) [
+                'label' => $item->label,
+                'value' => $item->total,
+                'reached' => $item->reached,
+                'percent' => $beneficiaryMixTotal > 0 ? ($item->total / $beneficiaryMixTotal) * 100 : 0,
+                'color' => match($item->label) {
+                    'Farmer' => '#16a34a',
+                    'Fisherfolk' => '#2563eb',
+                    default => '#6b7280'
+                }
+            ];
+        });
+
+        // UNREACHED BY BARANGAY — Priority outreach calculation
+        $unreachedBarangayGroups = $unreachedBeneficiaries
+            ->groupBy(fn ($b) => $b->barangay->name ?? 'Unassigned')
+            ->map(fn ($rows, $name) => (object) [
+                'barangay_name' => $name,
+                'count' => $rows->count(),
+                'share' => $unreachedTotal > 0 ? ($rows->count() / $unreachedTotal) * 100 : 0
+            ])
+            ->sortByDesc('count');
+
+        $priorityOutreachBarangays = $unreachedBarangayGroups->take(5)->values();
+        $topPriorityOutreach = $unreachedBarangayGroups->first();
+        $topPriorityOutreachBarangay = $topPriorityOutreach->barangay_name ?? 'N/A';
+        $topPriorityOutreachCount = $topPriorityOutreach->count ?? 0;
+        $topPriorityOutreachShare = $topPriorityOutreach->share ?? 0;
 
         // UNREACHED BY BARANGAY — Top barangays with unreached beneficiaries
         $unreachedByBarangay = Beneficiary::with('barangay')
@@ -642,23 +734,132 @@ class ReportsController extends Controller
             ->orderByDesc('reach_percentage')
             ->get();
 
-        // Monthly allocation trend line (for line chart)
-        $allocationMonthlyTrend = collect(range(1, 12))
-            ->map(function (int $month) use ($monthlyDistribution) {
-                $data = $monthlyDistribution->firstWhere('month_number', $month);
-                if (!$data) {
-                    return (object) [
-                        'month' => $month,
-                        'total_reached' => 0,
-                        'completion_rate' => 0,
-                    ];
-                }
-                return (object) [
-                    'month' => $month,
-                    'total_reached' => $data->total_beneficiaries,
-                    'completion_rate' => 100,
-                ];
-            });
+        // NEW: YoY Comparison (Previous Year Data)
+        $prevYear = $selectedYear - 1;
+
+        $prevYearEventReach = DistributionEvent::query()
+            ->join('allocations', 'distribution_events.id', '=', 'allocations.distribution_event_id')
+            ->whereNull('distribution_events.deleted_at')
+            ->whereNull('allocations.deleted_at')
+            ->whereYear('distribution_events.distribution_date', $prevYear)
+            ->where('distribution_events.status', 'Completed')
+            ->count(DB::raw('DISTINCT allocations.beneficiary_id'));
+
+        $prevYearDirectReach = DirectAssistance::query()
+            ->whereNull('deleted_at')
+            ->whereYear(DB::raw('COALESCE(distributed_at, created_at)'), $prevYear)
+            ->where(function ($q) {
+                $q->whereNotNull('distributed_at')
+                    ->orWhereIn('status', ['released', 'completed']);
+            })
+            ->count(DB::raw('DISTINCT beneficiary_id'));
+
+        $prevYearTotalReach = $prevYearEventReach + $prevYearDirectReach;
+
+        // Current Year Total Reach (sum of monthly distribution already calculated basically)
+        $currYearEventReach = (int) $monthlyDistribution->sum('event_beneficiaries');
+        $currYearDirectReach = (int) $monthlyDistribution->sum('direct_beneficiaries');
+        $currYearTotalReach = $currYearEventReach + $currYearDirectReach;
+        $yoyGrowth = $prevYearTotalReach > 0 ? (($currYearTotalReach - $prevYearTotalReach) / $prevYearTotalReach) * 100 : 0;
+
+        $monthNames = [
+            1 => 'January', 2 => 'February', 3 => 'March',
+            4 => 'April', 5 => 'May', 6 => 'June',
+            7 => 'July', 8 => 'August', 9 => 'September',
+            10 => 'October', 11 => 'November', 12 => 'December'
+        ];
+
+        // NEW: Liquidation Aging Buckets
+        $liquidationAging = DistributionEvent::query()
+            ->where('type', 'financial')
+            ->whereNull('deleted_at')
+            ->whereIn('liquidation_status', ['pending', 'submitted'])
+            ->whereYear('distribution_date', $selectedYear)
+            ->selectRaw("
+                SUM(CASE WHEN DATEDIFF(NOW(), COALESCE(liquidation_due_date, distribution_date)) <= 30 THEN 1 ELSE 0 END) as bucket_30,
+                SUM(CASE WHEN DATEDIFF(NOW(), COALESCE(liquidation_due_date, distribution_date)) BETWEEN 31 AND 60 THEN 1 ELSE 0 END) as bucket_60,
+                SUM(CASE WHEN DATEDIFF(NOW(), COALESCE(liquidation_due_date, distribution_date)) BETWEEN 61 AND 90 THEN 1 ELSE 0 END) as bucket_90,
+                SUM(CASE WHEN DATEDIFF(NOW(), COALESCE(liquidation_due_date, distribution_date)) > 90 THEN 1 ELSE 0 END) as bucket_over_90
+            ")
+            ->first();
+
+        // NEW: Outreach Efficiency (Avg days from created to distributed)
+        $avgOutreachDays = DistributionEvent::query()
+            ->whereNull('deleted_at')
+            ->where('status', 'Completed')
+            ->whereYear('distribution_date', $selectedYear)
+            ->selectRaw('AVG(DATEDIFF(distribution_date, created_at)) as avg_days')
+            ->value('avg_days') ?? 0;
+
+        $unreachedTotal = max(0, $totalBeneficiaries - $reachedCount);
+        $kpiCompletedEvents = $monthlyDistribution->sum('total_events');
+
+        // NEW: Program Analysis Insights
+        $topPurpose = $assistanceByPurpose->sortByDesc('total_amount')->first();
+        $topPurposeName = $topPurpose->name ?? 'None';
+        $topPurposeAmount = $topPurpose->total_amount ?? 0;
+        $topPurposeBeneficiaries = $topPurpose->total_beneficiaries ?? 0;
+
+        $programBeneficiaryTotal = $assistanceByPurpose->sum('total_beneficiaries');
+        $programFinancialTotal = $assistanceByPurpose->sum('total_amount');
+        $avgProgramSupport = $programBeneficiaryTotal > 0 ? $programFinancialTotal / $programBeneficiaryTotal : 0;
+
+        $topCategory = $programCategorySummary->sortByDesc('amount')->first();
+        $topProgramCategoryName = $topCategory->category ?? 'None';
+        $topProgramCategoryAmount = $topCategory->amount ?? 0;
+        $programCategoriesCount = $programCategorySummary->count();
+
+        $topReachProgram = $assistanceByPurpose->sortByDesc('total_beneficiaries')->first();
+        $topProgramByReachName = $topReachProgram->name ?? 'None';
+        $topProgramByReachTotal = $topReachProgram->total_beneficiaries ?? 0;
+
+        // NEW: Allocation Tab Insights
+        $topResource = $resourceDistribution->sortByDesc('total_quantity_distributed')->first();
+        $topResourceName = $topResource->name ?? 'None';
+        $topResourceQty = $topResource->total_quantity_distributed ?? 0;
+        $totalAllocQty = $resourceDistribution->sum('total_quantity_distributed');
+        $directSharePct = $totalAllocQty > 0 ? ($resourceDistribution->sum('direct_quantity_distributed') / $totalAllocQty) * 100 : 0;
+        $topBarangayByEvents = $statusPerBarangay->sortByDesc('total_events')->first();
+        $topBarangayByEventsName = $topBarangayByEvents->barangay->name ?? 'None';
+        $topBarangayByEventsTotal = $topBarangayByEvents->total_events ?? 0;
+        $allocationResourceTypesCount = $resourceDistribution->count();
+
+        // NEW: Financial Tab Insights
+        $topAssistance = $financialSummary->sortByDesc('total_amount_disbursed')->first();
+        $topAssistanceName = $topAssistance->name ?? 'None';
+        $topAssistanceAmount = $topAssistance->total_amount_disbursed ?? 0;
+        $financialReachedTotal = $financialSummary->sum('total_beneficiaries_reached');
+        $avgFinancialPerReached = $financialReachedTotal > 0 ? $financialSummary->sum('total_amount_disbursed') / $financialReachedTotal : 0;
+        $highestFinBarangay = $financialPerBarangay->sortByDesc('total_amount')->first();
+        $highestFinancialBarangayName = $highestFinBarangay->name ?? 'None';
+        $highestFinancialBarangayAmount = $highestFinBarangay->total_amount ?? 0;
+        $topDirectFinancialType = $financialSummary->sortByDesc('direct_amount_disbursed')->first();
+        $topDirectFinancialTypeName = $topDirectFinancialType->name ?? 'None';
+        $topDirectFinancialTypeAmount = $topDirectFinancialType->direct_amount_disbursed ?? 0;
+
+        // NEW: Barangay Tab Insights
+        $topBarangayByBeneficiaries = $barangayInsights->sortByDesc('beneficiaries_total')->first();
+        $topBarangayByBeneficiariesName = $topBarangayByBeneficiaries->barangay_name ?? 'None';
+        $topBarangayByBeneficiariesTotal = $topBarangayByBeneficiaries->beneficiaries_total ?? 0;
+        $topBarangayByCompletedEvents = $barangayInsights->sortByDesc('completed_events')->first();
+        $topBarangayByCompletedEventsName = $topBarangayByCompletedEvents->barangay_name ?? 'None';
+        $topBarangayByCompletedEventsTotal = $topBarangayByCompletedEvents->completed_events ?? 0;
+        $topPendingBarangay = $barangayInsights->sortByDesc('pending_events')->first();
+        $topPendingBarangayName = $topPendingBarangay->barangay_name ?? 'None';
+        $topPendingBarangayCount = $topPendingBarangay->pending_events ?? 0;
+
+        // NEW: Agency Tab Insights
+        $topAgencyByFinancial = $agencySummary->sortByDesc('financial_amount')->first();
+        $topAgencyByFinancialName = $topAgencyByFinancial->agency_name ?? 'None';
+        $topAgencyByFinancialAmount = $topAgencyByFinancial->financial_amount ?? 0;
+        $topAgencyByReach = $agencySummary->sortByDesc('beneficiaries_reached')->first();
+        $topAgencyByReachName = $topAgencyByReach->agency_name ?? 'None';
+        $topAgencyByReachTotal = $topAgencyByReach->beneficiaries_reached ?? 0;
+        $agenciesCount = $agencySummary->count();
+        $avgFinancialPerAgency = $agenciesCount > 0 ? $agencySummary->sum('financial_amount') / $agenciesCount : 0;
+        $topAgencyByEvents = $agencySummary->sortByDesc('completed_events')->first();
+        $topAgencyByEventsName = $topAgencyByEvents->agency_name ?? 'None';
+        $topAgencyByEventsTotal = $topAgencyByEvents->completed_events ?? 0;
 
         return view('reports.index', compact(
             'complianceOverview',
@@ -666,6 +867,8 @@ class ReportsController extends Controller
             'resourceDistribution',
             'statusPerBarangay',
             'unreachedBeneficiaries',
+            'unreachedTotal',
+            'kpiCompletedEvents',
             'totalBeneficiaries',
             'monthlyDistribution',
             'currentYear',
@@ -680,7 +883,62 @@ class ReportsController extends Controller
             'programCategorySummary',
             'topResourcesByReach',
             'barangayEfficiency',
-            'allocationMonthlyTrend',
+            'yoyGrowth',
+            'prevYearTotalReach',
+            'currYearTotalReach',
+            'liquidationAging',
+            'avgOutreachDays',
+            'beneficiaryClassificationReach',
+            'beneficiaryMixTotal',
+            'selectedYear',
+            'dominantBeneficiaryMixLabel',
+            'dominantBeneficiaryMixPercent',
+            'coverageRate',
+            'reachedCount',
+            'topPriorityOutreachBarangay',
+            'topPriorityOutreachCount',
+            'topPriorityOutreachShare',
+            'priorityOutreachBarangays',
+            'monthNames',
+            'reportTabs',
+            'complianceOverview',
+            'topPurposeName',
+            'topPurposeAmount',
+            'topPurposeBeneficiaries',
+            'avgProgramSupport',
+            'programBeneficiaryTotal',
+            'topProgramCategoryName',
+            'topProgramCategoryAmount',
+            'programCategoriesCount',
+            'topProgramByReachName',
+            'topProgramByReachTotal',
+            'topResourceName',
+            'topResourceQty',
+            'directSharePct',
+            'topBarangayByEventsName',
+            'topBarangayByEventsTotal',
+            'allocationResourceTypesCount',
+            'topAssistanceName',
+            'topAssistanceAmount',
+            'financialReachedTotal',
+            'avgFinancialPerReached',
+            'highestFinancialBarangayName',
+            'highestFinancialBarangayAmount',
+            'topDirectFinancialTypeName',
+            'topDirectFinancialTypeAmount',
+            'topBarangayByBeneficiariesName',
+            'topBarangayByBeneficiariesTotal',
+            'topBarangayByCompletedEventsName',
+            'topBarangayByCompletedEventsTotal',
+            'topPendingBarangayName',
+            'topPendingBarangayCount',
+            'topAgencyByFinancialName',
+            'topAgencyByFinancialAmount',
+            'topAgencyByReachName',
+            'topAgencyByReachTotal',
+            'avgFinancialPerAgency',
+            'topAgencyByEventsName',
+            'topAgencyByEventsTotal'
         ));
     }
 }
