@@ -161,7 +161,6 @@
                                             data-name="{{ $program->name }}"
                                             data-agency-id="{{ $program->agency_id }}"
                                             data-description="{{ $program->description }}"
-                                            data-classification="{{ $program->classification }}"
                                             data-active="{{ $program->is_active }}"
                                             data-bs-toggle="modal"
                                             data-bs-target="#pnModal"
@@ -254,15 +253,13 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="pnClassification" class="form-label fw-semibold">Classification <span class="text-danger">*</span></label>
-                                <select id="pnClassification" class="form-select" required>
-                                    <option value="" disabled selected>Select classification...</option>
-                                    <option value="Farmer">🌾 Farmer</option>
-                                    <option value="Fisherfolk">🐟 Fisherfolk</option>
-                                    <option value="Both">👥 Both Farmer & Fisherfolk</option>
-                                </select>
+                                <label class="form-label fw-semibold">Classification</label>
+                                <div id="pnClassificationDisplay" class="form-control bg-light" style="pointer-events:none; min-height:38px;">
+                                    <span class="text-muted fst-italic">Select an agency to auto-derive classification</span>
+                                </div>
+                                <input type="hidden" id="pnClassification" value="">
                                 <small class="text-muted d-block mt-2">
-                                    <i class="bi bi-info-circle"></i> This determines which beneficiary types can receive this program
+                                    <i class="bi bi-lock"></i> Auto-derived from agency classifications — cannot be changed manually
                                 </small>
                             </div>
 
@@ -490,6 +487,47 @@ document.addEventListener('DOMContentLoaded', function() {
     const pnModal = document.getElementById('pnModal');
     const pnStepIndicator = document.getElementById('pnStepIndicator');
 
+    // ==================== AGENCY CHANGE → AUTO-DERIVE CLASSIFICATION ====================
+    document.getElementById('pnAgencyId').addEventListener('change', function() {
+        const agencyId = this.value;
+        const displayEl = document.getElementById('pnClassificationDisplay');
+        const hiddenEl = document.getElementById('pnClassification');
+
+        if (!agencyId) {
+            displayEl.innerHTML = '<span class="text-muted fst-italic">Select an agency to auto-derive classification</span>';
+            hiddenEl.value = '';
+            return;
+        }
+
+        displayEl.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Resolving...';
+
+        fetch(`/admin/settings/agencies/${agencyId}/classification`, {
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrftoken
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.classification) {
+                hiddenEl.value = data.classification;
+                let badgeClass = 'bg-secondary';
+                let icon = '';
+                if (data.classification === 'Farmer') { badgeClass = 'bg-success'; icon = '🌾 '; }
+                else if (data.classification === 'Fisherfolk') { badgeClass = 'bg-info'; icon = '🐟 '; }
+                else if (data.classification === 'Both') { badgeClass = 'bg-warning text-dark'; icon = '👥 '; }
+                displayEl.innerHTML = `<span class="badge ${badgeClass} fs-6">${icon}${data.classification}</span>`;
+            } else {
+                hiddenEl.value = '';
+                displayEl.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle"></i> ${data.message || 'No classification for this agency'}</span>`;
+            }
+        })
+        .catch(() => {
+            hiddenEl.value = '';
+            displayEl.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-triangle"></i> Failed to resolve classification</span>';
+        });
+    });
+
     pnNextBtn.addEventListener('click', function() {
         // Validate step 1 fields
         if (!document.getElementById('pnAgencyId').value.trim()) {
@@ -501,7 +539,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         if (!document.getElementById('pnClassification').value) {
-            alert('Please select a classification');
+            alert('Classification could not be resolved. Please ensure the selected agency has valid classifications configured.');
             return;
         }
 
@@ -811,9 +849,11 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('pnName').value = this.dataset.name;
             document.getElementById('pnAgencyId').value = this.dataset.agencyId;
             document.getElementById('pnDescription').value = this.dataset.description;
-            document.getElementById('pnClassification').value = this.dataset.classification;
             document.getElementById('pnIsActive').checked = this.dataset.active === '1';
             document.getElementById('pnModalTitle').textContent = 'Edit Program';
+
+            // Trigger agency change to re-derive classification from agency
+            document.getElementById('pnAgencyId').dispatchEvent(new Event('change'));
 
             // Reset modal to step 1
             const pnInfoTab = new bootstrap.Tab(document.getElementById('pnInfoTab'));
@@ -832,6 +872,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!e.relatedTarget || !e.relatedTarget.classList.contains('edit-pn')) {
             document.getElementById('pnForm').reset();
             document.getElementById('pnId').value = '';
+            document.getElementById('pnClassification').value = '';
+            document.getElementById('pnClassificationDisplay').innerHTML =
+                '<span class="text-muted fst-italic">Select an agency to auto-derive classification</span>';
             document.getElementById('pnModalTitle').textContent = 'Add Program';
             uploadedFilesMap = {};
             document.getElementById('pnUploadedFiles').style.display = 'none';
@@ -874,7 +917,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     agency_id: document.getElementById('pnAgencyId').value,
                     name: document.getElementById('pnName').value,
                     description: document.getElementById('pnDescription').value,
-                    classification: document.getElementById('pnClassification').value,
                     is_active: document.getElementById('pnIsActive').checked
                 })
             });

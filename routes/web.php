@@ -255,6 +255,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('settings/agencies', [SystemSettingsController::class, 'storeAgency'])->name('settings.agencies.store');
     Route::put('settings/agencies/{agency}', [SystemSettingsController::class, 'updateAgency'])->name('settings.agencies.update');
     Route::patch('settings/agencies/{agency}/status', [SystemSettingsController::class, 'updateAgencyStatus'])->name('settings.agencies.status');
+    Route::get('settings/agencies/{agency}/classification', [SystemSettingsController::class, 'resolveAgencyClassification'])->name('settings.agencies.classification');
     Route::delete('settings/agencies/{agency}', [SystemSettingsController::class, 'destroyAgency'])->name('settings.agencies.destroy');
     Route::get('settings/agencies/{agency}/form-fields', [SystemSettingsController::class, 'getAgencyFormFields'])->name('settings.agencies.form-fields.index');
     Route::delete('settings/agencies/{agency}/form-fields/cleanup-reserved', [SystemSettingsController::class, 'cleanupReservedAgencyFormFields'])->name('settings.agencies.form-fields.cleanup-reserved');

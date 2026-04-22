@@ -98,7 +98,17 @@ class SystemSettingsController extends Controller
 
     public function indexProgramNames(): View
     {
-        $agencies = Agency::where('is_active', true)->orderBy('name')->get();
+        $agencies = Agency::with('classifications:id,name')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+        $agencyClassificationMap = $agencies
+            ->mapWithKeys(function (Agency $agency): array {
+                return [
+                    (string) $agency->id => $agency->classifications->pluck('name')->values()->all(),
+                ];
+            })
+            ->all();
         $programNames = ProgramName::with(['agency', 'legalRequirements'])->orderBy('name')->get();
 
         $summary = [
@@ -107,7 +117,7 @@ class SystemSettingsController extends Controller
             'inactive' => ProgramName::where('is_active', false)->count(),
         ];
 
-        return view('admin.settings.program-names.index', compact('agencies', 'programNames', 'summary'));
+        return view('admin.settings.program-names.index', compact('agencies', 'programNames', 'summary', 'agencyClassificationMap'));
     }
 
     public function diagnostics(): View
@@ -542,8 +552,10 @@ class SystemSettingsController extends Controller
             'agency_id' => ['required', 'exists:agencies,id'],
             'description' => ['nullable', 'string', 'max:500'],
             'is_active' => ['boolean'],
-            'classification' => ['required', Rule::in(['Farmer', 'Fisherfolk', 'Both'])],
         ]);
+
+        $derivedClassification = $this->deriveProgramClassificationFromAgency((int) $validated['agency_id']);
+        $validated['classification'] = $derivedClassification;
 
         // Ensure unique name per agency
         $exists = ProgramName::where('agency_id', $validated['agency_id'])
@@ -557,13 +569,13 @@ class SystemSettingsController extends Controller
             ], 422);
         }
 
-        $programName = DB::transaction(function () use ($validated) {
+        $programName = DB::transaction(function () use ($validated, $derivedClassification) {
             $programName = ProgramName::create([
                 'name' => $validated['name'],
                 'agency_id' => $validated['agency_id'],
                 'description' => $validated['description'] ?? null,
                 'is_active' => $validated['is_active'] ?? true,
-                'classification' => $validated['classification'],
+                'classification' => $derivedClassification,
             ]);
 
             $this->audit->log(
@@ -584,8 +596,10 @@ class SystemSettingsController extends Controller
             'agency_id' => ['required', 'exists:agencies,id'],
             'description' => ['nullable', 'string', 'max:500'],
             'is_active' => ['boolean'],
-            'classification' => ['required', Rule::in(['Farmer', 'Fisherfolk', 'Both'])],
         ]);
+
+        $derivedClassification = $this->deriveProgramClassificationFromAgency((int) $validated['agency_id']);
+        $validated['classification'] = $derivedClassification;
 
         // Ensure unique name per agency (exclude self)
         $exists = ProgramName::where('agency_id', $validated['agency_id'])
@@ -600,7 +614,7 @@ class SystemSettingsController extends Controller
             ], 422);
         }
 
-        DB::transaction(function () use ($validated, $programName) {
+        DB::transaction(function () use ($validated, $programName, $derivedClassification) {
             $oldValues = $programName->toArray();
 
             $programName->update([
@@ -608,7 +622,7 @@ class SystemSettingsController extends Controller
                 'agency_id' => $validated['agency_id'],
                 'description' => $validated['description'] ?? null,
                 'is_active' => $validated['is_active'] ?? true,
-                'classification' => $validated['classification'],
+                'classification' => $derivedClassification,
             ]);
 
             $this->audit->log(
@@ -618,6 +632,86 @@ class SystemSettingsController extends Controller
         });
 
         return response()->json(['success' => true, 'programName' => $programName->fresh()->load('agency')]);
+    }
+
+    private function deriveProgramClassificationFromAgency(int $agencyId): string
+    {
+        $agency = Agency::with('classifications:id,name')->find($agencyId);
+
+        if (! $agency) {
+            throw ValidationException::withMessages([
+                'agency_id' => ['The selected agency could not be found.'],
+            ]);
+        }
+
+        $classificationNames = $agency->classifications
+            ->pluck('name')
+            ->map(fn ($name) => strtolower(trim((string) $name)))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $hasFarmer = $classificationNames->contains('farmer');
+        $hasFisherfolk = $classificationNames->contains('fisherfolk');
+
+        if ($hasFarmer && $hasFisherfolk) {
+            return 'Both';
+        }
+
+        if ($hasFarmer) {
+            return 'Farmer';
+        }
+
+        if ($hasFisherfolk) {
+            return 'Fisherfolk';
+        }
+
+        throw ValidationException::withMessages([
+            'agency_id' => ['Selected agency has no valid classification mapping. Please configure agency classifications first.'],
+        ]);
+    }
+
+    /**
+     * Resolve the derived classification for an agency (API).
+     * Used by the program modal to auto-populate classification.
+     */
+    public function resolveAgencyClassification(Agency $agency): JsonResponse
+    {
+        try {
+            $agency->load('classifications:id,name');
+
+            $classificationNames = $agency->classifications
+                ->pluck('name')
+                ->map(fn ($name) => strtolower(trim((string) $name)))
+                ->filter()
+                ->unique()
+                ->values();
+
+            $hasFarmer = $classificationNames->contains('farmer');
+            $hasFisherfolk = $classificationNames->contains('fisherfolk');
+
+            if ($hasFarmer && $hasFisherfolk) {
+                $classification = 'Both';
+            } elseif ($hasFarmer) {
+                $classification = 'Farmer';
+            } elseif ($hasFisherfolk) {
+                $classification = 'Fisherfolk';
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'classification' => null,
+                    'message' => 'This agency has no classification configured. Please configure agency classifications first.',
+                ], 422);
+            }
+
+            return response()->json([
+                'success' => true,
+                'classification' => $classification,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Error resolving agency classification', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Failed to resolve classification'], 500);
+        }
     }
 
     public function toggleProgramStatus(Request $request, ProgramName $programName): JsonResponse
