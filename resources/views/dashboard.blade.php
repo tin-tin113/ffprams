@@ -2,8 +2,6 @@
 
 @section('title', 'Dashboard')
 
-
-
 @section('content')
     <style>
         .dashboard-header {
@@ -486,6 +484,173 @@
     <div class="chart-card mb-4">
         <div style="position: relative; height: 300px;">
             <canvas id="topProgramsChart"></canvas>
+        </div>
+    </div>
+
+    {{-- SECTION 6A: DISTRIBUTION EVENTS STATUS --}}
+    <div class="section-header">
+        <i class="bi bi-calendar-check"></i>
+        <h6>Distribution Events Status</h6>
+    </div>
+    <div class="row g-3 mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="kpi-master">
+                <div class="kpi-content">
+                    <div class="kpi-icon" style="background: rgba(13, 110, 253, 0.1); color: #0d6efd;">
+                        <i class="bi bi-calendar-event"></i>
+                    </div>
+                    <div class="kpi-text">
+                        <h3>{{ $totalDistributionEvents ?? 0 }}</h3>
+                        <p style="font-size: 12px;">Total Events</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="kpi-master">
+                <div class="kpi-content">
+                    <div class="kpi-icon" style="background: rgba(255, 193, 7, 0.1); color: #ffc107;">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+                    <div class="kpi-text">
+                        <h3>{{ $pendingEventsCount ?? 0 }}</h3>
+                        <p style="font-size: 12px;">Pending</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="kpi-master">
+                <div class="kpi-content">
+                    <div class="kpi-icon" style="background: rgba(255, 152, 0, 0.1); color: #ff9800;">
+                        <i class="bi bi-arrow-repeat"></i>
+                    </div>
+                    <div class="kpi-text">
+                        <h3>{{ $ongoingEventsCount ?? 0 }}</h3>
+                        <p style="font-size: 12px;">Ongoing</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="kpi-master">
+                <div class="kpi-content">
+                    <div class="kpi-icon" style="background: rgba(76, 175, 80, 0.1); color: #4caf50;">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                    <div class="kpi-text">
+                        <h3>{{ $completedEventsCount ?? 0 }}</h3>
+                        <p style="font-size: 12px;">Completed</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- SECTION 6B: ASSISTANCE ALLOCATIONS STATUS --}}
+    <div class="section-header">
+        <i class="bi bi-box-seam"></i>
+        <h6>Assistance Allocations Status</h6>
+    </div>
+    <div class="row g-3 mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="kpi-master">
+                <div class="kpi-content">
+                    <div class="kpi-icon" style="background: rgba(63, 81, 181, 0.1); color: #3f51b5;">
+                        <i class="bi bi-folder2-open"></i>
+                    </div>
+                    <div class="kpi-text">
+                        <h3>{{ $totalAllocations ?? 0 }}</h3>
+                        <p style="font-size: 12px;">Total</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="kpi-master">
+                <div class="kpi-content">
+                    <div class="kpi-icon" style="background: rgba(156, 39, 176, 0.1); color: #9c27b0;">
+                        <i class="bi bi-calendar-event"></i>
+                    </div>
+                    <div class="kpi-text">
+                        <h3>{{ $plannedAllocations ?? 0 }}</h3>
+                        <p style="font-size: 12px;">Planned</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="kpi-master">
+                <div class="kpi-content">
+                    <div class="kpi-icon" style="background: rgba(233, 30, 99, 0.1); color: #e91e63;">
+                        <i class="bi bi-box-seam"></i>
+                    </div>
+                    <div class="kpi-text">
+                        <h3>{{ $readyAllocations ?? 0 }}</h3>
+                        <p style="font-size: 12px;">Ready</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="kpi-master">
+                <div class="kpi-content">
+                    <div class="kpi-icon" style="background: rgba(76, 175, 80, 0.1); color: #4caf50;">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                    <div class="kpi-text">
+                        <h3>{{ $releasedAllocations ?? 0 }}</h3>
+                        <p style="font-size: 12px;">Released</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- SECTION 6C: PROGRAMS STATUS --}}
+    <div class="section-header">
+        <i class="bi bi-list-task"></i>
+        <h6>Programs Status</h6>
+    </div>
+    <div class="row g-3 mb-4">
+        <div class="col-lg-4 col-md-6">
+            <div class="kpi-master">
+                <div class="kpi-content">
+                    <div class="kpi-icon" style="background: rgba(13, 110, 253, 0.1); color: #0d6efd;">
+                        <i class="bi bi-list-task"></i>
+                    </div>
+                    <div class="kpi-text">
+                        <h3>{{ $totalPrograms ?? 0 }}</h3>
+                        <p style="font-size: 12px;">Total Programs</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6">
+            <div class="kpi-master">
+                <div class="kpi-content">
+                    <div class="kpi-icon" style="background: rgba(76, 175, 80, 0.1); color: #4caf50;">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                    <div class="kpi-text">
+                        <h3>{{ $activePrograms ?? 0 }}</h3>
+                        <p style="font-size: 12px;">Active</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6">
+            <div class="kpi-master">
+                <div class="kpi-content">
+                    <div class="kpi-icon" style="background: rgba(156, 39, 176, 0.1); color: #9c27b0;">
+                        <i class="bi bi-x-circle"></i>
+                    </div>
+                    <div class="kpi-text">
+                        <h3>{{ $inactivePrograms ?? 0 }}</h3>
+                        <p style="font-size: 12px;">Inactive</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

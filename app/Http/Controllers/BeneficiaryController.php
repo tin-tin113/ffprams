@@ -160,8 +160,8 @@ class BeneficiaryController extends Controller
 
         try {
             // No duplicates - proceed with registration
-            $beneficiary = DB::transaction(function () use ($validated, $request) {
-                [$agencyIds, $agencyFieldsData] = $this->extractAgencyData($request->input('agencies', $validated['agencies'] ?? []));
+            $beneficiary = DB::transaction(function () use ($validated) {
+                [$agencyIds, $agencyFieldsData] = $this->extractAgencyData($validated['agencies'] ?? []);
                 $validated['agency_id'] = $agencyIds[0] ?? null;
                 $beneficiaryFillable = (new Beneficiary())->getFillable();
 
@@ -386,10 +386,10 @@ class BeneficiaryController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($beneficiary, $validated, $request) {
+            DB::transaction(function () use ($beneficiary, $validated) {
                 $oldValues = $beneficiary->toArray();
 
-            [$agencyIds, $agencyFieldsData] = $this->extractAgencyData($request->input('agencies', $validated['agencies'] ?? []));
+            [$agencyIds, $agencyFieldsData] = $this->extractAgencyData($validated['agencies'] ?? []);
             $validated['agency_id'] = $agencyIds[0] ?? null;
             $beneficiaryFillable = (new Beneficiary())->getFillable();
 
@@ -561,22 +561,6 @@ class BeneficiaryController extends Controller
                 continue;
             }
 
-            if (is_numeric($key)) {
-                $agencyId = (int) $key;
-                if ($agencyId > 0) {
-                    $agencyIds[] = $agencyId;
-                }
-
-                if (is_numeric($value)) {
-                    $valueAgencyId = (int) $value;
-                    if ($valueAgencyId > 0 && $valueAgencyId !== $agencyId) {
-                        $agencyIds[] = $valueAgencyId;
-                    }
-                }
-
-                continue;
-            }
-
             if (is_numeric($value)) {
                 $agencyId = (int) $value;
                 if ($agencyId > 0) {
@@ -640,6 +624,13 @@ class BeneficiaryController extends Controller
     {
         if (Auth::user()?->role !== 'admin') {
             abort(403, 'Only admins can delete beneficiaries.');
+        }
+
+        if ($beneficiary->isInApprovedEvent()) {
+            $programs = $beneficiary->approvedEventNames();
+            $programList = implode(', ', $programs);
+            return redirect()->route('beneficiaries.index')
+                ->with('error', "Cannot delete this beneficiary. They are part of approved allocations in: {$programList}");
         }
 
         $beneficiary->delete();

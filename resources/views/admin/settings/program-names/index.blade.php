@@ -2,45 +2,15 @@
 
 @section('title', 'Programs')
 @section('content')
-<div class="container-fluid py-4">
+<div class="container-fluid py-2">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
         <div></div>
         @if(Auth::user()->isAdmin())
         <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#pnModal">
             <i class="bi bi-plus"></i> Add Program
         </button>
         @endif
-    </div>
-
-    {{-- Summary Dashboard (One Column Design) --}}
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body p-0">
-                    <div class="row g-0 text-center">
-                        <div class="col-12 col-md-4 p-4 p-md-3 p-lg-4 border-end-md">
-                            <div class="text-muted small text-uppercase fw-semibold mb-1">
-                                <i class="bi bi-list-task me-1 text-primary"></i> Total Programs
-                            </div>
-                            <h3 class="mb-0 fw-bold text-primary">{{ number_format($summary['total'] ?? 0) }}</h3>
-                        </div>
-                        <div class="col-12 col-md-4 p-4 p-md-3 p-lg-4 border-end-md">
-                            <div class="text-muted small text-uppercase fw-semibold mb-1">
-                                <i class="bi bi-check-circle me-1 text-success"></i> Active
-                            </div>
-                            <h3 class="mb-0 fw-bold text-success">{{ number_format($summary['active'] ?? 0) }}</h3>
-                        </div>
-                        <div class="col-12 col-md-4 p-4 p-md-3 p-lg-4">
-                            <div class="text-muted small text-uppercase fw-semibold mb-1">
-                                <i class="bi bi-x-circle me-1 text-secondary"></i> Inactive
-                            </div>
-                            <h3 class="mb-0 fw-bold text-secondary">{{ number_format($summary['inactive'] ?? 0) }}</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     {{-- Filter Section --}}

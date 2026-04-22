@@ -2,9 +2,6 @@
 
 @section('title', 'Direct Assistance Management')
 
-
-
-
 @section('content')
 <div class="container-fluid">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">

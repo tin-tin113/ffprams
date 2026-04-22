@@ -117,11 +117,39 @@
             <a href="{{ route('beneficiaries.edit', $beneficiary) }}" class="btn btn-outline-primary">
                 <i class="bi bi-pencil-square me-1"></i> Edit
             </a>
+            @if(Auth::user()->isAdmin())
+                @if($beneficiary->isInApprovedEvent())
+                    <span class="btn btn-outline-danger disabled" title="Cannot delete - beneficiary is in approved events" style="cursor: not-allowed; opacity: 0.6;">
+                        <i class="bi bi-trash me-1"></i> Delete
+                    </span>
+                @else
+                    <button type="button"
+                            class="btn btn-outline-danger"
+                            title="Delete"
+                            data-confirm-message="Are you sure you want to delete {{ $beneficiary->full_name }}? This action cannot be undone."
+                            data-delete-url="{{ route('beneficiaries.destroy', $beneficiary) }}"
+                            onclick="confirmAction('Confirm Deletion', this.dataset.confirmMessage, this.dataset.deleteUrl, 'DELETE')">
+                        <i class="bi bi-trash me-1"></i> Delete
+                    </button>
+                @endif
+            @endif
             <a href="{{ route('beneficiaries.index') }}" class="btn btn-outline-secondary">
                 <i class="bi bi-list-ul me-1"></i> Back to List
             </a>
         </div>
     </div>
+
+    @if($beneficiary->isInApprovedEvent())
+        <div class="alert alert-info border-0 mb-4">
+            <div class="d-flex align-items-start gap-2">
+                <i class="bi bi-info-circle-fill mt-1"></i>
+                <div>
+                    <strong>Protected Beneficiary</strong><br>
+                    <small>This beneficiary is in approved allocations under: <strong>{{ implode(', ', $beneficiary->approvedEventNames()) }}</strong>. This record cannot be deleted to maintain data integrity.</small>
+                </div>
+            </div>
+        </div>
+    @endif
 
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body py-2">

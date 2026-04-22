@@ -1505,6 +1505,64 @@
                 </div>
             @endif
 
+            <!-- Event Allocations Status Breakdown -->
+            <div class="row g-4 mb-4">
+                @if($eventAllocationsByStatus->count())
+                    <div class="col-12 col-lg-6">
+                        <div class="card report-card border-0">
+                            <div class="card-header report-card-header">
+                                <span class="report-card-title"><i class="bi bi-box-seam me-1"></i> Event Allocations by Status</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="report-chart-wrap" style="height: 300px;">
+                                    <canvas id="eventAllocationStatusChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-white text-muted small">
+                                <div class="row g-2">
+                                    @foreach($eventAllocationsByStatus as $status)
+                                        <div class="col-6 col-sm-12">
+                                            <small>
+                                                <strong>{{ $status->status }}:</strong> {{ number_format($status->count) }} allocations |
+                                                {{ number_format($status->beneficiaries) }} beneficiaries
+                                            </small>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                <!-- Direct Assistance Status Breakdown -->
+                @if($directAssistanceByStatus->count())
+                    <div class="col-12 col-lg-6">
+                        <div class="card report-card border-0">
+                            <div class="card-header report-card-header">
+                                <span class="report-card-title"><i class="bi bi-hand-thumbs-up me-1"></i> Direct Assistance by Status</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="report-chart-wrap" style="height: 300px;">
+                                    <canvas id="directAssistanceStatusChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-white text-muted small">
+                                <div class="row g-2">
+                                    @foreach($directAssistanceByStatus as $status)
+                                        <div class="col-6 col-sm-12">
+                                            <small>
+                                                <strong>{{ $status->status }}:</strong> {{ number_format($status->count) }} records |
+                                                {{ number_format($status->beneficiaries) }} beneficiaries
+                                            </small>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            </div>
+
             @if($barangayEfficiency->count())
                 <div class="card report-card border-0 mb-4">
                     <div class="card-header report-card-header">
@@ -2392,6 +2450,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const agencySummaryData = @json($agencySummary->values());
     const programCategoryData = @json($programCategorySummary->values());
     const complianceOverviewData = @json($complianceOverview);
+    const eventAllocationStatusData = @json($eventAllocationsByStatus->values());
+    const directAssistanceStatusData = @json($directAssistanceByStatus->values());
 
     const chartInstances = {};
 
@@ -3113,6 +3173,82 @@ document.addEventListener('DOMContentLoaded', function () {
                         },
                         y: {
                             stacked: true
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    function initializeEventAllocationStatusChart() {
+        if (!eventAllocationStatusData.length) {
+            return;
+        }
+
+        createChartIfNeeded('eventAllocationStatusChart', function (canvas) {
+            const colors = ['rgba(34, 197, 94, 0.8)', 'rgba(59, 130, 246, 0.8)', 'rgba(168, 85, 247, 0.8)', 'rgba(239, 68, 68, 0.8)', 'rgba(249, 115, 22, 0.8)'];
+
+            return new Chart(canvas, {
+                type: 'doughnut',
+                data: {
+                    labels: eventAllocationStatusData.map(function (row) { return row.status; }),
+                    datasets: [{
+                        data: eventAllocationStatusData.map(function (row) { return toNumber(row.count); }),
+                        backgroundColor: colors.slice(0, eventAllocationStatusData.length),
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const status = eventAllocationStatusData[context.dataIndex];
+                                    return context.label + ': ' + context.parsed.y + ' allocations | ' + status.beneficiaries + ' beneficiaries';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    function initializeDirectAssistanceStatusChart() {
+        if (!directAssistanceStatusData.length) {
+            return;
+        }
+
+        createChartIfNeeded('directAssistanceStatusChart', function (canvas) {
+            const colors = ['rgba(34, 197, 94, 0.8)', 'rgba(59, 130, 246, 0.8)', 'rgba(168, 85, 247, 0.8)', 'rgba(239, 68, 68, 0.8)'];
+
+            return new Chart(canvas, {
+                type: 'doughnut',
+                data: {
+                    labels: directAssistanceStatusData.map(function (row) { return row.status; }),
+                    datasets: [{
+                        data: directAssistanceStatusData.map(function (row) { return toNumber(row.count); }),
+                        backgroundColor: colors.slice(0, directAssistanceStatusData.length),
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const status = directAssistanceStatusData[context.dataIndex];
+                                    return context.label + ': ' + context.parsed.y + ' records | ' + status.beneficiaries + ' beneficiaries';
+                                }
+                            }
                         }
                     }
                 }
@@ -3935,7 +4071,7 @@ document.addEventListener('DOMContentLoaded', function () {
             initializeMonthlyChart
         ],
         beneficiary: [initializeBeneficiariesChart, initializeBeneficiaryCompositionByBarangayChart, initializeUnreachedChart, initializeBeneficiaryMixChart, initializeBeneficiaryPriorityChart],
-        allocation: [initializeResourceDistributionChart, initializeAllocationMonthlyReachChart, initializeAllocationMonthlyQuantityChart, initializeTopResourcesByReachChart, initializeStatusPerBarangayChart],
+        allocation: [initializeResourceDistributionChart, initializeAllocationMonthlyReachChart, initializeAllocationMonthlyQuantityChart, initializeTopResourcesByReachChart, initializeEventAllocationStatusChart, initializeDirectAssistanceStatusChart, initializeStatusPerBarangayChart],
         financial: [initializeFinancialSummaryChart, initializeFinancialChannelMixChart, initializeFinancialPerBarangayChart],
         barangay: [initializeBarangayPerformanceChart, initializeBarangayEventMixChart],
         agency: [initializeAgencyContributionChart, initializeAgencyFinancialShareChart, initializeAgencyOperationsMixChart],
