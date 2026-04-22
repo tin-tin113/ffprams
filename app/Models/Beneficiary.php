@@ -203,27 +203,4 @@ class Beneficiary extends Model
             $this->name_suffix,
         ])));
     }
-
-    public function isInApprovedEvent(): bool
-    {
-        return $this->allocations()
-            ->whereHas('distributionEvent', function ($query) {
-                $query->whereNotNull('beneficiary_list_approved_at');
-            })
-            ->exists();
-    }
-
-    public function approvedEventNames(): array
-    {
-        return $this->allocations()
-            ->whereHas('distributionEvent', function ($query) {
-                $query->whereNotNull('beneficiary_list_approved_at');
-            })
-            ->with('distributionEvent.programName')
-            ->get()
-            ->map(fn ($allocation) => $allocation->distributionEvent->programName?->name ?? 'Unknown')
-            ->unique()
-            ->values()
-            ->all();
-    }
 }

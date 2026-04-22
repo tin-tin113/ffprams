@@ -121,42 +121,6 @@ class DashboardController extends Controller
         $programDisbursementChart = $this->getProgramDisbursementChartData();
         $monthlyReleaseMethodTrend = $this->getMonthlyReleaseMethodTrendData();
 
-        // Distribution events status counters
-        $pendingEventsCount = $pendingEvents;
-        $completedEventsCount = $completedEvents;
-        $ongoingEventsCount = $ongoingEvents;
-
-        // Allocation status counts
-        $totalAllocations = $totalEventAllocations + $totalDirectAllocations;
-        $plannedAllocations = DB::table('allocations')
-            ->whereNull('deleted_at')
-            ->where('release_method', 'direct')
-            ->whereNull('distributed_at')
-            ->count();
-
-        $readyAllocations = DB::table('allocations')
-            ->whereNull('deleted_at')
-            ->where('is_ready_for_release', 1)
-            ->whereNull('distributed_at')
-            ->count();
-
-        $releasedAllocations = DB::table('allocations')
-            ->whereNull('deleted_at')
-            ->whereNotNull('distributed_at')
-            ->count();
-
-        // Program status counts
-        $totalPrograms = DB::table('program_names')
-            ->count();
-
-        $activePrograms = DB::table('program_names')
-            ->where('is_active', 1)
-            ->count();
-
-        $inactivePrograms = DB::table('program_names')
-            ->where('is_active', 0)
-            ->count();
-
         return view('dashboard', [
             'totalBeneficiaries' => $totalBeneficiaries,
             'totalFarmers' => $totalFarmers,
@@ -192,19 +156,6 @@ class DashboardController extends Controller
             'monthlyTrendData' => $monthlyTrendData,
             'programDisbursementChart' => $programDisbursementChart,
             'monthlyReleaseMethodTrend' => $monthlyReleaseMethodTrend,
-            // Event status counters
-            'pendingEventsCount' => $pendingEventsCount,
-            'completedEventsCount' => $completedEventsCount,
-            'ongoingEventsCount' => $ongoingEventsCount,
-            // Allocation status counters
-            'totalAllocations' => $totalAllocations,
-            'plannedAllocations' => $plannedAllocations,
-            'readyAllocations' => $readyAllocations,
-            'releasedAllocations' => $releasedAllocations,
-            // Program status counters
-            'totalPrograms' => $totalPrograms,
-            'activePrograms' => $activePrograms,
-            'inactivePrograms' => $inactivePrograms,
         ]);
     }
 

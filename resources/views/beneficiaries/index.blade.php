@@ -15,6 +15,61 @@
         @endif
     </div>
 
+    <div class="row g-3 mb-4 mt-2">
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3">
+                        <i class="bi bi-people-fill text-success fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Total Beneficiaries</div>
+                        <div class="fs-4 fw-bold">{{ number_format($summary['total_all']) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-3 bg-primary bg-opacity-10 p-3 me-3">
+                        <i class="bi bi-person-check-fill text-primary fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Active Beneficiaries</div>
+                        <div class="fs-4 fw-bold">{{ number_format($summary['total_active']) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-3 bg-info bg-opacity-10 p-3 me-3">
+                        <i class="bi bi-paperclip text-info fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">With Documents</div>
+                        <div class="fs-4 fw-bold">{{ number_format($summary['with_documents']) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-3 bg-warning bg-opacity-10 p-3 me-3">
+                        <i class="bi bi-exclamation-triangle text-warning fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Without Documents</div>
+                        <div class="fs-4 fw-bold">{{ number_format($summary['without_documents']) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="card border-0 shadow-sm mb-4 modern-filter-card">
         <div class="card-body">
             <form method="GET" action="{{ route('beneficiaries.index') }}" id="beneficiaryFiltersForm">
@@ -238,19 +293,13 @@
                                         <i class="bi bi-paperclip"></i> <span class="btn-action-label">Docs</span>
                                     </a>
                                     @if(Auth::user()->isAdmin())
-                                        @if($beneficiary->isInApprovedEvent())
-                                            <span class="btn btn-sm btn-outline-danger disabled" title="Cannot delete - beneficiary is in approved events" style="cursor: not-allowed; opacity: 0.6;">
-                                                <i class="bi bi-trash"></i> <span class="btn-action-label">Delete</span>
-                                            </span>
-                                        @else
-                                            <button type="button"
-                                                    class="btn btn-sm btn-outline-danger" title="Delete"
-                                                    data-confirm-message="Are you sure you want to delete {{ $beneficiary->full_name }}? This action cannot be undone."
-                                                    data-delete-url="{{ route('beneficiaries.destroy', $beneficiary) }}"
-                                                    onclick="confirmAction('Confirm Deletion', this.dataset.confirmMessage, this.dataset.deleteUrl, 'DELETE')">
-                                                <i class="bi bi-trash"></i> <span class="btn-action-label">Delete</span>
-                                            </button>
-                                        @endif
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger" title="Delete"
+                                                data-confirm-message="Are you sure you want to delete {{ $beneficiary->full_name }}? This action cannot be undone."
+                                                data-delete-url="{{ route('beneficiaries.destroy', $beneficiary) }}"
+                                                onclick="confirmAction('Confirm Deletion', this.dataset.confirmMessage, this.dataset.deleteUrl, 'DELETE')">
+                                            <i class="bi bi-trash"></i> <span class="btn-action-label">Delete</span>
+                                        </button>
                                     @endif
                                 </td>
                             </tr>

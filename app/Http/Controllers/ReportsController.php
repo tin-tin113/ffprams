@@ -660,54 +660,6 @@ class ReportsController extends Controller
                 ];
             });
 
-        // EVENT ALLOCATIONS STATUS BREAKDOWN
-        $eventAllocationsByStatus = Allocation::query()
-            ->select('release_outcome')
-            ->selectRaw('COUNT(*) as total_count')
-            ->selectRaw('COUNT(DISTINCT beneficiary_id) as beneficiary_count')
-            ->selectRaw('COALESCE(SUM(quantity), 0) as total_quantity')
-            ->join('distribution_events', 'distribution_events.id', '=', 'allocations.distribution_event_id')
-            ->whereNull('allocations.deleted_at')
-            ->whereYear('distribution_events.distribution_date', $selectedYear)
-            ->where('distribution_events.status', 'Completed')
-            ->groupBy('release_outcome')
-            ->get()
-            ->map(function ($row) {
-                return (object) [
-                    'status' => $row->release_outcome ?? 'Not Recorded',
-                    'count' => $row->total_count,
-                    'beneficiaries' => $row->beneficiary_count,
-                    'quantity' => $row->total_quantity,
-                ];
-            });
-
-        // DIRECT ASSISTANCE STATUS BREAKDOWN
-        $directAssistanceByStatus = DirectAssistance::query()
-            ->select('status')
-            ->selectRaw('COUNT(*) as total_count')
-            ->selectRaw('COUNT(DISTINCT beneficiary_id) as beneficiary_count')
-            ->selectRaw('COALESCE(SUM(quantity), 0) as total_quantity')
-            ->whereNull('deleted_at')
-            ->whereYear(DB::raw('COALESCE(distributed_at, created_at)'), $selectedYear)
-            ->groupBy('status')
-            ->get()
-            ->map(function ($row) {
-                $statusLabel = match($row->status) {
-                    'planned' => 'Planned',
-                    'ready_for_release' => 'Ready for Release',
-                    'released' => 'Released',
-                    'not_received' => 'Not Received',
-                    'completed' => 'Completed',
-                    default => ucfirst(str_replace('_', ' ', $row->status ?? 'Unknown')),
-                };
-                return (object) [
-                    'status' => $statusLabel,
-                    'count' => $row->total_count,
-                    'beneficiaries' => $row->beneficiary_count,
-                    'quantity' => $row->total_quantity,
-                ];
-            });
-
         return view('reports.index', compact(
             'complianceOverview',
             'beneficiariesPerBarangay',
@@ -729,8 +681,6 @@ class ReportsController extends Controller
             'topResourcesByReach',
             'barangayEfficiency',
             'allocationMonthlyTrend',
-            'eventAllocationsByStatus',
-            'directAssistanceByStatus',
         ));
     }
 }
