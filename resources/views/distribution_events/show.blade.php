@@ -700,6 +700,12 @@
         <div class="card-header bg-white fw-semibold">
             <i class="bi bi-list-check me-1"></i> Allocations
         </div>
+        @if($event->isBeneficiaryListApproved())
+            <div class="alert alert-info m-3 mb-0">
+                <i class="bi bi-info-circle-fill"></i>
+                <strong>Beneficiary List Approved</strong> - The beneficiary list was approved on {{ $event->beneficiary_list_approved_at->format('M d, Y \a\t h:i A') }} by {{ $event->beneficiaryListApprovedBy->name ?? 'System' }}. Beneficiaries cannot be added or removed from this event.
+            </div>
+        @endif
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
@@ -816,7 +822,7 @@
                                         </form>
                                     @endif
 
-                                    @if($event->status !== 'Completed' && Auth::user()->role === 'admin')
+                                    @if($event->status !== 'Completed' && !$event->isBeneficiaryListApproved() && Auth::user()->role === 'admin')
                                         <form method="POST"
                                               action="{{ route('allocations.destroy', $allocation) }}"
                                               class="d-inline"

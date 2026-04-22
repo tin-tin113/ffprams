@@ -988,6 +988,11 @@ class AllocationController extends Controller
                 ->with('error', 'Allocations cannot be removed from a completed event.');
         }
 
+        if ($event && $event->isBeneficiaryListApproved()) {
+            return redirect()->back()
+                ->with('error', 'Beneficiaries cannot be removed from an event with an approved beneficiary list.');
+        }
+
         DB::transaction(function () use ($allocation) {
             $allocation->delete();
 
