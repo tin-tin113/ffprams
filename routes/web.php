@@ -212,6 +212,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     // Settings — Program Legal Requirements
     Route::post('settings/program-names/{programName}/legal-requirements', [SystemSettingsController::class, 'uploadProgramLegalRequirement'])->name('settings.program-names.legal-requirements.upload');
     Route::get('settings/program-names/{programName}/legal-requirements', [SystemSettingsController::class, 'listProgramLegalRequirements'])->name('settings.program-names.legal-requirements.list');
+    Route::get('settings/program-names/{programName}/legal-requirements/{requirement}/view', [SystemSettingsController::class, 'viewProgramLegalRequirement'])->name('settings.program-names.legal-requirements.view');
     Route::get('settings/program-names/{programName}/legal-requirements/{requirement}/download', [SystemSettingsController::class, 'downloadProgramLegalRequirement'])->name('settings.program-names.legal-requirements.download');
     Route::delete('settings/program-names/{programName}/legal-requirements/{requirement}', [SystemSettingsController::class, 'deleteProgramLegalRequirement'])->name('settings.program-names.legal-requirements.delete');
 

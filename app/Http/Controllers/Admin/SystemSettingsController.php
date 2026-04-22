@@ -28,6 +28,8 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SystemSettingsController extends Controller
 {
@@ -807,11 +809,11 @@ class SystemSettingsController extends Controller
         $path = "program-requirements/{$programName->id}/{$yearMonth}/{$storedName}";
 
         try {
-            $fileContent = file_get_contents($file->getRealPath());
-            $sha256 = hash('sha256', $fileContent);
+            $sha256 = hash_file('sha256', $file->getRealPath());
 
-            // Store the file
-            Storage::disk('program_documents')->put($path, $fileContent);
+            // Store the file using putFileAs for better memory efficiency
+            $directory = "program-requirements/{$programName->id}/{$yearMonth}";
+            Storage::disk('program_documents')->putFileAs($directory, $file, $storedName);
 
             $requirement = DB::transaction(function () use ($programName, $file, $path, $storedName, $mimeType, $extension, $sha256, $originalName, $request) {
                 $requirement = ProgramLegalRequirement::create([
@@ -868,7 +870,27 @@ class SystemSettingsController extends Controller
         ]);
     }
 
-    public function downloadProgramLegalRequirement(ProgramLegalRequirement $requirement): Response
+    public function viewProgramLegalRequirement(ProgramLegalRequirement $requirement): BinaryFileResponse
+    {
+        if (! Storage::disk('program_documents')->exists($requirement->path)) {
+            abort(404, 'File not found');
+        }
+
+        $this->audit->log(
+            auth()->id(), 'viewed', 'program_legal_requirements', $requirement->id,
+            [], $requirement->toArray(),
+        );
+
+        return response()->file(
+            Storage::disk('program_documents')->path($requirement->path),
+            [
+                'Content-Type' => $requirement->mime_type ?: 'application/octet-stream',
+                'X-Content-Type-Options' => 'nosniff',
+            ]
+        );
+    }
+
+    public function downloadProgramLegalRequirement(ProgramLegalRequirement $requirement): BinaryFileResponse|StreamedResponse
     {
         if (! Storage::disk('program_documents')->exists($requirement->path)) {
             abort(404, 'File not found');

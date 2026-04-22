@@ -33,10 +33,15 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-light">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
                         <i class="bi bi-file-earmark-pdf"></i> Legal Requirements / Supporting Documents
                     </h5>
+                    @if(Auth::user()->isAdmin())
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadDocModal">
+                        <i class="bi bi-plus-circle"></i> Upload Document
+                    </button>
+                    @endif
                 </div>
                 <div class="card-body">
                     @if($programName->legalRequirements->count() > 0)
@@ -79,17 +84,25 @@
                                         <small class="text-muted">{{ $req->remarks ? Str::limit($req->remarks, 30) : '-' }}</small>
                                     </td>
                                     <td class="text-center">
-                                        <a href="{{ route('admin.settings.program-names.legal-requirements.download', [$programName, $req]) }}"
-                                           class="btn btn-sm btn-outline-info"
-                                           title="Download document">
-                                            <i class="bi bi-download"></i>
-                                        </a>
-                                        <button class="btn btn-sm btn-outline-danger delete-req"
-                                                data-id="{{ $req->id }}"
-                                                data-program-id="{{ $programName->id }}"
-                                                title="Delete document">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
+                                        <div class="btn-group">
+                                            <a href="{{ route('admin.settings.program-names.legal-requirements.view', [$programName, $req]) }}"
+                                               class="btn btn-sm btn-outline-primary"
+                                               target="_blank"
+                                               title="View document">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{{ route('admin.settings.program-names.legal-requirements.download', [$programName, $req]) }}"
+                                               class="btn btn-sm btn-outline-info"
+                                               title="Download document">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                            <button class="btn btn-sm btn-outline-danger delete-req"
+                                                    data-id="{{ $req->id }}"
+                                                    data-program-id="{{ $programName->id }}"
+                                                    title="Delete document">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                                 @endforeach
@@ -433,6 +446,56 @@
     </div>
 </div>
 
+{{-- Upload Document Modal --}}
+@if(Auth::user()->isAdmin())
+<div class="modal fade" id="uploadDocModal" tabindex="-1" aria-labelledby="uploadDocModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="uploadDocForm" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadDocModalLabel">Upload Supporting Document</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="docFile" class="form-label fw-semibold">Select File <span class="text-danger">*</span></label>
+                        <input type="file" id="docFile" name="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <small class="text-muted">Max size: 5MB. PDF, JPG, PNG allowed.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="docType" class="form-label fw-semibold">Document Type</label>
+                        <select id="docType" name="document_type" class="form-select">
+                            <option value="">Select type...</option>
+                            <option value="Executive Order">Executive Order</option>
+                            <option value="DAO">DAO (Department Administrative Order)</option>
+                            <option value="Memorandum">Memorandum</option>
+                            <option value="Policy">Policy</option>
+                            <option value="Contract">Contract / Agreement</option>
+                            <option value="Legal Basis">Legal Basis</option>
+                            <option value="Other">Other Document</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="docRemarks" class="form-label fw-semibold">Remarks</label>
+                        <textarea id="docRemarks" name="remarks" class="form-control" rows="3" placeholder="Optional notes..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="uploadSubmitBtn">
+                        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        <i class="bi bi-cloud-arrow-up"></i> Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+
 <style>
     .display-4 {
         font-size: 2.5rem;
@@ -589,6 +652,52 @@ document.addEventListener('DOMContentLoaded', function() {
             );
         });
     });
+
+    // Upload document
+    const uploadForm = document.getElementById('uploadDocForm');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('uploadSubmitBtn');
+            const spinner = submitBtn.querySelector('.spinner-border');
+            const icon = submitBtn.querySelector('.bi-cloud-arrow-up');
+            
+            const formData = new FormData(this);
+            const programId = '{{ $programName->id }}';
+
+            submitBtn.disabled = true;
+            spinner.classList.remove('d-none');
+            icon.classList.add('d-none');
+
+            fetch(`/admin/settings/program-names/${programId}/legal-requirements`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrftoken,
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'Failed to upload document');
+                    submitBtn.disabled = false;
+                    spinner.classList.add('d-none');
+                    icon.classList.remove('d-none');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('An error occurred during upload');
+                submitBtn.disabled = false;
+                spinner.classList.add('d-none');
+                icon.classList.remove('d-none');
+            });
+        });
+    }
 });
 </script>
 
