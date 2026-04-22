@@ -226,10 +226,10 @@
                     </div>
                 </div>
                 <div class="col-lg-2 col-md-3 col-6">
-                    <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_assistance_purpose" role="button" tabindex="0">
+                    <div class="card h-100 text-center recipient-card cursor-pointer" data-type="by_direct_allocation" role="button" tabindex="0">
                         <div class="card-body py-3">
-                            <i class="bi bi-lightning-charge fs-5 d-block mb-2" style="color: #dc2626;"></i>
-                            <div class="fw-semibold small">By Purpose</div>
+                            <i class="bi bi-person-check fs-5 d-block mb-2" style="color: #dc2626;"></i>
+                            <div class="fw-semibold small">By Direct Allocation</div>
                         </div>
                     </div>
                 </div>
@@ -286,13 +286,15 @@
                 </select>
             </div>
 
-            <div id="assistancePurposeFilter" class="mb-3 modern-filter-grid" style="display:none;">
-                <label for="assistancePurposeSelect" class="form-label fw-semibold small">Select Assistance Purpose</label>
-                <select class="form-select form-select-sm" id="assistancePurposeSelect">
-                    <option value="" disabled selected>Choose assistance purpose...</option>
-                    @foreach($assistancePurposes as $ap)
-                        <option value="{{ $ap->id }}">{{ $ap->name }} ({{ ucfirst($ap->category) }})</option>
-                    @endforeach
+            <div id="directAllocationFilter" class="mb-3 modern-filter-grid" style="display:none;">
+                <label for="directAllocationSelect" class="form-label fw-semibold small">Filter by Allocation Status</label>
+                <select class="form-select form-select-sm" id="directAllocationSelect">
+                    <option value="" disabled selected>Choose status...</option>
+                    <option value="all">All Direct Allocations</option>
+                    <option value="planned">Planned</option>
+                    <option value="ready_for_release">Ready for Release</option>
+                    <option value="released">Released</option>
+                    <option value="not_received">Not Received</option>
                 </select>
             </div>
 
@@ -606,7 +608,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('eventFilter').style.display = 'none';
             document.getElementById('barangayFilter').style.display = 'none';
             document.getElementById('resourceTypeFilter').style.display = 'none';
-            document.getElementById('assistancePurposeFilter').style.display = 'none';
+            document.getElementById('directAllocationFilter').style.display = 'none';
             document.getElementById('specificSelector').style.display = 'none';
             document.getElementById('secondaryBeneficiaryFilter').style.display = 'none';
 
@@ -614,7 +616,7 @@ document.addEventListener('DOMContentLoaded', function () {
             else if (recipientType === 'by_event') document.getElementById('eventFilter').style.display = 'block';
             else if (recipientType === 'by_barangay') document.getElementById('barangayFilter').style.display = 'block';
             else if (recipientType === 'by_resource_type') document.getElementById('resourceTypeFilter').style.display = 'block';
-            else if (recipientType === 'by_assistance_purpose') document.getElementById('assistancePurposeFilter').style.display = 'block';
+            else if (recipientType === 'by_direct_allocation') document.getElementById('directAllocationFilter').style.display = 'block';
             else if (recipientType === 'selected') document.getElementById('specificSelector').style.display = 'block', loadAllBeneficiaries();
 
             resetPreview();
@@ -625,7 +627,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // FILTER CHANGE HANDLERS
     // ══════════════════════════════════════════════════════════════════════════════
 
-    ['programSelect', 'eventSelect', 'barangaySelect', 'resourceTypeSelect', 'assistancePurposeSelect'].forEach(id => {
+    ['programSelect', 'eventSelect', 'barangaySelect', 'resourceTypeSelect', 'directAllocationSelect'].forEach(id => {
         document.getElementById(id)?.addEventListener('change', fetchPreview);
     });
 
@@ -641,13 +643,13 @@ document.addEventListener('DOMContentLoaded', function () {
             else if (recipientType === 'by_event') body.distribution_event_id = document.getElementById('eventSelect').value;
             else if (recipientType === 'by_barangay') body.barangay_id = document.getElementById('barangaySelect').value;
             else if (recipientType === 'by_resource_type') body.resource_type_id = document.getElementById('resourceTypeSelect').value;
-            else if (recipientType === 'by_assistance_purpose') body.assistance_purpose_id = document.getElementById('assistancePurposeSelect').value;
+            else if (recipientType === 'by_direct_allocation') body.direct_allocation_status = document.getElementById('directAllocationSelect').value;
 
             if (!body.program_name_id && recipientType === 'by_program') return;
             if (!body.distribution_event_id && recipientType === 'by_event') return;
             if (!body.barangay_id && recipientType === 'by_barangay') return;
             if (!body.resource_type_id && recipientType === 'by_resource_type') return;
-            if (!body.assistance_purpose_id && recipientType === 'by_assistance_purpose') return;
+            if (!body.direct_allocation_status && recipientType === 'by_direct_allocation') return;
 
             fetch('{{ route("sms.preview") }}', {
                 method: 'POST',
@@ -893,7 +895,7 @@ document.addEventListener('DOMContentLoaded', function () {
         else if (recipientType === 'by_event') body.distribution_event_id = document.getElementById('eventSelect').value;
         else if (recipientType === 'by_barangay') body.barangay_id = document.getElementById('barangaySelect').value;
         else if (recipientType === 'by_resource_type') body.resource_type_id = document.getElementById('resourceTypeSelect').value;
-        else if (recipientType === 'by_assistance_purpose') body.assistance_purpose_id = document.getElementById('assistancePurposeSelect').value;
+        else if (recipientType === 'by_direct_allocation') body.direct_allocation_status = document.getElementById('directAllocationSelect').value;
         else if (recipientType === 'selected') body.beneficiary_ids = Array.from(document.querySelectorAll('.specific-checkbox:checked')).map(cb => cb.value);
         else if (recipientType !== 'selected') body.beneficiary_ids = Array.from(document.querySelectorAll('.refined-checkbox:checked')).map(cb => cb.value);
 

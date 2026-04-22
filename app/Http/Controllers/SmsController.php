@@ -41,10 +41,6 @@ class SmsController extends Controller
             ->whereHas('agency', fn ($query) => $query->active())
             ->orderBy('name')
             ->get(['id', 'name']);
-        $assistancePurposes = AssistancePurpose::active()
-            ->orderBy('category')
-            ->orderBy('name')
-            ->get(['id', 'name', 'category']);
 
         // Default templates
         $templates = [
@@ -77,7 +73,6 @@ class SmsController extends Controller
             'programs',
             'events',
             'resourceTypes',
-            'assistancePurposes',
             'templates',
             'smsLogs',
             'summary'
@@ -87,7 +82,7 @@ class SmsController extends Controller
     public function preview(Request $request): JsonResponse
     {
         $request->validate([
-            'recipient_type' => ['required', Rule::in(['by_program', 'by_event', 'by_barangay', 'by_resource_type', 'by_assistance_purpose', 'selected'])],
+            'recipient_type' => ['required', Rule::in(['by_program', 'by_event', 'by_barangay', 'by_resource_type', 'by_direct_allocation', 'selected'])],
             'program_name_id' => [
                 'required_if:recipient_type,by_program',
                 'nullable',
@@ -102,7 +97,7 @@ class SmsController extends Controller
             ],
             'barangay_id' => ['required_if:recipient_type,by_barangay', 'nullable', 'exists:barangays,id'],
             'resource_type_id' => ['required_if:recipient_type,by_resource_type', 'nullable', 'exists:resource_types,id'],
-            'assistance_purpose_id' => ['required_if:recipient_type,by_assistance_purpose', 'nullable', 'exists:assistance_purposes,id'],
+            'direct_allocation_status' => ['required_if:recipient_type,by_direct_allocation', 'nullable', Rule::in(['all', 'planned', 'ready_for_release', 'released', 'not_received'])],
             'beneficiary_ids' => ['nullable', 'array'],
             'beneficiary_ids.*' => ['integer', 'exists:beneficiaries,id'],
         ]);
@@ -152,7 +147,7 @@ class SmsController extends Controller
     {
         $request->validate([
             'message' => ['required', 'string', 'min:5'],
-            'recipient_type' => ['required', Rule::in(['by_program', 'by_event', 'by_barangay', 'by_resource_type', 'by_assistance_purpose', 'selected'])],
+            'recipient_type' => ['required', Rule::in(['by_program', 'by_event', 'by_barangay', 'by_resource_type', 'by_direct_allocation', 'selected'])],
             'program_name_id' => [
                 'required_if:recipient_type,by_program',
                 'nullable',
@@ -167,7 +162,7 @@ class SmsController extends Controller
             ],
             'barangay_id' => ['required_if:recipient_type,by_barangay', 'nullable', 'exists:barangays,id'],
             'resource_type_id' => ['required_if:recipient_type,by_resource_type', 'nullable', 'exists:resource_types,id'],
-            'assistance_purpose_id' => ['required_if:recipient_type,by_assistance_purpose', 'nullable', 'exists:assistance_purposes,id'],
+            'direct_allocation_status' => ['required_if:recipient_type,by_direct_allocation', 'nullable', Rule::in(['all', 'planned', 'ready_for_release', 'released', 'not_received'])],
             'beneficiary_ids' => ['nullable', 'array'],
             'beneficiary_ids.*' => ['integer', 'exists:beneficiaries,id'],
         ]);
@@ -214,7 +209,7 @@ class SmsController extends Controller
                 'distribution_event_id' => $request->distribution_event_id,
                 'barangay_id' => $request->barangay_id,
                 'resource_type_id' => $request->resource_type_id,
-                'assistance_purpose_id' => $request->assistance_purpose_id,
+                'direct_allocation_status' => $request->direct_allocation_status,
             ],
         );
 
@@ -251,10 +246,13 @@ class SmsController extends Controller
                         ->orWhereHas('directAssistance', fn ($d) => $d->where('resource_type_id', $request->resource_type_id));
                 });
                 break;
-            case 'by_assistance_purpose':
-                $query->where(function ($q) use ($request) {
-                    $q->whereHas('allocations', fn ($a) => $a->where('assistance_purpose_id', $request->assistance_purpose_id))
-                        ->orWhereHas('directAssistance', fn ($d) => $d->where('assistance_purpose_id', $request->assistance_purpose_id));
+            case 'by_direct_allocation':
+                $status = $request->direct_allocation_status;
+                $query->whereHas('allocations', function ($a) use ($status) {
+                    $a->where('release_method', 'direct');
+                    if ($status && $status !== 'all') {
+                        $a->whereReleaseStatus($status);
+                    }
                 });
                 break;
             case 'selected':
