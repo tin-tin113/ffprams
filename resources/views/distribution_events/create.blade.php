@@ -418,9 +418,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function filterResourcesByAgency() {
-        const selected = programSelect.options[programSelect.selectedIndex];
-        const agencyId = selected ? selected.dataset.agencyId : '';
+    function updateResourceTypeOptions() {
+        const isFinancial = document.querySelector('input[name="type"]:checked').value === 'financial';
+        const programSelected = programSelect.options[programSelect.selectedIndex];
+        const agencyId = programSelected ? programSelected.dataset.agencyId : '';
         const currentValue = resourceSelect.value;
 
         resourceSelect.innerHTML = '';
@@ -428,7 +429,13 @@ document.addEventListener('DOMContentLoaded', function () {
         allResourceOptions.forEach(function (opt) {
             if (opt.value === '') {
                 resourceSelect.appendChild(opt.cloneNode(true));
-            } else if (!agencyId || opt.dataset.agencyId === agencyId) {
+                return;
+            }
+
+            const matchesType = isFinancial ? (opt.dataset.unit === 'PHP') : (opt.dataset.unit !== 'PHP');
+            const matchesAgency = !agencyId || opt.dataset.agencyId === agencyId;
+
+            if (matchesType && matchesAgency) {
                 resourceSelect.appendChild(opt.cloneNode(true));
             }
         });
@@ -440,6 +447,8 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             resourceSelect.selectedIndex = 0;
         }
+
+        updateUnit();
     }
 
     function toggleType() {
@@ -469,31 +478,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         updateComplianceDependencies();
-
-        // Filter resource type options
-        const currentValue = resourceSelect.value;
-        resourceSelect.innerHTML = '';
-
-        allResourceOptions.forEach(function (opt) {
-            if (opt.value === '') {
-                resourceSelect.appendChild(opt.cloneNode(true));
-            } else if (isFinancial && opt.dataset.unit === 'PHP') {
-                resourceSelect.appendChild(opt.cloneNode(true));
-            } else if (!isFinancial && opt.dataset.unit !== 'PHP') {
-                resourceSelect.appendChild(opt.cloneNode(true));
-            }
-        });
-
-        // Restore selection if still valid
-        const exists = Array.from(resourceSelect.options).some(o => o.value === currentValue);
-        if (exists) {
-            resourceSelect.value = currentValue;
-        } else {
-            resourceSelect.selectedIndex = 0;
-        }
-
-        updateUnit();
-        filterResourcesByAgency();
+        updateResourceTypeOptions();
     }
 
     typeRadios.forEach(function (radio) {
@@ -505,8 +490,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     programSelect.addEventListener('change', function () {
-        filterResourcesByAgency();
-        updateUnit();
+        updateResourceTypeOptions();
     });
 
     legalBasisType?.addEventListener('change', updateComplianceDependencies);

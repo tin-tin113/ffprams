@@ -169,6 +169,7 @@
                                         <tr>
                                             <th>Name</th>
                                             <th>Unit</th>
+                                            <th>Category</th>
                                             <th>Agency</th>
                                             <th class="text-center" style="width: 120px;">Actions</th>
                                         </tr>
@@ -178,6 +179,17 @@
                                             <tr data-resource-type-id="{{ $resourceType->id }}">
                                                 <td><strong>{{ $resourceType->name }}</strong></td>
                                                 <td><small>{{ $resourceType->unit ?: 'N/A' }}</small></td>
+                                                <td>
+                                                    @if($resourceType->unit === 'PHP')
+                                                        <span class="badge bg-success">
+                                                            <i class="bi bi-cash-stack me-1"></i> Financial
+                                                        </span>
+                                                    @else
+                                                        <span class="badge bg-secondary">
+                                                            <i class="bi bi-box-seam me-1"></i> Physical
+                                                        </span>
+                                                    @endif
+                                                </td>
                                                 <td><small>{{ $resourceType->agency?->name ?? 'N/A' }}</small></td>
                                                 <td class="text-center">
                                                     <div class="btn-group btn-group-sm" role="group">
@@ -880,6 +892,21 @@
                     </div>
 
                     <div class="mb-3">
+                        <label class="form-label">Resource Category <span class="text-danger">*</span></label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="category_toggle" id="rtCategoryPhysical" value="physical" checked>
+                            <label class="btn btn-outline-secondary" for="rtCategoryPhysical">
+                                <i class="bi bi-box-seam me-1"></i> Physical Resource
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="category_toggle" id="rtCategoryFinancial" value="financial">
+                            <label class="btn btn-outline-success" for="rtCategoryFinancial">
+                                <i class="bi bi-cash-stack me-1"></i> Financial Assistance
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
                         <label for="rtUnit" class="form-label">Unit Type <span class="text-danger">*</span></label>
                         <select class="form-select" id="rtUnit" name="unit" required>
                             <option value="" selected disabled>Select unit type...</option>
@@ -887,7 +914,7 @@
                                 <option value="{{ $unitValue }}">{{ $unitLabel }}</option>
                             @endforeach
                         </select>
-                        <small class="text-muted">Use PHP for cash assistance (amount-based).</small>
+                        <small class="text-muted" id="rtUnitHelp">Use PHP for cash assistance (amount-based).</small>
                     </div>
                 </form>
             </div>
@@ -927,6 +954,21 @@
                     </div>
 
                     <div class="mb-3">
+                        <label class="form-label">Resource Category <span class="text-danger">*</span></label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="edit_category_toggle" id="editRtCategoryPhysical" value="physical">
+                            <label class="btn btn-outline-secondary" for="editRtCategoryPhysical">
+                                <i class="bi bi-box-seam me-1"></i> Physical Resource
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="edit_category_toggle" id="editRtCategoryFinancial" value="financial">
+                            <label class="btn btn-outline-success" for="editRtCategoryFinancial">
+                                <i class="bi bi-cash-stack me-1"></i> Financial Assistance
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
                         <label for="editRtUnit" class="form-label">Unit Type <span class="text-danger">*</span></label>
                         <select class="form-select" id="editRtUnit" name="unit" required>
                             <option value="" selected disabled>Select unit type...</option>
@@ -934,7 +976,7 @@
                                 <option value="{{ $unitValue }}">{{ $unitLabel }}</option>
                             @endforeach
                         </select>
-                        <small class="text-muted">Use PHP for cash assistance (amount-based).</small>
+                        <small class="text-muted" id="editRtUnitHelp">Use PHP for cash assistance (amount-based).</small>
                     </div>
                 </form>
             </div>
@@ -2237,6 +2279,67 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ========== RESOURCE TYPE MANAGEMENT ==========
+    function filterUnitsByCategory(selectElement, helpTextElement, category) {
+        if (!selectElement) return;
+        
+        const options = selectElement.options;
+        for (let i = 0; i < options.length; i++) {
+            const option = options[i];
+            if (option.value === "") continue;
+            
+            if (category === 'financial') {
+                // Financial: ONLY PHP
+                if (option.value === 'PHP') {
+                    option.hidden = false;
+                    option.disabled = false;
+                } else {
+                    option.hidden = true;
+                    option.disabled = true;
+                }
+            } else {
+                // Physical: EVERYTHING EXCEPT PHP
+                if (option.value === 'PHP') {
+                    option.hidden = true;
+                    option.disabled = true;
+                } else {
+                    option.hidden = false;
+                    option.disabled = false;
+                }
+            }
+        }
+        
+        if (category === 'financial') {
+            selectElement.value = 'PHP';
+            if (helpTextElement) helpTextElement.innerHTML = '<i class="bi bi-info-circle me-1"></i> Financial assistance is restricted to PHP (Pesos) unit.';
+        } else {
+            if (selectElement.value === 'PHP') {
+                selectElement.value = '';
+            }
+            if (helpTextElement) helpTextElement.innerHTML = '<i class="bi bi-info-circle me-1"></i> Physical resources cannot use PHP (Pesos) as a unit.';
+        }
+    }
+
+    // Add listeners for category toggles
+    document.querySelectorAll('input[name="category_toggle"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            filterUnitsByCategory(
+                document.getElementById('rtUnit'),
+                document.getElementById('rtUnitHelp'),
+                this.value
+            );
+        });
+    });
+
+    document.querySelectorAll('input[name="edit_category_toggle"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            filterUnitsByCategory(
+                document.getElementById('editRtUnit'),
+                document.getElementById('editRtUnitHelp'),
+                this.value
+            );
+        });
+    });
+
     function ensureUnitOption(selectElement, unitValue) {
         if (!selectElement || !unitValue) {
             return;
@@ -2256,6 +2359,14 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('addResourceTypeModal').addEventListener('show.bs.modal', function() {
         document.getElementById('resourceTypeForm').reset();
         document.getElementById('resourceTypeId').value = '';
+        
+        // Default to physical and filter
+        document.getElementById('rtCategoryPhysical').checked = true;
+        filterUnitsByCategory(
+            document.getElementById('rtUnit'),
+            document.getElementById('rtUnitHelp'),
+            'physical'
+        );
     });
 
     document.getElementById('saveResourceTypeBtn').addEventListener('click', async function() {
@@ -2316,6 +2427,23 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('editRtAgency').value = rt.agency_id;
             ensureUnitOption(document.getElementById('editRtUnit'), rt.unit || '');
             document.getElementById('editRtUnit').value = rt.unit || '';
+
+            // Set category based on unit and apply filter
+            if (rt.unit === 'PHP') {
+                document.getElementById('editRtCategoryFinancial').checked = true;
+                filterUnitsByCategory(
+                    document.getElementById('editRtUnit'),
+                    document.getElementById('editRtUnitHelp'),
+                    'financial'
+                );
+            } else {
+                document.getElementById('editRtCategoryPhysical').checked = true;
+                filterUnitsByCategory(
+                    document.getElementById('editRtUnit'),
+                    document.getElementById('editRtUnitHelp'),
+                    'physical'
+                );
+            }
 
             bootstrap.Modal.getOrCreateInstance(document.getElementById('editResourceTypeModal')).show();
         } catch (error) {

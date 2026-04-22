@@ -101,4 +101,24 @@ class DistributionEventRequest extends FormRequest
             'liquidation_submitted_at.before_or_equal' => 'Liquidation submitted date/time cannot be in the future.',
         ];
     }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $resourceTypeId = $this->input('resource_type_id');
+            $type = $this->input('type');
+
+            if ($resourceTypeId && $type) {
+                $resourceType = \App\Models\ResourceType::find($resourceTypeId);
+                if ($resourceType) {
+                    $isPHP = $resourceType->unit === 'PHP';
+                    if ($type === 'financial' && ! $isPHP) {
+                        $validator->errors()->add('resource_type_id', 'Financial assistance events must use a resource type with "PHP" unit.');
+                    } elseif ($type === 'physical' && $isPHP) {
+                        $validator->errors()->add('resource_type_id', 'Physical resource events cannot use a resource type with "PHP" unit.');
+                    }
+                }
+            }
+        });
+    }
 }
