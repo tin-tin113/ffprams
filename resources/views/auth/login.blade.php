@@ -31,7 +31,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background-image: url('{{ asset('images/login-bg.jpg') }}');
+            background-image: url('{{ asset('images/town-hall-bg.jpg') }}');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -47,17 +47,20 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.35);
+            background: rgba(0, 0, 0, 0.5);
             z-index: 0;
         }
 
         .login-card {
-            background: var(--forest-green);
+            background: rgba(26, 60, 52, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
             padding: 40px 35px;
             width: 100%;
             max-width: 420px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
             position: relative;
             z-index: 1;
         }
