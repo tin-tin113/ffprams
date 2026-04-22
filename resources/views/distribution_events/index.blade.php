@@ -23,81 +23,81 @@
     </div>
 
     {{-- Summary Cards --}}
-    <div class="row g-3 mb-4 mt-2">
+    <div class="row g-2 mb-3 mt-1">
         <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
             <div class="card border-0 shadow-sm">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-3 bg-primary bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-calendar-event text-primary fs-4"></i>
+                <div class="card-body d-flex align-items-center summary-stat-card-body">
+                    <div class="rounded-3 bg-primary bg-opacity-10 p-2 me-2">
+                        <i class="bi bi-calendar-event text-primary fs-5"></i>
                     </div>
-                    <div>
-                        <div class="text-muted small">Total Events</div>
-                        <div class="fs-5 fw-bold">{{ number_format($total) }}</div>
+                    <div class="summary-stat-text">
+                        <div class="text-muted summary-stat-label">Total Events</div>
+                        <div class="fw-bold summary-stat-value">{{ number_format($total) }}</div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
             <div class="card border-0 shadow-sm">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-3 bg-info bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-hourglass-split text-info fs-4"></i>
+                <div class="card-body d-flex align-items-center summary-stat-card-body">
+                    <div class="rounded-3 bg-info bg-opacity-10 p-2 me-2">
+                        <i class="bi bi-hourglass-split text-info fs-5"></i>
                     </div>
-                    <div>
-                        <div class="text-muted small">Pending</div>
-                        <div class="fs-5 fw-bold">{{ number_format($pending) }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-3 bg-warning bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-arrow-repeat text-warning fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Ongoing</div>
-                        <div class="fs-5 fw-bold">{{ number_format($ongoing) }}</div>
+                    <div class="summary-stat-text">
+                        <div class="text-muted summary-stat-label">Pending</div>
+                        <div class="fw-bold summary-stat-value">{{ number_format($pending) }}</div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
             <div class="card border-0 shadow-sm">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-check-circle text-success fs-4"></i>
+                <div class="card-body d-flex align-items-center summary-stat-card-body">
+                    <div class="rounded-3 bg-warning bg-opacity-10 p-2 me-2">
+                        <i class="bi bi-arrow-repeat text-warning fs-5"></i>
                     </div>
-                    <div>
-                        <div class="text-muted small">Completed</div>
-                        <div class="fs-5 fw-bold">{{ number_format($completed) }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-cash-stack text-success fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Financial Events</div>
-                        <div class="fs-5 fw-bold">{{ number_format($totalFinancialEvents) }}</div>
+                    <div class="summary-stat-text">
+                        <div class="text-muted summary-stat-label">Ongoing</div>
+                        <div class="fw-bold summary-stat-value">{{ number_format($ongoing) }}</div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
             <div class="card border-0 shadow-sm">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-3 p-3 me-3" style="background-color: rgba(25, 135, 84, 0.1);">
-                        <i class="bi bi-currency-exchange text-success fs-4"></i>
+                <div class="card-body d-flex align-items-center summary-stat-card-body">
+                    <div class="rounded-3 bg-success bg-opacity-10 p-2 me-2">
+                        <i class="bi bi-check-circle text-success fs-5"></i>
                     </div>
-                    <div>
-                        <div class="text-muted small">Cash Disbursed</div>
-                        <div class="fs-5 fw-bold">&#8369;{{ number_format($totalCashDisbursed, 2) }}</div>
+                    <div class="summary-stat-text">
+                        <div class="text-muted summary-stat-label">Completed</div>
+                        <div class="fw-bold summary-stat-value">{{ number_format($completed) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center summary-stat-card-body">
+                    <div class="rounded-3 bg-success bg-opacity-10 p-2 me-2">
+                        <i class="bi bi-cash-stack text-success fs-5"></i>
+                    </div>
+                    <div class="summary-stat-text">
+                        <div class="text-muted summary-stat-label">Financial Events</div>
+                        <div class="fw-bold summary-stat-value">{{ number_format($totalFinancialEvents) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center summary-stat-card-body">
+                    <div class="rounded-3 p-2 me-2" style="background-color: rgba(25, 135, 84, 0.1);">
+                        <i class="bi bi-currency-exchange text-success fs-5"></i>
+                    </div>
+                    <div class="summary-stat-text">
+                        <div class="text-muted summary-stat-label">Cash Disbursed</div>
+                        <div class="fw-bold summary-stat-value summary-stat-value-cash">&#8369;{{ number_format($totalCashDisbursed, 2) }}</div>
                     </div>
                 </div>
             </div>
@@ -309,6 +309,46 @@
 
 .module-page .table tbody td {
     font-size: 0.9rem;
+}
+
+.module-page .summary-stat-card-body {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0.6rem 0.75rem;
+}
+
+.module-page .summary-stat-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.module-page .summary-stat-label {
+    font-size: 0.7rem;
+    line-height: 1.2;
+}
+
+.module-page .summary-stat-value {
+    font-size: 0.95rem;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.module-page .summary-stat-value-cash {
+    display: block;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: break-all;
+    font-size: clamp(0.68rem, 0.55rem + 0.4vw, 0.88rem);
+    line-height: 1.2;
+}
+
+@media (min-width: 576px) {
+    .module-page .summary-stat-card-body {
+        flex-wrap: nowrap;
+        gap: 0;
+    }
 }
 </style>
 @endpush

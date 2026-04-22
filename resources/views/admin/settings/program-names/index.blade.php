@@ -20,28 +20,28 @@
     </div>
 
     {{-- Summary Dashboard (One Column Design) --}}
-    <div class="row mb-4">
+    <div class="row mb-3">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-body p-0">
                     <div class="row g-0 text-center">
-                        <div class="col-12 col-md-4 p-4 p-md-3 p-lg-4 border-end-md">
-                            <div class="text-muted small text-uppercase fw-semibold mb-1">
+                        <div class="col-12 col-md-4 p-3 border-end-md">
+                            <div class="text-muted prog-stat-label text-uppercase fw-semibold mb-1">
                                 <i class="bi bi-list-task me-1 text-primary"></i> Total Programs
                             </div>
-                            <h3 class="mb-0 fw-bold text-primary">{{ number_format($summary['total'] ?? 0) }}</h3>
+                            <div class="fw-bold prog-stat-value text-primary">{{ number_format($summary['total'] ?? 0) }}</div>
                         </div>
-                        <div class="col-12 col-md-4 p-4 p-md-3 p-lg-4 border-end-md">
-                            <div class="text-muted small text-uppercase fw-semibold mb-1">
+                        <div class="col-12 col-md-4 p-3 border-end-md">
+                            <div class="text-muted prog-stat-label text-uppercase fw-semibold mb-1">
                                 <i class="bi bi-check-circle me-1 text-success"></i> Active
                             </div>
-                            <h3 class="mb-0 fw-bold text-success">{{ number_format($summary['active'] ?? 0) }}</h3>
+                            <div class="fw-bold prog-stat-value text-success">{{ number_format($summary['active'] ?? 0) }}</div>
                         </div>
-                        <div class="col-12 col-md-4 p-4 p-md-3 p-lg-4">
-                            <div class="text-muted small text-uppercase fw-semibold mb-1">
+                        <div class="col-12 col-md-4 p-3">
+                            <div class="text-muted prog-stat-label text-uppercase fw-semibold mb-1">
                                 <i class="bi bi-x-circle me-1 text-secondary"></i> Inactive
                             </div>
-                            <h3 class="mb-0 fw-bold text-secondary">{{ number_format($summary['inactive'] ?? 0) }}</h3>
+                            <div class="fw-bold prog-stat-value text-secondary">{{ number_format($summary['inactive'] ?? 0) }}</div>
                         </div>
                     </div>
                 </div>
@@ -465,6 +465,16 @@
     .main-content .navbar .nav-link.active {
         background-color: #0056b3;
         color: white !important;
+    }
+
+    .prog-stat-label {
+        font-size: 0.68rem;
+    }
+
+    .prog-stat-value {
+        font-size: 1.05rem;
+        font-weight: 700;
+        line-height: 1.2;
     }
 
     @media (min-width: 768px) {

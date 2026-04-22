@@ -16,40 +16,40 @@
     </div>
 
     {{-- Summary Dashboard (One Column Design) --}}
-    <div class="row mb-4 mt-2">
+    <div class="row mb-3 mt-1">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-body p-0">
                     <div class="row g-0 text-center">
-                        <div class="col-12 col-md border-end-md p-4 p-md-3 p-lg-4">
-                            <div class="text-muted small text-uppercase fw-semibold mb-1">
+                        <div class="col-12 col-md border-end-md p-3">
+                            <div class="text-muted alloc-stat-label text-uppercase fw-semibold mb-1">
                                 <i class="bi bi-folder2-open me-1 text-primary"></i> Total
                             </div>
-                            <h3 class="mb-0 fw-bold text-primary">{{ number_format($summary['total']) }}</h3>
+                            <div class="fw-bold alloc-stat-value text-primary">{{ number_format($summary['total']) }}</div>
                         </div>
-                        <div class="col-12 col-md border-end-md p-4 p-md-3 p-lg-4">
-                            <div class="text-muted small text-uppercase fw-semibold mb-1">
+                        <div class="col-12 col-md border-end-md p-3">
+                            <div class="text-muted alloc-stat-label text-uppercase fw-semibold mb-1">
                                 <i class="bi bi-calendar-event me-1 text-secondary"></i> Planned
                             </div>
-                            <h3 class="mb-0 fw-bold text-secondary">{{ number_format($summary['planned']) }}</h3>
+                            <div class="fw-bold alloc-stat-value text-secondary">{{ number_format($summary['planned']) }}</div>
                         </div>
-                        <div class="col-12 col-md border-end-md p-4 p-md-3 p-lg-4">
-                            <div class="text-muted small text-uppercase fw-semibold mb-1">
+                        <div class="col-12 col-md border-end-md p-3">
+                            <div class="text-muted alloc-stat-label text-uppercase fw-semibold mb-1">
                                 <i class="bi bi-box-seam me-1 text-info"></i> Ready
                             </div>
-                            <h3 class="mb-0 fw-bold text-info">{{ number_format($summary['ready']) }}</h3>
+                            <div class="fw-bold alloc-stat-value text-info">{{ number_format($summary['ready']) }}</div>
                         </div>
-                        <div class="col-12 col-md border-end-md p-4 p-md-3 p-lg-4">
-                            <div class="text-muted small text-uppercase fw-semibold mb-1">
+                        <div class="col-12 col-md border-end-md p-3">
+                            <div class="text-muted alloc-stat-label text-uppercase fw-semibold mb-1">
                                 <i class="bi bi-check-circle me-1 text-success"></i> Released
                             </div>
-                            <h3 class="mb-0 fw-bold text-success">{{ number_format($summary['released']) }}</h3>
+                            <div class="fw-bold alloc-stat-value text-success">{{ number_format($summary['released']) }}</div>
                         </div>
-                        <div class="col-12 col-md p-4 p-md-3 p-lg-4">
-                            <div class="text-muted small text-uppercase fw-semibold mb-1">
+                        <div class="col-12 col-md p-3">
+                            <div class="text-muted alloc-stat-label text-uppercase fw-semibold mb-1">
                                 <i class="bi bi-x-circle me-1 text-danger"></i> Not Rcvd
                             </div>
-                            <h3 class="mb-0 fw-bold text-danger">{{ number_format($summary['not_received']) }}</h3>
+                            <div class="fw-bold alloc-stat-value text-danger">{{ number_format($summary['not_received']) }}</div>
                         </div>
                     </div>
                 </div>
@@ -589,8 +589,14 @@
     font-size: 0.9rem;
 }
 
-.module-page .row.g-0 .h3 {
-    font-size: 1.4rem;
+.module-page .row.g-0 .alloc-stat-label {
+    font-size: 0.68rem;
+}
+
+.module-page .row.g-0 .alloc-stat-value {
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.2;
 }
 
 @media (min-width: 768px) {

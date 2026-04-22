@@ -20,55 +20,55 @@
         @endif
     </div>
 
-    <div class="row g-3 mb-4 mt-2">
+    <div class="row g-2 mb-3 mt-1">
         <div class="col-12 col-sm-6 col-lg-3">
             <div class="card border-0 shadow-sm">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-people-fill text-success fs-4"></i>
+                <div class="card-body d-flex align-items-center bene-stat-card-body">
+                    <div class="rounded-3 bg-success bg-opacity-10 p-2 me-2">
+                        <i class="bi bi-people-fill text-success fs-5"></i>
                     </div>
                     <div>
-                        <div class="text-muted small">Total Beneficiaries</div>
-                        <div class="fs-4 fw-bold">{{ number_format($summary['total_all']) }}</div>
+                        <div class="text-muted bene-stat-label">Total Beneficiaries</div>
+                        <div class="fw-bold bene-stat-value">{{ number_format($summary['total_all']) }}</div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-12 col-sm-6 col-lg-3">
             <div class="card border-0 shadow-sm">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-3 bg-primary bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-person-check-fill text-primary fs-4"></i>
+                <div class="card-body d-flex align-items-center bene-stat-card-body">
+                    <div class="rounded-3 bg-primary bg-opacity-10 p-2 me-2">
+                        <i class="bi bi-person-check-fill text-primary fs-5"></i>
                     </div>
                     <div>
-                        <div class="text-muted small">Active Beneficiaries</div>
-                        <div class="fs-4 fw-bold">{{ number_format($summary['total_active']) }}</div>
+                        <div class="text-muted bene-stat-label">Active Beneficiaries</div>
+                        <div class="fw-bold bene-stat-value">{{ number_format($summary['total_active']) }}</div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-12 col-sm-6 col-lg-3">
             <div class="card border-0 shadow-sm">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-3 bg-info bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-paperclip text-info fs-4"></i>
+                <div class="card-body d-flex align-items-center bene-stat-card-body">
+                    <div class="rounded-3 bg-info bg-opacity-10 p-2 me-2">
+                        <i class="bi bi-paperclip text-info fs-5"></i>
                     </div>
                     <div>
-                        <div class="text-muted small">With Documents</div>
-                        <div class="fs-4 fw-bold">{{ number_format($summary['with_documents']) }}</div>
+                        <div class="text-muted bene-stat-label">With Documents</div>
+                        <div class="fw-bold bene-stat-value">{{ number_format($summary['with_documents']) }}</div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-12 col-sm-6 col-lg-3">
             <div class="card border-0 shadow-sm">
-                <div class="card-body d-flex align-items-center">
-                    <div class="rounded-3 bg-warning bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-exclamation-triangle text-warning fs-4"></i>
+                <div class="card-body d-flex align-items-center bene-stat-card-body">
+                    <div class="rounded-3 bg-warning bg-opacity-10 p-2 me-2">
+                        <i class="bi bi-exclamation-triangle text-warning fs-5"></i>
                     </div>
                     <div>
-                        <div class="text-muted small">Without Documents</div>
-                        <div class="fs-4 fw-bold">{{ number_format($summary['without_documents']) }}</div>
+                        <div class="text-muted bene-stat-label">Without Documents</div>
+                        <div class="fw-bold bene-stat-value">{{ number_format($summary['without_documents']) }}</div>
                     </div>
                 </div>
             </div>
@@ -366,8 +366,18 @@
     font-size: 0.9rem;
 }
 
-.module-page .fs-4 {
-    font-size: 1.5rem !important;
+.module-page .bene-stat-card-body {
+    padding: 0.6rem 0.75rem;
+}
+
+.module-page .bene-stat-label {
+    font-size: 0.7rem;
+    line-height: 1.2;
+}
+
+.module-page .bene-stat-value {
+    font-size: 0.95rem;
+    line-height: 1.2;
 }
 
 @media (min-width: 992px) {
