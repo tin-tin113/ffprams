@@ -313,6 +313,15 @@ class SystemSettingsController extends Controller
 
             $agency->classifications()->sync($validated['classifications'] ?? []);
 
+            // Now that the agency's classification is synced, cascade the derived classification to its programs.
+            // A fresh agency instance is needed with the classifications relationship loaded.
+            $freshAgency = $agency->fresh(['classifications']);
+            $derivedClassification = $this->deriveProgramClassificationFromAgencyModel($freshAgency);
+            
+            ProgramName::where('agency_id', $agency->id)->update([
+                'classification' => $derivedClassification,
+            ]);
+
             $this->audit->log(
                 auth()->id(), 'updated', 'agencies', $agency->id,
                 $oldValues, $agency->fresh()->toArray(),
@@ -644,6 +653,11 @@ class SystemSettingsController extends Controller
             ]);
         }
 
+        return $this->deriveProgramClassificationFromAgencyModel($agency);
+    }
+
+    private function deriveProgramClassificationFromAgencyModel(Agency $agency): string
+    {
         $classificationNames = $agency->classifications
             ->pluck('name')
             ->map(fn ($name) => strtolower(trim((string) $name)))
