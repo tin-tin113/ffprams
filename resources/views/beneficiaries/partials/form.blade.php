@@ -211,13 +211,11 @@
     }
 @endphp
 
-{{-- SECTION 1 — Agency & Personal Information --}}
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-white fw-semibold">
-        <i class="bi bi-building me-1"></i> Agency & Personal Information
+<div class="mb-5">
+    <div class="border-bottom pb-2 mb-4">
+        <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-building me-2 text-muted"></i>Agency & Personal Information</h5>
     </div>
-    <div class="card-body">
-        <div class="row g-3">
+    <div class="row g-4">
             {{-- Agency Selection (Multi-Select) --}}
             <div class="col-12">
                 <label class="form-label">Source Agencies <span class="text-danger">*</span></label>
@@ -373,16 +371,23 @@
             {{-- Contact Number --}}
             <div class="col-12 col-md-3">
                 <label for="contact_number" class="form-label">Contact Number <span class="text-danger">*</span></label>
-                <input type="text" class="form-control @error('contact_number') is-invalid @enderror"
-                       id="contact_number" name="contact_number" placeholder="09XXXXXXXXX or +639XXXXXXXXX"
-                       value="{{ old('contact_number', $beneficiary->contact_number ?? '') }}"
-                       inputmode="numeric"
-                       maxlength="13"
-                       pattern="^(\+639\d{9}|639\d{9}|09\d{9}|9\d{9})$"
-                       title="Use one of: 09XXXXXXXXX, 9XXXXXXXXX, 639XXXXXXXXX, +639XXXXXXXXX"
-                       required>
-                @error('contact_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                <small class="text-muted">Accepted: 09XXXXXXXXX, 9XXXXXXXXX, 639XXXXXXXXX, +639XXXXXXXXX</small>
+                <div class="input-group has-validation">
+                    <span class="input-group-text bg-white text-muted border-end-0 pe-2" id="contact_number_addon">
+                        +63 <span class="mx-1 text-black-50">|</span>
+                    </span>
+                    <input type="text" class="form-control border-start-0 ps-1 @error('contact_number') is-invalid @enderror"
+                           id="contact_number" name="contact_number" placeholder="9XXXXXXXXX"
+                           value="{{ preg_replace('/^(0|63)+/', '', preg_replace('/\D/', '', old('contact_number', $beneficiary->contact_number ?? ''))) }}"
+                           inputmode="numeric"
+                           maxlength="20"
+                           pattern="^(\+639\d{9}|639\d{9}|09\d{9}|9\d{9})$"
+                           oninput="this.value = this.value.replace(/\D/g, '').replace(/^(0|63)+/, '').substring(0, 10);"
+                           title="Start with 9 (e.g. 9123456789)"
+                           aria-describedby="contact_number_addon"
+                           required>
+                    @error('contact_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <small class="text-muted">Enter 10-digit mobile number</small>
             </div>
 
 
@@ -404,14 +409,14 @@
 
             <input type="hidden" name="photo_path" value="{{ old('photo_path', $beneficiary->photo_path ?? '') }}">
         </div>
-    </div>
 </div>
 
 {{-- SECTION 2 — Address Information --}}
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-white fw-semibold"><i class="bi bi-geo-alt me-1"></i> Address Information</div>
-    <div class="card-body">
-        <div class="row g-3">
+<div class="mb-5">
+    <div class="border-bottom pb-2 mb-4">
+        <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-geo-alt me-2 text-muted"></i>Address Information</h5>
+    </div>
+        <div class="row g-4">
             <div class="col-12 col-md-8">
                 <label for="home_address" class="form-label">Home Address <span class="text-danger">*</span></label>
                 <input type="text" class="form-control @error('home_address') is-invalid @enderror"
@@ -430,14 +435,14 @@
                 @error('barangay_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
         </div>
-    </div>
 </div>
 
 {{-- SECTION 3 — Farmer Information (DA/RSBSA) --}}
-<div class="card border-0 shadow-sm mb-4" id="farmer-info-section" style="display: none;">
-    <div class="card-header bg-white fw-semibold"><i class="bi bi-leaf me-1"></i> Farmer Information</div>
-    <div class="card-body">
-        <div class="row g-3">
+<div class="mb-5" id="farmer-info-section" style="display: none;">
+    <div class="border-bottom pb-2 mb-4">
+        <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-leaf me-2 text-muted"></i>Farmer Information</h5>
+    </div>
+        <div class="row g-4">
             <div class="col-12 col-md-6">
                 <label for="rsbsa_availability_status" class="form-label">Farmer Availability Status <span class="text-danger">*</span></label>
                 <select class="form-select @error('rsbsa_availability_status') is-invalid @enderror"
@@ -537,14 +542,14 @@
             @endforeach
             </div>
         </div>
-    </div>
 </div>
 
 {{-- SECTION 4 — Fisherfolk Information --}}
-<div class="card border-0 shadow-sm mb-4" id="fisherfolk-info-section" style="display: none;">
-    <div class="card-header bg-white fw-semibold"><i class="bi bi-water me-1"></i> Fisherfolk Information</div>
-    <div class="card-body">
-        <div class="row g-3">
+<div class="mb-5" id="fisherfolk-info-section" style="display: none;">
+    <div class="border-bottom pb-2 mb-4">
+        <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-water me-2 text-muted"></i>Fisherfolk Information</h5>
+    </div>
+        <div class="row g-4">
             <div class="col-12 col-md-6">
                 <label for="fishr_availability_status" class="form-label">Fisherfolk Availability Status <span class="text-danger">*</span></label>
                 <select class="form-select @error('fishr_availability_status') is-invalid @enderror"
@@ -636,18 +641,17 @@
             @endforeach
             </div>
         </div>
-    </div>
 </div>
 
 
 {{-- SECTION 6 — Dynamic Agency Form Fields --}}
-<div class="card border-0 shadow-sm mb-4" id="agency-dynamic-fields-section">
-    <div class="card-header bg-white fw-semibold"><i class="bi bi-sliders me-1"></i> Agency-Specific Dynamic Fields</div>
-    <div class="card-body">
+<div class="mb-5" id="agency-dynamic-fields-section">
+    <div class="border-bottom pb-2 mb-4">
+        <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-sliders me-2 text-muted"></i>Agency-Specific Dynamic Fields</h5>
+    </div>
         <div id="dynamic-agencies-container">
             {{-- Will be populated by JavaScript based on selected agencies --}}
         </div>
-    </div>
 </div>
 
 <div
@@ -659,10 +663,11 @@
 ></div>
 
 {{-- SECTION 8 — Association Membership --}}
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-white fw-semibold"><i class="bi bi-people me-1"></i> Association Membership</div>
-    <div class="card-body">
-        <div class="row g-3">
+<div class="mb-5">
+    <div class="border-bottom pb-2 mb-4">
+        <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-people me-2 text-muted"></i>Association Membership</h5>
+    </div>
+        <div class="row g-4">
             <div class="col-12 col-md-6">
                 <div class="form-check form-switch mt-2">
                     <input type="hidden" name="association_member" value="0">
@@ -678,13 +683,12 @@
                 @error('association_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
         </div>
-    </div>
 </div>
 
 
 
 {{-- Submit / Cancel --}}
-<div class="d-flex gap-2">
+<div class="d-flex justify-content-center gap-3 mt-5 border-top pt-4">
     <button type="submit" class="btn {{ $editing ? 'btn-primary' : 'btn-success' }}">
         <i class="bi bi-check-lg me-1"></i> {{ $editing ? 'Update Beneficiary' : 'Register Beneficiary' }}
     </button>

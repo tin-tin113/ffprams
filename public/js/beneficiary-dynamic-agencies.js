@@ -274,12 +274,11 @@ class DynamicAgencyForm {
             console.log(`Agency ${agency.name} has ${visibleFields.length} visible form fields`);
 
             html += `
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-header bg-light fw-semibold">
-                        <i class="bi bi-file-earmark-text me-1"></i> ${agency.name} - ${agency.full_name}
+                <div class="col-12 mb-4">
+                    <div class="fw-bold text-secondary border-bottom pb-2 mb-3">
+                        <i class="bi bi-file-earmark-text me-1"></i> ${agency.name} <span class="fw-normal">- ${agency.full_name}</span>
                     </div>
-                    <div class="card-body">
-                        <div class="row g-3">
+                    <div class="row g-4">
             `;
 
             const groupedFields = {};
@@ -328,7 +327,6 @@ class DynamicAgencyForm {
 
             html += `
                         </div>
-                    </div>
                 </div>
             `;
         });

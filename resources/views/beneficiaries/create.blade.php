@@ -8,18 +8,23 @@
 @endsection
 
 @section('content')
-    <div class="d-flex align-items-center mb-4">
-        <a href="{{ route('beneficiaries.index') }}" class="btn btn-outline-secondary btn-sm me-3">
-            <i class="bi bi-arrow-left"></i>
-        </a>
+    <div class="row justify-content-center">
+        <div class="col-12 col-xxl-10">
+            <div class="d-flex align-items-center mb-4">
+                <a href="{{ route('beneficiaries.index') }}" class="btn btn-outline-secondary btn-sm me-3">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <h4 class="mb-0 fw-bold">Register New Beneficiary</h4>
+            </div>
+
+            <div id="beneficiaryAjaxNotice" class="alert d-none" role="alert"></div>
+
+            <form id="beneficiaryCreateForm" action="{{ route('beneficiaries.store') }}" method="POST">
+                @csrf
+                @include('beneficiaries.partials.form')
+            </form>
+        </div>
     </div>
-
-    <div id="beneficiaryAjaxNotice" class="alert d-none" role="alert"></div>
-
-    <form id="beneficiaryCreateForm" action="{{ route('beneficiaries.store') }}" method="POST">
-        @csrf
-        @include('beneficiaries.partials.form')
-    </form>
 
     <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090;">
         <div id="beneficiaryToast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
