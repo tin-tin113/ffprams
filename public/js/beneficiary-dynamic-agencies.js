@@ -299,6 +299,8 @@ class DynamicAgencyForm {
             });
 
             const sectionOrder = ['general_information', 'additional_information', 'farmer_information', 'fisherfolk_information', 'dar_information'];
+            const activeSectionsCount = sectionOrder.filter(key => groupedFields[key] && groupedFields[key].length > 0).length;
+
             sectionOrder.forEach((sectionKey) => {
                 const sectionFields = groupedFields[sectionKey] || [];
                 if (sectionFields.length === 0) {
@@ -309,11 +311,14 @@ class DynamicAgencyForm {
                 const currentClassLabel = classification + " Information";
 
                 if (sectionLabel !== currentClassLabel) {
-                    html += `
-                        <div class="col-12 mt-2">
-                            <div class="fw-semibold text-uppercase text-muted small border-bottom pb-1 mb-2">${sectionLabel}</div>
-                        </div>
-                    `;
+                    // Hide "General Information" header if it's the only section for this agency, to avoid redundant "classification descriptions"
+                    if (!(sectionKey === 'general_information' && activeSectionsCount === 1)) {
+                        html += `
+                            <div class="col-12 mt-2">
+                                <div class="fw-semibold text-uppercase text-muted small border-bottom pb-1 mb-2">${sectionLabel}</div>
+                            </div>
+                        `;
+                    }
                 }
 
                 sectionFields.forEach((field) => {

@@ -166,12 +166,7 @@
         'fishr_availability_status',
         filled($beneficiary->fishr_unavailability_reason ?? null) ? 'not_available_yet' : 'provided'
     );
-    $cloaAvailabilityStatus = old(
-        'cloa_ep_availability_status',
-        filled($beneficiary->cloa_ep_number ?? null)
-            ? 'provided'
-            : (filled($beneficiary->cloa_ep_unavailability_reason ?? null) ? 'not_available_yet' : 'provided')
-    );
+
     $governmentIdAvailabilityStatus = old(
         'government_id_availability_status',
         (filled($beneficiary->id_type ?? null) || filled($beneficiary->id_number ?? null)) ? 'available' : 'not_available'
@@ -212,7 +207,7 @@
 @endphp
 
 {{-- SECTION 0 — Registration Context --}}
-<div class="mb-5 bg-light rounded-3 p-4 border">
+<div class="mb-5 bg-white rounded-3 p-4 border">
     <div class="row g-4">
         {{-- Sector/Classification --}}
         <div class="col-12 col-md-3">
@@ -266,7 +261,7 @@
     </div>
 </div>
 
-<div class="mb-5">
+<div class="mb-5 bg-white rounded-3 p-4 border">
     <div class="border-bottom pb-2 mb-4">
         <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-person me-2 text-muted"></i>Personal Information</h5>
     </div>
@@ -420,7 +415,7 @@
 </div>
 
 {{-- SECTION 2 — Address Information --}}
-<div class="mb-5">
+<div class="mb-5 bg-white rounded-3 p-4 border">
     <div class="border-bottom pb-2 mb-4">
         <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-geo-alt me-2 text-muted"></i>Address Information</h5>
     </div>
@@ -446,7 +441,7 @@
 </div>
 
 {{-- SECTION 3 — Farmer Information --}}
-<div class="mb-5" id="farmer-info-section" style="display: none;">
+<div class="mb-5 bg-white rounded-3 p-4 border" id="farmer-info-section" style="display: none;">
     <div class="border-bottom pb-2 mb-4">
         <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-leaf me-2 text-muted"></i>Farmer Information</h5>
     </div>
@@ -568,7 +563,7 @@
 </div>
 
 {{-- SECTION 4 — Fisherfolk Information --}}
-<div class="mb-5" id="fisherfolk-info-section" style="display: none;">
+<div class="mb-5 bg-white rounded-3 p-4 border" id="fisherfolk-info-section" style="display: none;">
     <div class="border-bottom pb-2 mb-4">
         <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-water me-2 text-muted"></i>Fisherfolk Information</h5>
     </div>
@@ -684,7 +679,7 @@
 
 
 {{-- SECTION 6 — Dynamic Agency Form Fields --}}
-<div class="mb-5" id="agency-dynamic-fields-section">
+<div class="mb-5 bg-white rounded-3 p-4 border" id="agency-dynamic-fields-section">
     <div class="border-bottom pb-2 mb-4">
         <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-sliders me-2 text-muted"></i>Agency-Specific Dynamic Fields</h5>
     </div>
@@ -702,7 +697,7 @@
 ></div>
 
 {{-- SECTION 8 — Association Membership --}}
-<div class="mb-5">
+<div class="mb-5 bg-white rounded-3 p-4 border">
     <div class="border-bottom pb-2 mb-4">
         <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-people me-2 text-muted"></i>Association Membership</h5>
     </div>
@@ -756,12 +751,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const fishrFieldsWrapper = document.getElementById('fishr-fields-wrapper');
     const fishrReasonWrapper = document.getElementById('fishr-reason-wrapper');
     const fishrReasonField = document.getElementById('fishr_unavailability_reason');
-    const cloaAvailabilitySelect = document.getElementById('cloa_ep_availability_status');
-    const darFieldsWrapper = document.getElementById('dar-fields-wrapper');
-    const cloaNumberWrapper = document.getElementById('cloa-ep-number-wrapper');
-    const cloaReasonWrapper = document.getElementById('cloa-ep-reason-wrapper');
-    const cloaNumberField = document.getElementById('cloa_ep_number');
-    const cloaReasonField = document.getElementById('cloa_ep_unavailability_reason');
+
     const governmentIdAvailabilitySelect = document.getElementById('government_id_availability_status');
     const governmentIdFieldsWrapper = document.getElementById('government-id-fields-wrapper');
     const idTypeField = document.getElementById('id_type');
@@ -789,7 +779,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         toggleRsbsaAvailability();
         toggleFishrAvailability();
-        toggleCloaAvailability();
+
 
         console.log('Updated sections - Classification:', classification, 'Agencies:', selectedAgencies);
     }
@@ -910,15 +900,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function toggleCloaAvailability() {
-        const selectedAgencies = getSelectedAgencyNames();
-        const isApplicable = classificationSelect
-            && classificationSelect.value === 'Farmer'
-            && selectedAgencies.includes('DAR');
-        
-        // Static DAR section is removed in favor of dynamic agency fields.
-        // Keeping availability state monitoring for logic consistency if needed.
-    }
+
 
     function toggleGovernmentIdFields() {
         if (!governmentIdAvailabilitySelect || !governmentIdFieldsWrapper) {
@@ -968,9 +950,7 @@ document.addEventListener('DOMContentLoaded', function () {
         fishrAvailabilitySelect.addEventListener('change', toggleFishrAvailability);
     }
 
-    if (cloaAvailabilitySelect) {
-        cloaAvailabilitySelect.addEventListener('change', toggleCloaAvailability);
-    }
+
 
     if (governmentIdAvailabilitySelect) {
         governmentIdAvailabilitySelect.addEventListener('change', toggleGovernmentIdFields);
@@ -982,7 +962,7 @@ document.addEventListener('DOMContentLoaded', function () {
     toggleVesselFields();
     toggleRsbsaAvailability();
     toggleFishrAvailability();
-    toggleCloaAvailability();
+
     toggleGovernmentIdFields();
 });
 </script>

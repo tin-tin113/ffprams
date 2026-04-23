@@ -82,10 +82,6 @@ class BeneficiaryRequest extends FormRequest
                 'status' => 'fishr_availability_status',
                 'is_applicable' => $classification === 'fisherfolk' && ($hasDa || $hasBfar),
             ],
-            'cloa_ep_unavailability_reason' => [
-                'status' => 'cloa_ep_availability_status',
-                'is_applicable' => $classification === 'farmer' && $hasDar,
-            ],
         ];
 
         foreach ($contextRules as $reasonKey => $rule) {
@@ -253,8 +249,6 @@ class BeneficiaryRequest extends FormRequest
             'rsbsa_unavailability_reason' => ['nullable', 'string', 'max:500'],
             'fishr_availability_status' => ['nullable', 'in:provided,not_available_yet,not_applicable,to_be_verified'],
             'fishr_unavailability_reason' => ['nullable', 'string', 'max:500'],
-            'cloa_ep_availability_status' => ['nullable', 'in:provided,not_available_yet,not_applicable,to_be_verified'],
-            'cloa_ep_unavailability_reason' => ['nullable', 'string', 'max:500'],
 
             // Association membership (common to all)
             'association_member' => ['required', 'boolean'],
@@ -303,17 +297,7 @@ class BeneficiaryRequest extends FormRequest
                 $rules['length_of_residency_months'] = [$residencyMonthsRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', 'integer', 'min:6'];
             }
 
-            // DAR with Farmer classification
-            if ($agencyName === 'DAR' && $classification === 'Farmer') {
-                $rules['cloa_ep_number'] = [$cloaNumberRequired ? 'required_if:cloa_ep_availability_status,provided' : 'nullable', 'nullable', 'string', 'max:100', Rule::unique('beneficiaries', 'cloa_ep_number')->ignore($beneficiaryId)];
-                $rules['cloa_ep_availability_status'] = ['required', 'in:provided,not_available_yet,not_applicable,to_be_verified'];
-                $rules['cloa_ep_unavailability_reason'] = ['nullable', 'string', 'max:500'];
-                $rules['arb_classification'] = [$arbClassificationRequired ? 'required_if:cloa_ep_availability_status,provided' : 'nullable', 'nullable', Rule::in($arbClassificationValues)];
-                $rules['landholding_description'] = [$landholdingDescriptionRequired ? 'required_if:cloa_ep_availability_status,provided' : 'nullable', 'nullable', 'string', 'max:1000'];
-                $rules['land_area_awarded_hectares'] = [$landAreaAwardedRequired ? 'required_if:cloa_ep_availability_status,provided' : 'nullable', 'nullable', 'numeric', 'min:0.01'];
-                $rules['ownership_scheme'] = [$ownershipSchemeRequired ? 'required_if:cloa_ep_availability_status,provided' : 'nullable', 'nullable', Rule::in($ownershipSchemeValues)];
-                $rules['barc_membership_status'] = [$barcMembershipRequired ? 'required_if:cloa_ep_availability_status,provided' : 'nullable', 'nullable', 'string', 'max:100'];
-            }
+
         }
 
         // If no fields have been set to required for farmer/fisherfolk/dar, make them optional
@@ -356,24 +340,7 @@ class BeneficiaryRequest extends FormRequest
         if (!isset($rules['length_of_residency_months'])) {
             $rules['length_of_residency_months'] = ['nullable', 'integer', 'min:0'];
         }
-        if (!isset($rules['cloa_ep_number'])) {
-            $rules['cloa_ep_number'] = ['nullable', 'string', 'max:100'];
-        }
-        if (!isset($rules['arb_classification'])) {
-            $rules['arb_classification'] = ['nullable', 'string', 'max:100'];
-        }
-        if (!isset($rules['landholding_description'])) {
-            $rules['landholding_description'] = ['nullable', 'string', 'max:1000'];
-        }
-        if (!isset($rules['land_area_awarded_hectares'])) {
-            $rules['land_area_awarded_hectares'] = ['nullable', 'numeric', 'min:0.01'];
-        }
-        if (!isset($rules['ownership_scheme'])) {
-            $rules['ownership_scheme'] = ['nullable', Rule::in($ownershipSchemeValues)];
-        }
-        if (!isset($rules['barc_membership_status'])) {
-            $rules['barc_membership_status'] = ['nullable', 'string', 'max:100'];
-        }
+
 
         // ===== DYNAMIC AGENCY FORM FIELDS VALIDATION =====
         // Validate custom fields defined by each selected agency
@@ -855,32 +822,7 @@ class BeneficiaryRequest extends FormRequest
             $classification = (string) $this->input('classification', '');
             $allowedAgencySections = $this->allowedAgencyFormSections($classification);
 
-            $hasDarForFarmer = strtolower($classification) === 'farmer'
-                && $selectedAgencies->contains(fn ($agency) => strtoupper((string) $agency->name) === 'DAR');
-
-            if ($hasDarForFarmer) {
-                $status = (string) $this->input('cloa_ep_availability_status', '');
-                $cloaNumber = $this->input('cloa_ep_number');
-                $cloaReason = $this->input('cloa_ep_unavailability_reason');
-                $validStatuses = ['provided', 'not_available_yet', 'not_applicable', 'to_be_verified'];
-
-                if (! in_array($status, $validStatuses, true)) {
-                    $validator->errors()->add(
-                        'cloa_ep_availability_status',
-                        'Please select CLOA/EP availability status.'
-                    );
-                } elseif ($status === 'provided' && empty($cloaNumber)) {
-                    $validator->errors()->add(
-                        'cloa_ep_number',
-                        'CLOA/EP number is required when status is set to Provided.'
-                    );
-                } elseif ($status !== 'provided' && empty($cloaReason)) {
-                    $validator->errors()->add(
-                        'cloa_ep_unavailability_reason',
-                        'Please provide a reason when CLOA/EP number is not marked as Provided.'
-                    );
-                }
-            }
+            // DAR validation is now handled by the dynamic agency field validation loop below.
 
             $hasDaForFarmer = strtolower($classification) === 'farmer'
                 && $selectedAgencies->contains(fn ($agency) => strtoupper((string) $agency->name) === 'DA');

@@ -166,7 +166,7 @@ class BeneficiaryController extends Controller
                 $beneficiaryFillable = (new Beneficiary())->getFillable();
 
                 unset($validated['agencies']);
-                unset($validated['rsbsa_availability_status'], $validated['fishr_availability_status'], $validated['cloa_ep_availability_status']);
+                unset($validated['rsbsa_availability_status'], $validated['fishr_availability_status']);
 
                 // Store unavailability reasons from dynamic fields
                 $customFieldReasons = (array) ($validated['custom_field_unavailability_reasons'] ?? []);
@@ -394,7 +394,7 @@ class BeneficiaryController extends Controller
             $beneficiaryFillable = (new Beneficiary())->getFillable();
 
             unset($validated['agencies']);
-            unset($validated['rsbsa_availability_status'], $validated['fishr_availability_status'], $validated['cloa_ep_availability_status']);
+            unset($validated['rsbsa_availability_status'], $validated['fishr_availability_status']);
 
             // Store unavailability reasons from dynamic fields
             $customFieldReasons = (array) ($validated['custom_field_unavailability_reasons'] ?? []);
