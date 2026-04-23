@@ -211,54 +211,70 @@
     }
 @endphp
 
+{{-- SECTION 0 — Registration Context --}}
+<div class="mb-5 bg-light rounded-3 p-4 border">
+    <div class="row g-4 align-items-start">
+        {{-- Classification --}}
+        <div class="col-12 col-md-3">
+            <label for="classification" class="form-label text-muted fw-semibold small text-uppercase">Sector <span class="text-danger">*</span></label>
+            <select class="form-select border-secondary border-opacity-25 @error('classification') is-invalid @enderror"
+                    id="classification" name="classification" required>
+                <option value="" disabled {{ old('classification', $beneficiary->classification ?? '') === '' ? 'selected' : '' }}>Select classification...</option>
+                @foreach(['Farmer', 'Fisherfolk'] as $type)
+                    <option value="{{ $type }}" {{ old('classification', $beneficiary->classification ?? '') === $type ? 'selected' : '' }}>{{ $type }}</option>
+                @endforeach
+            </select>
+            @error('classification')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+
+        {{-- Agency Selection (Multi-Select) --}}
+        <div class="col-12 col-md-9 border-start ps-4">
+            <label class="form-label text-muted fw-semibold small text-uppercase">Required Document Agencies <span class="text-danger">*</span></label>
+            <div id="agency-checkboxes" class="mb-1">
+                {{-- Populated dynamically --}}
+            </div>
+            <small class="text-muted">Fields will dynamically adjust based on your selection.</small>
+            @error('agencies')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+        </div>
+    </div>
+</div>
+
+{{-- Meta Information --}}
+<div class="row g-4 mb-5 border-bottom pb-4">
+    {{-- Status --}}
+    <div class="col-12 col-md-4">
+        <label for="status" class="form-label text-muted fw-semibold small text-uppercase">Account Status <span class="text-danger">*</span></label>
+        <select class="form-select @error('status') is-invalid @enderror"
+                id="status" name="status" required>
+            @foreach(['Active', 'Inactive'] as $s)
+                <option value="{{ $s }}" {{ old('status', $beneficiary->status ?? 'Active') === $s ? 'selected' : '' }}>{{ $s }}</option>
+            @endforeach
+        </select>
+        @error('status')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+
+    {{-- Registration Date --}}
+    <div class="col-12 col-md-4">
+        <label for="registered_at" class="form-label text-muted fw-semibold small text-uppercase">Registration Date <span class="text-danger">*</span></label>
+        <input type="date" class="form-control @error('registered_at') is-invalid @enderror"
+               id="registered_at" name="registered_at"
+               value="{{ old('registered_at', isset($beneficiary) && $beneficiary->registered_at ? $beneficiary->registered_at->format('Y-m-d') : '') }}" required>
+        @error('registered_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
+    </div>
+</div>
+
 <div class="mb-5">
     <div class="border-bottom pb-2 mb-4">
-        <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-building me-2 text-muted"></i>Agency & Personal Information</h5>
+        <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-person me-2 text-muted"></i>Personal Information</h5>
     </div>
     <div class="row g-4">
-            {{-- Agency Selection (Multi-Select) --}}
-            <div class="col-12">
-                <label class="form-label">Source Agencies <span class="text-danger">*</span></label>
-                <div id="agency-checkboxes" class="mb-3">
-                    {{-- Populated dynamically based on classification --}}
-                    {{-- Farmer classification shows: DA, DAR --}}
-                    {{-- Fisherfolk classification shows: DA, BFAR --}}
-                </div>
-                <small class="text-muted">Select all agencies this beneficiary is registered under</small>
-                @error('agencies')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-            </div>
-
-            {{-- Classification --}}
-            <div class="col-12 col-md-4">
-                <label for="classification" class="form-label">Classification <span class="text-danger">*</span></label>
-                <select class="form-select @error('classification') is-invalid @enderror"
-                        id="classification" name="classification" required>
-                    <option value="" disabled {{ old('classification', $beneficiary->classification ?? '') === '' ? 'selected' : '' }}>Select...</option>
-                    @foreach(['Farmer', 'Fisherfolk'] as $type)
-                        <option value="{{ $type }}" {{ old('classification', $beneficiary->classification ?? '') === $type ? 'selected' : '' }}>{{ $type }}</option>
-                    @endforeach
-                </select>
-                @error('classification')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-
-            {{-- Status --}}
-            <div class="col-12 col-md-4">
-                <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
-                <select class="form-select @error('status') is-invalid @enderror"
-                        id="status" name="status" required>
-                    @foreach(['Active', 'Inactive'] as $s)
-                        <option value="{{ $s }}" {{ old('status', $beneficiary->status ?? 'Active') === $s ? 'selected' : '' }}>{{ $s }}</option>
-                    @endforeach
-                </select>
-                @error('status')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
 
             {{-- Name Fields --}}
-            <div class="col-12 col-md-3">
+            <div class="col-12 col-md-4">
                 <label for="first_name" class="form-label">First Name <span class="text-danger">*</span></label>
                 <input type="text" class="form-control @error('first_name') is-invalid @enderror"
                        id="first_name" name="first_name"
@@ -282,8 +298,8 @@
                 @error('last_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
 
-            <div class="col-12 col-md-3">
-                <label for="name_suffix" class="form-label">Name Extension</label>
+            <div class="col-12 col-md-2">
+                <label for="name_suffix" class="form-label">Suffix / Ext.</label>
                 <input type="text" class="form-control @error('name_suffix') is-invalid @enderror"
                        id="name_suffix" name="name_suffix"
                        value="{{ $nameSuffixValue }}" placeholder="Jr., Sr., III">
@@ -335,7 +351,9 @@
                 @error('highest_education')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
 
-            <div class="col-12 col-md-3">
+            <div class="col-12"><hr class="text-black-50 my-2 border-dashed"></div>
+
+            <div class="col-12 col-md-4">
                 <label for="government_id_availability_status" class="form-label">Government ID Availability</label>
                 <select class="form-select @error('government_id_availability_status') is-invalid @enderror"
                         id="government_id_availability_status"
@@ -346,30 +364,32 @@
                 @error('government_id_availability_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
 
-            <div id="government-id-fields-wrapper" class="contents {{ $governmentIdAvailabilityStatus === 'available' ? '' : 'd-none' }}">
-                <div class="col-12 col-md-3">
-                    <label for="id_type" class="form-label">Government ID Type</label>
-                    <select class="form-select @error('id_type') is-invalid @enderror" id="id_type" name="id_type">
-                        <option value="" {{ old('id_type', $beneficiary->id_type ?? '') === '' ? 'selected' : '' }}>Select ID type...</option>
-                        @foreach($idTypeOptions as $opt)
-                            <option value="{{ $opt->value }}" {{ old('id_type', $beneficiary->id_type ?? '') === $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
-                        @endforeach
-                    </select>
-                    @error('id_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
+            <div id="government-id-fields-wrapper" class="col-12 col-md-8 contents {{ $governmentIdAvailabilityStatus === 'available' ? '' : 'd-none' }}">
+                <div class="row g-4">
+                    <div class="col-12 col-md-6">
+                        <label for="id_type" class="form-label">Government ID Type</label>
+                        <select class="form-select @error('id_type') is-invalid @enderror" id="id_type" name="id_type">
+                            <option value="" {{ old('id_type', $beneficiary->id_type ?? '') === '' ? 'selected' : '' }}>Select ID type...</option>
+                            @foreach($idTypeOptions as $opt)
+                                <option value="{{ $opt->value }}" {{ old('id_type', $beneficiary->id_type ?? '') === $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
+                            @endforeach
+                        </select>
+                        @error('id_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
 
-                <div class="col-12 col-md-3">
-                    <label for="id_number" class="form-label">ID Number</label>
-                    <input type="text" class="form-control @error('id_number') is-invalid @enderror"
-                           id="id_number" name="id_number" maxlength="100"
-                           value="{{ old('id_number', $beneficiary->id_number ?? '') }}"
-                           placeholder="Enter ID number">
-                    @error('id_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <div class="col-12 col-md-6">
+                        <label for="id_number" class="form-label">ID Number</label>
+                        <input type="text" class="form-control @error('id_number') is-invalid @enderror"
+                               id="id_number" name="id_number" maxlength="100"
+                               value="{{ old('id_number', $beneficiary->id_number ?? '') }}"
+                               placeholder="Enter ID number">
+                        @error('id_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
                 </div>
             </div>
 
             {{-- Contact Number --}}
-            <div class="col-12 col-md-3">
+            <div class="col-12 col-md-4">
                 <label for="contact_number" class="form-label">Contact Number <span class="text-danger">*</span></label>
                 <div class="input-group has-validation">
                     <span class="input-group-text bg-white text-muted border-end-0 pe-2" id="contact_number_addon">
@@ -388,17 +408,6 @@
                     @error('contact_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <small class="text-muted">Enter 10-digit mobile number</small>
-            </div>
-
-
-
-            {{-- Registration Date --}}
-            <div class="col-12 col-md-3">
-                <label for="registered_at" class="form-label">Registration Date <span class="text-danger">*</span></label>
-                <input type="date" class="form-control @error('registered_at') is-invalid @enderror"
-                       id="registered_at" name="registered_at"
-                       value="{{ old('registered_at', isset($beneficiary) ? $beneficiary->registered_at->format('Y-m-d') : '') }}" required>
-                @error('registered_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
 
 

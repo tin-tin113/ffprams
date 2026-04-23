@@ -374,40 +374,46 @@ class DynamicAgencyForm {
             console.log(`Creating required field status for ${field.field_name}`);
             // Required field with status and reason option
             fieldHtml += `
-                <div class="col-12">
-                    <div class="card bg-light border-0 p-3 mb-3">
-                        <div class="row g-3 align-items-end">
-                            <div class="col-md-6">
-                                <label for="${statusSelectId}" class="form-label mb-1">Availability Status <span class="text-danger">*</span></label>
-                                <select
-                                    class="form-select availability-status-select"
-                                    id="${statusSelectId}"
-                                    name="${statusFieldName}"
-                                    data-field-target="${valueSectionId}"
-                                    data-reason-target="${reasonSectionId}"
-                                >
-                                    <option value="provided" ${availabilityStatus === 'provided' ? 'selected' : ''}>Provided</option>
-                                    <option value="not_available_yet" ${availabilityStatus === 'not_available_yet' ? 'selected' : ''}>Not available yet</option>
-                                    <option value="not_applicable" ${availabilityStatus === 'not_applicable' ? 'selected' : ''}>Not applicable</option>
-                                    <option value="to_be_verified" ${availabilityStatus === 'to_be_verified' ? 'selected' : ''}>To be verified</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <small class="text-muted">Specify current availability status.</small>
-                            </div>
+                <div class="col-12 border rounded p-3 mb-2 bg-light bg-opacity-50">
+                    <div class="row g-3 align-items-center mb-3 border-bottom pb-3">
+                        <div class="col-md-4">
+                            <label for="${statusSelectId}" class="form-label mb-1 text-muted fw-semibold small text-uppercase">Availability Status <span class="text-danger">*</span></label>
+                            <select
+                                class="form-select form-select-sm availability-status-select"
+                                id="${statusSelectId}"
+                                name="${statusFieldName}"
+                                data-field-target="${valueSectionId}"
+                                data-reason-target="${reasonSectionId}"
+                            >
+                                <option value="provided" ${availabilityStatus === 'provided' ? 'selected' : ''}>Provided</option>
+                                <option value="not_available_yet" ${availabilityStatus === 'not_available_yet' ? 'selected' : ''}>Not available yet</option>
+                                <option value="not_applicable" ${availabilityStatus === 'not_applicable' ? 'selected' : ''}>Not applicable</option>
+                                <option value="to_be_verified" ${availabilityStatus === 'to_be_verified' ? 'selected' : ''}>To be verified</option>
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="text-muted small">Select the current availability status for <strong>${field.display_label}</strong>.</div>
                         </div>
                     </div>
 
                     <div class="availability-value-section" id="${valueSectionId}" style="display: ${showFieldValue ? 'block' : 'none'}">
-                        <label for="${fieldName}" class="form-label">${field.display_label} <span class="text-danger">*</span></label>
-                        ${this.renderFieldInput(fieldName, field, fieldValue)}
-                        ${field.help_text ? `<small class="text-muted d-block mt-1">${field.help_text}</small>` : ''}
+                        <div class="row">
+                            <div class="col-12 col-md-8">
+                                <label for="${fieldName}" class="form-label">${field.display_label} <span class="text-danger">*</span></label>
+                                ${this.renderFieldInput(fieldName, field, fieldValue)}
+                                ${field.help_text ? `<small class="text-muted d-block mt-1">${field.help_text}</small>` : ''}
+                            </div>
+                        </div>
                     </div>
 
                     <div class="availability-reason-section" id="${reasonSectionId}" style="display: ${showFieldValue ? 'none' : 'block'}">
-                        <label for="${unavailabilityFieldName}" class="form-label">Reason for Unavailability <span class="text-danger">*</span></label>
-                        <textarea class="form-control" id="${unavailabilityFieldName}" name="${unavailabilityFieldName}" rows="3" placeholder="Explain why you don't have this...">${unavailabilityValue || ''}</textarea>
-                        <small class="text-muted d-block mt-1">${field.help_text || 'Please provide a reason'}</small>
+                        <div class="row">
+                            <div class="col-12 col-md-10">
+                                <label for="${unavailabilityFieldName}" class="form-label text-danger">Reason for Unavailability <span class="text-danger">*</span></label>
+                                <textarea class="form-control border-danger-subtle" id="${unavailabilityFieldName}" name="${unavailabilityFieldName}" rows="2" placeholder="Explain why this information is currently unavailable...">${unavailabilityValue || ''}</textarea>
+                                <small class="text-muted d-block mt-1">${field.help_text || 'Please provide a clearer context for missing data'}</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
