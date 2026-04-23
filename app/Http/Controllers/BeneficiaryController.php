@@ -243,7 +243,7 @@ class BeneficiaryController extends Controller
                     } elseif ($agencyName === 'BFAR') {
                         $identifier = $beneficiary->fishr_number ?? null;
                     } elseif ($agencyName === 'DAR') {
-                        $identifier = $beneficiary->cloa_ep_number ?? null;
+                        $identifier = $agencyFieldsData[$agency->id]['cloa_ep_number'] ?? null;
                     }
 
                     // Attach agency with identifier and registration date
@@ -473,7 +473,7 @@ class BeneficiaryController extends Controller
                 } elseif ($agencyName === 'BFAR') {
                     $identifier = $beneficiary->fishr_number ?? null;
                 } elseif ($agencyName === 'DAR') {
-                    $identifier = $beneficiary->cloa_ep_number ?? null;
+                    $identifier = $agencyFieldsData[$agency->id]['cloa_ep_number'] ?? null;
                 }
 
                 // Get existing registration date if agency was already registered, otherwise use today

@@ -65,15 +65,6 @@ class Beneficiary extends Model
         'length_of_residency_months',
         'fishr_unavailability_reason',
 
-        // DAR/ARB fields
-        'cloa_ep_number',
-        'arb_classification',
-        'landholding_description',
-        'land_area_awarded_hectares',
-        'ownership_scheme',
-        'barc_membership_status',
-        'cloa_ep_unavailability_reason',
-
         // Custom fields
         'custom_fields',
         'custom_field_unavailability_reasons',
@@ -88,7 +79,6 @@ class Beneficiary extends Model
             'association_member'                 => 'boolean',
             'farm_size_hectares'                 => 'decimal:2',
             'fishing_vessel_tonnage'             => 'decimal:2',
-            'land_area_awarded_hectares'         => 'decimal:2',
             'length_of_residency_months'         => 'integer',
             'custom_fields'                      => 'array',
             'custom_field_unavailability_reasons' => 'array',
