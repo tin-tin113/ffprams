@@ -545,6 +545,10 @@
                         </select>
                     </form>
 
+                    <a href="{{ route('reports.index', ['year' => $currentYear, 'tab' => $activeTab]) }}" class="btn btn-primary shadow-sm" title="Refresh Data">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </a>
+
                     <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
                         <i class="bi bi-printer me-1"></i> Print
                     </button>

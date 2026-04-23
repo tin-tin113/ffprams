@@ -108,7 +108,7 @@ class ReportsController extends Controller
         $beneficiariesPerBarangay = Beneficiary::select('barangay_id')
             ->selectRaw("SUM(CASE WHEN classification = 'Farmer' THEN 1 ELSE 0 END) as total_farmers")
             ->selectRaw("SUM(CASE WHEN classification = 'Fisherfolk' THEN 1 ELSE 0 END) as total_fisherfolk")
-            ->selectRaw("SUM(CASE WHEN classification IN ('Farmer', 'Fisherfolk') THEN 1 ELSE 0 END) as grand_total")
+            ->selectRaw("COUNT(id) as grand_total")
             ->with('barangay')
             ->groupBy('barangay_id')
             ->orderBy('barangay_id')
@@ -578,46 +578,78 @@ class ReportsController extends Controller
             ->values();
 
         // BARANGAY INSIGHTS — Aggregated performance metrics
+        $eventInsightsAgg = DistributionEvent::query()
+            ->select('barangay_id')
+            ->selectRaw('COUNT(DISTINCT distribution_events.id) as total_events')
+            ->selectRaw('SUM(CASE WHEN distribution_events.status = "Completed" THEN 1 ELSE 0 END) as completed_events')
+            ->selectRaw('SUM(CASE WHEN distribution_events.status = "Pending" THEN 1 ELSE 0 END) as pending_events')
+            ->selectRaw('SUM(CASE WHEN distribution_events.status = "Ongoing" THEN 1 ELSE 0 END) as ongoing_events')
+            ->selectRaw('SUM(CASE WHEN distribution_events.type = "physical" THEN 1 ELSE 0 END) as event_distribution')
+            ->selectRaw('SUM(CASE WHEN distribution_events.type = "financial" THEN 1 ELSE 0 END) as financial_events')
+            ->selectRaw('COALESCE(SUM(allocations.amount), 0) as event_financial_amount')
+            ->leftJoin('allocations', function ($join) {
+                $join->on('allocations.distribution_event_id', '=', 'distribution_events.id')
+                    ->whereNull('allocations.deleted_at')
+                    ->whereNotNull('allocations.distributed_at');
+            })
+            ->whereNull('distribution_events.deleted_at')
+            ->whereYear('distribution_events.distribution_date', $selectedYear)
+            ->groupBy('barangay_id');
+
+        $directInsightsAgg = DirectAssistance::query()
+            ->select('beneficiaries.barangay_id')
+            ->selectRaw('COUNT(DISTINCT direct_assistance.id) as direct_operations')
+            ->selectRaw('COALESCE(SUM(direct_assistance.amount), 0) as direct_amount')
+            ->join('beneficiaries', 'beneficiaries.id', '=', 'direct_assistance.beneficiary_id')
+            ->whereNull('direct_assistance.deleted_at')
+            ->where(function ($q) {
+                $q->whereNotNull('direct_assistance.distributed_at')
+                    ->orWhereIn('direct_assistance.status', ['released', 'completed']);
+            })
+            ->whereYear(DB::raw('COALESCE(direct_assistance.distributed_at, direct_assistance.created_at)'), $selectedYear)
+            ->groupBy('beneficiaries.barangay_id');
+
+        $beneficiariesAgg = Beneficiary::query()
+            ->select('barangay_id')
+            ->selectRaw('COUNT(DISTINCT id) as beneficiaries_total')
+            ->groupBy('barangay_id');
+
         $barangayInsights = Barangay::query()
             ->select('barangays.id', 'barangays.name as barangay_name')
-            ->selectRaw('COUNT(DISTINCT de.id) as total_events')
-            ->selectRaw('SUM(CASE WHEN de.type = "physical" THEN 1 ELSE 0 END) as event_distribution')
-            ->selectRaw('SUM(CASE WHEN de.type = "financial" THEN 1 ELSE 0 END) as financial_events')
-            ->selectRaw('COALESCE(SUM(a.amount), 0) as financial_amount')
-            ->selectRaw('COUNT(DISTINCT da.id) as direct_operations')
-            ->selectRaw('COALESCE(SUM(da.amount), 0) as direct_amount')
-            ->leftJoin('distribution_events as de', function ($join) use ($selectedYear) {
-                $join->on('de.barangay_id', '=', 'barangays.id')
-                    ->whereNull('de.deleted_at')
-                    ->where('de.status', 'Completed')
-                    ->whereYear('de.distribution_date', $selectedYear);
+            ->selectRaw('COALESCE(b_agg.beneficiaries_total, 0) as beneficiaries_total')
+            ->selectRaw('COALESCE(e_agg.total_events, 0) as total_events')
+            ->selectRaw('COALESCE(e_agg.completed_events, 0) as completed_events')
+            ->selectRaw('COALESCE(e_agg.pending_events, 0) as pending_events')
+            ->selectRaw('COALESCE(e_agg.ongoing_events, 0) as ongoing_events')
+            ->selectRaw('COALESCE(e_agg.event_distribution, 0) as event_distribution')
+            ->selectRaw('COALESCE(e_agg.financial_events, 0) as financial_events')
+            ->selectRaw('COALESCE(d_agg.direct_operations, 0) as direct_operations')
+            ->selectRaw('(COALESCE(e_agg.event_financial_amount, 0) + COALESCE(d_agg.direct_amount, 0)) as financial_amount')
+            ->leftJoinSub($eventInsightsAgg, 'e_agg', function ($join) {
+                $join->on('e_agg.barangay_id', '=', 'barangays.id');
             })
-            ->leftJoin('allocations as a', function ($join) {
-                $join->on('de.id', '=', 'a.distribution_event_id')
-                    ->whereNull('a.deleted_at')
-                    ->whereNotNull('a.distributed_at');
+            ->leftJoinSub($directInsightsAgg, 'd_agg', function ($join) {
+                $join->on('d_agg.barangay_id', '=', 'barangays.id');
             })
-            ->leftJoin('beneficiaries as b', 'b.barangay_id', '=', 'barangays.id')
-            ->leftJoin('direct_assistance as da', function ($join) use ($selectedYear) {
-                $join->on('b.id', '=', 'da.beneficiary_id')
-                    ->whereNull('da.deleted_at')
-                    ->where(function ($q) {
-                        $q->whereNotNull('da.distributed_at')
-                            ->orWhereIn('da.status', ['released', 'completed']);
-                    })
-                    ->whereYear(DB::raw('COALESCE(da.distributed_at, da.created_at)'), $selectedYear);
+            ->leftJoinSub($beneficiariesAgg, 'b_agg', function ($join) {
+                $join->on('b_agg.barangay_id', '=', 'barangays.id');
             })
-            ->groupBy('barangays.id', 'barangays.name')
-            ->having(DB::raw('COUNT(DISTINCT de.id) + COUNT(DISTINCT da.id)'), '>', 0)
+            ->where(function ($q) {
+                $q->whereNotNull('e_agg.barangay_id')
+                  ->orWhereNotNull('d_agg.barangay_id');
+            })
             ->orderByDesc('financial_amount')
             ->get();
 
         // AGENCY SUMMARY — Aggregated contribution metrics
         $agencySummary = Agency::query()
             ->select('agencies.id', 'agencies.name as agency_name')
+            ->selectRaw('COUNT(DISTINCT rt.id) as resource_types')
             ->selectRaw('COUNT(DISTINCT de.id) as total_events')
             ->selectRaw('SUM(CASE WHEN de.status = "Completed" THEN 1 ELSE 0 END) as completed_events')
-            ->selectRaw('COALESCE(SUM(a.amount), 0) as financial_amount')
+            ->selectRaw('(COUNT(DISTINCT a.beneficiary_id) + COUNT(DISTINCT da.beneficiary_id)) as beneficiaries_reached')
+            ->selectRaw('(COALESCE(SUM(a.quantity), 0) + COALESCE(SUM(da.quantity), 0)) as resource_quantity')
+            ->selectRaw('(COALESCE(SUM(a.amount), 0) + COALESCE(SUM(da.amount), 0)) as financial_amount')
             ->selectRaw('COUNT(DISTINCT da.id) as direct_operations')
             ->selectRaw('COALESCE(SUM(a.quantity), 0) as total_items_distributed')
             ->leftJoin('resource_types as rt', 'rt.agency_id', '=', 'agencies.id')

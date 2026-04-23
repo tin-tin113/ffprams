@@ -43,6 +43,10 @@
         </div>
     </details>
     <!-- NEW: Liquidation Health Gauge -->
+    @php
+        $hasPendingReports = isset($liquidationAging) && (($liquidationAging->bucket_30 ?? 0) + ($liquidationAging->bucket_60 ?? 0) + ($liquidationAging->bucket_90 ?? 0) + ($liquidationAging->bucket_over_90 ?? 0)) > 0;
+    @endphp
+    @if($hasPendingReports)
     <div class="card report-card border-0 mb-4 bg-light shadow-none">
         <div class="card-header report-card-header bg-transparent">
             <span class="report-card-title"><i class="bi bi-activity me-1"></i> Liquidation Health (Aging of Pending Reports)</span>
@@ -71,6 +75,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     @if($financialSummary->sum('total_amount_disbursed') > 0)
         <div class="card report-card border-0 mb-4">
