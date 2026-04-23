@@ -34,6 +34,34 @@
             </div>
         </div>
     </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-success text-white border-bottom-0 py-3">
+                    <h5 class="modal-title fw-bold" id="confirmationModalLabel">
+                        <i class="bi bi-file-earmark-check me-2"></i>Review Registration Details
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="p-4 bg-light border-bottom">
+                        <p class="text-muted mb-0 small text-uppercase fw-bold tracking-wider">Confirm if the following information is correct before saving.</p>
+                    </div>
+                    <div id="summaryContent" class="p-4">
+                        <!-- Summary will be injected here -->
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top-0 py-3">
+                    <button type="button" class="btn btn-link text-decoration-none text-muted fw-semibold" data-bs-dismiss="modal">Go back and edit</button>
+                    <button type="button" id="confirmSubmitBtn" class="btn btn-success px-4 fw-bold shadow-sm">
+                        <i class="bi bi-check-circle me-1"></i> Register Beneficiary
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -207,6 +235,186 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    var confirmationModalEl = document.getElementById('confirmationModal');
+    var confirmationModal = confirmationModalEl ? new bootstrap.Modal(confirmationModalEl) : null;
+    var confirmSubmitBtn = document.getElementById('confirmSubmitBtn');
+    var summaryContent = document.getElementById('summaryContent');
+
+    function getLabelFor(name) {
+        var input = form.querySelector('[name="' + name + '"]');
+        if (!input) return name;
+        
+        var id = input.id;
+        if (id) {
+            var label = form.querySelector('label[for="' + id + '"]');
+            if (label) return label.textContent.replace('*', '').trim();
+        }
+        
+        // Try parent label if it's a checkbox/radio
+        var parentLabel = input.closest('.form-check')?.querySelector('.form-check-label');
+        if (parentLabel) return parentLabel.textContent.trim();
+
+        // Try preceding label
+        var prevLabel = input.previousElementSibling;
+        if (prevLabel && prevLabel.tagName === 'LABEL') return prevLabel.textContent.replace('*', '').trim();
+
+        return name;
+    }
+
+    function updateSummary() {
+        if (!summaryContent) return;
+        
+        var formData = new FormData(form);
+        var html = '<div class="row g-4">';
+
+        function addSummarySection(title, fields, icon) {
+            var sectionHtml = '<div class="col-12"><div class="d-flex align-items-center mb-2 text-success"><i class="bi ' + icon + ' me-2"></i><h6 class="mb-0 fw-bold text-uppercase small tracking-wider">' + title + '</h6></div><div class="row g-3 bg-white p-3 rounded border shadow-sm mx-0">';
+            var hasFields = false;
+
+            fields.forEach(function(field) {
+                var value = '';
+                var label = '';
+                
+                if (typeof field === 'string') {
+                    label = getLabelFor(field);
+                    var input = form.querySelector('[name="' + field + '"]');
+                    if (input && input.tagName === 'SELECT') {
+                        value = input.options[input.selectedIndex]?.text || 'N/A';
+                    } else if (input && (input.type === 'checkbox' || input.type === 'radio')) {
+                        // For single checkbox (like association_member)
+                        if (input.checked) {
+                            value = 'Yes';
+                        } else {
+                            value = 'No';
+                        }
+                    } else {
+                        value = formData.get(field) || 'N/A';
+                    }
+                } else {
+                    label = field.label;
+                    value = field.value;
+                }
+
+                if (value && value !== 'N/A' && value !== 'Select...' && value !== 'No') {
+                    hasFields = true;
+                    sectionHtml += '<div class="col-md-6"><div class="small text-muted mb-1">' + label + '</div><div class="fw-bold">' + value + '</div></div>';
+                } else if (value === 'No' && (field === 'association_member' || field === 'has_fishing_vessel')) {
+                    // Still show "No" for important toggles if needed, but let's keep it clean
+                    hasFields = true;
+                    sectionHtml += '<div class="col-md-6"><div class="small text-muted mb-1">' + label + '</div><div class="fw-bold">' + value + '</div></div>';
+                }
+            });
+
+            sectionHtml += '</div></div>';
+            if (hasFields) html += sectionHtml;
+        }
+
+        // 1. Basic Info
+        var selectedAgencies = Array.from(document.querySelectorAll('#agency-checkboxes .agency-checkbox:checked'))
+            .map(function(cb) { return cb.dataset.agencyName; })
+            .join(', ');
+
+        addSummarySection('Registration Context', [
+            'classification',
+            { label: 'Agencies', value: selectedAgencies || 'None' },
+            'status',
+            'registered_at'
+        ], 'bi-info-circle');
+
+        // 2. Personal Info
+        var fullName = [formData.get('first_name'), formData.get('middle_name'), formData.get('last_name')].filter(Boolean).join(' ');
+        if (formData.get('name_suffix')) fullName += ' ' + formData.get('name_suffix');
+        
+        addSummarySection('Personal Information', [
+            { label: 'Full Name', value: fullName },
+            'sex',
+            'date_of_birth',
+            'civil_status',
+            'contact_number',
+            'id_type',
+            'id_number'
+        ], 'bi-person');
+
+        // 3. Address
+        var barangaySelect = document.getElementById('barangay_id');
+        var barangay = barangaySelect ? barangaySelect.options[barangaySelect.selectedIndex]?.text : 'N/A';
+        addSummarySection('Address', [
+            'home_address',
+            { label: 'Barangay', value: barangay }
+        ], 'bi-geo-alt');
+
+        // 4. Sector Specific
+        var classification = formData.get('classification');
+        if (classification === 'Farmer') {
+            addSummarySection('Farmer Details', [
+                'farm_ownership',
+                'farm_type',
+                'farm_size_hectares',
+                'primary_commodity',
+                'organization_membership',
+                'association_member',
+                'association_name'
+            ], 'bi-leaf');
+        } else if (classification === 'Fisherfolk') {
+            addSummarySection('Fisherfolk Details', [
+                'fisherfolk_type',
+                'main_fishing_gear',
+                'length_of_residency_months',
+                'has_fishing_vessel',
+                'fishing_vessel_type',
+                'fishing_vessel_tonnage',
+                'association_member',
+                'association_name'
+            ], 'bi-water');
+        }
+
+        // 5. Dynamic Agency Fields
+        var dynamicSections = form.querySelectorAll('#dynamic-agencies-container > div.col-12.mb-4');
+        dynamicSections.forEach(function(section) {
+            var agencyTitle = section.querySelector('.fw-bold')?.textContent?.trim() || 'Agency Field';
+            var fields = [];
+            
+            // Look for both standard inputs and those inside required field wrappers
+            section.querySelectorAll('input:not([type="hidden"]), select, textarea').forEach(function(input) {
+                // Skip availability status selects if they are 'provided' (the value is more important)
+                if (input.classList.contains('availability-status-select')) return;
+                
+                var val = '';
+                if (input.tagName === 'SELECT') {
+                    val = input.options[input.selectedIndex]?.text;
+                } else {
+                    val = input.value;
+                }
+                
+                if (val && val !== 'Select...' && val.trim() !== '') {
+                    // Try to find label in the same container
+                    var label = '';
+                    var labelEl = section.querySelector('label[for="' + input.id + '"]');
+                    if (labelEl) {
+                        label = labelEl.textContent.replace('*', '').trim();
+                    } else {
+                        // Try to find label in previous sibling
+                        var prev = input.previousElementSibling;
+                        if (prev && prev.tagName === 'LABEL') {
+                            label = prev.textContent.replace('*', '').trim();
+                        } else {
+                            label = input.name.split('[').pop().replace(']', '').replace(/_/g, ' ');
+                            label = label.charAt(0).toUpperCase() + label.slice(1);
+                        }
+                    }
+                    fields.push({ label: label, value: val });
+                }
+            });
+            
+            if (fields.length > 0) {
+                addSummarySection(agencyTitle, fields, 'bi-building');
+            }
+        });
+
+        html += '</div>';
+        summaryContent.innerHTML = html;
+    }
+
     form.addEventListener('submit', function (event) {
         event.preventDefault();
 
@@ -218,6 +426,18 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        updateSummary();
+        confirmationModal.show();
+    });
+
+    if (confirmSubmitBtn) {
+        confirmSubmitBtn.addEventListener('click', function() {
+            confirmationModal.hide();
+            executeSubmit();
+        });
+    }
+
+    function executeSubmit() {
         setSubmittingState(true);
 
         fetch(form.action, {
@@ -277,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .finally(function () {
             setSubmittingState(false);
         });
-    });
+    }
 });
 </script>
 @endpush

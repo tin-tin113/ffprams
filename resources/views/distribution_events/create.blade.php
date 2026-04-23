@@ -324,6 +324,35 @@
         </div>
     </form>
 
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-success text-white border-0 py-3">
+                    <h5 class="modal-title d-flex align-items-center" id="confirmationModalLabel">
+                        <i class="bi bi-check2-circle me-2 fs-4"></i>
+                        Confirm Distribution Event Details
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 bg-light">
+                    <p class="text-muted mb-4">Please review the event details below before creating.</p>
+                    <div id="summaryContent" class="mb-0" style="max-height: 60vh; overflow-y: auto;">
+                        <!-- Summary will be injected here -->
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 bg-white">
+                    <button type="button" class="btn btn-outline-secondary px-4 py-2" data-bs-dismiss="modal">
+                        <i class="bi bi-pencil me-1"></i> Edit Details
+                    </button>
+                    <button type="button" class="btn btn-success px-4 py-2" id="confirmSubmitBtn">
+                        <i class="bi bi-check2-circle me-1"></i> Confirm & Create
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090;">
         <div id="distributionEventCreateToast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
@@ -754,6 +783,110 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    var confirmationModalEl = document.getElementById('confirmationModal');
+    var confirmationModal = confirmationModalEl ? new bootstrap.Modal(confirmationModalEl) : null;
+    var confirmSubmitBtn = document.getElementById('confirmSubmitBtn');
+    var summaryContent = document.getElementById('summaryContent');
+
+    function getLabelFor(name) {
+        var input = form.querySelector('[name="' + name + '"]');
+        if (!input) return name;
+        
+        var id = input.id;
+        if (id) {
+            var label = form.querySelector('label[for="' + id + '"]');
+            if (label) return label.textContent.replace('*', '').trim();
+        }
+        
+        // Try parent label if it's a checkbox/radio
+        var parentLabel = input.closest('.form-check')?.querySelector('.form-check-label');
+        if (parentLabel) return parentLabel.textContent.trim();
+
+        // Try preceding label
+        var prevLabel = input.previousElementSibling;
+        if (prevLabel && prevLabel.tagName === 'LABEL') return prevLabel.textContent.replace('*', '').trim();
+
+        return name;
+    }
+
+    function updateSummary() {
+        if (!summaryContent) return;
+        
+        var formData = new FormData(form);
+        var html = '<div class="row g-4">';
+
+        function addSummarySection(title, fields, icon) {
+            var sectionHtml = '<div class="col-12"><div class="d-flex align-items-center mb-2 text-success"><i class="bi ' + icon + ' me-2"></i><h6 class="mb-0 fw-bold text-uppercase small tracking-wider">' + title + '</h6></div><div class="row g-3 bg-white p-3 rounded border shadow-sm mx-0">';
+            var hasFields = false;
+
+            fields.forEach(function(field) {
+                var value = '';
+                var label = '';
+                
+                if (typeof field === 'string') {
+                    label = getLabelFor(field);
+                    var input = form.querySelector('[name="' + field + '"]');
+                    if (input && input.tagName === 'SELECT') {
+                        value = input.options[input.selectedIndex]?.text || 'N/A';
+                    } else if (input && (input.type === 'checkbox' || input.type === 'radio')) {
+                        if (input.type === 'radio') {
+                             var checkedRadio = form.querySelector('input[name="' + field + '"]:checked');
+                             value = checkedRadio ? checkedRadio.nextElementSibling.textContent.trim() : 'N/A';
+                        } else {
+                             value = input.checked ? 'Yes' : 'No';
+                        }
+                    } else {
+                        value = formData.get(field) || 'N/A';
+                    }
+                } else {
+                    label = field.label;
+                    value = field.value;
+                }
+
+                if (value && value !== 'N/A' && value !== 'Select...' && value !== 'Select Barangay' && value !== 'Select Program Name' && value !== 'Select Resource Type') {
+                    hasFields = true;
+                    sectionHtml += '<div class="col-md-6"><div class="small text-muted mb-1">' + label + '</div><div class="fw-bold">' + value + '</div></div>';
+                }
+            });
+
+            sectionHtml += '</div></div>';
+            if (hasFields) html += sectionHtml;
+        }
+
+        // 1. Event Details
+        addSummarySection('Event Details', [
+            'type',
+            'barangay_id',
+            'program_name_id',
+            'resource_type_id',
+            'distribution_date'
+        ], 'bi-calendar-event');
+
+        // 2. Financial Details (if financial)
+        var type = form.querySelector('input[name="type"]:checked')?.value;
+        if (type === 'financial') {
+            addSummarySection('Financial Details', [
+                'total_fund_amount',
+                'fund_source',
+                'trust_account_code',
+                'fund_release_reference'
+            ], 'bi-cash-stack');
+
+            addSummarySection('Legal & Compliance', [
+                'legal_basis_type',
+                'legal_basis_reference_no',
+                'legal_basis_date',
+                'liquidation_status',
+                'liquidation_due_date',
+                'compliance_overall_status',
+                'compliance_overall_reason'
+            ], 'bi-shield-check');
+        }
+
+        html += '</div>';
+        summaryContent.innerHTML = html;
+    }
+
     form.addEventListener('submit', function (event) {
         event.preventDefault();
 
@@ -765,17 +898,16 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        if (typeof confirmThenRun === 'function') {
-            confirmThenRun(
-                'Confirm Event Creation',
-                'Create this distribution event?',
-                submitCreateRequest
-            );
-            return;
-        }
-
-        submitCreateRequest();
+        updateSummary();
+        confirmationModal.show();
     });
+
+    if (confirmSubmitBtn) {
+        confirmSubmitBtn.addEventListener('click', function() {
+            confirmationModal.hide();
+            submitCreateRequest();
+        });
+    }
 });
 </script>
 @endpush
