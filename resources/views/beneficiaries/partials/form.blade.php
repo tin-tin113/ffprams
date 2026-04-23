@@ -213,8 +213,8 @@
 
 {{-- SECTION 0 — Registration Context --}}
 <div class="mb-5 bg-light rounded-3 p-4 border">
-    <div class="row g-4 align-items-start">
-        {{-- Classification --}}
+    <div class="row g-4">
+        {{-- Sector/Classification --}}
         <div class="col-12 col-md-3">
             <label for="classification" class="form-label text-muted fw-semibold small text-uppercase">Sector <span class="text-danger">*</span></label>
             <select class="form-select border-secondary border-opacity-25 @error('classification') is-invalid @enderror"
@@ -230,40 +230,39 @@
         </div>
 
         {{-- Agency Selection (Multi-Select) --}}
-        <div class="col-12 col-md-9 border-start ps-4">
+        <div class="col-12 col-md-9 border-md-start ps-md-4">
             <label class="form-label text-muted fw-semibold small text-uppercase">Required Document Agencies <span class="text-danger">*</span></label>
-            <div id="agency-checkboxes" class="mb-1">
+            <div id="agency-checkboxes" class="mb-1 d-flex flex-wrap gap-4">
                 {{-- Populated dynamically --}}
             </div>
             <small class="text-muted">Fields will dynamically adjust based on your selection.</small>
             @error('agencies')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
         </div>
-    </div>
-</div>
 
-{{-- Meta Information --}}
-<div class="row g-4 mb-5 border-bottom pb-4">
-    {{-- Status --}}
-    <div class="col-12 col-md-4">
-        <label for="status" class="form-label text-muted fw-semibold small text-uppercase">Account Status <span class="text-danger">*</span></label>
-        <select class="form-select @error('status') is-invalid @enderror"
-                id="status" name="status" required>
-            @foreach(['Active', 'Inactive'] as $s)
-                <option value="{{ $s }}" {{ old('status', $beneficiary->status ?? 'Active') === $s ? 'selected' : '' }}>{{ $s }}</option>
-            @endforeach
-        </select>
-        @error('status')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
+        <div class="col-12"><hr class="text-black-50 my-1 border-dashed"></div>
 
-    {{-- Registration Date --}}
-    <div class="col-12 col-md-4">
-        <label for="registered_at" class="form-label text-muted fw-semibold small text-uppercase">Registration Date <span class="text-danger">*</span></label>
-        <input type="date" class="form-control @error('registered_at') is-invalid @enderror"
-               id="registered_at" name="registered_at"
-               value="{{ old('registered_at', isset($beneficiary) && $beneficiary->registered_at ? $beneficiary->registered_at->format('Y-m-d') : '') }}" required>
-        @error('registered_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        {{-- Status --}}
+        <div class="col-12 col-md-4">
+            <label for="status" class="form-label text-muted fw-semibold small text-uppercase">Account Status <span class="text-danger">*</span></label>
+            <select class="form-select @error('status') is-invalid @enderror"
+                    id="status" name="status" required>
+                @foreach(['Active', 'Inactive'] as $s)
+                    <option value="{{ $s }}" {{ old('status', $beneficiary->status ?? 'Active') === $s ? 'selected' : '' }}>{{ $s }}</option>
+                @endforeach
+            </select>
+            @error('status')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+
+        {{-- Registration Date --}}
+        <div class="col-12 col-md-4">
+            <label for="registered_at" class="form-label text-muted fw-semibold small text-uppercase">Registration Date <span class="text-danger">*</span></label>
+            <input type="date" class="form-control @error('registered_at') is-invalid @enderror"
+                   id="registered_at" name="registered_at"
+                   value="{{ old('registered_at', isset($beneficiary) && $beneficiary->registered_at ? $beneficiary->registered_at->format('Y-m-d') : '') }}" required>
+            @error('registered_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        </div>
     </div>
 </div>
 
@@ -446,15 +445,17 @@
         </div>
 </div>
 
-{{-- SECTION 3 — Farmer Information (DA/RSBSA) --}}
+{{-- SECTION 3 — Farmer Information --}}
 <div class="mb-5" id="farmer-info-section" style="display: none;">
     <div class="border-bottom pb-2 mb-4">
         <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-leaf me-2 text-muted"></i>Farmer Information</h5>
     </div>
-        <div class="row g-4">
-            <div class="col-12 col-md-6">
-                <label for="rsbsa_availability_status" class="form-label">Farmer Availability Status <span class="text-danger">*</span></label>
-                <select class="form-select @error('rsbsa_availability_status') is-invalid @enderror"
+    
+    <div class="col-12 border rounded p-3 mb-4 bg-light bg-opacity-50">
+        <div class="row g-3 align-items-center mb-3">
+            <div class="col-md-4">
+                <label for="rsbsa_availability_status" class="form-label mb-1 text-muted fw-semibold small text-uppercase">Farmer Data Availability <span class="text-danger">*</span></label>
+                <select class="form-select form-select-sm @error('rsbsa_availability_status') is-invalid @enderror"
                         id="rsbsa_availability_status"
                         name="rsbsa_availability_status">
                     <option value="provided" {{ $rsbsaAvailabilityStatus === 'provided' ? 'selected' : '' }}>Provided</option>
@@ -464,19 +465,28 @@
                 </select>
                 @error('rsbsa_availability_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="col-12 {{ $rsbsaAvailabilityStatus === 'provided' ? 'd-none' : '' }}" id="rsbsa-reason-wrapper">
-                <label for="rsbsa_unavailability_reason" class="form-label">Reason for Unavailability <span class="text-danger">*</span></label>
-                <textarea class="form-control @error('rsbsa_unavailability_reason') is-invalid @enderror"
-                          id="rsbsa_unavailability_reason"
-                          name="rsbsa_unavailability_reason"
-                          rows="3"
-                          maxlength="500"
-                          placeholder="Explain why farmer fields are unavailable (e.g., specific agency or classification is missing)..."
-                          {{ $rsbsaAvailabilityStatus !== 'provided' ? 'required' : '' }}>{{ old('rsbsa_unavailability_reason', $beneficiary->rsbsa_unavailability_reason ?? '') }}</textarea>
-                @error('rsbsa_unavailability_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            <div class="col-md-8">
+                <div class="text-muted small">Select the current availability status for the farmer-specific profile (ownership, farm size, etc).</div>
             </div>
-            <div id="rsbsa-fields-wrapper" class="contents {{ $rsbsaAvailabilityStatus === 'provided' ? '' : 'd-none' }}">
-            <div class="col-12 col-md-6">
+        </div>
+
+        <div class="col-12 {{ $rsbsaAvailabilityStatus === 'provided' ? 'd-none' : '' }}" id="rsbsa-reason-wrapper">
+            <div class="row">
+                <div class="col-12 col-md-10 mt-2">
+                    <label for="rsbsa_unavailability_reason" class="form-label text-danger">Reason for Unavailability <span class="text-danger">*</span></label>
+                    <textarea class="form-control border-danger-subtle @error('rsbsa_unavailability_reason') is-invalid @enderror"
+                              id="rsbsa_unavailability_reason" name="rsbsa_unavailability_reason" rows="2" maxlength="500"
+                              placeholder="Explain why farmer fields are unavailable..."
+                              {{ $rsbsaAvailabilityStatus !== 'provided' ? 'required' : '' }}>{{ old('rsbsa_unavailability_reason', $beneficiary->rsbsa_unavailability_reason ?? '') }}</textarea>
+                    @error('rsbsa_unavailability_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="rsbsa-fields-wrapper" class="contents {{ $rsbsaAvailabilityStatus === 'provided' ? '' : 'd-none' }}">
+        <div class="row g-4">
+            <div class="col-12 col-md-4">
                 <label for="farm_ownership" class="form-label">Farm Ownership {!! $farmOwnershipRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('farm_ownership') is-invalid @enderror" id="farm_ownership" name="farm_ownership">
                     <option value="">Select...</option>
@@ -500,21 +510,8 @@
                 </select>
                 @error('farm_ownership')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="col-12 col-md-6">
-                <label for="farm_size_hectares" class="form-label">Farm Size (Hectares) <span class="text-danger">*</span></label>
-                <input type="number" class="form-control @error('farm_size_hectares') is-invalid @enderror"
-                       id="farm_size_hectares" name="farm_size_hectares" step="0.01" min="0"
-                       value="{{ old('farm_size_hectares', $beneficiary->farm_size_hectares ?? '') }}">
-                @error('farm_size_hectares')<div class="invalid-feedback">{{ $message }}</div>@enderror
-            </div>
-            <div class="col-12 col-md-6">
-                <label for="primary_commodity" class="form-label">Primary Commodity <span class="text-danger">*</span></label>
-                <input type="text" class="form-control @error('primary_commodity') is-invalid @enderror"
-                       id="primary_commodity" name="primary_commodity" maxlength="255"
-                       value="{{ old('primary_commodity', $beneficiary->primary_commodity ?? '') }}">
-                @error('primary_commodity')<div class="invalid-feedback">{{ $message }}</div>@enderror
-            </div>
-            <div class="col-12 col-md-6">
+            
+            <div class="col-12 col-md-4">
                 <label for="farm_type" class="form-label">Farm Type {!! $farmTypeRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('farm_type') is-invalid @enderror" id="farm_type" name="farm_type">
                     <option value="">Select...</option>
@@ -538,6 +535,23 @@
                 </select>
                 @error('farm_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
+
+            <div class="col-12 col-md-4">
+                <label for="farm_size_hectares" class="form-label">Farm Size (Hectares) <span class="text-danger">*</span></label>
+                <input type="number" class="form-control @error('farm_size_hectares') is-invalid @enderror"
+                       id="farm_size_hectares" name="farm_size_hectares" step="0.01" min="0"
+                       value="{{ old('farm_size_hectares', $beneficiary->farm_size_hectares ?? '') }}">
+                @error('farm_size_hectares')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            
+            <div class="col-12 col-md-6">
+                <label for="primary_commodity" class="form-label">Primary Commodity <span class="text-danger">*</span></label>
+                <input type="text" class="form-control @error('primary_commodity') is-invalid @enderror"
+                       id="primary_commodity" name="primary_commodity" maxlength="255"
+                       value="{{ old('primary_commodity', $beneficiary->primary_commodity ?? '') }}">
+                @error('primary_commodity')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+            
             <div class="col-12 col-md-6">
                 <label for="organization_membership" class="form-label">Organization Membership</label>
                 <input type="text" class="form-control @error('organization_membership') is-invalid @enderror"
@@ -549,8 +563,8 @@
             @foreach($customFieldGroups->get('farmer_information', collect()) as $customField)
                 @include('beneficiaries.partials.custom-field-input', ['customField' => $customField, 'beneficiaryCustomFields' => $beneficiaryCustomFields])
             @endforeach
-            </div>
         </div>
+    </div>
 </div>
 
 {{-- SECTION 4 — Fisherfolk Information --}}
@@ -558,10 +572,12 @@
     <div class="border-bottom pb-2 mb-4">
         <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-water me-2 text-muted"></i>Fisherfolk Information</h5>
     </div>
-        <div class="row g-4">
-            <div class="col-12 col-md-6">
-                <label for="fishr_availability_status" class="form-label">Fisherfolk Availability Status <span class="text-danger">*</span></label>
-                <select class="form-select @error('fishr_availability_status') is-invalid @enderror"
+    
+    <div class="col-12 border rounded p-3 mb-4 bg-light bg-opacity-50">
+        <div class="row g-3 align-items-center mb-3">
+            <div class="col-md-4">
+                <label for="fishr_availability_status" class="form-label mb-1 text-muted fw-semibold small text-uppercase">Fisherfolk Data Availability <span class="text-danger">*</span></label>
+                <select class="form-select form-select-sm @error('fishr_availability_status') is-invalid @enderror"
                         id="fishr_availability_status"
                         name="fishr_availability_status">
                     <option value="provided" {{ $fishrAvailabilityStatus === 'provided' ? 'selected' : '' }}>Provided</option>
@@ -571,19 +587,28 @@
                 </select>
                 @error('fishr_availability_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="col-12 {{ $fishrAvailabilityStatus === 'provided' ? 'd-none' : '' }}" id="fishr-reason-wrapper">
-                <label for="fishr_unavailability_reason" class="form-label">Reason for Unavailability <span class="text-danger">*</span></label>
-                <textarea class="form-control @error('fishr_unavailability_reason') is-invalid @enderror"
-                          id="fishr_unavailability_reason"
-                          name="fishr_unavailability_reason"
-                          rows="3"
-                          maxlength="500"
-                          placeholder="Explain why fisherfolk fields are unavailable (e.g., specific agency or classification is missing)..."
-                          {{ $fishrAvailabilityStatus !== 'provided' ? 'required' : '' }}>{{ old('fishr_unavailability_reason', $beneficiary->fishr_unavailability_reason ?? '') }}</textarea>
-                @error('fishr_unavailability_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            <div class="col-md-8">
+                <div class="text-muted small">Select the current availability status for the fisherfolk-specific profile.</div>
             </div>
-            <div id="fishr-fields-wrapper" class="contents {{ $fishrAvailabilityStatus === 'provided' ? '' : 'd-none' }}">
-            <div class="col-12 col-md-6">
+        </div>
+
+        <div class="col-12 {{ $fishrAvailabilityStatus === 'provided' ? 'd-none' : '' }}" id="fishr-reason-wrapper">
+            <div class="row">
+                <div class="col-12 col-md-10 mt-2">
+                    <label for="fishr_unavailability_reason" class="form-label text-danger">Reason for Unavailability <span class="text-danger">*</span></label>
+                    <textarea class="form-control border-danger-subtle @error('fishr_unavailability_reason') is-invalid @enderror"
+                              id="fishr_unavailability_reason" name="fishr_unavailability_reason" rows="2" maxlength="500"
+                              placeholder="Explain why fisherfolk fields are unavailable..."
+                              {{ $fishrAvailabilityStatus !== 'provided' ? 'required' : '' }}>{{ old('fishr_unavailability_reason', $beneficiary->fishr_unavailability_reason ?? '') }}</textarea>
+                    @error('fishr_unavailability_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="fishr-fields-wrapper" class="contents {{ $fishrAvailabilityStatus === 'provided' ? '' : 'd-none' }}">
+        <div class="row g-4">
+            <div class="col-12 col-md-4">
                 <label for="fisherfolk_type" class="form-label">Fisherfolk Type {!! $fisherfolkTypeRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('fisherfolk_type') is-invalid @enderror" id="fisherfolk_type" name="fisherfolk_type">
                     <option value="">Select...</option>
@@ -607,14 +632,16 @@
                 </select>
                 @error('fisherfolk_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="col-12 col-md-6">
+            
+            <div class="col-12 col-md-4">
                 <label for="main_fishing_gear" class="form-label">Main Fishing Gear</label>
                 <input type="text" class="form-control @error('main_fishing_gear') is-invalid @enderror"
                        id="main_fishing_gear" name="main_fishing_gear" maxlength="255"
                        value="{{ old('main_fishing_gear', $beneficiary->main_fishing_gear ?? '') }}">
                 @error('main_fishing_gear')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="col-12 col-md-6">
+            
+            <div class="col-12 col-md-4">
                 <label for="length_of_residency_months" class="form-label">Length of Residency (Months) <span class="text-danger">*</span></label>
                 <input type="number" class="form-control @error('length_of_residency_months') is-invalid @enderror"
                        id="length_of_residency_months" name="length_of_residency_months" min="0"
@@ -622,14 +649,16 @@
                 <small class="text-muted">At least 6 months per RA 8550</small>
                 @error('length_of_residency_months')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
+            
             <div class="col-12">
-                <div class="form-check form-switch">
+                <div class="form-check form-switch bg-light p-3 rounded d-inline-block ps-5">
                     <input type="hidden" name="has_fishing_vessel" value="0">
                     <input type="checkbox" class="form-check-input" id="has_fishing_vessel" name="has_fishing_vessel" value="1"
                            {{ old('has_fishing_vessel', $beneficiary->has_fishing_vessel ?? false) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="has_fishing_vessel">Has Fishing Vessel</label>
+                    <label class="form-check-label ms-2 fw-medium" for="has_fishing_vessel">Has Fishing Vessel</label>
                 </div>
             </div>
+            
             <div class="col-12 col-md-6" id="vessel-type-wrapper" style="display: none;">
                 <label for="fishing_vessel_type" class="form-label">Fishing Vessel Type</label>
                 <input type="text" class="form-control @error('fishing_vessel_type') is-invalid @enderror"
@@ -637,6 +666,7 @@
                        value="{{ old('fishing_vessel_type', $beneficiary->fishing_vessel_type ?? '') }}">
                 @error('fishing_vessel_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
+            
             <div class="col-12 col-md-6" id="vessel-tonnage-wrapper" style="display: none;">
                 <label for="fishing_vessel_tonnage" class="form-label">Fishing Vessel Tonnage</label>
                 <input type="number" class="form-control @error('fishing_vessel_tonnage') is-invalid @enderror"
@@ -648,8 +678,8 @@
             @foreach($customFieldGroups->get('fisherfolk_information', collect()) as $customField)
                 @include('beneficiaries.partials.custom-field-input', ['customField' => $customField, 'beneficiaryCustomFields' => $beneficiaryCustomFields])
             @endforeach
-            </div>
         </div>
+    </div>
 </div>
 
 

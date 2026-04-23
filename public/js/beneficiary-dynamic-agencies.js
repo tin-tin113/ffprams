@@ -69,26 +69,23 @@ class DynamicAgencyForm {
             return;
         }
 
-        let html = '<div class="row g-2">';
+        let html = '';
         agencies.forEach(agency => {
             const isChecked = this.selectedAgencies.has(agency.id);
             html += `
-                <div class="col-12 col-md-6">
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input agency-checkbox"
-                               id="agency_${agency.id}"
-                               data-agency-id="${agency.id}"
-                               data-agency-name="${agency.name}"
-                               ${isChecked ? 'checked' : ''}>
-                        <label class="form-check-label" for="agency_${agency.id}">
-                            <strong>${agency.name}</strong>
-                            <small class="text-muted d-block">${agency.full_name}</small>
-                        </label>
-                    </div>
+                <div class="form-check border p-3 rounded bg-white flex-grow-1" style="min-width: 200px;">
+                    <input type="checkbox" class="form-check-input agency-checkbox ms-1"
+                           id="agency_${agency.id}"
+                           data-agency-id="${agency.id}"
+                           data-agency-name="${agency.name}"
+                           ${isChecked ? 'checked' : ''}>
+                    <label class="form-check-label ms-2" for="agency_${agency.id}">
+                        <span class="fw-bold text-dark">${agency.name}</span>
+                        <small class="text-muted d-block mt-1 lh-sm">${agency.full_name}</small>
+                    </label>
                 </div>
             `;
         });
-        html += '</div>';
 
         this.agencyCheckboxesContainer.innerHTML = html;
 
