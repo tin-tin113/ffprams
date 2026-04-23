@@ -323,6 +323,7 @@
                         <button type="button" class="btn btn-sm btn-outline-primary" id="selectAllRefined">
                             <i class="bi bi-check-all me-1"></i>Select All
                         </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="clearAllRefined">Clear All</button>
                         <small class="text-muted align-self-center"><span id="refinedCount">0</span> selected</small>
                     </div>
                 </div>
@@ -676,6 +677,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(r => r.json())
             .then(data => {
                 filterBeneficiaries = data.recipients || [];
+                filterBeneficiaries.forEach(b => b._selected = false);
                 renderSecondaryBeneficiaryList();
                 document.getElementById('secondaryBeneficiaryFilter').style.display = 'block';
             })
@@ -696,7 +698,7 @@ document.addEventListener('DOMContentLoaded', function () {
         list.innerHTML = filtered.map(b => `
             <div class="beneficiary-checkbox-item">
                 <div class="form-check">
-                    <input class="form-check-input refined-checkbox" type="checkbox" id="refined-${b.id}" value="${b.id}" data-name="${b.full_name}" checked>
+                    <input class="form-check-input refined-checkbox" type="checkbox" id="refined-${b.id}" value="${b.id}" data-name="${b.full_name}" ${b._selected ? 'checked' : ''}>
                     <label class="form-check-label" for="refined-${b.id}">
                         <div class="fw-semibold small">${b.full_name}</div>
                         <small class="text-muted">${b.barangay || '—'} • ${b.contact_number || 'No contact'}</small>
@@ -706,15 +708,20 @@ document.addEventListener('DOMContentLoaded', function () {
         `).join('');
 
         document.querySelectorAll('.refined-checkbox').forEach(cb => {
-            cb.addEventListener('change', updateRefinedCount);
+            cb.addEventListener('change', (e) => {
+                const bId = parseInt(e.target.value);
+                const ben = filterBeneficiaries.find(b => b.id === bId);
+                if (ben) ben._selected = e.target.checked;
+                updateRefinedCount();
+            });
         });
 
-        // Update count immediately since all are checked by default
+        // Update count immediately
         updateRefinedCount();
     }
 
     function updateRefinedCount() {
-        const count = document.querySelectorAll('.refined-checkbox:checked').length;
+        const count = filterBeneficiaries.filter(b => b._selected).length;
         document.getElementById('refinedCount').textContent = count;
         updatePreview();
     }
@@ -722,8 +729,18 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('beneficiaryFilterSearch')?.addEventListener('input', renderSecondaryBeneficiaryList);
 
     document.getElementById('selectAllRefined')?.addEventListener('click', () => {
-        document.querySelectorAll('.refined-checkbox').forEach(cb => cb.checked = true);
-        updateRefinedCount();
+        const search = (document.getElementById('beneficiaryFilterSearch')?.value || '').toLowerCase();
+        filterBeneficiaries.forEach(b => {
+             if (b.full_name.toLowerCase().includes(search)) {
+                 b._selected = true;
+             }
+        });
+        renderSecondaryBeneficiaryList();
+    });
+
+    document.getElementById('clearAllRefined')?.addEventListener('click', () => {
+        filterBeneficiaries.forEach(b => b._selected = false);
+        renderSecondaryBeneficiaryList();
     });
 
     // ══════════════════════════════════════════════════════════════════════════════
@@ -735,6 +752,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(r => r.json())
             .then(data => {
                 window.allBeneficiaries = data.recipients || [];
+                window.allBeneficiaries.forEach(b => b._selected = false);
                 renderBeneficiaryList();
             });
     }
@@ -752,7 +770,7 @@ document.addEventListener('DOMContentLoaded', function () {
         list.innerHTML = filtered.map(b => `
             <div class="beneficiary-checkbox-item">
                 <div class="form-check">
-                    <input class="form-check-input specific-checkbox" type="checkbox" id="specific-${b.id}" value="${b.id}" checked>
+                    <input class="form-check-input specific-checkbox" type="checkbox" id="specific-${b.id}" value="${b.id}" ${b._selected ? 'checked' : ''}>
                     <label class="form-check-label" for="specific-${b.id}">
                         <div class="fw-semibold small">${b.full_name}</div>
                         <small class="text-muted">${b.barangay || '—'} • ${b.contact_number || 'No contact'}</small>
@@ -762,32 +780,38 @@ document.addEventListener('DOMContentLoaded', function () {
         `).join('');
 
         document.querySelectorAll('.specific-checkbox').forEach(cb => {
-            cb.addEventListener('change', () => {
+            cb.addEventListener('change', (e) => {
+                const bId = parseInt(e.target.value);
+                const ben = window.allBeneficiaries.find(b => b.id === bId);
+                if (ben) ben._selected = e.target.checked;
                 updateSelectedCount();
                 updatePreview();
             });
         });
 
-        // Update count and preview immediately since all are checked by default
+        // Update count and preview immediately
         updateSelectedCount();
         updatePreview();
     }
 
     function updateSelectedCount() {
-        const count = document.querySelectorAll('.specific-checkbox:checked').length;
+        const count = window.allBeneficiaries.filter(b => b._selected).length;
         document.getElementById('selectedCount').textContent = count;
     }
 
     document.getElementById('beneficiarySearch')?.addEventListener('input', renderBeneficiaryList);
     document.getElementById('selectAllVisible')?.addEventListener('click', () => {
-        document.querySelectorAll('.specific-checkbox').forEach(cb => cb.checked = true);
-        updateSelectedCount();
-        updatePreview();
+        const search = (document.getElementById('beneficiarySearch')?.value || '').toLowerCase();
+        window.allBeneficiaries.forEach(b => {
+             if (b.full_name.toLowerCase().includes(search)) {
+                 b._selected = true;
+             }
+        });
+        renderBeneficiaryList();
     });
     document.getElementById('clearAllSelected')?.addEventListener('click', () => {
-        document.querySelectorAll('.specific-checkbox').forEach(cb => cb.checked = false);
-        updateSelectedCount();
-        updatePreview();
+        window.allBeneficiaries.forEach(b => b._selected = false);
+        renderBeneficiaryList();
     });
 
     // ══════════════════════════════════════════════════════════════════════════════
@@ -796,19 +820,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function updatePreview() {
         if (recipientType === 'selected') {
-            const selected = document.querySelectorAll('.specific-checkbox:checked');
+            const selected = window.allBeneficiaries.filter(b => b._selected);
             previewData.count = selected.length;
-            previewData.recipients = Array.from(selected).map(cb => {
-                const item = window.allBeneficiaries.find(b => b.id == cb.value);
-                return item;
-            });
+            previewData.recipients = selected;
         } else {
-            const refined = document.querySelectorAll('.refined-checkbox:checked');
+            const refined = filterBeneficiaries.filter(b => b._selected);
             previewData.count = refined.length;
-            previewData.recipients = refined.length ? Array.from(refined).map(cb => {
-                const item = filterBeneficiaries.find(b => b.id == cb.value);
-                return item;
-            }) : filterBeneficiaries;
+            previewData.recipients = refined;
         }
 
         updatePreviewUI();
@@ -913,8 +931,9 @@ document.addEventListener('DOMContentLoaded', function () {
         else if (recipientType === 'by_barangay') body.barangay_id = document.getElementById('barangaySelect').value;
         else if (recipientType === 'by_resource_type') body.resource_type_id = document.getElementById('resourceTypeSelect').value;
         else if (recipientType === 'by_direct_allocation') body.direct_allocation_status = document.getElementById('directAllocationSelect').value;
-        else if (recipientType === 'selected') body.beneficiary_ids = Array.from(document.querySelectorAll('.specific-checkbox:checked')).map(cb => cb.value);
-        else if (recipientType !== 'selected') body.beneficiary_ids = Array.from(document.querySelectorAll('.refined-checkbox:checked')).map(cb => cb.value);
+        
+        if (recipientType === 'selected') body.beneficiary_ids = window.allBeneficiaries.filter(b => b._selected).map(b => b.id);
+        else body.beneficiary_ids = filterBeneficiaries.filter(b => b._selected).map(b => b.id);
 
         console.log('Sending SMS:', {
             url: '{{ route("sms.send") }}',
