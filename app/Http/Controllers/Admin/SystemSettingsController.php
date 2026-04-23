@@ -1043,11 +1043,33 @@ class SystemSettingsController extends Controller
             ->paginate(25, ['*'], 'beneficiaries_page')
             ->appends(request()->query());
             
-        $beneficiaryAllocationCounts = Allocation::where('program_name_id', $programName->id)
+        $beneficiaryAllocationCounts = Allocation::where('allocations.program_name_id', $programName->id)
             ->whereIn('beneficiary_id', $beneficiaries->pluck('id'))
             ->selectRaw('beneficiary_id, count(*) as count')
             ->groupBy('beneficiary_id')
             ->pluck('count', 'beneficiary_id');
+
+        // Analytics Data for Insights Tab
+        $barangayReach = Allocation::where('allocations.program_name_id', $programName->id)
+            ->join('distribution_events', 'allocations.distribution_event_id', '=', 'distribution_events.id')
+            ->join('barangays', 'distribution_events.barangay_id', '=', 'barangays.id')
+            ->selectRaw('barangays.name, count(*) as total')
+            ->groupBy('barangays.name')
+            ->orderByDesc('total')
+            ->limit(10)
+            ->get();
+
+        $resourceMix = Allocation::where('allocations.program_name_id', $programName->id)
+            ->join('resource_types', 'allocations.resource_type_id', '=', 'resource_types.id')
+            ->selectRaw('resource_types.name, count(*) as total')
+            ->groupBy('resource_types.name')
+            ->get();
+
+        $monthlyTrend = Allocation::where('program_name_id', $programName->id)
+            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, count(*) as total")
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
 
         return view('admin.settings.program-names.detail', compact(
             'programName',
@@ -1058,7 +1080,10 @@ class SystemSettingsController extends Controller
             'totalEvents',
             'totalAllocatedAmount',
             'totalBeneficiaries',
-            'beneficiaryAllocationCounts'
+            'beneficiaryAllocationCounts',
+            'barangayReach',
+            'resourceMix',
+            'monthlyTrend'
         ));
     }
 

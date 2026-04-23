@@ -1,183 +1,496 @@
 @extends('layouts.app')
 
+@push('styles')
+<style>
+    .program-header {
+        background: #fff;
+        border-radius: 1rem;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        margin-bottom: 2rem;
+    }
+    .stat-card {
+        border-radius: 1rem;
+        transition: all 0.3s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+    }
+    .nav-tabs {
+        border-bottom: none;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        background: #f1f5f9;
+        border-radius: 0.75rem;
+        display: inline-flex;
+    }
+    .nav-tabs .nav-link {
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.6rem 1.25rem;
+        color: #64748b;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .nav-tabs .nav-link:hover {
+        background: rgba(255,255,255,0.5);
+        color: #0d6efd;
+    }
+    .nav-tabs .nav-link.active {
+        background: #fff;
+        color: #0d6efd;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .tab-content {
+        padding-top: 1.5rem;
+    }
+    .card {
+        border-radius: 1rem;
+        border: none;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+    }
+    .table thead th {
+        background: #f8fafc;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.025em;
+        color: #64748b;
+        border-top: none;
+    }
+    .badge-soft-primary { background: #e0e7ff; color: #4338ca; }
+    .badge-soft-success { background: #dcfce7; color: #15803d; }
+    .badge-soft-info { background: #e0f2fe; color: #0369a1; }
+    .badge-soft-warning { background: #fef3c7; color: #92400e; }
+    .badge-soft-danger { background: #fee2e2; color: #b91c1c; }
+    .badge-soft-purple { background: #f3e8ff; color: #7e22ce; }
+    .form-control, .form-select {
+        color: #1e293b !important;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="container-fluid py-4">
     {{-- Header --}}
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+    <div class="program-header">
+        <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-4">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
+                    <i class="bi bi-file-text fs-3"></i>
+                </div>
                 <div>
-                    <h2 class="mb-1">
-                        <i class="bi bi-file-text text-primary"></i> {{ $programName->name }}
-                    </h2>
-                    <p class="text-muted mb-0">
-                        <small>
-                            <span class="badge bg-secondary"><i class="bi bi-building"></i> {{ $programName->agency->name }}</span>
-                            <span class="badge bg-info text-dark"><i class="bi bi-tags"></i> {{ $programName->classification }}</span>
-                        </small>
-                    </p>
-                </div>
-                <div class="d-flex gap-2">
-                    <a href="{{ route('admin.settings.program-names.index') }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-arrow-left"></i> Back to Programs
-                    </a>
+                    <h2 class="mb-1 fw-bold text-dark">{{ $programName->name }}</h2>
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="badge badge-soft-primary px-3 py-2 rounded-pill"><i class="bi bi-building me-1"></i> {{ $programName->agency->name }}</span>
+                        <span class="badge badge-soft-info px-3 py-2 rounded-pill"><i class="bi bi-tags me-1"></i> {{ $programName->classification }}</span>
+                        <span class="badge {{ $programName->is_active ? 'badge-soft-success' : 'badge-soft-danger' }} px-3 py-2 rounded-pill">
+                            <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> {{ $programName->is_active ? 'Active' : 'Inactive' }}
+                        </span>
+                    </div>
                 </div>
             </div>
-            @if($programName->description)
-            <div class="card bg-light border-0">
-                <div class="card-body">
-                    <p class="text-muted mb-0"><i class="bi bi-info-circle me-1"></i> {{ $programName->description }}</p>
-                </div>
+            <div class="d-flex gap-2">
+                <a href="{{ route('admin.settings.program-names.index') }}" class="btn btn-outline-secondary px-4 rounded-pill">
+                    <i class="bi bi-arrow-left me-1"></i> Back
+                </a>
             </div>
-            @endif
         </div>
+        @if($programName->description)
+            <div class="mt-4 p-3 bg-light rounded-3 border-start border-primary border-4">
+                <p class="text-muted mb-0"><i class="bi bi-info-circle me-2"></i> {{ $programName->description }}</p>
+            </div>
+        @endif
     </div>
 
     {{-- Tabs Navigation --}}
-    <ul class="nav nav-tabs mb-4 px-2" id="programTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active fw-semibold" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="true">
-                <i class="bi bi-speedometer2"></i> Overview
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link fw-semibold" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab" aria-controls="documents" aria-selected="false">
-                <i class="bi bi-folder2-open"></i> Documents <span class="badge rounded-pill bg-secondary bg-opacity-25 text-dark ms-1">{{ $programName->legalRequirements->count() }}</span>
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link fw-semibold" id="events-tab" data-bs-toggle="tab" data-bs-target="#events" type="button" role="tab" aria-controls="events" aria-selected="false">
-                <i class="bi bi-calendar-event"></i> Events <span class="badge rounded-pill bg-secondary bg-opacity-25 text-dark ms-1">{{ $events->total() }}</span>
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link fw-semibold" id="allocations-tab" data-bs-toggle="tab" data-bs-target="#allocations" type="button" role="tab" aria-controls="allocations" aria-selected="false">
-                <i class="bi bi-box-seam"></i> Allocations <span class="badge rounded-pill bg-secondary bg-opacity-25 text-dark ms-1">{{ $allocations->total() }}</span>
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link fw-semibold" id="assistance-tab" data-bs-toggle="tab" data-bs-target="#assistance" type="button" role="tab" aria-controls="assistance" aria-selected="false">
-                <i class="bi bi-heart-pulse"></i> Direct Assistance <span class="badge rounded-pill bg-secondary bg-opacity-25 text-dark ms-1">{{ $directAssistanceRecords->total() }}</span>
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link fw-semibold" id="beneficiaries-tab" data-bs-toggle="tab" data-bs-target="#beneficiaries" type="button" role="tab" aria-controls="beneficiaries" aria-selected="false">
-                <i class="bi bi-people"></i> Beneficiaries <span class="badge rounded-pill bg-secondary bg-opacity-25 text-dark ms-1">{{ $totalBeneficiaries }}</span>
-            </button>
-        </li>
-    </ul>
+    <div class="d-flex justify-content-center justify-content-md-start">
+        <ul class="nav nav-pills program-tabs mb-4 p-1 bg-light rounded-pill shadow-sm" id="programTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active rounded-pill px-4 py-2" id="insights-tab" data-bs-toggle="tab" data-bs-target="#insights" type="button" role="tab">
+                    <i class="bi bi-graph-up-arrow me-2"></i>Insights
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-4 py-2" id="operations-tab" data-bs-toggle="tab" data-bs-target="#operations" type="button" role="tab">
+                    <i class="bi bi-calendar3 me-2"></i>Operations
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-4 py-2" id="distributions-tab" data-bs-toggle="tab" data-bs-target="#distributions" type="button" role="tab">
+                    <i class="bi bi-box-seam me-2"></i>Distributions
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-4 py-2" id="reach-tab" data-bs-toggle="tab" data-bs-target="#reach" type="button" role="tab">
+                    <i class="bi bi-people me-2"></i>Reach
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-4 py-2" id="legal-tab" data-bs-toggle="tab" data-bs-target="#legal" type="button" role="tab">
+                    <i class="bi bi-folder2-open me-2"></i>Legal & Files
+                </button>
+            </li>
+        </ul>
+    </div>
 
-    {{-- Tabs Content --}}
     <div class="tab-content" id="programTabsContent">
-        
-        {{-- Overview TAB --}}
-        <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+        <!-- Insights Tab -->
+        <div class="tab-pane fade show active" id="insights" role="tabpanel">
             <div class="row g-4 mb-4">
                 <div class="col-md-4">
-                    <div class="card shadow-sm border-0 h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between mb-3">
-                                <h6 class="text-muted fw-bold text-uppercase mb-0">Total Distribution Events</h6>
-                                <div class="bg-primary bg-opacity-10 text-primary p-2 rounded">
-                                    <i class="bi bi-calendar-check fs-4"></i>
-                                </div>
+                    <div class="stat-card shadow-sm border-0 h-100 bg-white p-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="stat-card-icon bg-soft-primary text-primary p-3 rounded-circle" style="background: rgba(13, 110, 253, 0.1);">
+                                <i class="bi bi-calendar-event fs-4"></i>
                             </div>
-                            <div class="display-5 fw-bold text-dark">{{ number_format($totalEvents) }}</div>
+                            <div>
+                                <div class="stat-card-value text-primary fs-3 fw-bold">{{ number_format($totalEvents) }}</div>
+                                <div class="stat-card-label fw-bold text-uppercase small text-muted">Total Operations</div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="card shadow-sm border-0 h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between mb-3">
-                                <h6 class="text-muted fw-bold text-uppercase mb-0">Total Allocated Amount</h6>
-                                <div class="bg-success bg-opacity-10 text-success p-2 rounded">
-                                    <i class="bi bi-cash-stack fs-4"></i>
-                                </div>
+                    <div class="stat-card shadow-sm border-0 h-100 bg-white p-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="stat-card-icon bg-soft-success text-success p-3 rounded-circle" style="background: rgba(25, 135, 84, 0.1);">
+                                <i class="bi bi-cash-stack fs-4"></i>
                             </div>
-                            <div class="display-5 fw-bold text-dark">₱{{ number_format($totalAllocatedAmount, 2) }}</div>
+                            <div>
+                                <div class="stat-card-value text-success fs-3 fw-bold">₱{{ number_format($totalAllocatedAmount, 2) }}</div>
+                                <div class="stat-card-label fw-bold text-uppercase small text-muted">Investment Reach</div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="card shadow-sm border-0 h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between mb-3">
-                                <h6 class="text-muted fw-bold text-uppercase mb-0">Total Beneficiaries</h6>
-                                <div class="bg-info bg-opacity-10 text-info p-2 rounded">
-                                    <i class="bi bi-people-fill fs-4"></i>
-                                </div>
+                    <div class="stat-card shadow-sm border-0 h-100 bg-white p-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="stat-card-icon bg-soft-info text-info p-3 rounded-circle" style="background: rgba(13, 202, 240, 0.1);">
+                                <i class="bi bi-people-fill fs-4"></i>
                             </div>
-                            <div class="display-5 fw-bold text-dark">{{ number_format($totalBeneficiaries) }}</div>
+                            <div>
+                                <div class="stat-card-value text-info fs-3 fw-bold">{{ number_format($totalBeneficiaries) }}</div>
+                                <div class="stat-card-label fw-bold text-uppercase small text-muted">Unique Beneficiaries</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-7">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4">
+                            <h5 class="card-title fw-bold mb-0">Barangay Reach (Top 10)</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <div style="height: 350px;">
+                                <canvas id="barangayChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4">
+                            <h5 class="card-title fw-bold mb-0">Resource Mix</h5>
+                        </div>
+                        <div class="card-body p-4 d-flex align-items-center justify-content-center">
+                            <div style="height: 350px; width: 100%;">
+                                <canvas id="resourceChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- Documents TAB --}}
-        <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-file-earmark-pdf text-primary gap-2"></i> Legal Requirements & Documents
-                    </h5>
-                    @if(Auth::user()->isAdmin())
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadDocModal">
-                        <i class="bi bi-cloud-upload"></i> Upload Document
-                    </button>
-                    @endif
+        <!-- Operations Tab -->
+        <div class="tab-pane fade" id="operations" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-muted">
+                                <tr>
+                                    <th class="ps-4">Date</th>
+                                    <th>Barangay</th>
+                                    <th>Resource</th>
+                                    <th>Status</th>
+                                    <th class="text-end pe-4">Reach</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($events as $event)
+                                <tr>
+                                    <td class="ps-4"><span class="fw-semibold text-dark">{{ $event->distribution_date?->format('M d, Y') ?? 'N/A' }}</span></td>
+                                    <td>{{ $event->barangay?->name ?? 'N/A' }}</td>
+                                    <td><span class="badge bg-soft-primary text-primary border-0">{{ $event->resourceType?->name ?? 'N/A' }}</span></td>
+                                    <td>
+                                        @if($event->status === 'Completed')
+                                            <span class="badge bg-soft-success px-3 py-2 rounded-pill">Completed</span>
+                                        @elseif($event->status === 'Planned')
+                                            <span class="badge bg-soft-warning px-3 py-2 rounded-pill">Planned</span>
+                                        @else
+                                            <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">{{ $event->status ?? '-' }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="d-flex align-items-center justify-content-end gap-2">
+                                            <span class="fw-bold">{{ $event->allocations_count }}</span>
+                                            <small class="text-muted">Allocated</small>
+                                        </div>
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted">No operations found.</td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="card-body">
+                @if($events->hasPages())
+                <div class="card-footer bg-transparent border-0 px-4 py-3">
+                    {{ $events->appends(['tab' => 'operations'])->links() }}
+                </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- Distributions Tab -->
+        <div class="tab-pane fade" id="distributions" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 px-4 pt-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title fw-bold mb-0">Distribution Ledger</h5>
+                        <ul class="nav nav-pills nav-sm bg-light rounded-pill p-1" id="ledgerSubTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active rounded-pill px-3 py-1 small" id="event-dist-tab" data-bs-toggle="pill" data-bs-target="#event-dist" type="button" role="tab">Event-based</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link rounded-pill px-3 py-1 small" id="direct-dist-tab" data-bs-toggle="pill" data-bs-target="#direct-dist" type="button" role="tab">Direct Assistance</button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="tab-content pt-0">
+                        <div class="tab-pane fade show active" id="event-dist" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light text-muted">
+                                        <tr>
+                                            <th class="ps-4">Beneficiary</th>
+                                            <th>Barangay</th>
+                                            <th>Resource</th>
+                                            <th class="text-end">Value</th>
+                                            <th>Method</th>
+                                            <th class="pe-4">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($allocations as $allocation)
+                                        <tr>
+                                            <td class="ps-4">
+                                                <div class="fw-semibold text-dark">{{ $allocation->beneficiary?->full_name ?? 'N/A' }}</div>
+                                                <small class="text-muted">{{ $allocation->created_at?->format('M d, Y') }}</small>
+                                            </td>
+                                            <td>{{ $allocation->distributionEvent?->barangay?->name ?? $allocation->beneficiary?->barangay?->name ?? 'N/A' }}</td>
+                                            <td><span class="badge bg-light text-dark border">{{ $allocation->resourceType?->name ?? 'N/A' }}</span></td>
+                                            <td class="text-end">
+                                                @if($allocation->amount) <div class="fw-bold">₱{{ number_format($allocation->amount, 2) }}</div> @endif
+                                                @if($allocation->quantity) <small class="text-muted">{{ number_format($allocation->quantity, 1) }} units</small> @endif
+                                            </td>
+                                            <td>
+                                                @if($allocation->release_method === 'cash')
+                                                    <span class="badge bg-soft-success px-2 py-1"><i class="bi bi-cash me-1"></i> Cash</span>
+                                                @else
+                                                    <span class="badge bg-soft-primary px-2 py-1"><i class="bi bi-ticket-detailed me-1"></i> Voucher</span>
+                                                @endif
+                                            </td>
+                                            <td class="pe-4">
+                                                <span class="badge {{ ($allocation->release_status_label ?? 'Planned') === 'Released' ? 'bg-success' : 'bg-secondary' }} px-3 py-2 rounded-pill">
+                                                    {{ $allocation->release_status_label ?? 'Planned' }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        @empty
+                                        <tr>
+                                            <td colspan="6" class="text-center py-5 text-muted">No records found.</td>
+                                        </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                            @if($allocations->hasPages())
+                            <div class="px-4 py-3">{{ $allocations->appends(['tab' => 'distributions'])->links() }}</div>
+                            @endif
+                        </div>
+                        <div class="tab-pane fade" id="direct-dist" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light text-muted">
+                                        <tr>
+                                            <th class="ps-4">Beneficiary</th>
+                                            <th>Resource</th>
+                                            <th class="text-end">Value</th>
+                                            <th>Status</th>
+                                            <th class="pe-4">Date Distributed</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($directAssistanceRecords as $record)
+                                        <tr>
+                                            <td class="ps-4">
+                                                <div class="fw-semibold text-dark">{{ $record->beneficiary?->full_name ?? 'N/A' }}</div>
+                                                <small class="text-muted">Recorded: {{ $record->created_at?->format('M d, Y') }}</small>
+                                            </td>
+                                            <td><span class="badge bg-light text-dark border">{{ $record->resourceType?->name ?? 'N/A' }}</span></td>
+                                            <td class="text-end">
+                                                @if($record->amount) <div class="fw-bold">₱{{ number_format($record->amount, 2) }}</div> @endif
+                                                @if($record->quantity) <small class="text-muted">{{ number_format($record->quantity, 1) }} units</small> @endif
+                                            </td>
+                                            <td>
+                                                <span class="badge {{ ($record->status_label ?? 'Planned') === 'Released' ? 'bg-soft-success text-success' : 'bg-soft-warning text-warning' }} px-3 py-2 rounded-pill">
+                                                    {{ $record->status_label ?? 'Planned' }}
+                                                </span>
+                                            </td>
+                                            <td class="pe-4"><small class="text-muted">{{ $record->distributed_at?->format('M d, Y') ?? 'N/A' }}</small></td>
+                                        </tr>
+                                        @empty
+                                        <tr>
+                                            <td colspan="5" class="text-center py-5 text-muted">No records found.</td>
+                                        </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                            @if($directAssistanceRecords->hasPages())
+                            <div class="px-4 py-3">{{ $directAssistanceRecords->appends(['tab' => 'distributions'])->links() }}</div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reach Tab -->
+        <div class="tab-pane fade" id="reach" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-muted">
+                                <tr>
+                                    <th class="ps-4">Beneficiary Name</th>
+                                    <th>Classification</th>
+                                    <th class="text-end pe-4">Frequency</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($beneficiaries as $beneficiary)
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar bg-soft-primary text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px">
+                                                <i class="bi bi-person-fill"></i>
+                                            </div>
+                                            <div>
+                                                <span class="d-block fw-bold text-dark">{{ $beneficiary->full_name ?? 'N/A' }}</span>
+                                                <small class="text-muted">{{ $beneficiary->barangay?->name ?? 'No Barangay' }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light border text-dark px-3 py-2 rounded-pill">{{ $beneficiary->classification }}</span>
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="d-flex align-items-center justify-content-end gap-2">
+                                            <span class="badge bg-primary px-3 py-2 rounded-pill">{{ $beneficiaryAllocationCounts[$beneficiary->id] ?? 0 }}</span>
+                                            <small class="text-muted">Distributions</small>
+                                        </div>
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="3" class="text-center py-5 text-muted">No unique beneficiaries recorded yet.</td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                @if($beneficiaries->hasPages())
+                <div class="card-footer bg-transparent border-0 px-4 py-3">
+                    {{ $beneficiaries->appends(['tab' => 'reach'])->links() }}
+                </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- Legal Tab -->
+        <div class="tab-pane fade" id="legal" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 px-4 pt-4 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title fw-bold mb-0">Program Library</h5>
+                    <button class="btn btn-primary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#uploadRequirementModal">
+                        <i class="bi bi-upload me-2"></i>Upload File
+                    </button>
+                </div>
+                <div class="card-body p-0">
                     @if($programName->legalRequirements->count() > 0)
                     <div class="table-responsive">
-                        <table class="table table-sm table-hover align-middle mb-0">
-                            <thead class="table-light">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-muted">
                                 <tr>
-                                    <th>Document Type</th>
+                                    <th class="ps-4">Document Type</th>
                                     <th>Filename</th>
                                     <th>Uploaded By</th>
                                     <th>Size</th>
-                                    <th>Uploaded Date</th>
-                                    <th>Remarks</th>
-                                    <th class="text-center" style="width: 140px;">Actions</th>
+                                    <th>Date</th>
+                                    <th class="text-center pe-4">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($programName->legalRequirements as $req)
-                                <tr>
-                                    <td>
-                                        @if($req->document_type)
-                                        <span class="badge bg-light border text-dark">{{ $req->document_type }}</span>
-                                        @else
-                                        <span class="text-muted">-</span>
-                                        @endif
+                                <tr class="border-transparent">
+                                    <td class="ps-4">
+                                        <span class="badge badge-soft-primary px-3 py-2 rounded-pill">{{ $req->document_type ?: 'Other' }}</span>
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <i class="bi bi-file-earmark-text text-secondary me-2"></i>
-                                            <small class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ $req->original_name }}">{{ $req->original_name }}</small>
+                                            <div class="p-2 bg-light rounded me-2">
+                                                <i class="bi bi-file-earmark-text text-primary"></i>
+                                            </div>
+                                            <div class="text-truncate" style="max-width: 250px;" title="{{ $req->original_name }}">
+                                                <span class="d-block fw-medium text-dark">{{ $req->original_name }}</span>
+                                                @if($req->remarks)<small class="text-muted d-block">{{ Str::limit($req->remarks, 30) }}</small>@endif
+                                            </div>
                                         </div>
                                     </td>
-                                    <td><small>{{ $req->uploader?->name ?? 'Unknown' }}</small></td>
-                                    <td><small>{{ number_format($req->size_bytes / 1024, 1) }} KB</small></td>
-                                    <td><small>{{ $req->created_at->format('M d, Y H:i') }}</small></td>
-                                    <td><small class="text-muted text-truncate d-inline-block" style="max-width: 150px;" title="{{ $req->remarks }}">{{ $req->remarks ?: '-' }}</small></td>
-                                    <td class="text-center">
-                                        <div class="btn-group">
+                                    <td><small class="text-muted">{{ $req->uploader?->name ?? 'System' }}</small></td>
+                                    <td><small class="text-muted">{{ number_format($req->size_bytes / 1024, 1) }} KB</small></td>
+                                    <td><small class="text-muted">{{ $req->created_at->format('M d, Y') }}</small></td>
+                                    <td class="text-center pe-4">
+                                        <div class="btn-group shadow-sm rounded-pill overflow-hidden border">
                                             <a href="{{ route('admin.settings.program-names.legal-requirements.view', [$programName, $req]) }}"
-                                               class="btn btn-sm btn-outline-primary"
-                                               target="_blank" title="View document">
-                                                <i class="bi bi-eye"></i>
+                                               class="btn btn-white btn-sm px-3 border-end" target="_blank" title="View">
+                                                <i class="bi bi-eye text-primary"></i>
                                             </a>
                                             <a href="{{ route('admin.settings.program-names.legal-requirements.download', [$programName, $req]) }}"
-                                               class="btn btn-sm btn-outline-info" title="Download document">
-                                                <i class="bi bi-download"></i>
+                                               class="btn btn-white btn-sm px-3 border-end" title="Download">
+                                                <i class="bi bi-download text-info"></i>
                                             </a>
-                                            <button class="btn btn-sm btn-outline-danger delete-req"
+                                            <button class="btn btn-white btn-sm px-3 delete-req"
                                                     data-id="{{ $req->id }}"
-                                                    data-program-id="{{ $programName->id }}" title="Delete document">
-                                                <i class="bi bi-trash"></i>
+                                                    data-program-id="{{ $programName->id }}" title="Delete">
+                                                <i class="bi bi-trash text-danger"></i>
                                             </button>
                                         </div>
                                     </td>
@@ -187,327 +500,70 @@
                         </table>
                     </div>
                     @else
-                    <div class="text-center py-5">
-                        <div class="display-1 text-muted mb-3"><i class="bi bi-folder-x border border-2 border-light rounded-circle p-4 bg-light"></i></div>
-                        <h5>No Documents Mapped</h5>
-                        <p class="text-muted">There are no legal requirement or supporting documents for this program yet.</p>
-                        @if(Auth::user()->isAdmin())
-                        <button class="btn btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#uploadDocModal">
-                            <i class="bi bi-plus-circle"></i> Upload First Document
-                        </button>
-                        @endif
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-folder-x display-4 d-block mb-3 opacity-25"></i>
+                        <p class="mb-0">No documents uploaded yet.</p>
                     </div>
                     @endif
                 </div>
             </div>
         </div>
-
-        {{-- Events TAB --}}
-        <div class="tab-pane fade" id="events" role="tabpanel" aria-labelledby="events-tab">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-white py-3">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-calendar-event text-primary"></i> Distribution Events
-                    </h5>
-                </div>
-                <div class="card-body">
-                    @if($events->count() > 0)
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Barangay</th>
-                                    <th>Resource Type</th>
-                                    <th>Status</th>
-                                    <th class="text-end">Allocations</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($events as $event)
-                                <tr>
-                                    <td><small class="fw-medium">{{ $event->distribution_date?->format('F d, Y') ?? 'N/A' }}</small></td>
-                                    <td><small>{{ $event->barangay?->name ?? 'N/A' }}</small></td>
-                                    <td><small>{{ $event->resourceType?->name ?? 'N/A' }}</small></td>
-                                    <td>
-                                        @if($event->status === 'Completed')
-                                            <span class="badge bg-success-subtle text-success border border-success-subtle">Completed</span>
-                                        @elseif($event->status === 'Planned')
-                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Planned</span>
-                                        @else
-                                            <span class="badge bg-light text-dark border">{{ $event->status ?? '-' }}</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-end"><span class="badge bg-secondary rounded-pill">{{ $event->allocations_count }}</span></td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="mt-3">
-                        {{ $events->links() }}
-                    </div>
-                    @else
-                    <div class="text-center py-5">
-                        <div class="display-1 text-muted mb-3"><i class="bi bi-calendar-x border border-2 border-light rounded-circle p-4 bg-light"></i></div>
-                        <h5>No Distribution Events Found</h5>
-                        <p class="text-muted">No distribution events have been created under this program yet.</p>
-                    </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        {{-- Allocations TAB --}}
-        <div class="tab-pane fade" id="allocations" role="tabpanel" aria-labelledby="allocations-tab">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-white py-3">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-box-seam text-primary"></i> Event Allocations
-                    </h5>
-                </div>
-                <div class="card-body">
-                    @if($allocations->count() > 0)
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Beneficiary</th>
-                                    <th>Barangay</th>
-                                    <th>Resource Type</th>
-                                    <th class="text-end">Quantity</th>
-                                    <th class="text-end">Amount (₱)</th>
-                                    <th>Release Method</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($allocations as $allocation)
-                                <tr>
-                                    <td><small class="text-muted">{{ $allocation->created_at?->format('M d, Y') ?? 'N/A' }}</small></td>
-                                    <td><small class="fw-medium">{{ $allocation->beneficiary?->full_name ?? $allocation->beneficiary?->name ?? 'N/A' }}</small></td>
-                                    <td><small>{{ $allocation->distributionEvent?->barangay?->name ?? $allocation->beneficiary?->barangay?->name ?? 'N/A' }}</small></td>
-                                    <td><small>{{ $allocation->resourceType?->name ?? $allocation->distributionEvent?->resourceType?->name ?? 'N/A' }}</small></td>
-                                    <td class="text-end"><small>{{ $allocation->quantity !== null ? number_format((float) $allocation->quantity, 2) : '-' }}</small></td>
-                                    <td class="text-end"><small>{{ $allocation->amount !== null ? number_format((float) $allocation->amount, 2) : '-' }}</small></td>
-                                    <td>
-                                        @if($allocation->release_method === 'cash')
-                                            <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-cash"></i> Cash</span>
-                                        @elseif($allocation->release_method === 'voucher')
-                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle"><i class="bi bi-ticket-detailed"></i> Voucher</span>
-                                        @else
-                                            <span class="badge bg-light text-dark border">{{ $allocation->release_method ? ucfirst($allocation->release_method) : 'N/A' }}</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if(($allocation->release_status_label ?? 'Planned') === 'Released')
-                                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Released</span>
-                                        @else
-                                            <span class="badge bg-secondary">{{ $allocation->release_status_label ?? 'Planned' }}</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="mt-3">
-                        {{ $allocations->links() }}
-                    </div>
-                    @else
-                    <div class="text-center py-5">
-                        <div class="display-1 text-muted mb-3"><i class="bi bi-inbox border border-2 border-light rounded-circle p-4 bg-light"></i></div>
-                        <h5>No Allocations Found</h5>
-                        <p class="text-muted">There are no individual allocations tied to events for this program.</p>
-                    </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        {{-- Direct Assistance TAB --}}
-        <div class="tab-pane fade" id="assistance" role="tabpanel" aria-labelledby="assistance-tab">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-white py-3">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-heart-pulse text-primary"></i> Direct Assistance Records
-                    </h5>
-                </div>
-                <div class="card-body">
-                    @if($directAssistanceRecords->count() > 0)
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Recorded</th>
-                                    <th>Beneficiary</th>
-                                    <th>Resource Type</th>
-                                    <th class="text-end">Quantity</th>
-                                    <th class="text-end">Amount (₱)</th>
-                                    <th>Status</th>
-                                    <th>Distributed At</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($directAssistanceRecords as $record)
-                                <tr>
-                                    <td><small class="text-muted">{{ $record->created_at?->format('M d, Y H:i') ?? 'N/A' }}</small></td>
-                                    <td><small class="fw-medium">{{ $record->beneficiary?->full_name ?? $record->beneficiary?->name ?? 'N/A' }}</small></td>
-                                    <td><small>{{ $record->resourceType?->name ?? 'N/A' }}</small></td>
-                                    <td class="text-end"><small>{{ $record->quantity !== null ? number_format((float) $record->quantity, 2) : '-' }}</small></td>
-                                    <td class="text-end"><small>{{ $record->amount !== null ? number_format((float) $record->amount, 2) : '-' }}</small></td>
-                                    <td>
-                                        @if(($record->status_label ?? 'Planned') === 'Completed')
-                                            <span class="badge bg-success">Completed</span>
-                                        @else
-                                            <span class="badge bg-secondary">{{ $record->status_label ?? 'Planned' }}</span>
-                                        @endif
-                                    </td>
-                                    <td><small>{{ $record->distributed_at?->format('M d, Y') ?? 'N/A' }}</small></td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="mt-3">
-                        {{ $directAssistanceRecords->links() }}
-                    </div>
-                    @else
-                    <div class="text-center py-5">
-                        <div class="display-1 text-muted mb-3"><i class="bi bi-clipboard-x border border-2 border-light rounded-circle p-4 bg-light"></i></div>
-                        <h5>No Direct Assistance Records</h5>
-                        <p class="text-muted">No direct assistance has been recorded under this program.</p>
-                    </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        {{-- Beneficiaries TAB --}}
-        <div class="tab-pane fade" id="beneficiaries" role="tabpanel" aria-labelledby="beneficiaries-tab">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-white py-3">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-people text-primary"></i> Unique Beneficiaries
-                    </h5>
-                </div>
-                <div class="card-body">
-                    @if($beneficiaries->count() > 0)
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Classification</th>
-                                    <th class="text-end">Program Allocations</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($beneficiaries as $beneficiary)
-                                <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar bg-light text-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px">
-                                                <i class="bi bi-person"></i>
-                                            </div>
-                                            <span class="fw-medium">{{ $beneficiary->full_name ?? $beneficiary->name ?? 'N/A' }}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        @if(isset($beneficiary->classification))
-                                        <span class="badge bg-light border text-dark">{{ $beneficiary->classification }}</span>
-                                        @else
-                                        <span class="text-muted">-</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-end">
-                                        <span class="badge bg-primary rounded-pill">{{ $beneficiaryAllocationCounts[$beneficiary->id] ?? 0 }}</span>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="mt-3">
-                        {{ $beneficiaries->links() }}
-                    </div>
-                    @else
-                    <div class="text-center py-5">
-                        <div class="display-1 text-muted mb-3"><i class="bi bi-people border border-2 border-light rounded-circle p-4 bg-light opacity-50"></i></div>
-                        <h5>No Beneficiaries Reached</h5>
-                        <p class="text-muted">No beneficiaries have received allocations or assistance under this program yet.</p>
-                    </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-
     </div>
 </div>
 
-{{-- Upload Document Modal --}}
-@if(Auth::user()->isAdmin())
-<div class="modal fade" id="uploadDocModal" tabindex="-1" aria-labelledby="uploadDocModalLabel" aria-hidden="true">
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadRequirementModal" tabindex="-1">
     <div class="modal-dialog">
-        <div class="modal-content border-0 shadow">
-            <form id="uploadDocForm" enctype="multipart/form-data">
-                <div class="modal-header bg-light">
-                    <h5 class="modal-title" id="uploadDocModalLabel"><i class="bi bi-cloud-upload me-2 text-primary"></i>Upload Supporting Document</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <form action="{{ route('admin.settings.program-names.legal-requirements.upload', $programName) }}"
+              method="POST" enctype="multipart/form-data" class="modal-content border-0 shadow">
+            @csrf
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Upload Program File</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Document Type</label>
+                    <select name="document_type" class="form-select border-0 bg-light" required>
+                        <option value="">Select type...</option>
+                        <option value="Executive Order">Executive Order</option>
+                        <option value="Program Guidelines">Program Guidelines</option>
+                        <option value="Legal Basis">Legal Basis</option>
+                        <option value="Memorandum">Memorandum</option>
+                        <option value="Other">Other</option>
+                    </select>
                 </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="docFile" class="form-label fw-semibold">Select File <span class="text-danger">*</span></label>
-                        <input type="file" id="docFile" name="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
-                        <small class="text-muted"><i class="bi bi-info-circle"></i> Max size: 5MB. PDF, JPG, PNG allowed.</small>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="docType" class="form-label fw-semibold">Document Type</label>
-                        <select id="docType" name="document_type" class="form-select">
-                            <option value="">Select type...</option>
-                            <option value="Executive Order">Executive Order</option>
-                            <option value="DAO">DAO (Department Administrative Order)</option>
-                            <option value="Memorandum">Memorandum</option>
-                            <option value="Policy">Policy</option>
-                            <option value="Contract">Contract / Agreement</option>
-                            <option value="Legal Basis">Legal Basis</option>
-                            <option value="Other">Other Document</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="docRemarks" class="form-label fw-semibold">Remarks</label>
-                        <textarea id="docRemarks" name="remarks" class="form-control" rows="3" placeholder="Optional notes..."></textarea>
-                    </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Select File</label>
+                    <input type="file" name="requirement_file" class="form-control border-0 bg-light" required>
+                    <small class="text-muted">PDF, DOCX, JPG, PNG allowed (max 10MB)</small>
                 </div>
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="uploadSubmitBtn">
-                        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-                        <i class="bi bi-upload"></i> Upload
-                    </button>
+                <div class="mb-0">
+                    <label class="form-label fw-semibold">Remarks</label>
+                    <textarea name="remarks" class="form-control border-0 bg-light" rows="3" placeholder="Optional notes..."></textarea>
                 </div>
-            </form>
-        </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light px-4 rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary px-4 rounded-pill shadow-sm">Start Upload</button>
+            </div>
+        </form>
     </div>
 </div>
-@endif
 
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const csrftoken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     // Restore active tab based on URL param
     const urlParams = new URLSearchParams(window.location.search);
-    const activeTab = urlParams.get('tab');
-    if (activeTab) {
-        const tabTrigger = document.querySelector(`#${activeTab}-tab`);
-        if (tabTrigger) {
-            const tab = new bootstrap.Tab(tabTrigger);
-            tab.show();
-        }
+    const activeTab = urlParams.get('tab') || 'insights';
+    const tabTrigger = document.querySelector(`#${activeTab}-tab`);
+    if (tabTrigger) {
+        const tab = new bootstrap.Tab(tabTrigger);
+        tab.show();
     }
 
     // Update URL when switching tabs
@@ -520,9 +576,55 @@ document.addEventListener('DOMContentLoaded', function() {
             window.history.replaceState({}, '', currentUrl);
         });
     });
-    
-    // Auto-select tab if pagination is clicked inside it
-    // Note: this logic runs gracefully when page restarts, setting the active tab based on ?tab=xxx in the URL that pagination append.
+
+    // --- Charts Implementation ---
+    const barangayCtx = document.getElementById('barangayChart');
+    if (barangayCtx) {
+        new Chart(barangayCtx, {
+            type: 'bar',
+            data: {
+                labels: {!! json_encode($barangayReach->pluck('name')) !!},
+                datasets: [{
+                    label: 'Beneficiaries',
+                    data: {!! json_encode($barangayReach->pluck('total')) !!},
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 8,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { display: false } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    const resourceCtx = document.getElementById('resourceChart');
+    if (resourceCtx) {
+        new Chart(resourceCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {!! json_encode($resourceMix->pluck('name')) !!},
+                datasets: [{
+                    data: {!! json_encode($resourceMix->pluck('total')) !!},
+                    backgroundColor: ['#22c55e', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444', '#14b8a6'],
+                    borderWidth: 0,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }
+                },
+                cutout: '70%'
+            }
+        });
+    }
 
     // Delete legal requirement
     document.querySelectorAll('.delete-req').forEach(btn => {
@@ -530,84 +632,17 @@ document.addEventListener('DOMContentLoaded', function() {
             const reqId = this.dataset.id;
             const programId = this.dataset.programId;
 
-            confirmThenRun(
-                'Confirm Deletion',
-                'Delete this legal requirement document? This action cannot be undone.',
-                function () {
-                    fetch(`/admin/settings/program-names/${programId}/legal-requirements/${reqId}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'X-CSRF-TOKEN': csrftoken,
-                            'Accept': 'application/json'
-                        }
-                    })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Ensure we stay on the documents tab on reload
-                            const currentUrl = new URL(window.location.href);
-                            currentUrl.searchParams.set('tab', 'documents');
-                            window.location.href = currentUrl.href;
-                        } else {
-                            alert(data.message || 'Failed to delete document');
-                        }
-                    })
-                    .catch(function () {
-                        alert('An error occurred');
-                    });
-                }
-            );
+            if (confirm('Delete this legal requirement document? This action cannot be undone.')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/admin/settings/program-names/${programId}/legal-requirements/${reqId}`;
+                form.innerHTML = `<input type="hidden" name="_token" value="${csrftoken}"><input type="hidden" name="_method" value="DELETE">`;
+                document.body.appendChild(form);
+                form.submit();
+            }
         });
     });
-
-    // Upload document
-    const uploadForm = document.getElementById('uploadDocForm');
-    if (uploadForm) {
-        uploadForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const submitBtn = document.getElementById('uploadSubmitBtn');
-            const spinner = submitBtn.querySelector('.spinner-border');
-            const icon = submitBtn.querySelector('.bi-upload');
-            
-            const formData = new FormData(this);
-            const programId = '{{ $programName->id }}';
-
-            submitBtn.disabled = true;
-            spinner.classList.remove('d-none');
-            icon.classList.add('d-none');
-
-            fetch(`/admin/settings/program-names/${programId}/legal-requirements`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': csrftoken,
-                    'Accept': 'application/json'
-                },
-                body: formData
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    const currentUrl = new URL(window.location.href);
-                    currentUrl.searchParams.set('tab', 'documents');
-                    window.location.href = currentUrl.href;
-                } else {
-                    alert(data.message || 'Failed to upload document');
-                    submitBtn.disabled = false;
-                    spinner.classList.add('d-none');
-                    icon.classList.remove('d-none');
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                alert('An error occurred during upload');
-                submitBtn.disabled = false;
-                spinner.classList.add('d-none');
-                icon.classList.remove('d-none');
-            });
-        });
-    }
 });
 </script>
-
+@endpush
 @endsection

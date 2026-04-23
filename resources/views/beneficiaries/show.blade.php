@@ -84,720 +84,825 @@
     ])->filter(fn ($reason) => filled($reason));
 @endphp
 
+@push('styles')
+<style>
+    /* Premium Dashboard Styles */
+    .beneficiary-header {
+        background: #fff;
+        border-radius: 1rem;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        margin-bottom: 2rem;
+    }
+    .stat-card {
+        border-radius: 1rem;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+    }
+    .nav-pills.program-tabs {
+        gap: 0.5rem;
+        padding: 0.5rem;
+        background: #f1f5f9;
+        border-radius: 0.75rem;
+        display: inline-flex;
+    }
+    .nav-pills.program-tabs .nav-link {
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.6rem 1.25rem;
+        color: #64748b;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: transparent;
+    }
+    .nav-pills.program-tabs .nav-link:hover {
+        background: rgba(255,255,255,0.5);
+        color: #0d6efd;
+    }
+    .nav-pills.program-tabs .nav-link.active {
+        background: #fff;
+        color: #0d6efd;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .tab-content {
+        padding-top: 1.5rem;
+    }
+    .card {
+        border-radius: 1rem;
+        border: none;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+    }
+    .info-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #94a3b8;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+    }
+    .info-value {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 0.95rem;
+    }
+    .badge-soft-primary { background: #e0e7ff; color: #4338ca; }
+    .badge-soft-success { background: #dcfce7; color: #15803d; }
+    .badge-soft-info { background: #e0f2fe; color: #0369a1; }
+    .badge-soft-warning { background: #fef3c7; color: #92400e; }
+    .badge-soft-danger { background: #fee2e2; color: #b91c1c; }
+    .badge-soft-purple { background: #f3e8ff; color: #7e22ce; }
+
+    /* SMS Thread Styles */
+    .sms-thread {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+        background: #f8fafc;
+        border-radius: 1rem;
+    }
+    .sms-message {
+        max-width: 85%;
+        padding: 0.85rem 1rem;
+        border-radius: 1rem;
+        position: relative;
+        font-size: 0.9rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .sms-message.sent {
+        align-self: flex-end;
+        background: #0d6efd;
+        color: white;
+        border-bottom-right-radius: 0.25rem;
+    }
+    .sms-message.failed {
+        align-self: flex-end;
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+        border-bottom-right-radius: 0.25rem;
+    }
+    .sms-meta {
+        font-size: 0.7rem;
+        margin-top: 0.4rem;
+        opacity: 0.8;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+    }
+    .sent .sms-meta { color: rgba(255,255,255,0.9); }
+
+    .form-control, .form-select {
+        color: #1e293b !important;
+    }
+
+    .avatar-circle {
+        width: 64px;
+        height: 64px;
+        background: #f1f5f9;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-size: 1.5rem;
+        border: 2px solid #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    @media print {
+        .no-print { display: none !important; }
+        .card { box-shadow: none !important; border: 1px solid #e2e8f0 !important; }
+    }
+</style>
+@endpush
+
 @section('content')
-    {{-- Page Header --}}
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
-        <div class="d-flex align-items-center flex-wrap gap-2 gap-sm-0">
-            <a href="{{ route('beneficiaries.index') }}" class="btn btn-outline-secondary btn-sm me-3">
-                <i class="bi bi-arrow-left"></i>
-            </a>
-            <div>
-                <h1 class="h3 mb-1">{{ $beneficiary->full_name }}</h1>
-                <div class="d-flex flex-wrap gap-2">
-                    @php
-                        $classBadge = match($beneficiary->classification) {
-                            'Farmer'     => 'bg-primary',
-                            'Fisherfolk' => 'bg-info text-dark',
-                            'Both'       => '',
-                            default      => 'bg-secondary',
-                        };
-                    @endphp
-                    @if($beneficiary->classification === 'Both')
-                        <span class="badge" style="background-color: #6f42c1;">{{ $beneficiary->classification }}</span>
-                    @else
-                        <span class="badge {{ $classBadge }}">{{ $beneficiary->classification }}</span>
-                    @endif
-                    <span class="badge {{ $beneficiary->status === 'Active' ? 'bg-success' : 'bg-danger' }}">
-                        {{ $beneficiary->status }}
-                    </span>
-                </div>
-            </div>
-        </div>
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="{{ route('beneficiaries.edit', $beneficiary) }}" class="btn btn-outline-primary">
-                <i class="bi bi-pencil-square me-1"></i> Edit
-            </a>
-            <a href="{{ route('beneficiaries.index') }}" class="btn btn-outline-secondary">
-                <i class="bi bi-list-ul me-1"></i> Back to List
-            </a>
-        </div>
-    </div>
-
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body py-2">
-            <div class="d-flex flex-wrap gap-2">
-                <a href="#beneficiary-profile" class="btn btn-sm btn-outline-secondary">Profile</a>
-                <a href="#supporting-documents" class="btn btn-sm btn-outline-secondary">Documents</a>
-                <a href="#distribution-history" class="btn btn-sm btn-outline-secondary">Distribution History</a>
-                <a href="#send-sms" class="btn btn-sm btn-outline-secondary">Send SMS</a>
-                <a href="#sms-history" class="btn btn-sm btn-outline-secondary">SMS History</a>
-            </div>
-        </div>
-    </div>
-
-    {{-- Profile Card --}}
-    <div id="beneficiary-profile" class="card border-0 shadow-sm mb-4" style="scroll-margin-top: 90px;">
-        {{-- Personal Information --}}
-        <div class="card-header bg-white fw-semibold">
-            <i class="bi bi-person me-1"></i> Personal Information
-        </div>
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <div class="text-muted small">First Name</div>
-                    <div class="fw-semibold">{{ $beneficiary->first_name }}</div>
-                </div>
-                <div class="col-md-3">
-                    <div class="text-muted small">Middle Name</div>
-                    <div class="fw-semibold">{{ $beneficiary->middle_name ?? '—' }}</div>
-                </div>
-                <div class="col-md-3">
-                    <div class="text-muted small">Last Name</div>
-                    <div class="fw-semibold">{{ $beneficiary->last_name }}</div>
-                </div>
-                <div class="col-md-3">
-                    <div class="text-muted small">Name Extension</div>
-                    <div class="fw-semibold">{{ $beneficiary->name_suffix ?? '—' }}</div>
-                </div>
-                <div class="col-md-3">
-                    <div class="text-muted small">Sex</div>
-                    <div class="fw-semibold">{{ $beneficiary->sex }}</div>
-                </div>
-                <div class="col-md-3">
-                    <div class="text-muted small">Date of Birth</div>
-                    <div class="fw-semibold">{{ $beneficiary->date_of_birth ? $beneficiary->date_of_birth->format('M d, Y') : '—' }}</div>
-                </div>
-                <div class="col-md-4">
-                    <div class="text-muted small">Civil Status</div>
-                    <div class="fw-semibold">{{ $beneficiary->civil_status }}</div>
-                </div>
-                <div class="col-md-4">
-                    <div class="text-muted small">Highest Education</div>
-                    <div class="fw-semibold">{{ $beneficiary->highest_education ?? '—' }}</div>
-                </div>
-                <div class="col-md-4">
-                    <div class="text-muted small">ID Type</div>
-                    <div class="fw-semibold">{{ $beneficiary->id_type ?? '—' }}</div>
-                </div>
-                <div class="col-md-4">
-                    <div class="text-muted small">ID Number</div>
-                    <div class="fw-semibold">{{ $beneficiary->id_number ?? '—' }}</div>
-                </div>
-                <div class="col-md-4">
-                    <div class="text-muted small">Contact Number</div>
-                    <div class="fw-semibold">{{ $beneficiary->contact_number }}</div>
-                </div>
-            </div>
-        </div>
-
-        {{-- Registration Details --}}
-        <div class="card-header bg-white fw-semibold border-top">
-            <i class="bi bi-geo-alt me-1"></i> Registration Details
-        </div>
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <div class="text-muted small">Barangay</div>
-                    <div class="fw-semibold">{{ $beneficiary->barangay->name ?? '—' }}</div>
-                </div>
-
-                @if($beneficiary->isFarmer())
-                    <div class="col-md-4">
-                        <div class="text-muted small">RSBSA Number</div>
-                        <div class="fw-semibold">{{ $beneficiary->rsbsa_number ?? '—' }}</div>
+<div class="container-fluid py-4">
+    {{-- Header --}}
+    <div class="beneficiary-header">
+        <div class="row align-items-center g-4">
+            <div class="col-md-7">
+                <div class="d-flex align-items-center gap-4">
+                    <div class="avatar-circle flex-shrink-0">
+                        <i class="bi bi-person-fill"></i>
                     </div>
-                @endif
-                @if($beneficiary->isFisherfolk())
-                    <div class="col-md-4">
-                        <div class="text-muted small">FishR Number</div>
-                        <div class="fw-semibold">{{ $beneficiary->fishr_number ?? '—' }}</div>
-                    </div>
-                @endif
-                <div class="col-md-4">
-                    <div class="text-muted small">Registered Date</div>
-                    <div class="fw-semibold">{{ $beneficiary->registered_at->format('M d, Y') }}</div>
-                </div>
-                <div class="col-md-4">
-                    <div class="text-muted small">Status</div>
                     <div>
-                        <span class="badge {{ $beneficiary->status === 'Active' ? 'bg-success' : 'bg-danger' }}">
-                            {{ $beneficiary->status }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- Address Information --}}
-        <div class="card-header bg-white fw-semibold border-top">
-            <i class="bi bi-geo-alt-fill me-1"></i> Address Information
-        </div>
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-8">
-                    <div class="text-muted small">Home Address</div>
-                    <div class="fw-semibold">{{ $beneficiary->home_address ?? '—' }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="card-header bg-white fw-semibold border-top">
-            <i class="bi bi-building me-1"></i> Registered Agencies
-        </div>
-        <div class="card-body">
-            @if($beneficiary->agencies->isNotEmpty())
-                <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Agency</th>
-                                <th>Identifier</th>
-                                <th>Registration Date</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($beneficiary->agencies as $agency)
-                                <tr>
-                                    <td class="fw-semibold">{{ $agency->name }}</td>
-                                    <td>
-                                        @if($agency->pivot->identifier)
-                                            <code class="small">{{ $agency->pivot->identifier }}</code>
-                                        @else
-                                            <span class="text-muted">—</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-muted small">{{ $agency->pivot->registered_at }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @else
-                <p class="text-muted mb-0">
-                    <i class="bi bi-inbox me-1"></i>
-                    No registered agencies.
-                </p>
-            @endif
-        </div>
-
-        {{-- Farmer Details --}}
-        @if($beneficiary->isFarmer())
-            <div class="card-header bg-white fw-semibold border-top">
-                <i class="bi bi-tree me-1"></i> Farmer Details
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <div class="text-muted small">Farm Ownership</div>
-                        <div class="fw-semibold">{{ $beneficiary->farm_ownership ?? '—' }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-muted small">Farm Size</div>
-                        <div class="fw-semibold">{{ $beneficiary->farm_size_hectares ? $beneficiary->farm_size_hectares . ' hectares' : '—' }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-muted small">Primary Commodity</div>
-                        <div class="fw-semibold">{{ $beneficiary->primary_commodity ?? '—' }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-muted small">Farm Type</div>
-                        <div class="fw-semibold">{{ $beneficiary->farm_type ?? '—' }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-muted small">Organization / Cooperative Membership</div>
-                        <div class="fw-semibold">{{ $beneficiary->organization_membership ?? '—' }}</div>
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        {{-- DAR Details --}}
-        @if($hasDarDetails)
-            <div class="card-header bg-white fw-semibold border-top">
-                <i class="bi bi-file-earmark-text me-1"></i> DAR/ARB Details
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <div class="text-muted small">CLOA/EP Number</div>
-                        <div class="fw-semibold">{{ $beneficiary->cloa_ep_number ?? '—' }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-muted small">ARB Classification</div>
-                        <div class="fw-semibold">{{ $beneficiary->arb_classification ?? '—' }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-muted small">Ownership Scheme</div>
-                        <div class="fw-semibold">{{ $beneficiary->ownership_scheme ?? '—' }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-muted small">Land Area Awarded</div>
-                        <div class="fw-semibold">{{ $beneficiary->land_area_awarded_hectares ? $beneficiary->land_area_awarded_hectares . ' hectares' : '—' }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-muted small">BARC Membership Status</div>
-                        <div class="fw-semibold">{{ $beneficiary->barc_membership_status ?? '—' }}</div>
-                    </div>
-                    <div class="col-md-12">
-                        <div class="text-muted small">Landholding Description</div>
-                        <div class="fw-semibold">{{ $beneficiary->landholding_description ?? '—' }}</div>
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        {{-- Fisherfolk Details --}}
-        @if($beneficiary->isFisherfolk())
-            <div class="card-header bg-white fw-semibold border-top">
-                <i class="bi bi-water me-1"></i> Fisherfolk Details
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <div class="text-muted small">Fisherfolk Type</div>
-                        <div class="fw-semibold">{{ $beneficiary->fisherfolk_type ?? '—' }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-muted small">Main Fishing Gear</div>
-                        <div class="fw-semibold">{{ $beneficiary->main_fishing_gear ?? '—' }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-muted small">Has Fishing Vessel</div>
-                        <div class="fw-semibold">
-                            @if($beneficiary->has_fishing_vessel)
-                                <span class="badge bg-success">Yes</span>
-                            @else
-                                <span class="badge bg-secondary">No</span>
+                        <h2 class="mb-1 fw-bold text-dark">{{ $beneficiary->full_name }}</h2>
+                        <div class="d-flex flex-wrap gap-2">
+                            @php
+                                $classBadge = match($beneficiary->classification) {
+                                    'Farmer'     => 'badge-soft-primary',
+                                    'Fisherfolk' => 'badge-soft-info',
+                                    'Both'       => 'badge-soft-purple',
+                                    default      => 'bg-soft-secondary',
+                                };
+                            @endphp
+                            <span class="badge {{ $classBadge }} px-3 py-2 rounded-pill">
+                                <i class="bi bi-person-badge me-1"></i> {{ $beneficiary->classification }}
+                            </span>
+                            <span class="badge {{ $beneficiary->status === 'Active' ? 'badge-soft-success' : 'badge-soft-danger' }} px-3 py-2 rounded-pill">
+                                <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> {{ $beneficiary->status }}
+                            </span>
+                            @if($beneficiary->barangay)
+                                <span class="badge bg-light text-muted border px-3 py-2 rounded-pill">
+                                    <i class="bi bi-geo-alt me-1"></i> Barangay {{ $beneficiary->barangay->name }}
+                                </span>
                             @endif
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="text-muted small">Length of Residency (Months)</div>
-                        <div class="fw-semibold">{{ $beneficiary->length_of_residency_months ?? '—' }}</div>
-                    </div>
-                    @if($beneficiary->has_fishing_vessel)
-                        <div class="col-md-4">
-                            <div class="text-muted small">Fishing Vessel Type</div>
-                            <div class="fw-semibold">{{ $beneficiary->fishing_vessel_type ?? '—' }}</div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="text-muted small">Fishing Vessel Tonnage</div>
-                            <div class="fw-semibold">{{ $beneficiary->fishing_vessel_tonnage ? $beneficiary->fishing_vessel_tonnage . ' tons' : '—' }}</div>
-                        </div>
-                    @endif
                 </div>
             </div>
-        @endif
-
-        {{-- Association --}}
-        <div class="card-header bg-white fw-semibold border-top">
-            <i class="bi bi-shield-check me-1"></i> Association Membership
-        </div>
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <div class="text-muted small">Association Member</div>
-                    <div class="fw-semibold">
-                        @if($beneficiary->association_member)
-                            <span class="badge bg-success">Yes</span>
-                        @else
-                            <span class="badge bg-secondary">No</span>
-                        @endif
-                    </div>
+            <div class="col-md-5">
+                <div class="d-flex justify-content-md-end gap-3 no-print">
+                    <a href="{{ route('beneficiaries.index') }}" class="btn btn-light rounded-pill px-4">
+                        <i class="bi bi-arrow-left me-1"></i> Back
+                    </a>
+                    <a href="{{ route('beneficiaries.edit', $beneficiary) }}" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                        <i class="bi bi-pencil-square me-1"></i> Edit Profile
+                    </a>
                 </div>
-                @if($beneficiary->association_member && $beneficiary->association_name)
-                    <div class="col-md-8">
-                        <div class="text-muted small">Association Name</div>
-                        <div class="fw-semibold">{{ $beneficiary->association_name }}</div>
-                    </div>
-                @endif
             </div>
         </div>
+    </div>
 
-        @if($customFieldValues->isNotEmpty() || $agencyDynamicCustomFieldValues->isNotEmpty())
-            <div class="card-header bg-white fw-semibold border-top">
-                <i class="bi bi-sliders me-1"></i> Additional Configured Fields
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    @foreach($customFieldValues as $fieldGroup => $fieldValue)
-                        <div class="col-md-4">
-                            <div class="text-muted small">{{ Str::title(str_replace('_', ' ', $fieldGroup)) }}</div>
-                            <div class="fw-semibold">
-                                {{ is_array($fieldValue) ? collect($fieldValue)->filter(fn ($item) => filled($item))->implode(', ') : $fieldValue }}
+    {{-- Tabs Navigation --}}
+    <div class="d-flex justify-content-center justify-content-md-start">
+        <ul class="nav nav-pills program-tabs mb-4 p-1 no-print" id="beneficiaryTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active rounded-pill px-4 py-2" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                    <i class="bi bi-person-lines-fill me-2"></i>Overview
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-4 py-2" id="distributions-tab" data-bs-toggle="tab" data-bs-target="#distributions" type="button" role="tab">
+                    <i class="bi bi-box-seam me-2"></i>Distributions
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-4 py-2" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab">
+                    <i class="bi bi-file-earmark-text me-2"></i>Documents
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-4 py-2" id="communications-tab" data-bs-toggle="tab" data-bs-target="#communications" type="button" role="tab">
+                    <i class="bi bi-chat-left-dots me-2"></i>Communications
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <div class="tab-content" id="beneficiaryTabsContent">
+        <!-- Overview Tab -->
+        <div class="tab-pane fade show active" id="overview" role="tabpanel">
+            <div class="row g-4">
+                {{-- Main Info Column --}}
+                <div class="col-lg-8">
+                    {{-- Personal Info Card --}}
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center gap-2">
+                            <div class="bg-primary bg-opacity-10 p-2 rounded text-primary">
+                                <i class="bi bi-info-circle"></i>
+                            </div>
+                            <h5 class="card-title fw-bold mb-0">Personal & Contact Information</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row g-4">
+                                <div class="col-md-3">
+                                    <div class="info-label">First Name</div>
+                                    <div class="info-value">{{ $beneficiary->first_name }}</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="info-label">Middle Name</div>
+                                    <div class="info-value">{{ $beneficiary->middle_name ?: '—' }}</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="info-label">Last Name</div>
+                                    <div class="info-value">{{ $beneficiary->last_name }}</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="info-label">Extension</div>
+                                    <div class="info-value">{{ $beneficiary->name_suffix ?: '—' }}</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="info-label">Sex</div>
+                                    <div class="info-value">{{ $beneficiary->sex }}</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="info-label">Date of Birth</div>
+                                    <div class="info-value">{{ $beneficiary->date_of_birth ? $beneficiary->date_of_birth->format('M d, Y') : '—' }}</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="info-label">Civil Status</div>
+                                    <div class="info-value">{{ $beneficiary->civil_status }}</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="info-label">Education</div>
+                                    <div class="info-value">{{ $beneficiary->highest_education ?: '—' }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-label">Contact Number</div>
+                                    <div class="info-value text-primary">
+                                        @if($beneficiary->contact_number)
+                                            <i class="bi bi-telephone-fill me-1"></i> {{ $beneficiary->contact_number }}
+                                        @else
+                                            <span class="text-muted small">No contact recorded</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-label">Primary ID ({{ $beneficiary->id_type ?: 'None' }})</div>
+                                    <div class="info-value">{{ $beneficiary->id_number ?: '—' }}</div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="info-label">Home Address</div>
+                                    <div class="info-value text-muted"><i class="bi bi-house-door me-1"></i> {{ $beneficiary->home_address ?: '—' }}</div>
+                                </div>
                             </div>
                         </div>
-                    @endforeach
+                    </div>
 
-                    @foreach($agencyDynamicCustomFieldValues as $entry)
-                        <div class="col-md-4">
-                            <div class="text-muted small">{{ $entry['agency_name'] }} &middot; {{ $entry['field_label'] }}</div>
-                            <div class="fw-semibold">{{ $entry['value'] }}</div>
+                    {{-- Agency Registrations Card --}}
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center gap-2">
+                            <div class="bg-success bg-opacity-10 p-2 rounded text-success">
+                                <i class="bi bi-building-check"></i>
+                            </div>
+                            <h5 class="card-title fw-bold mb-0">Registered Agencies</h5>
                         </div>
-                    @endforeach
-                </div>
-            </div>
-        @endif
-
-        @if($coreUnavailabilityReasons->isNotEmpty() || $customFieldUnavailabilityReasons->isNotEmpty() || $agencyDynamicUnavailabilityReasons->isNotEmpty())
-            <div class="card-header bg-white fw-semibold border-top">
-                <i class="bi bi-info-circle me-1"></i> Field Unavailability Reasons
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    @foreach($coreUnavailabilityReasons as $fieldLabel => $reason)
-                        <div class="col-md-6">
-                            <div class="text-muted small">{{ $fieldLabel }}</div>
-                            <div class="fw-semibold">{{ $reason }}</div>
+                        <div class="card-body p-0">
+                            @if($beneficiary->agencies->isNotEmpty())
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="bg-light text-muted">
+                                            <tr>
+                                                <th class="ps-4">Agency</th>
+                                                <th>Identifier</th>
+                                                <th class="text-end pe-4">Registration Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($beneficiary->agencies as $agency)
+                                                <tr>
+                                                    <td class="ps-4">
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <div class="bg-soft-primary text-primary p-1 rounded-circle" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                                                                <i class="bi bi-check-circle-fill" style="font-size: 0.8rem;"></i>
+                                                            </div>
+                                                            <span class="fw-bold text-dark">{{ $agency->name }}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        @if($agency->pivot->identifier)
+                                                            <span class="badge bg-light text-dark border px-2 py-1 font-monospace">{{ $agency->pivot->identifier }}</span>
+                                                        @else
+                                                            <span class="text-muted small">—</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-end pe-4">
+                                                        <span class="text-muted small">{{ $agency->pivot->registered_at }}</span>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="text-center py-5 text-muted">No agency registrations found.</div>
+                            @endif
                         </div>
-                    @endforeach
+                    </div>
 
-                    @foreach($customFieldUnavailabilityReasons as $fieldName => $reason)
-                        <div class="col-md-6">
-                            <div class="text-muted small">{{ Str::title(str_replace('_', ' ', $fieldName)) }}</div>
-                            <div class="fw-semibold">{{ $reason }}</div>
+                    {{-- Classification Details Card --}}
+                    @if($beneficiary->isFarmer() || $beneficiary->isFisherfolk() || $hasDarDetails)
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center gap-2">
+                                <div class="bg-info bg-opacity-10 p-2 rounded text-info">
+                                    <i class="bi bi-grid-3x3-gap"></i>
+                                </div>
+                                <h5 class="card-title fw-bold mb-0">Classification Specifics</h5>
+                            </div>
+                            <div class="card-body p-4">
+                                {{-- Farmer Section --}}
+                                @if($beneficiary->isFarmer())
+                                    <div class="mb-4">
+                                        <h6 class="text-primary fw-bold mb-3 small text-uppercase"><i class="bi bi-tree me-2"></i>Farmer Details</h6>
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <div class="info-label">Ownership</div>
+                                                <div class="info-value">{{ $beneficiary->farm_ownership ?: '—' }}</div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="info-label">Farm Size</div>
+                                                <div class="info-value">{{ $beneficiary->farm_size_hectares ? $beneficiary->farm_size_hectares . ' ha' : '—' }}</div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="info-label">Commodity</div>
+                                                <div class="info-value">{{ $beneficiary->primary_commodity ?: '—' }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                {{-- Fisherfolk Section --}}
+                                @if($beneficiary->isFisherfolk())
+                                    <div class="mb-4 @if($beneficiary->isFarmer()) border-top pt-4 @endif">
+                                        <h6 class="text-info fw-bold mb-3 small text-uppercase"><i class="bi bi-water me-2"></i>Fisherfolk Details</h6>
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <div class="info-label">Fisherfolk Type</div>
+                                                <div class="info-value">{{ $beneficiary->fisherfolk_type ?: '—' }}</div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="info-label">Main Gear</div>
+                                                <div class="info-value">{{ $beneficiary->main_fishing_gear ?: '—' }}</div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="info-label">Vessel</div>
+                                                <div class="info-value">
+                                                    @if($beneficiary->has_fishing_vessel)
+                                                        <span class="badge badge-soft-success">Yes</span>
+                                                    @else
+                                                        <span class="badge badge-soft-secondary">No</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                {{-- DAR Details --}}
+                                @if($hasDarDetails)
+                                    <div class="mb-0 @if($beneficiary->isFarmer() || $beneficiary->isFisherfolk()) border-top pt-4 @endif">
+                                        <h6 class="text-success fw-bold mb-3 small text-uppercase"><i class="bi bi-journal-check me-2"></i>DAR / ARB Details</h6>
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <div class="info-label">CLOA/EP #</div>
+                                                <div class="info-value font-monospace">{{ $beneficiary->cloa_ep_number ?: '—' }}</div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="info-label">Classification</div>
+                                                <div class="info-value">{{ $beneficiary->arb_classification ?: '—' }}</div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="info-label">Ownership Scheme</div>
+                                                <div class="info-value">{{ $beneficiary->ownership_scheme ?: '—' }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
                         </div>
-                    @endforeach
+                    @endif
 
-                    @foreach($agencyDynamicUnavailabilityReasons as $entry)
-                        <div class="col-md-6">
-                            <div class="text-muted small">{{ $entry['agency_name'] }} &middot; {{ $entry['field_label'] }}</div>
-                            <div class="fw-semibold">{{ $entry['reason'] }}</div>
+                    {{-- Custom Fields Card --}}
+                    @if($customFieldValues->isNotEmpty() || $agencyDynamicCustomFieldValues->isNotEmpty())
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center gap-2">
+                                <div class="bg-warning bg-opacity-10 p-2 rounded text-warning">
+                                    <i class="bi bi-sliders"></i>
+                                </div>
+                                <h5 class="card-title fw-bold mb-0">Additional Attributes</h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="row g-4">
+                                    @foreach($customFieldValues as $fieldGroup => $fieldValue)
+                                        <div class="col-md-4">
+                                            <div class="info-label">{{ Str::title(str_replace('_', ' ', $fieldGroup)) }}</div>
+                                            <div class="info-value">
+                                                {{ is_array($fieldValue) ? collect($fieldValue)->filter(fn ($item) => filled($item))->implode(', ') : $fieldValue }}
+                                            </div>
+                                        </div>
+                                    @endforeach
+
+                                    @foreach($agencyDynamicCustomFieldValues as $entry)
+                                        <div class="col-md-4">
+                                            <div class="info-label">{{ $entry['agency_name'] }} &middot; {{ $entry['field_label'] }}</div>
+                                            <div class="info-value">{{ $entry['value'] }}</div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
                         </div>
-                    @endforeach
-                </div>
-            </div>
-        @endif
-    </div>
-
-    {{-- Supporting Documents --}}
-    <div id="supporting-documents" class="card border-0 shadow-sm mb-4" style="scroll-margin-top: 90px;">
-        <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
-            <span><i class="bi bi-paperclip me-1"></i> Supporting Documents</span>
-            <a href="{{ route('beneficiaries.attachments.create', $beneficiary) }}" class="btn btn-sm btn-outline-primary">
-                <i class="bi bi-box-arrow-up-right me-1"></i> Open Upload Page
-            </a>
-        </div>
-        <div class="card-body">
-            <form action="{{ route('beneficiaries.attachments.store', $beneficiary) }}"
-                  method="POST"
-                  enctype="multipart/form-data"
-                  class="row g-3 align-items-end mb-3"
-                  data-submit-spinner>
-                @csrf
-                <div class="col-md-4">
-                    <label for="document_type" class="form-label">Document Type</label>
-                    <input type="text"
-                           class="form-control @error('document_type') is-invalid @enderror"
-                           id="document_type"
-                           name="document_type"
-                           maxlength="100"
-                           placeholder="e.g. Valid ID, Barangay Certificate"
-                           value="{{ old('document_type') }}">
-                    @error('document_type')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-                <div class="col-md-5">
-                    <label for="attachment" class="form-label">Attachment File <span class="text-danger">*</span></label>
-                    <input type="file"
-                           class="form-control @error('attachment') is-invalid @enderror"
-                           id="attachment"
-                           name="attachment"
-                           accept=".pdf,.jpg,.jpeg,.png"
-                           required>
-                    @error('attachment')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                    <div class="form-text">Accepted: PDF, JPG, JPEG, PNG. Maximum: 5 MB.</div>
-                </div>
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-upload me-1"></i> Upload Document
-                    </button>
-                </div>
-            </form>
-
-            @if($beneficiary->attachments->isNotEmpty())
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0 table-responsive-cards">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Type</th>
-                                <th>File Name</th>
-                                <th>Size</th>
-                                <th>Uploaded By</th>
-                                <th>Uploaded At</th>
-                                <th class="text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($beneficiary->attachments as $attachment)
-                                <tr>
-                                    <td data-label="Type">{{ $attachment->document_type ?: 'Uncategorized' }}</td>
-                                    <td class="text-break" data-label="File Name">{{ $attachment->original_name }}</td>
-                                    <td data-label="Size">{{ number_format($attachment->size_bytes / 1024, 2) }} KB</td>
-                                    <td data-label="Uploaded By">{{ $attachment->uploader?->name ?? 'System' }}</td>
-                                    <td data-label="Uploaded At">{{ $attachment->created_at->format('M d, Y h:i A') }}</td>
-                                    <td class="text-end text-nowrap" data-label="Actions">
-                                        <a href="{{ route('beneficiaries.attachments.view', [$beneficiary, $attachment]) }}"
-                                           class="btn btn-sm btn-outline-secondary me-1"
-                                           target="_blank"
-                                           rel="noopener">
-                                            <i class="bi bi-eye"></i> View
-                                        </a>
-                                        <a href="{{ route('beneficiaries.attachments.download', [$beneficiary, $attachment]) }}"
-                                           class="btn btn-sm btn-outline-primary me-1">
-                                            <i class="bi bi-download"></i> Download
-                                        </a>
-                                        <form action="{{ route('beneficiaries.attachments.destroy', [$beneficiary, $attachment]) }}"
-                                              method="POST"
-                                              class="d-inline"
-                                              data-confirm-title="Delete Attachment"
-                                              data-confirm-message="Delete {{ $attachment->original_name }} from this beneficiary record?">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                <i class="bi bi-trash"></i> Delete
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @else
-                <p class="text-muted mb-0">
-                    <i class="bi bi-inbox me-1"></i>
-                    No supporting documents uploaded yet.
-                </p>
-            @endif
-        </div>
-    </div>
-
-    {{-- Distribution History --}}
-    <div id="distribution-history" class="card border-0 shadow-sm mb-4" style="scroll-margin-top: 90px;">
-        @php
-            // Merge and sort allocations and direct assistance by most recent date first
-            $allDistributions = collect();
-
-            // Add allocations with method type indicator
-            foreach($beneficiary->allocations as $allocation) {
-                $allDistributions->push((object)[
-                    'type' => 'allocation',
-                    'method' => $allocation->isDirect() ? 'Direct' : 'Event-Based',
-                    'methodBadge' => $allocation->isDirect() ? 'Direct' : 'Event-Based',
-                    'badgeClass' => $allocation->isDirect() ? 'bg-info text-dark' : 'bg-secondary',
-                    'data' => $allocation,
-                    'sortDate' => $allocation->distributionEvent?->distribution_date ?? $allocation->created_at,
-                ]);
-            }
-
-            // Add direct assistance with method type indicator
-            foreach($beneficiary->directAssistance as $assistance) {
-                $allDistributions->push((object)[
-                    'type' => 'directAssistance',
-                    'method' => 'Direct Assistance',
-                    'methodBadge' => 'Direct Assistance',
-                    'badgeClass' => 'bg-warning text-dark',
-                    'data' => $assistance,
-                    'sortDate' => $assistance->distributed_at ?? $assistance->created_at,
-                ]);
-            }
-
-            // Sort by most recent date first (descending)
-            $allDistributions = $allDistributions->sortByDesc('sortDate')->values();
-        @endphp
-
-        <div class="card-header bg-white">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div class="fw-semibold">
-                    <i class="bi bi-box-seam me-1"></i> Distribution History
-                    @if($allDistributions->isNotEmpty())
-                        <span class="badge bg-light text-dark ms-2">{{ $allDistributions->count() }} Record{{ $allDistributions->count() !== 1 ? 's' : '' }}</span>
                     @endif
                 </div>
-                <small class="text-muted">Showing all allocations, events, and direct assistance</small>
-            </div>
-        </div>
 
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0 table-responsive-cards">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Method</th>
-                            <th>Program</th>
-                            <th>Resource Type</th>
-                            <th>Source Agency</th>
-                            <th>Value</th>
-                            <th>Distribution Date</th>
-                            <th>Status</th>
-                            <th>Distributed At</th>
-                            <th>Remarks</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($allDistributions as $distribution)
-                            <tr>
-                                <td data-label="Method">
-                                    <span class="badge {{ $distribution->badgeClass }}">{{ $distribution->methodBadge }}</span>
-                                </td>
-
-                                @if($distribution->type === 'allocation')
-                                    @php
-                                        $allocation = $distribution->data;
-                                    @endphp
-                                    <td class="fw-semibold" data-label="Program">{{ $allocation->programName->name ?? $allocation->distributionEvent->programName->name ?? '—' }}</td>
-                                    <td data-label="Resource Type">{{ $allocation->resourceType->name ?? $allocation->distributionEvent->resourceType->name ?? '—' }}</td>
-                                    <td data-label="Source Agency">{{ $allocation->resourceType->agency->name ?? $allocation->distributionEvent->resourceType->agency->name ?? '—' }}</td>
-                                    <td data-label="Value">{{ $allocation->getDisplayValue() }}</td>
-                                    <td class="text-muted small" data-label="Distribution Date">{{ $allocation->distributionEvent?->distribution_date?->format('M d, Y') ?? $allocation->created_at?->format('M d, Y') ?? '—' }}</td>
-                                    <td data-label="Status">
-                                        @php
-                                            $eventStatus = $allocation->distributionEvent?->status ?? ($allocation->distributed_at ? 'Released' : 'Planned');
-                                            $statusBadge = match($eventStatus) {
-                                                'Pending'   => 'bg-primary',
-                                                'Ongoing'   => 'bg-warning text-dark',
-                                                'Completed' => 'bg-success',
-                                                'Released'  => 'bg-success',
-                                                'Planned'   => 'bg-secondary',
-                                                default     => 'bg-secondary',
-                                            };
-                                        @endphp
-                                        <span class="badge {{ $statusBadge ?? 'bg-secondary' }}">{{ $eventStatus ?? '—' }}</span>
-                                    </td>
-                                    <td class="text-muted small" data-label="Distributed At">{{ $allocation->distributed_at?->format('M d, Y h:i A') ?? '—' }}</td>
-                                    <td data-label="Remarks">{{ $allocation->remarks ?? '—' }}</td>
-                                @else
-                                    @php
-                                        $assistance = $distribution->data;
-                                    @endphp
-                                    <td class="fw-semibold" data-label="Program">{{ $assistance->programName->name ?? '—' }}</td>
-                                    <td data-label="Resource Type">{{ $assistance->resourceType->name ?? '—' }}</td>
-                                    <td data-label="Source Agency">{{ $assistance->programName->agency->name ?? '—' }}</td>
-                                    <td data-label="Value">{{ $assistance->getDisplayValue() }}</td>
-                                    <td class="text-muted small" data-label="Distribution Date">{{ $assistance->created_at?->format('M d, Y') ?? '—' }}</td>
-                                    <td data-label="Status">
-                                        @php
-                                            $normalizedStatus = $assistance->normalized_status;
-                                        @endphp
-                                        @switch($normalizedStatus)
-                                            @case('planned')
-                                                <span class="badge bg-warning text-dark">Planned</span>
-                                                @break
-                                            @case('ready_for_release')
-                                                <span class="badge bg-primary">Ready for Release</span>
-                                                @break
-                                            @case('released')
-                                                <span class="badge bg-success">Released</span>
-                                                @break
-                                            @case('not_received')
-                                                <span class="badge bg-danger">Not Received</span>
-                                                @break
-                                            @default
-                                                <span class="badge bg-secondary">{{ $assistance->status_label }}</span>
-                                                @break
-                                        @endswitch
-                                    </td>
-                                    <td class="text-muted small" data-label="Distributed At">{{ $assistance->distributed_at?->format('M d, Y h:i A') ?? '—' }}</td>
-                                    <td data-label="Remarks">
-                                        {{ $assistance->remarks ?? '—' }}
-                                        @if($assistance->distributionEvent)
-                                            <br><small class="text-muted">Linked to event</small>
-                                        @endif
-                                    </td>
-                                @endif
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="9" class="text-center text-muted py-4">
-                                    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
-                                    No distributions recorded yet.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        @if($beneficiary->directAssistance->isNotEmpty())
-            <div class="card-footer bg-white">
-                <a href="{{ route('direct-assistance.index', ['beneficiary_search' => $beneficiary->full_name]) }}" class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-arrow-right me-1"></i> View All Direct Assistance
-                </a>
-            </div>
-        @endif
-    </div>
-
-    {{-- Send SMS --}}
-    <div id="send-sms" class="card border-0 shadow-sm mb-4" style="scroll-margin-top: 90px;">
-        <div class="card-header bg-white fw-semibold">
-            <i class="bi bi-send me-1"></i> Send SMS
-        </div>
-        <div class="card-body">
-            @if($beneficiary->contact_number)
-                <form action="{{ route('beneficiaries.sendSms', $beneficiary) }}" method="POST" data-submit-spinner>
-                    @csrf
-                    <div class="mb-3">
-                        <label for="sms-message" class="form-label">Message</label>
-                        <textarea name="message" id="sms-message" class="form-control @error('message') is-invalid @enderror"
-                                  rows="3" maxlength="300" placeholder="Type your message here..." data-char-counter>{{ old('message') }}</textarea>
-                        @error('message')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                        <div class="form-text">Max 300 characters. Will be sent to {{ $beneficiary->contact_number }}</div>
+                {{-- Sidebar Column --}}
+                <div class="col-lg-4">
+                    {{-- Status Summary Card --}}
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4">
+                            <h5 class="card-title fw-bold mb-0">Registration Context</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="d-flex flex-column gap-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-muted small fw-bold text-uppercase">RSBSA #</span>
+                                    <span class="info-value font-monospace">{{ $beneficiary->rsbsa_number ?: '—' }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center border-top pt-2">
+                                    <span class="text-muted small fw-bold text-uppercase">FishR #</span>
+                                    <span class="info-value font-monospace">{{ $beneficiary->fishr_number ?: '—' }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center border-top pt-2">
+                                    <span class="text-muted small fw-bold text-uppercase">Member Date</span>
+                                    <span class="info-value">{{ $beneficiary->registered_at ? $beneficiary->registered_at->format('M d, Y') : '—' }}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-send me-1"></i> Send SMS
-                    </button>
-                </form>
-            @else
-                <p class="text-muted mb-0">
-                    <i class="bi bi-exclamation-circle me-1"></i>
-                    No contact number on file. Please update the beneficiary profile to send SMS.
-                </p>
-            @endif
-        </div>
-    </div>
 
-    {{-- SMS History --}}
-    <div id="sms-history" class="card border-0 shadow-sm mb-4" style="scroll-margin-top: 90px;">
-        <div class="card-header bg-white fw-semibold">
-            <i class="bi bi-chat-dots me-1"></i> SMS History
+                    {{-- Association Card --}}
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4">
+                            <h5 class="card-title fw-bold mb-0">Association</h5>
+                        </div>
+                        <div class="card-body p-4 text-center">
+                            @if($beneficiary->association_member)
+                                <div class="bg-success bg-opacity-10 text-success p-3 rounded-circle d-inline-flex mb-3">
+                                    <i class="bi bi-shield-check fs-2"></i>
+                                </div>
+                                <h6 class="fw-bold mb-1">Active Member</h6>
+                                <p class="text-muted small mb-0">{{ $beneficiary->association_name ?: 'Association name not specified' }}</p>
+                            @else
+                                <div class="bg-secondary bg-opacity-10 text-secondary p-3 rounded-circle d-inline-flex mb-3">
+                                    <i class="bi bi-shield-x fs-2"></i>
+                                </div>
+                                <h6 class="fw-bold mb-1 text-muted">Non-Member</h6>
+                                <p class="text-muted small mb-0">No organizational link recorded</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Missing Data Reasons Card --}}
+                    @if($coreUnavailabilityReasons->isNotEmpty() || $customFieldUnavailabilityReasons->isNotEmpty() || $agencyDynamicUnavailabilityReasons->isNotEmpty())
+                        <div class="card border-0 shadow-sm mb-4 border-start border-warning border-4">
+                            <div class="card-header bg-transparent border-0 pt-4 px-4">
+                                <h5 class="card-title fw-bold mb-0 text-warning">Data Availability Notes</h5>
+                            </div>
+                            <div class="card-body p-4 pt-2">
+                                <div class="d-flex flex-column gap-3">
+                                    @foreach($coreUnavailabilityReasons as $label => $reason)
+                                        <div>
+                                            <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.6rem;">{{ $label }}</div>
+                                            <div class="small fw-semibold">{{ $reason }}</div>
+                                        </div>
+                                    @endforeach
+                                    @foreach($agencyDynamicUnavailabilityReasons as $entry)
+                                        <div>
+                                            <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.6rem;">{{ $entry['agency_name'] }} &middot; {{ $entry['field_label'] }}</div>
+                                            <div class="small fw-semibold">{{ $entry['reason'] }}</div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0 table-responsive-cards">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Message</th>
-                            <th>Status</th>
-                            <th>Sent At</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($beneficiary->smsLogs as $sms)
-                            <tr>
-                                <td class="small text-break" data-label="Message">{{ $sms->message }}</td>
-                                <td data-label="Status">
-                                    <span class="badge {{ $sms->status === 'sent' ? 'bg-success' : 'bg-danger' }}">
-                                        {{ ucfirst($sms->status) }}
-                                    </span>
-                                </td>
-                                <td class="text-muted small" data-label="Sent At">{{ $sms->sent_at->format('M d, Y h:i A') }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="3" class="text-center text-muted py-4">
-                                    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
-                                    No SMS logs found.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+
+        <!-- Distributions Tab -->
+        <div class="tab-pane fade" id="distributions" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                @php
+                    $allDistributions = collect();
+                    foreach($beneficiary->allocations as $allocation) {
+                        $allDistributions->push((object)[
+                            'type' => 'allocation',
+                            'methodBadge' => $allocation->isDirect() ? 'Direct' : 'Event-Based',
+                            'badgeClass' => $allocation->isDirect() ? 'badge-soft-info' : 'badge-soft-primary',
+                            'data' => $allocation,
+                            'sortDate' => $allocation->distributionEvent?->distribution_date ?? $allocation->created_at,
+                        ]);
+                    }
+                    foreach($beneficiary->directAssistance as $assistance) {
+                        $allDistributions->push((object)[
+                            'type' => 'directAssistance',
+                            'methodBadge' => 'Direct Assistance',
+                            'badgeClass' => 'badge-soft-warning',
+                            'data' => $assistance,
+                            'sortDate' => $assistance->distributed_at ?? $assistance->created_at,
+                        ]);
+                    }
+                    $allDistributions = $allDistributions->sortByDesc('sortDate')->values();
+                @endphp
+
+                <div class="card-header bg-transparent border-0 p-4 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title fw-bold mb-0">Consolidated Distribution Ledger</h5>
+                    @if($allDistributions->isNotEmpty())
+                        <span class="badge bg-light text-muted border rounded-pill">{{ $allDistributions->count() }} Records</span>
+                    @endif
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-muted">
+                                <tr>
+                                    <th class="ps-4">Method</th>
+                                    <th>Program & Resource</th>
+                                    <th>Agency</th>
+                                    <th class="text-end">Value</th>
+                                    <th>Status</th>
+                                    <th class="text-end pe-4">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($allDistributions as $distribution)
+                                    @if($distribution->type === 'allocation')
+                                        @php $allocation = $distribution->data; @endphp
+                                        <tr>
+                                            <td class="ps-4"><span class="badge {{ $distribution->badgeClass }} px-2 py-1 rounded-pill">{{ $distribution->methodBadge }}</span></td>
+                                            <td>
+                                                <div class="fw-bold text-dark">{{ $allocation->programName->name ?? $allocation->distributionEvent->programName->name ?? '—' }}</div>
+                                                <small class="text-muted">{{ $allocation->resourceType->name ?? $allocation->distributionEvent->resourceType->name ?? '—' }}</small>
+                                            </td>
+                                            <td><small class="text-muted">{{ $allocation->resourceType->agency->name ?? '—' }}</small></td>
+                                            <td class="text-end fw-bold text-primary">{{ $allocation->getDisplayValue() }}</td>
+                                            <td>
+                                                @php
+                                                    $eventStatus = $allocation->distributionEvent?->status ?: ($allocation->distributed_at ? 'Released' : 'Planned');
+                                                    $sBadge = match($eventStatus) {
+                                                        'Completed', 'Released' => 'badge-soft-success',
+                                                        'Ongoing', 'Pending'   => 'badge-soft-warning',
+                                                        default                 => 'badge-soft-secondary',
+                                                    };
+                                                @endphp
+                                                <span class="badge {{ $sBadge }} px-2 py-1 rounded-pill">{{ $eventStatus }}</span>
+                                            </td>
+                                            <td class="text-end pe-4">
+                                                <div class="small text-dark fw-semibold">{{ $allocation->distributed_at ? $allocation->distributed_at->format('M d, Y') : '—' }}</div>
+                                                @if($allocation->distributionEvent?->distribution_date)
+                                                    <small class="text-muted" style="font-size: 0.7rem;">Sched: {{ $allocation->distributionEvent->distribution_date->format('M d, Y') }}</small>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @else
+                                        @php $assistance = $distribution->data; @endphp
+                                        <tr>
+                                            <td class="ps-4"><span class="badge {{ $distribution->badgeClass }} px-2 py-1 rounded-pill">{{ $distribution->methodBadge }}</span></td>
+                                            <td>
+                                                <div class="fw-bold text-dark">{{ $assistance->programName->name ?? '—' }}</div>
+                                                <small class="text-muted">{{ $assistance->resourceType->name ?? '—' }}</small>
+                                            </td>
+                                            <td><small class="text-muted">{{ $assistance->programName->agency->name ?? '—' }}</small></td>
+                                            <td class="text-end fw-bold text-primary">{{ $assistance->getDisplayValue() }}</td>
+                                            <td>
+                                                @php $nStatus = $assistance->normalized_status; @endphp
+                                                <span class="badge @if($nStatus === 'released') badge-soft-success @elseif($nStatus === 'planned') badge-soft-warning @else badge-soft-secondary @endif px-2 py-1 rounded-pill">
+                                                    {{ $assistance->status_label }}
+                                                </span>
+                                            </td>
+                                            <td class="text-end pe-4">
+                                                <div class="small text-dark fw-semibold">{{ $assistance->distributed_at ? $assistance->distributed_at->format('M d, Y') : '—' }}</div>
+                                                <small class="text-muted" style="font-size: 0.7rem;">Recorded: {{ $assistance->created_at->format('M d, Y') }}</small>
+                                            </td>
+                                        </tr>
+                                    @endif
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="text-center py-5 text-muted">No distribution history found for this beneficiary.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documents Tab -->
+        <div class="tab-pane fade" id="documents" role="tabpanel">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4">
+                            <h5 class="card-title fw-bold mb-0">Upload Document</h5>
+                        </div>
+                        <div class="card-body p-4 pt-2">
+                            <form action="{{ route('beneficiaries.attachments.store', $beneficiary) }}" method="POST" enctype="multipart/form-data" data-submit-spinner>
+                                @csrf
+                                <div class="mb-3">
+                                    <label class="form-label info-label">Document Category</label>
+                                    <input type="text" name="document_type" class="form-control bg-light border-0 @error('document_type') is-invalid @enderror" placeholder="e.g. Govt ID, Barangay Cert" value="{{ old('document_type') }}">
+                                    @error('document_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label info-label">Select File</label>
+                                    <div class="p-3 bg-light rounded-3 border-dashed border-primary text-center">
+                                        <input type="file" name="attachment" class="form-control border-0 bg-transparent @error('attachment') is-invalid @enderror" accept=".pdf,.jpg,.jpeg,.png" required>
+                                        <small class="text-muted mt-2 d-block">PDF, JPG, PNG (Max 5MB)</small>
+                                    </div>
+                                    @error('attachment')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 shadow-sm">
+                                    <i class="bi bi-cloud-upload me-2"></i>Upload Support File
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                            <h5 class="card-title fw-bold mb-0">Supporting Documents Library</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            @if($beneficiary->attachments->isNotEmpty())
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="bg-light text-muted">
+                                            <tr>
+                                                <th class="ps-4">Type</th>
+                                                <th>File Name</th>
+                                                <th class="text-end pe-4">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($beneficiary->attachments as $attachment)
+                                                <tr>
+                                                    <td class="ps-4">
+                                                        <span class="badge badge-soft-primary rounded-pill">{{ $attachment->document_type ?: 'Other' }}</span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <i class="bi bi-file-earmark-text fs-5 text-muted"></i>
+                                                            <div>
+                                                                <div class="fw-semibold text-dark text-truncate" style="max-width: 300px;">{{ $attachment->original_name }}</div>
+                                                                <small class="text-muted">{{ number_format($attachment->size_bytes / 1024, 1) }} KB &bull; {{ $attachment->created_at->format('M d, Y') }}</small>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-end pe-4">
+                                                        <div class="btn-group shadow-sm rounded-pill overflow-hidden border">
+                                                            <a href="{{ route('beneficiaries.attachments.view', [$beneficiary, $attachment]) }}" class="btn btn-white btn-sm px-3 border-end" target="_blank" title="View">
+                                                                <i class="bi bi-eye text-primary"></i>
+                                                            </a>
+                                                            <a href="{{ route('beneficiaries.attachments.download', [$beneficiary, $attachment]) }}" class="btn btn-white btn-sm px-3 border-end" title="Download">
+                                                                <i class="bi bi-download text-info"></i>
+                                                            </a>
+                                                            <form action="{{ route('beneficiaries.attachments.destroy', [$beneficiary, $attachment]) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this attachment?')">
+                                                                @csrf @method('DELETE')
+                                                                <button type="submit" class="btn btn-white btn-sm px-3" title="Delete">
+                                                                    <i class="bi bi-trash text-danger"></i>
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="text-center py-5 text-muted">
+                                    <i class="bi bi-folder-x display-4 d-block mb-3 opacity-25"></i>
+                                    <p class="mb-0">No documents in the library.</p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Communications Tab -->
+        <div class="tab-pane fade" id="communications" role="tabpanel">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4">
+                            <h5 class="card-title fw-bold mb-0">Broadcast SMS</h5>
+                        </div>
+                        <div class="card-body p-4 pt-2">
+                            @if($beneficiary->contact_number)
+                                <form action="{{ route('beneficiaries.sendSms', $beneficiary) }}" method="POST" data-submit-spinner>
+                                    @csrf
+                                    <div class="mb-3">
+                                        <label class="form-label info-label">Message Template / Content</label>
+                                        <textarea name="message" class="form-control bg-light border-0 @error('message') is-invalid @enderror" rows="5" maxlength="300" placeholder="Type your message for this beneficiary..." required>{{ old('message') }}</textarea>
+                                        @error('message')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                        <div class="form-text small mt-2">Recipient: <span class="fw-bold text-primary">{{ $beneficiary->contact_number }}</span></div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 shadow-sm">
+                                        <i class="bi bi-send me-2"></i>Send Message
+                                    </button>
+                                </form>
+                            @else
+                                <div class="alert badge-soft-warning border-0 p-3 rounded-3 d-flex align-items-center gap-3">
+                                    <i class="bi bi-exclamation-triangle fs-4"></i>
+                                    <div class="small">No valid contact number on file. SMS functionality is disabled for this profile.</div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4">
+                            <h5 class="card-title fw-bold mb-0">Message Thread</h5>
+                        </div>
+                        <div class="card-body p-4 pt-2">
+                            @if($beneficiary->smsLogs->isNotEmpty())
+                                <div class="sms-thread">
+                                    @foreach($beneficiary->smsLogs->sortByDesc('sent_at') as $sms)
+                                        <div class="sms-message {{ $sms->status === 'sent' ? 'sent shadow-sm' : 'failed' }}">
+                                            <div class="message-text">{{ $sms->message }}</div>
+                                            <div class="sms-meta">
+                                                <span>{{ $sms->sent_at->format('M d, h:i A') }}</span>
+                                                @if($sms->status === 'sent')
+                                                    <i class="bi bi-check2-all"></i>
+                                                @else
+                                                    <i class="bi bi-exclamation-circle-fill" title="Delivery Failed"></i>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="text-center py-5 text-muted">
+                                    <i class="bi bi-chat-square-text display-4 d-block mb-3 opacity-25"></i>
+                                    <p class="mb-0">No SMS history recorded.</p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+</div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Restore active tab based on URL param
+    const urlParams = new URLSearchParams(window.location.search);
+    const activeTab = urlParams.get('tab') || 'overview';
+    const tabTrigger = document.querySelector(`#${activeTab}-tab`);
+    if (tabTrigger) {
+        const tab = new bootstrap.Tab(tabTrigger);
+        tab.show();
+    }
+
+    // Update URL when switching tabs
+    const tabEls = document.querySelectorAll('button[data-bs-toggle="tab"]');
+    tabEls.forEach(tabEl => {
+        tabEl.addEventListener('shown.bs.tab', function (event) {
+            const targetId = event.target.id.replace('-tab', '');
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('tab', targetId);
+            window.history.replaceState({}, '', currentUrl);
+        });
+    });
+});
+</script>
+@endpush
 @endsection
