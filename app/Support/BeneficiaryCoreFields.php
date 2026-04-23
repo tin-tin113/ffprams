@@ -71,6 +71,12 @@ final class BeneficiaryCoreFields
         'fishing_vessel_type',
         'fishing_vessel_tonnage',
         'length_of_residency_months',
+        'cloa_ep_number',
+        'arb_classification',
+        'landholding_description',
+        'land_area_awarded_hectares',
+        'ownership_scheme',
+        'barc_membership_status',
     ];
 
     /**
@@ -89,6 +95,12 @@ final class BeneficiaryCoreFields
         'fishing_vessel_type',
         'fishing_vessel_tonnage',
         'length_of_residency_months',
+        'cloa_ep_number',
+        'arb_classification',
+        'landholding_description',
+        'land_area_awarded_hectares',
+        'ownership_scheme',
+        'barc_membership_status',
     ];
 
     /**

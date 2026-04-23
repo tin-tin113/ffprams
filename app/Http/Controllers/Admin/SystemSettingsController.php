@@ -44,10 +44,14 @@ class SystemSettingsController extends Controller
     /**
      * Show admin settings dashboard with all settings in tabs
      */
-    public function index(): View
+    public function index(Request $request): View
     {
+        $activeTab = $request->query('tab', 'agencies');
+
         // Agencies data
-        $agencies = Agency::with('classifications')->orderBy('name')->get();
+        $agencies = Agency::with(['classifications' => function($q) {
+            $q->orderBy('name');
+        }])->orderBy('name')->get();
 
         // Resource Types data
         $activeAgencies = Agency::where('is_active', true)->orderBy('name')->get();
@@ -59,15 +63,25 @@ class SystemSettingsController extends Controller
         // Form Fields data
         $this->validateFormFieldOptions();
         $hiddenGlobalGroups = BeneficiaryCoreFields::agencySpecificCoreFieldNames();
-        $formFields = FormFieldOption::query()
+        
+        $allGlobalFields = FormFieldOption::query()
             ->whereNotIn('field_group', $hiddenGlobalGroups)
             ->orderBy('field_group')
             ->orderBy('sort_order')
             ->orderBy('label')
-            ->get()
+            ->get();
+
+        // 1. Global / General fields (Placement: personal_information)
+        $globalFormFields = $allGlobalFields
+            ->filter(fn($f) => $f->placement_section === FormFieldOption::PLACEMENT_PERSONAL_INFORMATION)
             ->groupBy('field_group');
 
-        $fieldGroupMeta = $formFields->map(function ($options) {
+        // 2. Classification-specific Global fields (Custom fields added for Farmer/Fisherfolk/DAR)
+        $classificationCustomFields = $allGlobalFields
+            ->filter(fn($f) => $f->placement_section !== FormFieldOption::PLACEMENT_PERSONAL_INFORMATION)
+            ->groupBy('placement_section');
+
+        $fieldGroupMeta = $allGlobalFields->groupBy('field_group')->map(function ($options) {
             $group = $options->first();
 
             return [
@@ -77,7 +91,7 @@ class SystemSettingsController extends Controller
                 'required' => $group->is_required ?? false,
                 'active' => (bool) $options->contains(fn ($option) => (bool) $option->is_active),
             ];
-        })->unique('group');
+        });
 
         $classificationCoreFields = collect($this->classificationCoreFieldDefinitions())
             ->map(function (array $definition): array {
@@ -95,7 +109,19 @@ class SystemSettingsController extends Controller
             })
             ->groupBy('classification');
 
-        return view('admin.settings.index', compact('agencies', 'activeAgencies', 'resourceTypes', 'resourceUnitOptions', 'purposes', 'purposeCategoryOptions', 'formFields', 'fieldGroupMeta', 'classificationCoreFields'));
+        return view('admin.settings.index', compact(
+            'activeTab',
+            'agencies', 
+            'activeAgencies', 
+            'resourceTypes', 
+            'resourceUnitOptions', 
+            'purposes', 
+            'purposeCategoryOptions', 
+            'globalFormFields', 
+            'classificationCustomFields',
+            'fieldGroupMeta', 
+            'classificationCoreFields'
+        ));
     }
 
     public function indexProgramNames(): View
@@ -1240,6 +1266,9 @@ class SystemSettingsController extends Controller
             'position_target_id' => ['nullable', 'integer', 'exists:form_field_options,id'],
             'is_required' => ['boolean'],
             'is_active' => ['boolean'],
+            'options' => ['nullable', 'array'],
+            'options.*.label' => ['required_with:options', 'string', 'max:255'],
+            'options.*.value' => ['nullable', 'string', 'max:255'],
         ]);
 
         $validated['field_group'] = $this->normalizeKey($validated['field_group']);
@@ -1348,7 +1377,7 @@ class SystemSettingsController extends Controller
             $validated['placement_section']
         );
 
-        $option = DB::transaction(function () use ($validated, $resolvedOrderMode) {
+        $option = DB::transaction(function () use ($validated, $resolvedOrderMode, $isOptionBased) {
             $resolvedSortOrder = $this->resolveSortOrder(
                 $validated['field_group'],
                 null,
@@ -1364,26 +1393,43 @@ class SystemSettingsController extends Controller
                 'is_required' => $validated['is_required'] ?? false,
             ]);
 
-            $option = FormFieldOption::create([
-                'field_group' => $validated['field_group'],
-                'field_type' => $validated['field_type'],
-                'placement_section' => $validated['placement_section'],
-                'label' => $validated['label'],
-                'value' => $validated['value'],
-                'sort_order' => $resolvedSortOrder,
-                'is_required' => $validated['is_required'] ?? false,
-                'is_active' => $validated['is_active'] ?? true,
-            ]);
+            if ($isOptionBased && !empty($validated['options'])) {
+                $sortOrder = $resolvedSortOrder;
+                foreach ($validated['options'] as $opt) {
+                    $option = FormFieldOption::create([
+                        'field_group' => $validated['field_group'],
+                        'field_type' => $validated['field_type'],
+                        'placement_section' => $validated['placement_section'],
+                        'label' => $opt['label'],
+                        'value' => $opt['value'] ?: $this->normalizeKey($opt['label']),
+                        'sort_order' => $sortOrder,
+                        'is_required' => $validated['is_required'] ?? false,
+                        'is_active' => $validated['is_active'] ?? true,
+                    ]);
+                    $sortOrder += 10;
+                }
+            } else {
+                $option = FormFieldOption::create([
+                    'field_group' => $validated['field_group'],
+                    'field_type' => $validated['field_type'],
+                    'placement_section' => $validated['placement_section'],
+                    'label' => $validated['label'],
+                    'value' => $validated['value'],
+                    'sort_order' => $resolvedSortOrder,
+                    'is_required' => $validated['is_required'] ?? false,
+                    'is_active' => $validated['is_active'] ?? true,
+                ]);
+            }
 
             $this->normalizeGroupSortOrder($validated['field_group']);
-            $option->refresh();
+            if (isset($option)) $option->refresh();
 
             $this->audit->log(
-                auth()->id(), 'created', 'form_field_options', $option->id,
-                [], $option->toArray(),
+                auth()->id(), 'created', 'form_field_options', $option->id ?? 0,
+                [], $option ? $option->toArray() : [],
             );
 
-            return $option;
+            return $option ?? null;
         });
 
         return response()->json([
@@ -1839,7 +1885,7 @@ class SystemSettingsController extends Controller
             $validated = $request->validate([
                 'field_name' => ['required', 'string', 'lowercase', 'regex:/^[a-z0-9_]+$/', 'max:255'],
                 'display_label' => ['required', 'string', 'max:255'],
-                'field_type' => ['required', 'in:text,textarea,number,decimal,date,datetime,dropdown,checkbox'],
+                'field_type' => ['required', 'in:text,textarea,number,decimal,date,datetime,dropdown,checkbox,radio'],
                 'is_required' => ['nullable', 'boolean'],
                 'help_text' => ['nullable', 'string'],
                 'form_section' => ['nullable', 'string'],
@@ -1964,7 +2010,7 @@ class SystemSettingsController extends Controller
             $validated = $request->validate([
                 'field_name' => ['sometimes', 'string', 'lowercase', 'regex:/^[a-z0-9_]+$/', 'max:255'],
                 'display_label' => ['sometimes', 'string', 'max:255'],
-                'field_type' => ['sometimes', 'in:text,textarea,number,decimal,date,datetime,dropdown,checkbox'],
+                'field_type' => ['sometimes', 'in:text,textarea,number,decimal,date,datetime,dropdown,checkbox,radio'],
                 'is_required' => ['nullable', 'boolean'],
                 'help_text' => ['nullable', 'string'],
                 'form_section' => ['nullable', 'string'],
@@ -2047,7 +2093,7 @@ class SystemSettingsController extends Controller
 
                 $field->update($validated);
 
-                if (array_key_exists('options', $validated) || in_array($field->field_type, ['dropdown', 'checkbox'], true)) {
+                if (array_key_exists('options', $validated) || in_array($field->field_type, ['dropdown', 'checkbox', 'radio'], true)) {
                     $this->syncAgencyFieldOptions($field, $validated['options'] ?? []);
                 }
             });

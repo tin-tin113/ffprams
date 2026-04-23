@@ -639,123 +639,6 @@
     </div>
 </div>
 
-{{-- SECTION 5 — DAR Information --}}
-<div class="card border-0 shadow-sm mb-4" id="dar-info-section" style="display: none;">
-    <div class="card-header bg-white fw-semibold"><i class="bi bi-file-earmark-text me-1"></i> DAR/ARB Information</div>
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-12 col-md-6">
-                <label for="cloa_ep_availability_status" class="form-label">DAR/ARB Availability Status <span class="text-danger">*</span></label>
-                <select class="form-select @error('cloa_ep_availability_status') is-invalid @enderror"
-                        id="cloa_ep_availability_status"
-                        name="cloa_ep_availability_status">
-                    <option value="provided" {{ $cloaAvailabilityStatus === 'provided' ? 'selected' : '' }}>Provided</option>
-                    <option value="not_available_yet" {{ $cloaAvailabilityStatus === 'not_available_yet' ? 'selected' : '' }}>Not available yet</option>
-                    <option value="not_applicable" {{ $cloaAvailabilityStatus === 'not_applicable' ? 'selected' : '' }}>Not applicable</option>
-                    <option value="to_be_verified" {{ $cloaAvailabilityStatus === 'to_be_verified' ? 'selected' : '' }}>To be verified</option>
-                </select>
-                @error('cloa_ep_availability_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
-            </div>
-            <div id="dar-fields-wrapper" class="contents {{ $cloaAvailabilityStatus === 'provided' ? '' : 'd-none' }}">
-            <div class="col-12 col-md-6 {{ $cloaAvailabilityStatus === 'provided' ? '' : 'd-none' }}" id="cloa-ep-number-wrapper">
-                <label for="cloa_ep_number" class="form-label">CLOA/EP Number <span class="text-danger">*</span></label>
-                <input type="text"
-                       class="form-control @error('cloa_ep_number') is-invalid @enderror"
-                       id="cloa_ep_number"
-                       name="cloa_ep_number"
-                       maxlength="100"
-                       value="{{ old('cloa_ep_number', $beneficiary->cloa_ep_number ?? '') }}"
-                       {{ $cloaAvailabilityStatus === 'provided' ? 'required' : '' }}>
-                @error('cloa_ep_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
-            </div>
-            <div class="col-12 {{ $cloaAvailabilityStatus === 'provided' ? 'd-none' : '' }}" id="cloa-ep-reason-wrapper">
-                <label for="cloa_ep_unavailability_reason" class="form-label">Reason for Unavailability <span class="text-danger">*</span></label>
-                <textarea class="form-control @error('cloa_ep_unavailability_reason') is-invalid @enderror"
-                          id="cloa_ep_unavailability_reason"
-                          name="cloa_ep_unavailability_reason"
-                          rows="3"
-                          maxlength="500"
-                          placeholder="Explain why CLOA/EP Number is unavailable (e.g., specific agency or classification is missing)..."
-                          {{ $cloaAvailabilityStatus !== 'provided' ? 'required' : '' }}>{{ old('cloa_ep_unavailability_reason', $beneficiary->cloa_ep_unavailability_reason ?? '') }}</textarea>
-                @error('cloa_ep_unavailability_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
-            </div>
-            <div class="col-12 col-md-6">
-                <label for="arb_classification" class="form-label">ARB Classification {!! $arbClassificationRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
-                <select class="form-select @error('arb_classification') is-invalid @enderror" id="arb_classification" name="arb_classification">
-                    <option value="">Select...</option>
-                    @foreach($fieldOptions['arb_classification'] ?? ['Agricultural Lessee', 'Regular Farmworker', 'Seasonal Farmworker', 'Other Farmworker', 'Actual Tiller', 'Collective/Cooperative', 'Others'] as $option)
-                        @php
-                            if (is_object($option)) {
-                                $label = (string) ($option->label ?? $option->value ?? '');
-                                $value = (string) ($option->value ?? $option->label ?? '');
-                            } elseif (is_array($option)) {
-                                $label = (string) ($option['label'] ?? $option['value'] ?? '');
-                                $value = (string) ($option['value'] ?? $option['label'] ?? '');
-                            } else {
-                                $label = (string) $option;
-                                $value = (string) $option;
-                            }
-                        @endphp
-                        <option value="{{ $value }}" {{ old('arb_classification', $beneficiary->arb_classification ?? '') === $value ? 'selected' : '' }}>
-                            {{ $label }}
-                        </option>
-                    @endforeach
-                </select>
-                @error('arb_classification')<div class="invalid-feedback">{{ $message }}</div>@enderror
-            </div>
-            <div class="col-12">
-                <label for="landholding_description" class="form-label">Landholding Description <span class="text-danger">*</span></label>
-                <textarea class="form-control @error('landholding_description') is-invalid @enderror"
-                          id="landholding_description" name="landholding_description" rows="3" maxlength="1000"
-                          placeholder="Describe the landholding...">{{ old('landholding_description', $beneficiary->landholding_description ?? '') }}</textarea>
-                @error('landholding_description')<div class="invalid-feedback">{{ $message }}</div>@enderror
-            </div>
-            <div class="col-12 col-md-6">
-                <label for="land_area_awarded_hectares" class="form-label">Land Area Awarded (Hectares) <span class="text-danger">*</span></label>
-                <input type="number" class="form-control @error('land_area_awarded_hectares') is-invalid @enderror"
-                       id="land_area_awarded_hectares" name="land_area_awarded_hectares" step="0.01" min="0"
-                       value="{{ old('land_area_awarded_hectares', $beneficiary->land_area_awarded_hectares ?? '') }}">
-                @error('land_area_awarded_hectares')<div class="invalid-feedback">{{ $message }}</div>@enderror
-            </div>
-            <div class="col-12 col-md-6">
-                <label for="ownership_scheme" class="form-label">Ownership Scheme {!! $ownershipSchemeRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
-                <select class="form-select @error('ownership_scheme') is-invalid @enderror" id="ownership_scheme" name="ownership_scheme">
-                    <option value="">Select...</option>
-                    @foreach($fieldOptions['ownership_scheme'] ?? ['Individual', 'Collective', 'Cooperative'] as $option)
-                        @php
-                            if (is_object($option)) {
-                                $label = (string) ($option->label ?? $option->value ?? '');
-                                $value = (string) ($option->value ?? $option->label ?? '');
-                            } elseif (is_array($option)) {
-                                $label = (string) ($option['label'] ?? $option['value'] ?? '');
-                                $value = (string) ($option['value'] ?? $option['label'] ?? '');
-                            } else {
-                                $label = (string) $option;
-                                $value = (string) $option;
-                            }
-                        @endphp
-                        <option value="{{ $value }}" {{ old('ownership_scheme', $beneficiary->ownership_scheme ?? '') === $value ? 'selected' : '' }}>
-                            {{ $label }}
-                        </option>
-                    @endforeach
-                </select>
-                @error('ownership_scheme')<div class="invalid-feedback">{{ $message }}</div>@enderror
-            </div>
-            <div class="col-12 col-md-6">
-                <label for="barc_membership_status" class="form-label">BARC Membership Status</label>
-                <input type="text" class="form-control @error('barc_membership_status') is-invalid @enderror"
-                       id="barc_membership_status" name="barc_membership_status" maxlength="100"
-                       value="{{ old('barc_membership_status', $beneficiary->barc_membership_status ?? '') }}">
-                @error('barc_membership_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
-            </div>
-
-            @foreach($customFieldGroups->get('dar_information', collect()) as $customField)
-                @include('beneficiaries.partials.custom-field-input', ['customField' => $customField, 'beneficiaryCustomFields' => $beneficiaryCustomFields])
-            @endforeach
-            </div>
-        </div>
-    </div>
-</div>
 
 {{-- SECTION 6 — Dynamic Agency Form Fields --}}
 <div class="card border-0 shadow-sm mb-4" id="agency-dynamic-fields-section">
@@ -853,14 +736,10 @@ document.addEventListener('DOMContentLoaded', function () {
         // Hide all sections first
         farmerSection.style.display = 'none';
         fisherfolkSection.style.display = 'none';
-        darSection.style.display = 'none';
 
         // Show sections based on classification and selected agencies
         if (classification === 'Farmer') {
             farmerSection.style.display = 'block';
-            if (selectedAgencies.includes('DAR')) {
-                darSection.style.display = 'block';
-            }
         } else if (classification === 'Fisherfolk') {
             fisherfolkSection.style.display = 'block';
         }
@@ -993,53 +872,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const isApplicable = classificationSelect
             && classificationSelect.value === 'Farmer'
             && selectedAgencies.includes('DAR');
-
-        toggleSectionAvailability(
-            cloaAvailabilitySelect,
-            darFieldsWrapper,
-            cloaReasonWrapper,
-            cloaReasonField,
-            isApplicable ? ['cloa_ep_number', 'arb_classification', 'landholding_description', 'land_area_awarded_hectares', 'ownership_scheme'] : []
-        );
-
-        if (cloaAvailabilitySelect) {
-            cloaAvailabilitySelect.disabled = !isApplicable;
-        }
-
-        if (!isApplicable) {
-            if (darFieldsWrapper) {
-                darFieldsWrapper.classList.add('d-none');
-            }
-            if (cloaReasonWrapper) {
-                cloaReasonWrapper.classList.add('d-none');
-            }
-            if (cloaNumberWrapper) {
-                cloaNumberWrapper.style.display = 'none';
-            }
-            if (cloaNumberField) {
-                cloaNumberField.required = false;
-            }
-            if (cloaReasonField) {
-                cloaReasonField.required = false;
-            }
-
-            ['cloa_ep_number', 'arb_classification', 'landholding_description', 'land_area_awarded_hectares', 'ownership_scheme'].forEach((fieldId) => {
-                const field = document.getElementById(fieldId);
-                if (field) {
-                    field.required = false;
-                }
-            });
-
-            return;
-        }
-
-        if (cloaAvailabilitySelect && cloaNumberWrapper) {
-            cloaNumberWrapper.style.display = cloaAvailabilitySelect.value === 'provided' ? '' : 'none';
-        }
-
-        if (cloaNumberField && cloaAvailabilitySelect) {
-            cloaNumberField.required = cloaAvailabilitySelect.value === 'provided';
-        }
+        
+        // Static DAR section is removed in favor of dynamic agency fields.
+        // Keeping availability state monitoring for logic consistency if needed.
     }
 
     function toggleGovernmentIdFields() {

@@ -165,7 +165,7 @@ class DynamicAgencyForm {
             additional_information: 'Additional Information',
             farmer_information: 'Farmer Information',
             fisherfolk_information: 'Fisherfolk Information',
-            dar_information: 'DAR Information'
+            dar_information: 'DAR/ARB Information'
         };
 
         const normalizeSection = (value) => String(value || 'general_information').trim().toLowerCase();
@@ -227,6 +227,7 @@ class DynamicAgencyForm {
             'length_of_residency_months',
             'has_fishing_vessel',
             'fishing_vessel_type',
+            'fishing_vessel_tonnage',
             'fishing_vessel_tonnage',
         ]);
         const allowedSections = (() => {
@@ -308,11 +309,16 @@ class DynamicAgencyForm {
                     return;
                 }
 
-                html += `
-                    <div class="col-12 mt-2">
-                        <div class="fw-semibold text-uppercase text-muted small border-bottom pb-1 mb-2">${sectionLabelMap[sectionKey] || sectionKey}</div>
-                    </div>
-                `;
+                const sectionLabel = sectionLabelMap[sectionKey] || sectionKey;
+                const currentClassLabel = classification + " Information";
+
+                if (sectionLabel !== currentClassLabel) {
+                    html += `
+                        <div class="col-12 mt-2">
+                            <div class="fw-semibold text-uppercase text-muted small border-bottom pb-1 mb-2">${sectionLabel}</div>
+                        </div>
+                    `;
+                }
 
                 sectionFields.forEach((field) => {
                     console.log(`Rendering field: ${field.field_name} (type: ${field.field_type}, required: ${field.is_required})`);
@@ -389,7 +395,7 @@ class DynamicAgencyForm {
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <small class="text-muted">Set status for <strong>${this.escapeHtml(field.display_label)}</strong>.</small>
+                                <small class="text-muted">Specify current availability status.</small>
                             </div>
                         </div>
                     </div>
