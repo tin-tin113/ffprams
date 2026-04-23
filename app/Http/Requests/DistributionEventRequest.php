@@ -23,6 +23,7 @@ class DistributionEventRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
+            'name'              => ['required', 'string', 'max:255'],
             'barangay_id'       => ['required', 'exists:barangays,id'],
             'resource_type_id'  => ['required', 'exists:resource_types,id'],
             'program_name_id'   => ['required', 'exists:program_names,id'],

@@ -55,8 +55,9 @@
                 <i class="bi bi-arrow-left"></i>
             </a>
             <div>
-                <h1 class="h3 mb-1">{{ $event->barangay->name }}</h1>
-                <div class="d-flex gap-2 align-items-center">
+                <h1 class="h3 mb-1">{{ $event->name ?: 'Distribution Event #' . $event->id }}</h1>
+                <div class="d-flex gap-2 align-items-center mb-2">
+                    <span class="text-muted"><i class="bi bi-geo-alt me-1"></i> {{ $event->barangay->name }}</span>
                     <span class="badge {{ $statusBadge }}">{{ $event->status }}</span>
                     <span class="badge {{ $agencyBadge }}">{{ $agencyName }}</span>
                     @if($event->isFinancial())
@@ -140,6 +141,11 @@
         </div>
         <div class="card-body">
             <div class="row g-3">
+                <div class="col-md-12">
+                    <div class="text-muted small">Event Name</div>
+                    <div class="fw-semibold fs-5 text-primary">{{ $event->name ?: 'N/A' }}</div>
+                    <hr class="my-2">
+                </div>
                 <div class="col-md-4">
                     <div class="text-muted small">Barangay</div>
                     <div class="fw-semibold">{{ $event->barangay->name }}</div>

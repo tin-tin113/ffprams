@@ -177,6 +177,7 @@
                     <thead class="table-light">
                         <tr>
                             <th>#</th>
+                            <th>Event Name</th>
                             <th>Barangay</th>
                             <th>Resource Type</th>
                             <th>Source Agency</th>
@@ -192,6 +193,7 @@
                         @forelse($events as $event)
                             <tr>
                                 <td class="text-muted" data-label="#">{{ $events->firstItem() + $loop->index }}</td>
+                                <td data-label="Event Name" class="fw-semibold">{{ $event->name ?: 'N/A' }}</td>
                                 <td data-label="Barangay">{{ $event->barangay->name }}</td>
                                 <td data-label="Resource Type">{{ $event->resourceType->name }}</td>
                                 <td data-label="Source Agency">

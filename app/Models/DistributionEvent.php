@@ -37,6 +37,7 @@ class DistributionEvent extends Model
     ];
 
     protected $fillable = [
+        'name',
         'barangay_id',
         'resource_type_id',
         'program_name_id',

@@ -59,6 +59,17 @@
                         @enderror
                     </div>
 
+                    {{-- Event Name --}}
+                    <div class="col-12">
+                        <label for="name" class="form-label">Event Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control @error('name') is-invalid @enderror"
+                               id="name" name="name" value="{{ old('name') }}" 
+                               placeholder="e.g., Q1 Rice Seed Distribution 2024" required>
+                        @error('name')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
                     {{-- Barangay --}}
                     <div class="col-12 col-md-6">
                         <label for="barangay_id" class="form-label">Barangay <span class="text-danger">*</span></label>
@@ -855,6 +866,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // 1. Event Details
         addSummarySection('Event Details', [
+            'name',
             'type',
             'barangay_id',
             'program_name_id',
