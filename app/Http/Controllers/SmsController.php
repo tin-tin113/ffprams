@@ -167,6 +167,12 @@ class SmsController extends Controller
             'beneficiary_ids.*' => ['integer', 'exists:beneficiaries,id'],
         ]);
 
+        if (empty(config('services.sms.api_key'))) {
+            return response()->json([
+                'error' => 'SMS Service is not configured. Please contact administrator.',
+            ], 503);
+        }
+
         $query = $this->resolveRecipients($request);
 
         // If specific beneficiary IDs are provided (refined selection), further filter
@@ -176,6 +182,29 @@ class SmsController extends Controller
         }
 
         $recipients = $query->get();
+
+        if ($recipients->isEmpty()) {
+            return response()->json([
+                'sent' => 0,
+                'failed' => 0,
+                'total' => 0,
+                'message' => 'No recipients found.',
+            ]);
+        }
+
+        // Hard limit on message length to prevent excessive segment usage
+        $message = $request->message;
+        $length = mb_strlen($message);
+        if ($length > 480) {
+            return response()->json([
+                'error' => "Message is too long ({$length} characters). Maximum allowed is 480 characters (3 segments) to avoid excessive credit usage.",
+            ], 422);
+        }
+
+        // Increase execution time for larger broadcasts
+        // 5 seconds per recipient + 30 seconds base
+        $timeout = ($recipients->count() * 5) + 30;
+        set_time_limit(min($timeout, 3600)); // Max 1 hour
 
         $sent = 0;
         $failed = 0;

@@ -50,20 +50,32 @@ class SemaphoreService
         }
 
         try {
-            $response = Http::withHeaders([
-                'x-api-key' => $this->apiKey,
-            ])->post($this->endpoint, [
-                'recipient' => $recipient,
+            $response = Http::timeout(60)->post($this->endpoint, [
+                'apikey' => $this->apiKey,
+                'number' => $recipient,
                 'message' => $message,
+                'sendername' => $this->senderName,
             ]);
 
-            $success = $response->successful() && ($response->json('success') === true);
+            $responseData = $response->json();
+            $success = $response->successful() && (
+                ($responseData['success'] ?? false) === true || 
+                (is_array($responseData) && isset($responseData[0]['message_id']))
+            );
+
+            // Attempt to extract gateway message ID from various common response paths
+            $gatewayMessageId = $responseData['message_id']
+                ?? $responseData['data']['message_id']
+                ?? $responseData['id']
+                ?? $responseData['data']['id']
+                ?? ($responseData[0]['message_id'] ?? null);
 
             $this->logSms(
                 beneficiaryId: $beneficiaryId,
                 message: $message,
                 status: $success ? 'sent' : 'failed',
                 response: $response->body(),
+                gatewayMessageId: $gatewayMessageId,
             );
 
             return $success;
@@ -91,6 +103,10 @@ class SemaphoreService
         }
 
         try {
+            // Basic segment calculation (GSM 03.38)
+            $length = mb_strlen($message);
+            $segments = $length <= 160 ? 1 : ceil($length / 153);
+
             DB::table('sms_logs')->insert([
                 'beneficiary_id' => $beneficiaryId,
                 'message' => $message,
@@ -98,6 +114,7 @@ class SemaphoreService
                 'delivery_status' => $status === 'sent' ? 'pending' : 'failed',
                 'response' => $response,
                 'gateway_message_id' => $gatewayMessageId,
+                'segments' => $segments, // Assuming this column exists or we add it (I'll check migration)
                 'sent_at' => now(),
                 'created_at' => now(),
                 'updated_at' => now(),
