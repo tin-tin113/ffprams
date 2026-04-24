@@ -778,8 +778,10 @@
                                 <td>{{ $allocation->remarks ?? '—' }}</td>
                                 <td class="text-end text-nowrap">
                                     @if($event->status !== 'Completed' && in_array(Auth::user()->role, ['admin', 'staff'], true))
+                                        @php($isReleased = (bool)$allocation->distributed_at)
                                         <button type="button"
                                                 class="btn btn-sm btn-outline-primary me-1"
+                                                @if($isReleased) disabled title="Released items cannot be edited" @else title="Edit allocation" @endif
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#editAllocationModal"
                                                 data-update-url="{{ route('allocations.update', $allocation) }}"
@@ -797,23 +799,22 @@
                                               action="{{ route('allocations.markDistributed', $allocation) }}"
                                               class="d-inline"
                                                                                             data-confirm-title="Confirm Release"
-                                                                                            data-confirm-message="Mark this allocation as Released? This will timestamp the transaction.">
+                                              data-confirm-title="Confirm Release"
+                                              data-confirm-message="Mark this allocation as Released? This will timestamp the transaction.">
                                             @csrf
                                             <button type="submit" class="btn btn-sm btn-outline-success me-1">
-                                                                                                <i class="bi bi-check2"></i> Mark Released
+                                                <i class="bi bi-check2"></i> Mark Released
                                             </button>
                                         </form>
 
-                                        <form method="POST"
-                                              action="{{ route('allocations.markNotReceived', $allocation) }}"
-                                              class="d-inline"
-                                              data-confirm-title="Confirm Not Received"
-                                              data-confirm-message="Mark this allocation as Not Received for this release schedule?">
-                                            @csrf
-                                            <button type="submit" class="btn btn-sm btn-outline-danger me-1">
-                                                <i class="bi bi-x-lg"></i> Not Received
-                                            </button>
-                                        </form>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger me-1"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#notReceivedModal"
+                                                data-action-url="{{ route('allocations.markNotReceived', $allocation) }}"
+                                                data-beneficiary-name="{{ $allocation->beneficiary->full_name }}">
+                                            <i class="bi bi-x-lg"></i> Not Received
+                                        </button>
                                     @endif
 
                                     @if($event->status !== 'Completed' && Auth::user()->role === 'admin' && !$event->isBeneficiaryListApproved())
@@ -1243,6 +1244,78 @@
     </div>
 </div>
 @endif
+
+{{-- Bulk Release Confirmation Modal --}}
+<div class="modal fade" id="bulkReleaseConfirmModal" tabindex="-1" aria-labelledby="bulkReleaseConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="bulkReleaseConfirmModalLabel">Confirm Bulk Update</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4 px-4">
+                <div class="mb-3">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle rounded-circle p-3 mb-2">
+                        <i class="bi bi-question-lg text-primary fs-2"></i>
+                    </div>
+                </div>
+                <h5 class="fw-bold mb-2">Are you sure?</h5>
+                <p class="text-muted mb-0">
+                    You are about to mark <span id="bulk_confirm_count" class="fw-bold text-dark fs-5">0</span> allocation(s) as:
+                </p>
+                <div class="mt-2 mb-3">
+                    <span id="bulk_confirm_action_text" class="badge rounded-pill px-3 py-2 fs-6"></span>
+                </div>
+                <p class="text-muted small mb-0">This action will be timestamped and recorded in the official audit trail.</p>
+            </div>
+            <div class="modal-footer border-0 pt-0 justify-content-center pb-4">
+                <button type="button" class="btn btn-light px-4 rounded-pill fw-semibold me-2" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary px-4 rounded-pill shadow-sm fw-semibold" id="btn_confirm_bulk_release">Confirm Update</button>
+            </div>
+        </div>
+    </div>
+</div>
+{{-- Not Received Reason Modal --}}
+<div class="modal fade" id="notReceivedModal" tabindex="-1" aria-labelledby="notReceivedModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" id="notReceivedForm">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title" id="notReceivedModalLabel">Reason for Not Received</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">Why was <strong id="nr_beneficiary_name"></strong> unable to receive their allocation?</p>
+                    
+                    <div class="mb-3">
+                        <label for="nr_reason" class="form-label fw-bold">Primary Reason <span class="text-danger">*</span></label>
+                        <select class="form-select" name="reason" id="nr_reason" required>
+                            <option value="No Show">No Show (Did not arrive)</option>
+                            <option value="Ineligible">Ineligible (Incorrect documents/ID)</option>
+                            <option value="Refused">Refused (Declined the assistance)</option>
+                            <option value="Proxy Issue">Proxy Issue (Invalid representative)</option>
+                            <option value="Other">Other (Specify in remarks)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="nr_remarks" class="form-label fw-bold">Additional Remarks</label>
+                        <textarea class="form-control" name="remarks" id="nr_remarks" rows="3" placeholder="Optional notes..."></textarea>
+                    </div>
+                    
+                    <div class="alert alert-info py-2 small mb-0">
+                        <i class="bi bi-info-circle me-1"></i> This record will be moved to the "Not Received" tab.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Confirm Not Received</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {{-- 8. Upload Attachment Modal --}}
 <div class="modal fade" id="uploadAttachmentModal" tabindex="-1" aria-labelledby="uploadAttachmentModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -1471,6 +1544,16 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const action = btn.getAttribute('data-bulk-release-action');
+            const actionLabel = action === 'distributed' ? 'Released' : 'Not Received';
+            const actionClass = action === 'distributed' ? 'bg-success' : 'bg-danger';
+            
+            // Set modal content
+            document.getElementById('bulk_confirm_count').textContent = selectedIds.length;
+            const actionTextEl = document.getElementById('bulk_confirm_action_text');
+            actionTextEl.textContent = actionLabel;
+            actionTextEl.className = 'badge rounded-pill px-3 py-2 fs-6 ' + actionClass;
+
+            // Store action and IDs to form but don't submit yet
             bulkReleaseAction.value = action;
             bulkReleaseIds.innerHTML = '';
             selectedIds.forEach(id => {
@@ -1481,11 +1564,36 @@ document.addEventListener('DOMContentLoaded', function () {
                 bulkReleaseIds.appendChild(hidden);
             });
 
-            if (confirm('Confirm bulk update for ' + selectedIds.length + ' allocation(s)?')) {
-                bulkReleaseForm.submit();
-            }
+            // Show Modal
+            const confirmModal = new bootstrap.Modal(document.getElementById('bulkReleaseConfirmModal'));
+            confirmModal.show();
         });
     });
+
+    // Handle Confirm button inside the modal
+    const btnConfirmBulkRelease = document.getElementById('btn_confirm_bulk_release');
+    if (btnConfirmBulkRelease) {
+        btnConfirmBulkRelease.addEventListener('click', function() {
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Processing...';
+            bulkReleaseForm.submit();
+        });
+    }
+
+    // Not Received Modal Logic
+    const notReceivedModal = document.getElementById('notReceivedModal');
+    if (notReceivedModal) {
+        notReceivedModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const beneficiaryName = button.getAttribute('data-beneficiary-name');
+            const actionUrl = button.getAttribute('data-action-url');
+
+            document.getElementById('nr_beneficiary_name').textContent = beneficiaryName;
+            document.getElementById('notReceivedForm').action = actionUrl;
+            document.getElementById('nr_reason').value = 'No Show';
+            document.getElementById('nr_remarks').value = '';
+        });
+    }
 
     // Edit Allocation Modal
     const editAllocationModal = document.getElementById('editAllocationModal');

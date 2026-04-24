@@ -995,6 +995,11 @@ class AllocationController extends Controller
                 ->with('error', 'Allocations cannot be updated for a completed event.');
         }
 
+        if ($allocation->distributed_at) {
+            return redirect()->back()
+                ->with('error', 'Released allocations cannot be edited.');
+        }
+
         $rules = ['remarks' => ['nullable', 'string', 'max:500']];
         $rules['assistance_purpose_id'] = ['nullable', 'exists:assistance_purposes,id'];
 
@@ -1160,7 +1165,7 @@ class AllocationController extends Controller
             ->with('success', 'Allocation marked as Ready for Release.');
     }
 
-    public function markNotReceived(Allocation $allocation): RedirectResponse
+    public function markNotReceived(Request $request, Allocation $allocation): RedirectResponse
     {
         $event = $allocation->distributionEvent;
 
@@ -1189,12 +1194,17 @@ class AllocationController extends Controller
                 ->with('error', 'This allocation already has a final release outcome.');
         }
 
+        $reason = $request->input('reason', 'No Show');
+        $remarks = $request->input('remarks');
+        $fullRemarks = $reason . ($remarks ? ': ' . $remarks : '');
+
         $this->releaseOutcome->apply(
             $allocation,
             [
                 'is_ready_for_release' => false,
                 'distributed_at' => null,
                 'release_outcome' => 'not_received',
+                'remarks' => $fullRemarks,
             ],
             $this->audit,
             'updated',
@@ -1202,7 +1212,7 @@ class AllocationController extends Controller
         );
 
         return redirect()->back()
-            ->with('success', 'Allocation marked as not received.');
+            ->with('success', 'Allocation marked as not received (' . $reason . ').');
     }
 
     public function bulkUpdateReleaseOutcome(Request $request): RedirectResponse
