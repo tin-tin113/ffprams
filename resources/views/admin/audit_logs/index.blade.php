@@ -213,133 +213,109 @@
         ];
     @endphp
 
-    <div class="audit-header mb-4 mt-2">
+    <div class="audit-header mb-3 mt-2">
         <div class="row align-items-center">
             <div class="col-md-6">
-                <h1 class="h3 fw-bold text-dark mb-1">System Audit Log</h1>
-                <p class="text-muted small mb-0">Transparency and accountability through comprehensive activity tracking.</p>
+                <h1 class="h4 fw-bold text-dark mb-0">System Audit Log</h1>
             </div>
-            <div class="col-md-6 text-md-end mt-3 mt-md-0">
-                <div class="d-inline-flex flex-wrap gap-2">
-                    <div class="stat-pill">
-                        <span class="label">Total Records</span>
-                        <span class="value">{{ number_format($logs->total()) }}</span>
-                    </div>
-                    <div class="stat-pill {{ $activeFilterCount ? 'active' : '' }}">
-                        <span class="label">Active Filters</span>
-                        <span class="value">{{ $activeFilterCount }}</span>
-                    </div>
+            <div class="col-md-6 text-md-end">
+                <div class="d-inline-flex gap-2">
+                    <span class="text-muted small">Total: <strong>{{ number_format($logs->total()) }}</strong> records</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm mb-4 audit-filter-wrapper">
-        <div class="card-body p-0">
-            <div class="filter-toggle-header d-flex justify-content-between align-items-center p-3 border-bottom d-md-none" data-bs-toggle="collapse" data-bs-target="#auditFilterCollapse">
-                <span class="fw-semibold"><i class="bi bi-funnel me-2"></i>Filters</span>
-                <i class="bi bi-chevron-down"></i>
-            </div>
-            <div id="auditFilterCollapse" class="collapse show d-md-block">
-                <div class="p-3 p-lg-4">
-                    <form method="GET" action="{{ route('admin.audit-logs.index') }}" class="row g-3 align-items-end">
-                        <div class="col-md-3">
-                            <label class="form-label fw-medium small text-muted text-uppercase">Person</label>
-                            <select name="user_id" class="form-select border-0 bg-light shadow-none">
-                                <option value="">All Personnel</option>
-                                @foreach($users as $user)
-                                    <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
-                                        {{ $user->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-md-2">
-                            <label class="form-label fw-medium small text-muted text-uppercase">Activity Type</label>
-                            <select name="action" class="form-select border-0 bg-light shadow-none">
-                                <option value="">All Types</option>
-                                @foreach($actions as $action)
-                                    <option value="{{ $action }}" {{ request('action') === $action ? 'selected' : '' }}>
-                                        {{ $actionLabelMap[$action] ?? ucwords(str_replace('_', ' ', $action)) }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-md-3">
-                            <label class="form-label fw-medium small text-muted text-uppercase">Section</label>
-                            <select name="table_name" class="form-select border-0 bg-light shadow-none">
-                                <option value="">All Sections</option>
-                                @foreach($tables as $table)
-                                    <option value="{{ $table }}" {{ request('table_name') === $table ? 'selected' : '' }}>
-                                        {{ $tableLabelMap[$table] ?? ucwords(str_replace('_', ' ', $table)) }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-md-2">
-                            <label class="form-label fw-medium small text-muted text-uppercase">From Date</label>
-                            <input type="date" class="form-control border-0 bg-light shadow-none" name="from" value="{{ request('from') }}">
-                        </div>
-
-                        <div class="col-md-2">
-                            <label class="form-label fw-medium small text-muted text-uppercase">To Date</label>
-                            <input type="date" class="form-control border-0 bg-light shadow-none" name="to" value="{{ request('to') }}">
-                        </div>
-                        
-                        <div class="col-md-1">
-                            <label class="form-label fw-medium small text-muted text-uppercase">Rows</label>
-                            <select name="per_page" class="form-select border-0 bg-light shadow-none">
-                                <option value="30" {{ request('per_page') == '30' ? 'selected' : '' }}>30</option>
-                                <option value="60" {{ request('per_page') == '60' ? 'selected' : '' }}>60</option>
-                                <option value="100" {{ request('per_page') == '100' ? 'selected' : '' }}>100</option>
-                            </select>
-                        </div>
-
-                        <div class="col-12 mt-4 d-flex justify-content-between align-items-center">
-                            <div class="active-filter-badges d-none d-lg-flex gap-2">
-                                @if($activeFilterCount)
-                                    @foreach($activeFilters as $key => $value)
-                                        @if($key !== 'record_id')
-                                            <span class="badge rounded-pill bg-primary bg-opacity-10 text-primary border-0 px-3 py-2">
-                                                {{ $fieldLabelMap[$key] ?? ucwords(str_replace('_', ' ', $key)) }}: 
-                                                <span class="fw-bold">{{ $value }}</span>
-                                            </span>
-                                        @endif
-                                    @endforeach
-                                @endif
-                            </div>
-                            <div class="d-flex gap-2 ms-auto">
-                                @if($activeFilterCount)
-                                    <a href="{{ route('admin.audit-logs.index') }}" class="btn btn-link text-muted text-decoration-none px-3">
-                                        Clear All
-                                    </a>
-                                @endif
-                                <button type="submit" class="btn btn-dark px-4 rounded-pill">
-                                    <i class="bi bi-search me-2"></i>Search Activity
-                                </button>
-                            </div>
-                        </div>
-                    </form>
+    <div class="card border-0 shadow-sm mb-3 audit-filter-wrapper">
+        <div class="card-body p-2 px-3">
+            <form method="GET" action="{{ route('admin.audit-logs.index') }}" class="row g-2 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label fw-bold extra-small text-muted text-uppercase mb-1">Person</label>
+                    <select name="user_id" class="form-select form-select-sm border-0 bg-light shadow-none">
+                        <option value="">All Personnel</option>
+                        @foreach($users as $user)
+                            <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
+                                {{ $user->name }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
-            </div>
+
+                <div class="col-md-2">
+                    <label class="form-label fw-bold extra-small text-muted text-uppercase mb-1">Activity</label>
+                    <select name="action" class="form-select form-select-sm border-0 bg-light shadow-none">
+                        <option value="">All Types</option>
+                        @foreach($actions as $action)
+                            <option value="{{ $action }}" {{ request('action') === $action ? 'selected' : '' }}>
+                                {{ $actionLabelMap[$action] ?? ucwords(str_replace('_', ' ', $action)) }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label fw-bold extra-small text-muted text-uppercase mb-1">Section</label>
+                    <select name="table_name" class="form-select form-select-sm border-0 bg-light shadow-none">
+                        <option value="">All Sections</option>
+                        @foreach($tables as $table)
+                            <option value="{{ $table }}" {{ request('table_name') === $table ? 'selected' : '' }}>
+                                {{ $tableLabelMap[$table] ?? ucwords(str_replace('_', ' ', $table)) }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label fw-bold extra-small text-muted text-uppercase mb-1">From</label>
+                    <input type="date" class="form-control form-control-sm border-0 bg-light shadow-none" name="from" value="{{ request('from') }}">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label fw-bold extra-small text-muted text-uppercase mb-1">To</label>
+                    <input type="date" class="form-control form-control-sm border-0 bg-light shadow-none" name="to" value="{{ request('to') }}">
+                </div>
+                
+                <div class="col-md-1">
+                    <label class="form-label fw-bold extra-small text-muted text-uppercase mb-1">Rows</label>
+                    <select name="per_page" class="form-select form-select-sm border-0 bg-light shadow-none">
+                        <option value="30" {{ request('per_page') == '30' ? 'selected' : '' }}>30</option>
+                        <option value="60" {{ request('per_page') == '60' ? 'selected' : '' }}>60</option>
+                        <option value="100" {{ request('per_page') == '100' ? 'selected' : '' }}>100</option>
+                    </select>
+                </div>
+
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-dark btn-sm w-100 rounded-pill">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </form>
+            @if($activeFilterCount)
+                <div class="d-flex align-items-center gap-2 mt-2 pt-2 border-top">
+                    <span class="extra-small text-muted fw-bold text-uppercase">Filters:</span>
+                    @foreach($activeFilters as $key => $value)
+                        <span class="badge bg-primary bg-opacity-10 text-primary border-0 rounded-pill px-2 py-1 extra-small">
+                            {{ $fieldLabelMap[$key] ?? $key }}: {{ $value }}
+                        </span>
+                    @endforeach
+                    <a href="{{ route('admin.audit-logs.index') }}" class="ms-auto extra-small text-decoration-none text-muted">Clear All</a>
+                </div>
+            @endif
         </div>
     </div>
 
     <div class="timeline-container">
         @forelse($groupedLogs as $date => $dayLogs)
-            <div class="timeline-date-group mb-4">
-                <div class="date-header sticky-top bg-white py-2 mb-3 z-3">
-                    <h5 class="fw-bold text-dark mb-0 d-flex align-items-center">
+            <div class="timeline-date-group mb-3">
+                <div class="date-header sticky-top bg-white py-2 mb-2 z-3 border-bottom-0">
+                    <h6 class="fw-bold text-dark mb-0 d-flex align-items-center">
                         @php
                             $carbonDate = \Carbon\Carbon::parse($date);
                             $displayText = $carbonDate->isToday() ? 'Today' : ($carbonDate->isYesterday() ? 'Yesterday' : $carbonDate->format('F d, Y'));
                         @endphp
                         {{ $displayText }}
-                        <span class="badge rounded-pill bg-light text-muted fw-medium ms-2 border" style="font-size: 0.7rem;">{{ $dayLogs->count() }} activities</span>
-                    </h5>
+                        <span class="badge rounded-pill bg-light text-muted fw-medium ms-2 border" style="font-size: 0.65rem;">{{ $dayLogs->count() }}</span>
+                    </h6>
                 </div>
 
                 <div class="audit-card-list">
@@ -387,121 +363,126 @@
                                 })
                                 ->values();
                         @endphp
-                        <div class="card border-0 shadow-sm mb-2 audit-item-card overflow-hidden">
-                            <div class="card-body p-0">
-                                <div class="d-flex flex-column flex-lg-row">
-                                    <div class="audit-time-stripe d-none d-lg-flex flex-column justify-content-center align-items-center px-2 py-2 bg-light border-end" style="min-width: 70px;">
-                                        <span class="time fw-bold text-dark mb-0" style="font-size: 0.85rem;">{{ $log->created_at->format('h:i') }}</span>
-                                        <span class="period text-muted small text-uppercase" style="font-size: 0.6rem;">{{ $log->created_at->format('A') }}</span>
+                        <div class="card border-0 shadow-sm mb-1 audit-item-card overflow-hidden" id="card-{{ $log->id }}">
+                            <div class="card-body py-2 px-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="user-avatar-mini text-white rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 32px; height: 32px; font-size: 0.7rem;">
+                                        {{ strtoupper(substr($log->user->name ?? 'U', 0, 1)) }}
                                     </div>
-                                    <div class="flex-grow-1 py-2 px-3">
-                                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                                            <div class="d-flex align-items-center gap-2">
-                                                <div class="user-avatar-mini bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 24px; height: 24px; font-size: 0.65rem;">
-                                                    {{ strtoupper(substr($log->user->name ?? 'U', 0, 1)) }}
-                                                </div>
-                                                <div class="d-flex align-items-center flex-wrap gap-1">
-                                                    <span class="fw-bold text-dark small">{{ $log->user->name ?? 'Unknown User' }}</span>
-                                                    <span class="badge rounded-pill px-2 py-1" style="background-color: {{ $actionColor ?? '#94a3b8' }}15; color: {{ $actionColor ?? '#94a3b8' }}; border: 1px solid {{ $actionColor ?? '#94a3b8' }}30; font-size: 0.65rem;">
-                                                        <i class="bi {{ $actionIconMap[$log->action] ?? 'bi-dot' }} me-1"></i>
-                                                        {{ $actionLabelMap[$log->action] ?? ucwords(str_replace('_', ' ', $log->action)) }}
-                                                    </span>
-                                                    <span class="text-muted" style="font-size: 0.75rem;">
-                                                        @if($log->action === 'created')
-                                                            added record to
-                                                        @elseif($log->action === 'updated')
-                                                            modified
-                                                        @elseif($log->action === 'deleted')
-                                                            removed
+                                    
+                                    <div class="flex-grow-1 min-width-0">
+                                        <div class="d-flex align-items-center justify-content-between gap-2">
+                                            <div class="d-flex align-items-center flex-wrap gap-2 min-width-0">
+                                                <span class="fw-bold text-dark small text-truncate" style="max-width: 150px;">{{ $log->user->name ?? 'Unknown User' }}</span>
+                                                <span class="action-badge px-2 py-0" style="background-color: {{ $actionColor ?? '#94a3b8' }}15; color: {{ $actionColor ?? '#94a3b8' }}; border: 1px solid {{ $actionColor ?? '#94a3b8' }}30; height: 20px;">
+                                                    <i class="bi {{ $actionIconMap[$log->action] ?? 'bi-dot' }} extra-small"></i>
+                                                    <span class="extra-small fw-bold">{{ $actionLabelMap[$log->action] ?? ucwords(str_replace('_', ' ', $log->action)) }}</span>
+                                                </span>
+                                                <span class="text-muted extra-small d-none d-md-inline">
+                                                    @if($log->action === 'created')
+                                                        added record to
+                                                    @elseif($log->action === 'updated')
+                                                        modified
+                                                    @elseif($log->action === 'deleted')
+                                                        removed
+                                                    @else
+                                                        activity in
+                                                    @endif
+                                                    <span class="fw-bold">{{ $tableLabelMap[$log->table_name] ?? $log->table_name }}</span>
+                                                    @if($log->record_id)
+                                                        @php
+                                                            $recordRoute = match($log->table_name) {
+                                                                'beneficiaries' => route('beneficiaries.show', $log->record_id),
+                                                                'distribution_events' => route('distribution-events.show', $log->record_id),
+                                                                'users' => route('admin.users.edit', $log->record_id),
+                                                                default => null
+                                                            };
+                                                        @endphp
+                                                        @if($recordRoute)
+                                                            <a href="{{ $recordRoute }}" class="text-primary text-decoration-none fw-bold">#{{ $log->record_id }}</a>
                                                         @else
-                                                            activity in
+                                                            <span class="fw-bold">#{{ $log->record_id }}</span>
                                                         @endif
-                                                        <span class="fw-semibold text-dark">{{ $tableLabelMap[$log->table_name] ?? $log->table_name }}</span>
-                                                        @if($log->record_id)
-                                                            @php
-                                                                $recordRoute = match($log->table_name) {
-                                                                    'beneficiaries' => route('beneficiaries.show', $log->record_id),
-                                                                    'distribution_events' => route('distribution-events.show', $log->record_id),
-                                                                    'users' => route('admin.users.edit', $log->record_id),
-                                                                    default => null
-                                                                };
-                                                            @endphp
-                                                            @if($recordRoute)
-                                                                <a href="{{ $recordRoute }}" class="fw-bold text-primary text-decoration-none ms-1">#{{ $log->record_id }}</a>
-                                                            @else
-                                                                <span class="fw-bold text-dark ms-1">#{{ $log->record_id }}</span>
-                                                            @endif
-                                                        @endif
-                                                    </span>
-                                                </div>
+                                                    @endif
+                                                </span>
                                             </div>
-                                            <div class="d-flex align-items-center gap-3">
-                                                @if($changedKeys->count() > 0 || collect($requestMeta)->filter()->isNotEmpty())
-                                                    <button class="btn btn-link btn-sm text-primary fw-bold text-decoration-none p-0 expansion-trigger" style="font-size: 0.75rem;" type="button" data-bs-toggle="collapse" data-bs-target="#details-{{ $log->id }}">
-                                                        {{ $changedKeys->count() ?: '' }} Changes <i class="bi bi-chevron-down ms-1 transition-icon"></i>
+                                            
+                                            <div class="d-flex align-items-center gap-3 flex-shrink-0">
+                                                <span class="text-muted extra-small">{{ $log->created_at->format('h:i A') }}</span>
+                                                @if($changedKeys->count() > 0 || collect($requestMeta)->filter()->isNotEmpty() || $hasSpecialField)
+                                                    <button class="expansion-btn" type="button" data-bs-toggle="collapse" data-bs-target="#details-{{ $log->id }}" aria-expanded="false" onclick="document.getElementById('card-{{ $log->id }}').classList.toggle('expanded')">
+                                                        <i class="bi bi-chevron-down"></i>
                                                     </button>
                                                 @endif
-                                                <span class="text-muted d-lg-none" style="font-size: 0.7rem;">{{ $log->created_at->format('h:i A') }}</span>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="collapse" id="details-{{ $log->id }}">
+                                    <div class="pt-2 mt-2 border-top">
+                                        <div class="d-flex flex-wrap gap-2 mb-3">
+                                            @foreach($requestMeta as $mLabel => $mValue)
+                                                @if(filled($mValue))
+                                                    <span class="meta-item py-0 px-2" style="height: 18px; line-height: 18px;">
+                                                        <span class="text-uppercase fw-bold opacity-50 extra-small">{{ $mLabel }}:</span> <span class="extra-small">{{ $mValue }}</span>
+                                                    </span>
+                                                @endif
+                                            @endforeach
                                         </div>
 
                                         @if($hasSpecialField)
-                                            <div class="mt-2 p-2 rounded bg-warning bg-opacity-10 border-start border-warning border-3">
-                                                <div class="text-dark small" style="font-size: 0.75rem;">
-                                                    <span class="fw-bold text-warning-emphasis text-uppercase me-1" style="font-size: 0.6rem;">Override:</span> {{ $specialFieldValue }}
+                                            <div class="special-field-badge p-2 mb-3">
+                                                <i class="bi bi-exclamation-triangle-fill fs-6"></i>
+                                                <div>
+                                                    <div class="fw-bold extra-small text-uppercase opacity-75">Override Reason</div>
+                                                    <div class="small">{{ $specialFieldValue }}</div>
                                                 </div>
                                             </div>
                                         @endif
 
-                                        <div class="collapse" id="details-{{ $log->id }}">
-                                            <div class="pt-2 border-top mt-2">
-                                                <div class="d-flex flex-wrap gap-2 mb-2">
-                                                    @foreach($requestMeta as $mLabel => $mValue)
-                                                        @if(filled($mValue))
-                                                            <span class="text-muted" style="font-size: 0.65rem;">
-                                                                {{ $mLabel }}: <span class="text-dark fw-medium">{{ $mValue }}</span>
-                                                            </span>
-                                                        @endif
-                                                    @endforeach
-                                                </div>
-                                                @if($changedKeys->count())
-                                                    <div class="table-responsive">
-                                                        <table class="table table-sm table-borderless audit-diff-table align-middle mb-0">
-                                                            <thead>
-                                                                <tr class="text-muted small text-uppercase">
-                                                                    <th class="ps-0" style="width: 25%;">Field</th>
-                                                                    <th style="width: 37.5%;">Previous Value</th>
-                                                                    <th class="pe-0" style="width: 37.5%;">New Value</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                @foreach($changedKeys as $key)
-                                                                    <tr class="border-bottom-faint">
-                                                                        <td class="ps-0 fw-semibold text-dark small py-2">
-                                                                            {{ $fieldLabelMap[$key] ?? ucwords(str_replace('_', ' ', $key)) }}
-                                                                        </td>
-                                                                        <td class="py-2">
-                                                                            <div class="diff-value old px-2 py-1 rounded bg-danger bg-opacity-10 text-danger-emphasis small border border-danger-subtle">
-                                                                                {{ $formatValue((string) $key, $oldValues[$key] ?? null) }}
+                                        @if($changedKeys->count())
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-borderless audit-diff-table align-middle mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th class="extra-small">FIELD</th>
+                                                            <th class="extra-small">CHANGES</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach($changedKeys as $key)
+                                                            <tr>
+                                                                <td class="field-name-cell extra-small" style="width: 150px;">
+                                                                    {{ $fieldLabelMap[$key] ?? ucwords(str_replace('_', ' ', $key)) }}
+                                                                </td>
+                                                                <td>
+                                                                    <div class="row g-1 align-items-center diff-grid">
+                                                                        <div class="col">
+                                                                            <div class="diff-value-container">
+                                                                                <div class="diff-value old py-1 px-2 extra-small">
+                                                                                    {{ $formatValue((string) $key, $oldValues[$key] ?? null) }}
+                                                                                </div>
                                                                             </div>
-                                                                        </td>
-                                                                        <td class="pe-0 py-2">
-                                                                            <div class="diff-value new px-2 py-1 rounded bg-success bg-opacity-10 text-success-emphasis small border border-success-subtle fw-medium">
-                                                                                {{ $formatValue((string) $key, $newValues[$key] ?? null) }}
+                                                                        </div>
+                                                                        <div class="col-auto d-none d-md-flex">
+                                                                            <i class="bi bi-arrow-right text-muted extra-small"></i>
+                                                                        </div>
+                                                                        <div class="col">
+                                                                            <div class="diff-value-container">
+                                                                                <div class="diff-value new py-1 px-2 extra-small">
+                                                                                    {{ $formatValue((string) $key, $newValues[$key] ?? null) }}
+                                                                                </div>
                                                                             </div>
-                                                                        </td>
-                                                                    </tr>
-                                                                @endforeach
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                @else
-                                                    <div class="text-muted small py-2">
-                                                        <i class="bi bi-info-circle me-1"></i> No field-level changes were captured for this activity.
-                                                    </div>
-                                                @endif
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
                                             </div>
-                                        </div>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -523,11 +504,11 @@
         @endforelse
     </div>
 
-    <div class="mt-4 mb-5">
+    <div class="mt-3 mb-5">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-            <div class="text-muted small order-2 order-md-1">
+            <div class="text-muted extra-small order-2 order-md-1">
                 @if($logs->total() > 0)
-                    Showing {{ number_format($logs->firstItem()) }} to {{ number_format($logs->lastItem()) }} of {{ number_format($logs->total()) }} activities
+                    Showing {{ number_format($logs->firstItem()) }} to {{ number_format($logs->lastItem()) }} of {{ number_format($logs->total()) }}
                 @endif
             </div>
             @if($logs->hasPages())
@@ -542,108 +523,134 @@
 
 @push('styles')
 <style>
+    .extra-small { font-size: 0.65rem; }
+
     .stat-pill {
         display: inline-flex;
         flex-direction: column;
         background: white;
         border: 1px solid #edf2f7;
         padding: 0.5rem 1rem;
-        border-radius: 1rem;
+        border-radius: 0.75rem;
         min-width: 120px;
-        text-align: left;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    }
-
-    .stat-pill.active {
-        border-color: #0d6efd;
-        background: #f0f7ff;
-    }
-
-    .stat-pill .label {
-        font-size: 0.65rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: #718096;
-        font-weight: 600;
-        margin-bottom: 0.15rem;
-    }
-
-    .stat-pill .value {
-        font-size: 1.1rem;
-        font-weight: 800;
-        color: #1a202c;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     }
 
     .audit-filter-wrapper {
-        border-radius: 1.25rem;
-        overflow: hidden;
+        border-radius: 0.75rem;
     }
 
     .audit-item-card {
-        border-radius: 0.75rem;
-        transition: all 0.2s ease;
-        border: 1px solid #edf2f7 !important;
+        border-radius: 0.5rem;
+        transition: all 0.15s ease;
+        border: 1px solid #f1f5f9 !important;
     }
 
     .audit-item-card:hover {
+        border-color: #e2e8f0 !important;
+        background: #fcfdfe;
+    }
+
+    .audit-item-card.expanded {
+        border-color: #3b82f6 !important;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
-        border-color: #cbd5e0 !important;
     }
 
-    .audit-time-stripe {
-        min-width: 70px;
+    .user-avatar-mini {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     }
 
-    .date-header {
-        top: 60px; /* Adjust based on navbar height if needed */
+    .action-badge {
+        font-weight: 700;
+        border-radius: 0.35rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
     }
 
-    .transition-icon {
-        transition: transform 0.3s ease;
-        display: inline-block;
+    .meta-item {
+        color: #64748b;
+        background: #f8fafc;
+        border-radius: 0.25rem;
+        border: 1px solid #f1f5f9;
     }
 
-    .expansion-trigger[aria-expanded="true"] .transition-icon {
-        transform: rotate(90deg);
+    .expansion-btn {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        background: #f8fafc;
+        color: #94a3b8;
+        border: 1px solid #f1f5f9;
     }
 
-    .audit-diff-table th {
-        font-size: 0.7rem;
-        letter-spacing: 0.05em;
+    .expansion-btn:hover {
+        background: #f1f5f9;
+        color: #475569;
     }
 
-    .border-bottom-faint {
-        border-bottom: 1px solid #f7fafc;
+    .expansion-btn[aria-expanded="true"] {
+        background: #3b82f6;
+        color: white;
+        transform: rotate(180deg);
+    }
+
+    .audit-diff-table thead th {
+        background: #f8fafc;
+        padding: 0.4rem 0.5rem;
+        color: #64748b;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .audit-diff-table tbody td {
+        padding: 0.4rem 0.5rem;
     }
 
     .diff-value {
-        word-break: break-all;
-        line-height: 1.4;
+        border-radius: 0.35rem;
+        min-height: 1.5rem;
+        display: flex;
+        align-items: center;
+        border: 1px solid transparent;
     }
 
-    .hover-underline:hover {
-        text-decoration: underline !important;
+    .diff-value.old {
+        background-color: #fef2f2;
+        color: #991b1b;
+        border-color: #fee2e2;
     }
 
-    .copy-id-btn:hover {
-        color: #0d6efd !important;
+    .diff-value.new {
+        background-color: #f0fdf4;
+        color: #166534;
+        border-color: #dcfce7;
     }
 
-    .audit-diff-table tr:hover {
-        background-color: #f8fafc;
+    .date-header {
+        top: 0;
+        background: rgba(255, 255, 255, 0.95) !important;
+        backdrop-filter: blur(4px);
     }
 
-    @media (max-width: 991.98px) {
-        .date-header {
-            top: 0;
-        }
-        
-        .audit-time-stripe {
-            border-end: 0 !important;
-            border-bottom: 1px solid #edf2f7;
-            flex-direction: row !important;
-            justify-content: flex-start !important;
-            gap: 0.5rem;
+    .special-field-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #fffbeb;
+        border: 1px solid #fef3c7;
+        color: #92400e;
+        border-radius: 0.5rem;
+    }
+
+    @media (max-width: 767.98px) {
+        .diff-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.25rem;
         }
     }
 </style>
@@ -652,23 +659,7 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Copy ID functionality
-        document.querySelectorAll('.copy-id-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const id = this.getAttribute('data-id');
-                navigator.clipboard.writeText(id).then(() => {
-                    const icon = this.querySelector('i');
-                    icon.classList.replace('bi-clipboard', 'bi-check-lg');
-                    icon.classList.add('text-success');
-                    
-                    setTimeout(() => {
-                        icon.classList.replace('bi-check-lg', 'bi-clipboard');
-                        icon.classList.remove('text-success');
-                    }, 2000);
-                });
-            });
-        });
+        // Any specific JS logic for compact UI if needed
     });
 </script>
 @endpush
