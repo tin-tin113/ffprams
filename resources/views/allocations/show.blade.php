@@ -14,13 +14,13 @@
         $releaseStatus = $allocation->release_status;
         $isEventPending = (bool) ($event && $event->status === 'Pending');
         $isFinalOutcome = in_array($releaseStatus, ['released', 'not_received'], true);
+        $directWorkflowBlockedByPending = ! $isDirect && $isEventPending;
 
         $canSetReadyForRelease = $isDirect
-            && ! $isEventPending
             && in_array($releaseStatus, ['planned', 'not_received'], true);
 
         $canMarkOutcome = $isDirect
-            ? (! $isEventPending && $releaseStatus === 'ready_for_release')
+            ? ($releaseStatus === 'ready_for_release')
             : (! $isEventPending && ! $isFinalOutcome);
 
         $statusBadge = match ($releaseStatus) {
@@ -43,7 +43,7 @@
             <p class="text-muted mb-0">Review allocation record and release outcome.</p>
         </div>
         <div class="d-flex gap-2 flex-wrap justify-content-end">
-            @if($event)
+            @if($event && ! $isDirect)
                 <a href="{{ route('distribution-events.show', $event) }}" class="btn btn-outline-secondary">
                     <i class="bi bi-calendar-event me-1"></i> Open Event
                 </a>
@@ -201,7 +201,13 @@
                     @if(! $canSetReadyForRelease && ! $canMarkOutcome)
                         <div class="alert alert-light border mb-0">
                             <div class="fw-semibold mb-1">No Available Actions</div>
-                            <div class="text-muted small">This allocation is finalized or cannot be updated while the event is Pending.</div>
+                            <div class="text-muted small">
+                                @if($directWorkflowBlockedByPending)
+                                    This allocation cannot be updated while the event is Pending.
+                                @else
+                                    This allocation is finalized.
+                                @endif
+                            </div>
                         </div>
                     @endif
                 </div>

@@ -275,7 +275,7 @@ class DirectAssistanceController extends Controller
 
         if ($currentStatus === 'ready_for_release') {
             return redirect()->back()
-                ->with('warning', 'This record is already marked as Ready for Release.');
+                ->with('success', 'Assistance record is already staged and Ready for Release.');
         }
 
         if ($currentStatus === 'released') {

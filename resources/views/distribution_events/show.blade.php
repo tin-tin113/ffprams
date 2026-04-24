@@ -771,6 +771,11 @@
                                             <i class="bi bi-x-circle-fill me-1"></i>
                                             Not Received
                                         </span>
+                                    @elseif((bool) $allocation->is_ready_for_release)
+                                        <span class="text-primary fw-bold">
+                                            <i class="bi bi-bell-fill me-1"></i>
+                                            Ready for Release
+                                        </span>
                                     @else
                                         <span class="text-muted">Not yet released</span>
                                     @endif

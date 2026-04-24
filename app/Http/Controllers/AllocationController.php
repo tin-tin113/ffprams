@@ -1085,7 +1085,7 @@ class AllocationController extends Controller
     {
         $event = $allocation->distributionEvent;
 
-        if ($event && $event->status === 'Pending') {
+        if (!$allocation->isDirect() && $event && $event->status === 'Pending') {
             return redirect()->back()
                 ->with('error', 'Cannot mark as distributed while event is still Pending.');
         }
@@ -1133,20 +1133,15 @@ class AllocationController extends Controller
                 ->with('error', 'Ready for Release transition is available only for direct allocations.');
         }
 
-        $event = $allocation->distributionEvent;
-        if ($event && $event->status === 'Pending') {
-            return redirect()->back()
-                ->with('error', 'Cannot mark as Ready for Release while event is still Pending.');
-        }
-
         if ($allocation->release_status === 'released') {
             return redirect()->back()
                 ->with('error', 'Released allocations cannot be moved back to Ready for Release.');
         }
 
-        if ((bool) $allocation->is_ready_for_release) {
+        // Guard by effective status, not just the raw flag, to handle inconsistent legacy rows.
+        if ($allocation->release_status === 'ready_for_release') {
             return redirect()->back()
-                ->with('warning', 'This allocation is already marked as Ready for Release.');
+                ->with('success', 'Allocation is already staged and Ready for Release.');
         }
 
         $this->releaseOutcome->apply(
@@ -1169,7 +1164,7 @@ class AllocationController extends Controller
     {
         $event = $allocation->distributionEvent;
 
-        if ($event && $event->status === 'Pending') {
+        if (!$allocation->isDirect() && $event && $event->status === 'Pending') {
             return redirect()->back()
                 ->with('error', 'Cannot mark as not received while event is still Pending.');
         }

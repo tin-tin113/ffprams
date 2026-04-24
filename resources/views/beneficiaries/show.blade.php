@@ -691,14 +691,17 @@
                                             <td class="text-end fw-bold text-primary">{{ $allocation->getDisplayValue() }}</td>
                                             <td>
                                                 @php
-                                                    $eventStatus = $allocation->distributionEvent?->status ?: ($allocation->distributed_at ? 'Released' : 'Planned');
-                                                    $sBadge = match($eventStatus) {
+                                                    $displayStatus = $allocation->release_status_label;
+                                                        
+                                                    $sBadge = match($displayStatus) {
                                                         'Completed', 'Released' => 'badge-soft-success',
                                                         'Ongoing', 'Pending'   => 'badge-soft-warning',
+                                                        'Ready for Release'     => 'badge-soft-info',
+                                                        'Not Received'          => 'badge-soft-danger',
                                                         default                 => 'badge-soft-secondary',
                                                     };
                                                 @endphp
-                                                <span class="badge {{ $sBadge }} px-2 py-1 rounded-pill">{{ $eventStatus }}</span>
+                                                <span class="badge {{ $sBadge }} px-2 py-1 rounded-pill">{{ $displayStatus }}</span>
                                             </td>
                                             <td class="text-end pe-4">
                                                 <div class="small text-dark fw-semibold">{{ $allocation->distributed_at ? $allocation->distributed_at->format('M d, Y') : '—' }}</div>
@@ -718,8 +721,17 @@
                                             <td><small class="text-muted">{{ $assistance->programName->agency->name ?? '—' }}</small></td>
                                             <td class="text-end fw-bold text-primary">{{ $assistance->getDisplayValue() }}</td>
                                             <td>
-                                                @php $nStatus = $assistance->normalized_status; @endphp
-                                                <span class="badge @if($nStatus === 'released') badge-soft-success @elseif($nStatus === 'planned') badge-soft-warning @else badge-soft-secondary @endif px-2 py-1 rounded-pill">
+                                                @php 
+                                                    $nStatus = $assistance->normalized_status;
+                                                    $daBadge = match($nStatus) {
+                                                        'released'          => 'badge-soft-success',
+                                                        'planned'           => 'badge-soft-warning',
+                                                        'ready_for_release' => 'badge-soft-info',
+                                                        'not_received'      => 'badge-soft-danger',
+                                                        default             => 'badge-soft-secondary',
+                                                    };
+                                                @endphp
+                                                <span class="badge {{ $daBadge }} px-2 py-1 rounded-pill">
                                                     {{ $assistance->status_label }}
                                                 </span>
                                             </td>
