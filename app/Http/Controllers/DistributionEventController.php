@@ -39,6 +39,12 @@ class DistributionEventController extends Controller
             $sort = 'date_desc';
         }
 
+        $allowedPerPage = [25, 50, 100];
+        $perPage = (int) $request->input('per_page', 25);
+        if (! in_array($perPage, $allowedPerPage, true)) {
+            $perPage = 25;
+        }
+
         $events = DistributionEvent::with(['barangay', 'resourceType.agency', 'programName', 'createdBy'])
             ->withCount('allocations')
             ->when($request->filled('program_name_id'), fn ($q) => $q->where('program_name_id', $request->program_name_id))
@@ -86,7 +92,7 @@ class DistributionEventController extends Controller
                 ->orderByDesc('distribution_date')
                 ->orderByDesc('created_at')
                 ->orderByDesc('id'))
-            ->paginate(15)
+            ->paginate($perPage)
             ->withQueryString();
 
         $total = DistributionEvent::count();

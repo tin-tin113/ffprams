@@ -20,7 +20,7 @@ class UserController extends Controller
 
     public function index(): View
     {
-        $users = User::with('agency')->orderBy('created_at', 'desc')->get();
+        $users = User::with('agency')->orderBy('created_at', 'desc')->paginate(25)->withQueryString();
 
         return view('admin.users.index', compact('users'));
     }

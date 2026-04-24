@@ -319,15 +319,22 @@
                     </tbody>
                 </table>
             </div>
+        <div class="card-footer bg-white py-3 border-top-0">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                <div class="text-muted small order-2 order-md-1">
+                    @if($beneficiaries->total() > 0)
+                        Showing {{ number_format($beneficiaries->firstItem()) }} to {{ number_format($beneficiaries->lastItem()) }} of {{ number_format($beneficiaries->total()) }} beneficiaries
+                    @endif
+                </div>
+                @if($beneficiaries->hasPages())
+                    <div class="pagination-container order-1 order-md-2">
+                        {{ $beneficiaries->links() }}
+                    </div>
+                @endif
+            </div>
         </div>
     </div>
-
-    @if($beneficiaries->hasPages())
-        <div class="d-flex justify-content-center mt-4">
-            {{ $beneficiaries->links() }}
-        </div>
-    @endif
-    </div>
+</div>
 @endsection
 
 @push('styles')

@@ -18,6 +18,12 @@ class AuditLogController extends Controller
 {
     public function index(Request $request): View
     {
+        $allowedPerPage = [30, 60, 100];
+        $perPage = (int) $request->input('per_page', 30);
+        if (! in_array($perPage, $allowedPerPage, true)) {
+            $perPage = 30;
+        }
+
         $logs = AuditLog::with('user:id,name,email')
             ->when($request->filled('user_id'), fn ($q) => $q->where('user_id', $request->input('user_id')))
             ->when($request->filled('action'), fn ($q) => $q->where('action', $request->input('action')))
@@ -26,7 +32,7 @@ class AuditLogController extends Controller
             ->when($request->filled('from'), fn ($q) => $q->whereDate('created_at', '>=', $request->input('from')))
             ->when($request->filled('to'), fn ($q) => $q->whereDate('created_at', '<=', $request->input('to')))
             ->latest()
-            ->paginate(30)
+            ->paginate($perPage)
             ->withQueryString();
 
         $extractIds = static function (array $payload, string $key): array {

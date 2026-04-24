@@ -96,6 +96,14 @@
     <div class="row">
         <div class="col-12">
             <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Program List</h5>
+                    @if($programNames->total() > 0)
+                        <span class="text-muted small">
+                            Showing {{ $programNames->firstItem() }} to {{ $programNames->lastItem() }} of {{ $programNames->total() }} programs
+                        </span>
+                    @endif
+                </div>
                 <div class="table-responsive">
                     <table class="table table-hover table-sm mb-0 table-responsive-cards">
                         <thead class="table-light">
@@ -189,6 +197,20 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+                <div class="card-footer bg-white py-3 border-top-0">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                        <div class="text-muted small order-2 order-md-1">
+                            @if($programNames->total() > 0)
+                                Showing {{ number_format($programNames->firstItem()) }} to {{ number_format($programNames->lastItem()) }} of {{ number_format($programNames->total()) }} programs
+                            @endif
+                        </div>
+                        @if($programNames->hasPages())
+                            <div class="pagination-container order-1 order-md-2">
+                                {{ $programNames->links() }}
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>

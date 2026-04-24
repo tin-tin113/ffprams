@@ -275,14 +275,19 @@
                 </table>
             </div>
         </div>
-        <div class="card-footer bg-white d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 px-3 py-2">
-            <small class="text-muted">
-                Page {{ $directAssistance->currentPage() }} of {{ $directAssistance->lastPage() }}
-                &mdash; {{ number_format($directAssistance->total()) }} total {{ Str::plural('record', $directAssistance->total()) }}
-            </small>
-            @if($directAssistance->hasPages())
-                <div>{{ $directAssistance->links() }}</div>
-            @endif
+        <div class="card-footer bg-white py-3 border-top-0">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                <div class="text-muted small order-2 order-md-1">
+                    @if($directAssistance->total() > 0)
+                        Showing {{ number_format($directAssistance->firstItem()) }} to {{ number_format($directAssistance->lastItem()) }} of {{ number_format($directAssistance->total()) }} records
+                    @endif
+                </div>
+                @if($directAssistance->hasPages())
+                    <div class="pagination-container order-1 order-md-2">
+                        {{ $directAssistance->links() }}
+                    </div>
+                @endif
+            </div>
         </div>
     </div>
 </div>

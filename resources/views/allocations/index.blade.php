@@ -574,14 +574,19 @@
                 </table>
             </div>
         </div>
-        <div class="card-footer bg-white d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 px-3 py-2">
-            <small class="text-muted">
-                Page {{ $directAllocations->currentPage() }} of {{ $directAllocations->lastPage() }}
-                &mdash; {{ number_format($directAllocations->total()) }} total {{ Str::plural('record', $directAllocations->total()) }}
-            </small>
-            @if($directAllocations->hasPages())
-                <div>{{ $directAllocations->links() }}</div>
-            @endif
+        <div class="card-footer bg-white py-3 border-top-0">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                <div class="text-muted small order-2 order-md-1">
+                    @if($directAllocations->total() > 0)
+                        Showing {{ number_format($directAllocations->firstItem()) }} to {{ number_format($directAllocations->lastItem()) }} of {{ number_format($directAllocations->total()) }} records
+                    @endif
+                </div>
+                @if($directAllocations->hasPages())
+                    <div class="pagination-container order-1 order-md-2">
+                        {{ $directAllocations->links() }}
+                    </div>
+                @endif
+            </div>
         </div>
     </div>
 </div>

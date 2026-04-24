@@ -76,6 +76,20 @@
                 </table>
             </div>
         </div>
+        <div class="card-footer bg-white py-3 border-top-0">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                <div class="text-muted small order-2 order-md-1">
+                    @if($users->total() > 0)
+                        Showing {{ number_format($users->firstItem()) }} to {{ number_format($users->lastItem()) }} of {{ number_format($users->total()) }} users
+                    @endif
+                </div>
+                @if($users->hasPages())
+                    <div class="pagination-container order-1 order-md-2">
+                        {{ $users->links() }}
+                    </div>
+                @endif
+            </div>
+        </div>
     </div>
-
+</div>
 @endsection

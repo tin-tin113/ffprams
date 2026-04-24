@@ -45,9 +45,9 @@
                         <h5 class="mb-0">
                             <i class="bi bi-building"></i> Agencies Management
                         </h5>
-                        <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addAgencyModal">
-                            <i class="bi bi-plus-circle me-1"></i> Create Agency
-                        </button>
+                        <div class="d-flex align-items-center gap-3">
+                            @if($agencies->total() > 0)
+                        </div>
                     </div>
                 </div>
                 <div class="card-body p-0">
@@ -130,6 +130,20 @@
                         </table>
                     </div>
                 </div>
+                <div class="card-footer bg-white py-3 border-top-0">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                        <div class="text-muted small order-2 order-md-1">
+                            @if($agencies->total() > 0)
+                                Showing {{ number_format($agencies->firstItem()) }} to {{ number_format($agencies->lastItem()) }} of {{ number_format($agencies->total()) }} agencies
+                            @endif
+                        </div>
+                        @if($agencies->hasPages())
+                            <div class="pagination-container order-1 order-md-2">
+                                {{ $agencies->links() }}
+                            </div>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -159,9 +173,11 @@
                                 <h5 class="mb-0">
                                     <i class="bi bi-box"></i> Resource Types
                                 </h5>
-                                <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addResourceTypeModal">
-                                    <i class="bi bi-plus-circle me-1"></i> Create Resource Type
-                                </button>
+                                <div class="d-flex align-items-center gap-3">
+                                    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addResourceTypeModal">
+                                        <i class="bi bi-plus-circle me-1"></i> Create Resource Type
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div class="card-body p-0">
@@ -220,6 +236,20 @@
                                 </table>
                             </div>
                         </div>
+                        <div class="card-footer bg-white py-3 border-top-0">
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                                <div class="text-muted small order-2 order-md-1">
+                                    @if($resourceTypes->total() > 0)
+                                        Showing {{ number_format($resourceTypes->firstItem()) }} to {{ number_format($resourceTypes->lastItem()) }} of {{ number_format($resourceTypes->total()) }} resource types
+                                    @endif
+                                </div>
+                                @if($resourceTypes->hasPages())
+                                    <div class="pagination-container order-1 order-md-2">
+                                        {{ $resourceTypes->links() }}
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -231,9 +261,11 @@
                                 <h5 class="mb-0">
                                     <i class="bi bi-check-circle"></i> Assistance Purposes
                                 </h5>
-                                <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addPurposeModal">
-                                    <i class="bi bi-plus-circle me-1"></i> Create Purpose
-                                </button>
+                                <div class="d-flex align-items-center gap-3">
+                                    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addPurposeModal">
+                                        <i class="bi bi-plus-circle me-1"></i> Create Purpose
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div class="card-body p-0">
@@ -285,6 +317,21 @@
                                 </table>
                             </div>
                         </div>
+                        <div class="card-footer bg-white py-3 border-top-0">
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                                <div class="text-muted small order-2 order-md-1">
+                                    @if($purposes->total() > 0)
+                                        Showing {{ number_format($purposes->firstItem()) }} to {{ number_format($purposes->lastItem()) }} of {{ number_format($purposes->total()) }} purposes
+                                    @endif
+                                </div>
+                                @if($purposes->hasPages())
+                                    <div class="pagination-container order-1 order-md-2">
+                                        {{ $purposes->links() }}
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
                     </div>
                 </div>
             </div>

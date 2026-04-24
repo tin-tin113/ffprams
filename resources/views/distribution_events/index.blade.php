@@ -155,7 +155,15 @@
                             <option value="status_desc" {{ request('sort') === 'status_desc' ? 'selected' : '' }}>Status: Z-A</option>
                         </select>
                     </div>
-                    <div class="col-xl-3 col-lg-3 col-md-12 modern-filter-actions">
+                    <div class="col-xl-1 col-lg-1 col-md-6">
+                        <label class="form-label">Rows</label>
+                        <select class="form-select" name="per_page">
+                            <option value="25" {{ request('per_page') == '25' ? 'selected' : '' }}>25</option>
+                            <option value="50" {{ request('per_page') == '50' ? 'selected' : '' }}>50</option>
+                            <option value="100" {{ request('per_page') == '100' ? 'selected' : '' }}>100</option>
+                        </select>
+                    </div>
+                    <div class="col-xl-2 col-lg-2 col-md-12 modern-filter-actions">
                         <button type="submit" class="btn btn-success">
                             <i class="bi bi-funnel me-1"></i> Apply
                         </button>
@@ -264,15 +272,21 @@
                     </tbody>
                 </table>
             </div>
+        <div class="card-footer bg-white py-3 border-top-0">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                <div class="text-muted small order-2 order-md-1">
+                    @if($events->total() > 0)
+                        Showing {{ number_format($events->firstItem()) }} to {{ number_format($events->lastItem()) }} of {{ number_format($events->total()) }} events
+                    @endif
+                </div>
+                @if($events->hasPages())
+                    <div class="pagination-container order-1 order-md-2">
+                        {{ $events->links() }}
+                    </div>
+                @endif
+            </div>
         </div>
     </div>
-
-    {{-- Pagination --}}
-    @if($events->hasPages())
-        <div class="d-flex justify-content-center mt-4">
-            {{ $events->links() }}
-        </div>
-    @endif
 </div>
 
 @endsection

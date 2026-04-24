@@ -51,13 +51,13 @@ class SystemSettingsController extends Controller
         // Agencies data
         $agencies = Agency::with(['classifications' => function($q) {
             $q->orderBy('name');
-        }])->orderBy('name')->get();
+        }])->orderBy('name')->paginate(25, ['*'], 'agencies_page')->withQueryString();
 
         // Resource Types data
         $activeAgencies = Agency::where('is_active', true)->orderBy('name')->get();
-        $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
+        $resourceTypes = ResourceType::with('agency')->orderBy('name')->paginate(25, ['*'], 'resource_types_page')->withQueryString();
         $resourceUnitOptions = ResourceType::unitOptions();
-        $purposes = AssistancePurpose::orderBy('category')->orderBy('name')->get();
+        $purposes = AssistancePurpose::orderBy('category')->orderBy('name')->paginate(25, ['*'], 'purposes_page')->withQueryString();
         $purposeCategoryOptions = AssistancePurpose::getCategoryOptions();
 
         // Form Fields data
@@ -137,7 +137,7 @@ class SystemSettingsController extends Controller
                 ];
             })
             ->all();
-        $programNames = ProgramName::with(['agency', 'legalRequirements'])->orderBy('name')->get();
+        $programNames = ProgramName::with(['agency', 'legalRequirements'])->orderBy('name')->paginate(25)->withQueryString();
 
         $summary = [
             'total' => ProgramName::count(),
