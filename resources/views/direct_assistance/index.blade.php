@@ -6,6 +6,44 @@
     <li class="breadcrumb-item active">Direct Assistance</li>
 @endsection
 
+@push('styles')
+<style>
+    .stats-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: default;
+    }
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+    .stats-icon {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s ease;
+    }
+    .stats-card:hover .stats-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+    .tracking-wider {
+        letter-spacing: 0.05em;
+    }
+    .table-hover tbody tr {
+        transition: all 0.2s ease;
+    }
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.02) !important;
+    }
+    .badge-soft-primary { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
+    .badge-soft-success { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .badge-soft-warning { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+    .badge-soft-danger { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+    .badge-soft-secondary { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
+</style>
+@endpush
+
 @section('content')
 <div class="container-fluid">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
@@ -23,57 +61,69 @@
         </div>
     </div>
 
-    <!-- Summary Cards -->
+    <!-- Summary Dashboard -->
     <div class="row g-3 mb-4">
-        <div class="col-12 col-sm-6 col-lg-6 col-xl-3">
-            <div class="card border-0 shadow-sm bg-light">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <p class="text-muted small mb-1">Planned</p>
-                            <h3 class="mb-0">{{ $stats['planned'] }}</h3>
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 stats-card status-planned">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="stats-icon bg-warning-subtle text-warning rounded-circle p-2 me-2">
+                            <i class="bi bi-clock-history fs-4"></i>
                         </div>
-                        <i class="bi bi-clock-history text-warning" style="font-size: 24px;"></i>
+                        <span class="text-muted small fw-medium text-uppercase tracking-wider">Planned</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-end">
+                        <h2 class="mb-0 fw-bold">{{ number_format($stats['planned']) }}</h2>
+                        <span class="text-warning small"><i class="bi bi-arrow-up-right"></i> Staged</span>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-12 col-sm-6 col-lg-6 col-xl-3">
-            <div class="card border-0 shadow-sm bg-light">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <p class="text-muted small mb-1">Ready for Release</p>
-                            <h3 class="mb-0">{{ $stats['ready_for_release'] }}</h3>
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 stats-card status-ready">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="stats-icon bg-primary-subtle text-primary rounded-circle p-2 me-2">
+                            <i class="bi bi-bell fs-4"></i>
                         </div>
-                        <i class="bi bi-bell text-primary" style="font-size: 24px;"></i>
+                        <span class="text-muted small fw-medium text-uppercase tracking-wider">Ready for Release</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-end">
+                        <h2 class="mb-0 fw-bold">{{ number_format($stats['ready_for_release']) }}</h2>
+                        <span class="text-primary small"><i class="bi bi-broadcast"></i> Active</span>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-12 col-sm-6 col-lg-6 col-xl-3">
-            <div class="card border-0 shadow-sm bg-light">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <p class="text-muted small mb-1">Released Today</p>
-                            <h3 class="mb-0">{{ $stats['released_today'] }}</h3>
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 stats-card status-released">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="stats-icon bg-success-subtle text-success rounded-circle p-2 me-2">
+                            <i class="bi bi-check-circle fs-4"></i>
                         </div>
-                        <i class="bi bi-check-circle text-success" style="font-size: 24px;"></i>
+                        <span class="text-muted small fw-medium text-uppercase tracking-wider">Released Today</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-end">
+                        <h2 class="mb-0 fw-bold">{{ number_format($stats['released_today']) }}</h2>
+                        <span class="text-success small"><i class="bi bi-graph-up"></i> Performance</span>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-12 col-sm-6 col-lg-6 col-xl-3">
-            <div class="card border-0 shadow-sm bg-light">
-                <div class="card-body">
-                    <a href="{{ route('direct-assistance.barangay-analytics') }}" class="text-decoration-none">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <p class="text-muted small mb-1">Barangay Analytics</p>
-                                <p class="text-primary mb-0">View Report</p>
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 stats-card status-monthly border-start border-4 border-info">
+                <div class="card-body p-3">
+                    <a href="{{ route('direct-assistance.barangay-analytics') }}" class="text-decoration-none text-dark">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="stats-icon bg-info-subtle text-info rounded-circle p-2 me-2">
+                                <i class="bi bi-bar-chart fs-4"></i>
                             </div>
-                            <i class="bi bi-bar-chart text-primary" style="font-size: 24px;"></i>
+                            <span class="text-muted small fw-medium text-uppercase tracking-wider">Total This Month</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-end">
+                            <h2 class="mb-0 fw-bold">{{ number_format($stats['this_month']) }}</h2>
+                            <span class="text-info small fw-bold">View Analytics <i class="bi bi-chevron-right ms-1"></i></span>
                         </div>
                     </a>
                 </div>
@@ -82,16 +132,21 @@
     </div>
 
     <!-- Filters -->
-    <div class="card border-0 shadow-sm mb-4 modern-filter-card">
-        <div class="card-header bg-white fw-semibold">
-            <i class="bi bi-funnel me-1"></i> Filters
+    <div class="card border-0 shadow-sm mb-4 modern-filter-card overflow-hidden">
+        <div class="card-header bg-white py-3">
+            <div class="d-flex align-items-center">
+                <div class="bg-primary-subtle text-primary rounded p-2 me-2">
+                    <i class="bi bi-funnel-fill fs-5"></i>
+                </div>
+                <h5 class="mb-0 fw-bold">Filter Records</h5>
+            </div>
         </div>
-        <div class="card-body">
-            <form method="GET" action="{{ route('direct-assistance.index') }}" class="row g-2 align-items-end modern-filter-grid">
-                <div class="col-xl-4 col-lg-4 col-md-6">
-                    <label class="form-label text-primary fw-semibold"><i class="bi bi-tag me-1"></i> Program</label>
-                    <select class="form-select" name="program_id">
-                        <option value="">All Programs</option>
+        <div class="card-body bg-light-subtle">
+            <form method="GET" action="{{ route('direct-assistance.index') }}" class="row g-3 align-items-end">
+                <div class="col-xl-3 col-lg-4 col-md-6">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Program Name</label>
+                    <select class="form-select border-0 shadow-sm ajax-filter" name="program_id">
+                        <option value="">All Active Programs</option>
                         @foreach($programs as $program)
                             <option value="{{ $program->id }}" {{ request('program_id') == $program->id ? 'selected' : '' }}>
                                 {{ $program->name }}
@@ -99,19 +154,19 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-xl-2 col-lg-2 col-md-6">
-                    <label class="form-label">Status</label>
-                    <select class="form-select" name="status">
-                        <option value="">All Statuses</option>
+                <div class="col-xl-2 col-lg-4 col-md-6">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Assistance Status</label>
+                    <select class="form-select border-0 shadow-sm ajax-filter" name="status">
+                        <option value="">Any Status</option>
                         <option value="planned" {{ request('status') == 'planned' ? 'selected' : '' }}>Planned</option>
                         <option value="ready_for_release" {{ request('status') == 'ready_for_release' ? 'selected' : '' }}>Ready for Release</option>
                         <option value="released" {{ request('status') == 'released' ? 'selected' : '' }}>Released</option>
                         <option value="not_received" {{ request('status') == 'not_received' ? 'selected' : '' }}>Not Received</option>
                     </select>
                 </div>
-                <div class="col-xl-2 col-lg-2 col-md-6">
-                    <label class="form-label">Sort</label>
-                    <select class="form-select" name="sort">
+                <div class="col-xl-2 col-lg-4 col-md-6">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Sorting</label>
+                    <select class="form-select border-0 shadow-sm ajax-filter" name="sort">
                         <option value="created_desc" {{ request('sort', 'created_desc') === 'created_desc' ? 'selected' : '' }}>Date: Newest</option>
                         <option value="created_asc" {{ request('sort') === 'created_asc' ? 'selected' : '' }}>Date: Oldest</option>
                         <option value="program_asc" {{ request('sort') === 'program_asc' ? 'selected' : '' }}>Program: A-Z</option>
@@ -121,26 +176,27 @@
                     </select>
                 </div>
                 <div class="col-xl-1 col-lg-2 col-md-6">
-                    <label class="form-label">Rows</label>
-                    <select class="form-select" name="per_page" id="da_per_page">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Rows</label>
+                    <select class="form-select border-0 shadow-sm ajax-filter" name="per_page">
                         <option value="10"  {{ request('per_page', '25') == '10'  ? 'selected' : '' }}>10</option>
                         <option value="25"  {{ request('per_page', '25') == '25'  ? 'selected' : '' }}>25</option>
                         <option value="50"  {{ request('per_page', '25') == '50'  ? 'selected' : '' }}>50</option>
                         <option value="100" {{ request('per_page', '25') == '100' ? 'selected' : '' }}>100</option>
                     </select>
                 </div>
-                <div class="col-xl-2 col-lg-3 col-md-12 modern-filter-actions">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-funnel me-1"></i> Apply
+                <div class="col-xl-4 col-lg-10 col-md-12 d-flex gap-2 justify-content-xl-end">
+                    <button type="submit" class="btn btn-primary px-4 shadow-sm d-none d-xl-inline-block">
+                        <i class="bi bi-filter me-1"></i> Apply Filters
                     </button>
-                    <a href="{{ route('direct-assistance.index') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-clockwise me-1"></i> Clear
+                    <a href="{{ route('direct-assistance.index') }}" class="btn btn-outline-secondary px-4 shadow-sm bg-white" id="reset-filters">
+                        <i class="bi bi-x-lg me-1"></i> Reset
                     </a>
                 </div>
             </form>
         </div>
     </div>
 
+    <div id="direct-assistance-table-container">
     <!-- Direct Assistance List -->
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-1">
@@ -443,6 +499,95 @@ document.addEventListener('DOMContentLoaded', function() {
     const batchSummaryText = document.getElementById('batchSummaryText');
     const batchEmptyState = document.getElementById('batchEmptyState');
     const batchForm = document.getElementById('batchModeForm');
+
+    // AJAX Filtering Logic
+    const filterContainer = document.getElementById('direct-assistance-table-container');
+    const ajaxFilters = document.querySelectorAll('.ajax-filter');
+    const filterForm = document.querySelector('.modern-filter-card form');
+
+    const updateDirectAssistanceTable = async () => {
+        if (!filterContainer || !filterForm) return;
+
+        const formData = new FormData(filterForm);
+        const params = new URLSearchParams(formData).toString();
+        const url = `${window.location.pathname}?${params}`;
+
+        // Add loading state
+        filterContainer.style.opacity = '0.5';
+        filterContainer.style.pointerEvents = 'none';
+
+        try {
+            const response = await fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newContent = doc.getElementById('direct-assistance-table-container');
+
+            if (newContent) {
+                filterContainer.innerHTML = newContent.innerHTML;
+                history.pushState({}, '', url);
+            }
+        } catch (error) {
+            console.error('Error filtering direct assistance:', error);
+        } finally {
+            filterContainer.style.opacity = '1';
+            filterContainer.style.pointerEvents = 'auto';
+        }
+    };
+
+    ajaxFilters.forEach(filter => {
+        filter.addEventListener('change', updateDirectAssistanceTable);
+    });
+
+    if (filterForm) {
+        filterForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            updateDirectAssistanceTable();
+        });
+    }
+
+    // Handle Reset Button
+    const resetBtn = document.getElementById('reset-filters');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            filterForm.reset();
+            ajaxFilters.forEach(f => f.value = '');
+            updateDirectAssistanceTable();
+        });
+    }
+
+    // Delegate pagination link clicks to AJAX
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('#direct-assistance-table-container .pagination a');
+        if (link) {
+            e.preventDefault();
+            const url = link.href;
+            
+            // Add loading state
+            filterContainer.style.opacity = '0.5';
+            filterContainer.style.pointerEvents = 'none';
+
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(r => r.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newContent = doc.getElementById('direct-assistance-table-container');
+                    if (newContent) {
+                        filterContainer.innerHTML = newContent.innerHTML;
+                        history.pushState({}, '', url);
+                        window.scrollTo({ top: filterContainer.offsetTop - 100, behavior: 'smooth' });
+                    }
+                })
+                .finally(() => {
+                    filterContainer.style.opacity = '1';
+                    filterContainer.style.pointerEvents = 'auto';
+                });
+        }
+    });
     const batchSubmitBtn = document.getElementById('batchSubmitBtn');
     const batchValidationStatus = document.getElementById('batchValidationStatus');
 

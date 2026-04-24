@@ -15,42 +15,68 @@
         </div>
     </div>
 
-    {{-- Summary Dashboard (One Column Design) --}}
-    <div class="row mb-3 mt-1">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body p-0">
-                    <div class="row g-0 text-center">
-                        <div class="col-12 col-md border-end-md p-3">
-                            <div class="text-muted alloc-stat-label text-uppercase fw-semibold mb-1">
-                                <i class="bi bi-folder2-open me-1 text-primary"></i> Total
-                            </div>
-                            <div class="fw-bold alloc-stat-value text-primary">{{ number_format($summary['total']) }}</div>
+    <!-- Summary Dashboard -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 stats-card status-planned">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="stats-icon bg-warning-subtle text-warning rounded-circle p-2 me-2">
+                            <i class="bi bi-calendar-event fs-4"></i>
                         </div>
-                        <div class="col-12 col-md border-end-md p-3">
-                            <div class="text-muted alloc-stat-label text-uppercase fw-semibold mb-1">
-                                <i class="bi bi-calendar-event me-1 text-secondary"></i> Planned
-                            </div>
-                            <div class="fw-bold alloc-stat-value text-secondary">{{ number_format($summary['planned']) }}</div>
+                        <span class="text-muted small fw-medium text-uppercase tracking-wider">Planned</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-end">
+                        <h2 class="mb-0 fw-bold">{{ number_format($summary['planned']) }}</h2>
+                        <span class="text-warning small"><i class="bi bi-arrow-up-right"></i> Staged</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 stats-card status-ready">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="stats-icon bg-primary-subtle text-primary rounded-circle p-2 me-2">
+                            <i class="bi bi-box-seam fs-4"></i>
                         </div>
-                        <div class="col-12 col-md border-end-md p-3">
-                            <div class="text-muted alloc-stat-label text-uppercase fw-semibold mb-1">
-                                <i class="bi bi-box-seam me-1 text-info"></i> Ready
-                            </div>
-                            <div class="fw-bold alloc-stat-value text-info">{{ number_format($summary['ready']) }}</div>
+                        <span class="text-muted small fw-medium text-uppercase tracking-wider">Ready for Release</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-end">
+                        <h2 class="mb-0 fw-bold">{{ number_format($summary['ready']) }}</h2>
+                        <span class="text-primary small"><i class="bi bi-broadcast"></i> Active</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 stats-card status-released">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="stats-icon bg-success-subtle text-success rounded-circle p-2 me-2">
+                            <i class="bi bi-check-circle fs-4"></i>
                         </div>
-                        <div class="col-12 col-md border-end-md p-3">
-                            <div class="text-muted alloc-stat-label text-uppercase fw-semibold mb-1">
-                                <i class="bi bi-check-circle me-1 text-success"></i> Released
-                            </div>
-                            <div class="fw-bold alloc-stat-value text-success">{{ number_format($summary['released']) }}</div>
+                        <span class="text-muted small fw-medium text-uppercase tracking-wider">Released Today</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-end">
+                        <h2 class="mb-0 fw-bold">{{ number_format($summary['released']) }}</h2>
+                        <span class="text-success small"><i class="bi bi-graph-up"></i> Success</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 stats-card border-start border-4 border-info">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="stats-icon bg-info-subtle text-info rounded-circle p-2 me-2">
+                            <i class="bi bi-folder2-open fs-4"></i>
                         </div>
-                        <div class="col-12 col-md p-3">
-                            <div class="text-muted alloc-stat-label text-uppercase fw-semibold mb-1">
-                                <i class="bi bi-x-circle me-1 text-danger"></i> Not Rcvd
-                            </div>
-                            <div class="fw-bold alloc-stat-value text-danger">{{ number_format($summary['not_received']) }}</div>
-                        </div>
+                        <span class="text-muted small fw-medium text-uppercase tracking-wider">Total records</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-end">
+                        <h2 class="mb-0 fw-bold">{{ number_format($summary['total']) }}</h2>
+                        <span class="text-info small fw-bold">Grand Total</span>
                     </div>
                 </div>
             </div>
@@ -453,62 +479,72 @@
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm mb-4 modern-filter-card">
-        <div class="card-body">
-            <form method="GET" action="{{ route('allocations.index') }}">
-                <div class="row g-2 align-items-end modern-filter-grid">
-                    <div class="col-xl-4 col-lg-4 col-md-6">
-                        <label class="form-label">Program</label>
-                        <select class="form-select" name="program_name_id">
-                            <option value="">All Programs</option>
-                            @foreach($programNames as $program)
-                                <option value="{{ $program->id }}" {{ (string) request('program_name_id') === (string) $program->id ? 'selected' : '' }}>
-                                    {{ $program->name }} ({{ $program->agency->name ?? 'N/A' }})
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-xl-2 col-lg-2 col-md-6">
-                        <label class="form-label">Status</label>
-                        <select class="form-select" name="status">
-                            <option value="">All Statuses</option>
-                            <option value="planned" {{ request('status') === 'planned' ? 'selected' : '' }}>Planned</option>
-                            <option value="ready_for_release" {{ request('status') === 'ready_for_release' ? 'selected' : '' }}>Ready for Release</option>
-                            <option value="released" {{ request('status') === 'released' ? 'selected' : '' }}>Released</option>
-                            <option value="not_received" {{ request('status') === 'not_received' ? 'selected' : '' }}>Not Received</option>
-                        </select>
-                    </div>
-                    <div class="col-xl-2 col-lg-2 col-md-6">
-                        <label class="form-label">Sort</label>
-                        <select class="form-select" name="sort">
-                            <option value="date_desc" {{ request('sort', 'date_desc') === 'date_desc' ? 'selected' : '' }}>Date: Newest</option>
-                            <option value="date_asc" {{ request('sort') === 'date_asc' ? 'selected' : '' }}>Date: Oldest</option>
-                            <option value="program_asc" {{ request('sort') === 'program_asc' ? 'selected' : '' }}>Program: A-Z</option>
-                            <option value="program_desc" {{ request('sort') === 'program_desc' ? 'selected' : '' }}>Program: Z-A</option>
-                            <option value="status_asc" {{ request('sort') === 'status_asc' ? 'selected' : '' }}>Status: A-Z</option>
-                            <option value="status_desc" {{ request('sort') === 'status_desc' ? 'selected' : '' }}>Status: Z-A</option>
-                        </select>
-                    </div>
-                    <div class="col-xl-1 col-lg-2 col-md-6">
-                        <label class="form-label">Rows</label>
-                        <select class="form-select" name="per_page">
-                            <option value="10"  {{ request('per_page', '25') == '10'  ? 'selected' : '' }}>10</option>
-                            <option value="25"  {{ request('per_page', '25') == '25'  ? 'selected' : '' }}>25</option>
-                            <option value="50"  {{ request('per_page', '25') == '50'  ? 'selected' : '' }}>50</option>
-                            <option value="100" {{ request('per_page', '25') == '100' ? 'selected' : '' }}>100</option>
-                        </select>
-                    </div>
-                    <div class="col-xl-2 col-lg-3 col-md-12 modern-filter-actions">
-                        <button type="submit" class="btn btn-success">
-                            <i class="bi bi-funnel me-1"></i> Apply
-                        </button>
-                        <a href="{{ route('allocations.index') }}" class="btn btn-outline-secondary">Clear</a>
-                    </div>
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm mb-4 modern-filter-card overflow-hidden">
+        <div class="card-header bg-white py-3">
+            <div class="d-flex align-items-center">
+                <div class="bg-success-subtle text-success rounded p-2 me-2">
+                    <i class="bi bi-funnel-fill fs-5"></i>
+                </div>
+                <h5 class="mb-0 fw-bold">Filter Allocations</h5>
+            </div>
+        </div>
+        <div class="card-body bg-light-subtle">
+            <form method="GET" action="{{ route('allocations.index') }}" class="row g-3 align-items-end">
+                <div class="col-xl-3 col-lg-4 col-md-6">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Program</label>
+                    <select class="form-select border-0 shadow-sm ajax-filter" name="program_name_id">
+                        <option value="">All Programs</option>
+                        @foreach($programNames as $program)
+                            <option value="{{ $program->id }}" {{ (string) request('program_name_id') === (string) $program->id ? 'selected' : '' }}>
+                                {{ $program->name }} ({{ $program->agency->name ?? 'N/A' }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-xl-2 col-lg-4 col-md-6">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Status</label>
+                    <select class="form-select border-0 shadow-sm ajax-filter" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="planned" {{ request('status') === 'planned' ? 'selected' : '' }}>Planned</option>
+                        <option value="ready_for_release" {{ request('status') === 'ready_for_release' ? 'selected' : '' }}>Ready for Release</option>
+                        <option value="released" {{ request('status') === 'released' ? 'selected' : '' }}>Released</option>
+                        <option value="not_received" {{ request('status') === 'not_received' ? 'selected' : '' }}>Not Received</option>
+                    </select>
+                </div>
+                <div class="col-xl-2 col-lg-4 col-md-6">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Sorting</label>
+                    <select class="form-select border-0 shadow-sm ajax-filter" name="sort">
+                        <option value="date_desc" {{ request('sort', 'date_desc') === 'date_desc' ? 'selected' : '' }}>Date: Newest</option>
+                        <option value="date_asc" {{ request('sort') === 'date_asc' ? 'selected' : '' }}>Date: Oldest</option>
+                        <option value="program_asc" {{ request('sort') === 'program_asc' ? 'selected' : '' }}>Program: A-Z</option>
+                        <option value="program_desc" {{ request('sort') === 'program_desc' ? 'selected' : '' }}>Program: Z-A</option>
+                        <option value="status_asc" {{ request('sort') === 'status_asc' ? 'selected' : '' }}>Status: A-Z</option>
+                        <option value="status_desc" {{ request('sort') === 'status_desc' ? 'selected' : '' }}>Status: Z-A</option>
+                    </select>
+                </div>
+                <div class="col-xl-1 col-lg-2 col-md-6">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Rows</label>
+                    <select class="form-select border-0 shadow-sm ajax-filter" name="per_page">
+                        <option value="10"  {{ request('per_page', '25') == '10'  ? 'selected' : '' }}>10</option>
+                        <option value="25"  {{ request('per_page', '25') == '25'  ? 'selected' : '' }}>25</option>
+                        <option value="50"  {{ request('per_page', '25') == '50'  ? 'selected' : '' }}>50</option>
+                        <option value="100" {{ request('per_page', '25') == '100' ? 'selected' : '' }}>100</option>
+                    </select>
+                </div>
+                <div class="col-xl-4 col-lg-10 col-md-12 d-flex gap-2 justify-content-xl-end">
+                    <button type="submit" class="btn btn-success px-4 shadow-sm d-none d-xl-inline-block">
+                        <i class="bi bi-filter me-1"></i> Apply Filters
+                    </button>
+                    <a href="{{ route('allocations.index') }}" class="btn btn-outline-secondary px-4 shadow-sm bg-white" id="reset-filters">
+                        <i class="bi bi-x-lg me-1"></i> Reset
+                    </a>
                 </div>
             </form>
         </div>
     </div>
 
+    <div id="allocation-table-container">
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-1">
             <span class="fw-semibold"><i class="bi bi-list-check me-1"></i> Direct Allocations</span>
@@ -634,60 +670,45 @@
             </div>
         </div>
     </div>
+    </div>
 </div>
 @endsection
 
 @push('styles')
 <style>
-.module-page .h3 {
-    font-size: 1.5rem;
-    font-weight: 650;
-}
-
-.module-page .card {
-    border-radius: 12px;
-    border: 1px solid #e5e7eb;
-}
-
-.module-page .card.shadow-sm {
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06) !important;
-}
-
-.module-page .form-control,
-.module-page .form-select,
-.module-page .btn {
-    border-radius: 10px;
-}
-
-.module-page .btn {
-    font-size: 0.875rem;
-}
-
-.module-page .table thead th {
-    font-size: 0.78rem;
-    letter-spacing: 0.2px;
-    color: #4b5563;
-}
-
-.module-page .table tbody td {
-    font-size: 0.9rem;
-}
-
-.module-page .row.g-0 .alloc-stat-label {
-    font-size: 0.68rem;
-}
-
-.module-page .row.g-0 .alloc-stat-value {
-    font-size: 1.05rem;
-    font-weight: 700;
-    line-height: 1.2;
-}
-
-@media (min-width: 768px) {
-    .module-page .border-end-md {
-        border-right: 1px solid #e5e7eb !important;
+    .stats-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: default;
     }
-}
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+    .stats-icon {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s ease;
+    }
+    .stats-card:hover .stats-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+    .tracking-wider {
+        letter-spacing: 0.05em;
+    }
+    .table-hover tbody tr {
+        transition: all 0.2s ease;
+    }
+    .table-hover tbody tr:hover {
+        background-color: rgba(25, 135, 84, 0.02) !important;
+    }
+    .badge-soft-primary { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
+    .badge-soft-success { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .badge-soft-warning { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+    .badge-soft-danger { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+    .badge-soft-secondary { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
 </style>
 @endpush
 
@@ -704,6 +725,95 @@ document.addEventListener('DOMContentLoaded', function () {
     const programInfo = document.getElementById('program_info');
     const resourceInfo = document.getElementById('resource_info');
     const resourceInfoDefaultHtml = resourceInfo ? resourceInfo.innerHTML : '';
+
+    // AJAX Filtering Logic
+    const filterContainer = document.getElementById('allocation-table-container');
+    const ajaxFilters = document.querySelectorAll('.ajax-filter');
+    const filterForm = document.querySelector('.modern-filter-card form');
+
+    const updateAllocationTable = async () => {
+        if (!filterContainer || !filterForm) return;
+
+        const formData = new FormData(filterForm);
+        const params = new URLSearchParams(formData).toString();
+        const url = `${window.location.pathname}?${params}`;
+
+        // Add loading state
+        filterContainer.style.opacity = '0.5';
+        filterContainer.style.pointerEvents = 'none';
+
+        try {
+            const response = await fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newContent = doc.getElementById('allocation-table-container');
+
+            if (newContent) {
+                filterContainer.innerHTML = newContent.innerHTML;
+                history.pushState({}, '', url);
+            }
+        } catch (error) {
+            console.error('Error filtering allocations:', error);
+        } finally {
+            filterContainer.style.opacity = '1';
+            filterContainer.style.pointerEvents = 'auto';
+        }
+    };
+
+    ajaxFilters.forEach(filter => {
+        filter.addEventListener('change', updateAllocationTable);
+    });
+
+    if (filterForm) {
+        filterForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            updateAllocationTable();
+        });
+    }
+
+    // Handle Reset Button
+    const resetBtn = document.getElementById('reset-filters');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            filterForm.reset();
+            ajaxFilters.forEach(f => f.value = '');
+            updateAllocationTable();
+        });
+    }
+
+    // Delegate pagination link clicks to AJAX
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('#allocation-table-container .pagination a');
+        if (link) {
+            e.preventDefault();
+            const url = link.href;
+            
+            // Add loading state
+            filterContainer.style.opacity = '0.5';
+            filterContainer.style.pointerEvents = 'none';
+
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(r => r.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newContent = doc.getElementById('allocation-table-container');
+                    if (newContent) {
+                        filterContainer.innerHTML = newContent.innerHTML;
+                        history.pushState({}, '', url);
+                        window.scrollTo({ top: filterContainer.offsetTop - 100, behavior: 'smooth' });
+                    }
+                })
+                .finally(() => {
+                    filterContainer.style.opacity = '1';
+                    filterContainer.style.pointerEvents = 'auto';
+                });
+        }
+    });
 
     function formatUnitQuantityPlaceholder(unit) {
         const normalized = String(unit || '').toLowerCase();
