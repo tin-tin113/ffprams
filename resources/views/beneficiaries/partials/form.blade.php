@@ -654,17 +654,6 @@
 </div>
 
 
-{{-- SECTION 5 — DAR/ARB Information --}}
-<div class="mb-5 bg-white rounded-3 p-4 border" id="dar-info-section" style="display: none;">
-    <div class="border-bottom pb-2 mb-4">
-        <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-briefcase me-2 text-muted"></i>DAR/ARB Information</h5>
-    </div>
-    <div class="row g-4">
-        @foreach($customFieldGroups->get('dar_information', collect()) as $customField)
-            @include('beneficiaries.partials.custom-field-input', ['customField' => $customField, 'beneficiaryCustomFields' => $beneficiaryCustomFields])
-        @endforeach
-    </div>
-</div>
 
 
 {{-- SECTION 6 — Dynamic Agency Form Fields --}}
@@ -726,7 +715,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const agencyCheckboxes = document.getElementById('agency-checkboxes');
     const farmerSection = document.getElementById('farmer-info-section');
     const fisherfolkSection = document.getElementById('fisherfolk-info-section');
-    const darSection = document.getElementById('dar-info-section');
     const associationCheckbox = document.getElementById('association_member');
     const associationWrapper = document.getElementById('association-name-wrapper');
     const hasVesselCheckbox = document.getElementById('has_fishing_vessel');
@@ -766,9 +754,6 @@ document.addEventListener('DOMContentLoaded', function () {
             fisherfolkSection.style.display = 'block';
         }
         
-        if (selectedAgencies.includes('DAR')) {
-            darSection.style.display = 'block';
-        }
 
         toggleRsbsaAvailability();
         toggleFishrAvailability();

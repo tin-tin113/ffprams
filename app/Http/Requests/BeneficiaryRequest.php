@@ -21,8 +21,12 @@ class BeneficiaryRequest extends FormRequest
         'farm_ownership',
         'farm_type',
         'fisherfolk_type',
+        'cloa_ep_number',
         'arb_classification',
+        'landholding_description',
+        'land_area_awarded_hectares',
         'ownership_scheme',
+        'barc_membership_status',
     ];
 
     protected function prepareForValidation(): void
@@ -139,10 +143,7 @@ class BeneficiaryRequest extends FormRequest
         $fishingVesselTypeRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'fishing_vessel_type', false);
         $fishingVesselTonnageRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'fishing_vessel_tonnage', false);
         $residencyMonthsRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'length_of_residency_months', true);
-        $cloaNumberRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'cloa_ep_number', true);
-        $landholdingDescriptionRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'landholding_description', true);
-        $landAreaAwardedRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'land_area_awarded_hectares', true);
-        $barcMembershipRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'barc_membership_status', false);
+        $residencyMonthsRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'length_of_residency_months', true);
 
         $rules = [
             // Multiple agencies (multi-select) - handles both flat array [1,2,3] and nested array {1: {...}, 2: {...}}
@@ -297,15 +298,6 @@ class BeneficiaryRequest extends FormRequest
                 $rules['length_of_residency_months'] = [$residencyMonthsRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', 'integer', 'min:6'];
             }
 
-            // DAR with Farmer classification
-            if ($agencyName === 'DAR' && $classification === 'Farmer') {
-                $rules['cloa_ep_number'] = [$cloaNumberRequired ? 'required' : 'nullable', 'string', 'max:255'];
-                $rules['arb_classification'] = [$arbClassificationRequired ? 'required' : 'nullable', Rule::in($arbClassificationValues)];
-                $rules['landholding_description'] = [$landholdingDescriptionRequired ? 'required' : 'nullable', 'string', 'max:500'];
-                $rules['land_area_awarded_hectares'] = [$landAreaAwardedRequired ? 'required' : 'nullable', 'numeric', 'min:0.01'];
-                $rules['ownership_scheme'] = [$ownershipSchemeRequired ? 'required' : 'nullable', Rule::in($ownershipSchemeValues)];
-                $rules['barc_membership_status'] = [$barcMembershipRequired ? 'required' : 'nullable', 'string', 'max:100'];
-            }
         }
 
         // If no fields have been set to required for farmer/fisherfolk/dar, make them optional
@@ -348,31 +340,13 @@ class BeneficiaryRequest extends FormRequest
         if (!isset($rules['length_of_residency_months'])) {
             $rules['length_of_residency_months'] = ['nullable', 'integer', 'min:0'];
         }
-        if (!isset($rules['cloa_ep_number'])) {
-            $rules['cloa_ep_number'] = ['nullable', 'string', 'max:255'];
-        }
-        if (!isset($rules['arb_classification'])) {
-            $rules['arb_classification'] = ['nullable', Rule::in($arbClassificationValues)];
-        }
-        if (!isset($rules['landholding_description'])) {
-            $rules['landholding_description'] = ['nullable', 'string', 'max:500'];
-        }
-        if (!isset($rules['land_area_awarded_hectares'])) {
-            $rules['land_area_awarded_hectares'] = ['nullable', 'numeric', 'min:0.01'];
-        }
-        if (!isset($rules['ownership_scheme'])) {
-            $rules['ownership_scheme'] = ['nullable', Rule::in($ownershipSchemeValues)];
-        }
-        if (!isset($rules['barc_membership_status'])) {
-            $rules['barc_membership_status'] = ['nullable', 'string', 'max:100'];
-        }
 
 
         // ===== DYNAMIC AGENCY FORM FIELDS VALIDATION =====
         // Validate custom fields defined by each selected agency
         $allowedAgencySections = $this->allowedAgencyFormSections((string) $classification);
 
-        $dynamicAvailabilityExemptFieldNames = ['rsbsa_number', 'fishr_number', 'cloa_ep_number'];
+        $dynamicAvailabilityExemptFieldNames = ['rsbsa_number', 'fishr_number'];
 
         foreach ($selectedAgencies as $agency) {
             /** @var \App\Models\Agency $agency */
@@ -501,8 +475,6 @@ class BeneficiaryRequest extends FormRequest
             'last_name.required'               => 'Last name is required.',
             'registered_at.before_or_equal'     => 'Registration date cannot be a future date.',
             'date_of_birth.before'              => 'Date of birth must be a past date.',
-            'cloa_ep_number.required'           => 'CLOA/EP number is required for DAR beneficiaries.',
-            'cloa_ep_number.unique'             => 'A beneficiary with this CLOA/EP number already exists.',
             'length_of_residency_months.min'    => 'Fisherfolk must have at least 6 months residency per RA 8550.',
             'rsbsa_number.unique'               => 'A beneficiary with this RSBSA number already exists.',
             'fishr_number.unique'               => 'A beneficiary with this FishR number already exists.',
@@ -868,7 +840,7 @@ class BeneficiaryRequest extends FormRequest
                 }
             }
 
-            $dynamicAvailabilityExemptFieldNames = ['rsbsa_number', 'fishr_number', 'cloa_ep_number'];
+            $dynamicAvailabilityExemptFieldNames = ['rsbsa_number', 'fishr_number'];
 
             foreach ($selectedAgencies as $agency) {
                 /** @var \App\Models\Agency $agency */
