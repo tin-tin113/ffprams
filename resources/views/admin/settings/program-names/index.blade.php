@@ -189,7 +189,12 @@
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2">
                                             <li>
                                                 <a class="dropdown-item preview-pn d-flex align-items-center gap-2" href="#" data-id="{{ $program->id }}" data-bs-toggle="modal" data-bs-target="#previewModal">
-                                                    <i class="bi bi-eye text-info"></i> View Details
+                                                    <i class="bi bi-eye text-info"></i> Quick Preview
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('admin.programs.detail', $program) }}">
+                                                    <i class="bi bi-card-list text-primary"></i> Full Program Details
                                                 </a>
                                             </li>
                                             @if(Auth::user()->isAdmin())
@@ -470,7 +475,10 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer border-0 p-4 pt-0">
+            <div class="modal-footer border-0 p-4 pt-0 gap-2">
+                <a id="previewFullDetailsBtn" href="#" class="btn btn-primary w-100 rounded-pill fw-semibold py-2">
+                    <i class="bi bi-card-list me-2"></i>View Full Program Record
+                </a>
                 <button type="button" class="btn btn-light w-100 rounded-pill fw-semibold py-2" data-bs-dismiss="modal">Close Preview</button>
             </div>
         </div>
@@ -981,6 +989,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('previewName').textContent = program.name;
                 document.getElementById('previewAgency').textContent = program.agency.full_name;
                 document.getElementById('previewDescription').textContent = program.description || 'No description provided for this program.';
+                
+                // Update Full Details Link
+                const fullDetailsBtn = document.getElementById('previewFullDetailsBtn');
+                if (fullDetailsBtn) {
+                    fullDetailsBtn.href = `/admin/programs/${programId}`;
+                }
 
                 let classBadge = 'bg-secondary-subtle text-secondary';
                 if (program.classification === 'Farmer') classBadge = 'bg-success-subtle text-success';

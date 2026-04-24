@@ -639,7 +639,7 @@
                         <i class="bi bi-plus-lg me-1"></i> Add Beneficiary
                     </button>
                     <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#addAllModal">
-                        <i class="bi bi-people me-1"></i> Add All
+                        <i class="bi bi-people me-1"></i> Add All Barangay Beneficiaries
                     </button>
                 </div>
             @endif
@@ -803,7 +803,6 @@
                                         <form method="POST"
                                               action="{{ route('allocations.markDistributed', $allocation) }}"
                                               class="d-inline"
-                                                                                            data-confirm-title="Confirm Release"
                                               data-confirm-title="Confirm Release"
                                               data-confirm-message="Mark this allocation as Released? This will timestamp the transaction.">
                                             @csrf
