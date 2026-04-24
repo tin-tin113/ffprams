@@ -1089,25 +1089,47 @@
                 <div class="modal-body p-0">
                     @if($event->isBeneficiaryListApproved())
                         <div class="p-3 border-bottom">
-                            <div class="alert alert-warning py-2 mb-3">
+                            <div class="alert alert-warning py-2 mb-3 small">
                                 <strong>Reason required:</strong>
                                 This beneficiary list is already approved. Provide a valid reason before adding beneficiaries in bulk.
                             </div>
-                            <label for="approval_override_reason_bulk" class="form-label">
+                            <label for="approval_override_reason_bulk" class="form-label small fw-bold">
                                 Reason for post-approval add <span class="text-danger">*</span>
                             </label>
-                            <textarea class="form-control @error('approval_override_reason') is-invalid @enderror"
+                            <textarea class="form-control form-control-sm @error('approval_override_reason') is-invalid @enderror"
                                       id="approval_override_reason_bulk"
                                       name="approval_override_reason"
-                                      rows="3"
+                                      rows="2"
                                       minlength="10"
                                       maxlength="500"
                                       required>{{ old('approval_override_reason') }}</textarea>
-                            @error('approval_override_reason')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
                         </div>
                     @endif
+
+                    <div class="bg-light p-3 border-bottom shadow-sm" style="background-color: #f8fafc !important;">
+                        <div class="row align-items-center g-3">
+                            <div class="col-md-5">
+                                <label class="form-label small fw-bold text-primary mb-1">
+                                    <i class="bi bi-lightning-charge-fill me-1"></i> Quick Set: {{ $event->isFinancial() ? 'Amount' : 'Quantity' }}
+                                </label>
+                                <div class="input-group input-group-sm shadow-sm">
+                                    <input type="number" id="bulk_apply_value" class="form-control border-primary-subtle" 
+                                           step="0.01" placeholder="Set same {{ $event->isFinancial() ? 'amount' : 'quantity' }} for everyone...">
+                                    <button class="btn btn-primary px-3" type="button" id="btn_apply_to_all">
+                                        Apply
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-7 border-start-md ps-md-4">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-info-circle text-info fs-5"></i>
+                                    <div class="text-muted small lh-sm">
+                                        This will update the {{ $event->isFinancial() ? 'amount' : 'quantity' }} for all <strong>checked</strong> rows in the table below.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
@@ -1548,6 +1570,46 @@ document.addEventListener('DOMContentLoaded', function () {
     updateOverallComplianceReasonState();
 
     syncBulkSelectAllState();
+
+    // ---- Add All Modal Bulk Apply ----
+    const btnApplyToAll = document.getElementById('btn_apply_to_all');
+    const bulkApplyValue = document.getElementById('bulk_apply_value');
+    if (btnApplyToAll && bulkApplyValue) {
+        btnApplyToAll.addEventListener('click', function() {
+            const val = bulkApplyValue.value;
+            if (!val || val <= 0) {
+                alert('Please enter a valid positive value first.');
+                return;
+            }
+
+            const checkboxes = document.querySelectorAll('.bulk-add-checkbox');
+            let appliedCount = 0;
+            
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    const row = cb.closest('tr');
+                    if (row) {
+                        const input = row.querySelector('input[type="number"]:not([disabled])');
+                        if (input) {
+                            input.value = val;
+                            appliedCount++;
+                        }
+                    }
+                }
+            });
+
+            if (appliedCount > 0) {
+                // Flash the inputs to show success
+                const inputs = document.querySelectorAll('#bulkTableBody input[type="number"]:not([disabled])');
+                inputs.forEach(input => {
+                    input.style.backgroundColor = '#d1e7dd';
+                    setTimeout(() => input.style.backgroundColor = '', 500);
+                });
+            } else {
+                alert('No selected beneficiaries to apply value to.');
+            }
+        });
+    }
 
     // ---- Add All Modal Select All ----
     const bulkSelectAllModal = document.getElementById('bulk_select_all_modal');
