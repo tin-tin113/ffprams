@@ -1,15 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Create Distribution Event')
-
-@section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('distribution-events.index') }}">Distribution Events</a></li>
-    <li class="breadcrumb-item active">Create</li>
-@endsection
-
 @section('content')
-<div class="container-fluid">
-
+<div class="container-fluid py-4">
     @php
         $complianceStatusLabels = [
             'provided' => 'Provided',
@@ -20,364 +12,586 @@
     @endphp
 
     {{-- Page Header --}}
-    <div class="d-flex align-items-center mb-4">
-        <a href="{{ route('distribution-events.index') }}" class="btn btn-outline-secondary btn-sm me-3">
-            <i class="bi bi-arrow-left"></i>
-        </a>
+    <div class="row mb-4 align-items-center">
+        <div class="col-auto">
+            <a href="{{ route('distribution-events.index') }}" class="btn btn-light border shadow-sm rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </div>
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item text-muted small"><a href="{{ route('distribution-events.index') }}" class="text-decoration-none">Distribution Events</a></li>
+                    <li class="breadcrumb-item active small" aria-current="page">Create New</li>
+                </ol>
+            </nav>
+            <h4 class="mb-0 fw-bold">Create Distribution Event</h4>
+        </div>
     </div>
 
-    <div id="distributionEventCreateAjaxNotice" class="alert d-none" role="alert"></div>
+    <div id="distributionEventCreateAjaxNotice" class="alert d-none shadow-sm border-0 mb-4" role="alert"></div>
 
-    <form id="distributionEventCreateForm"
-          action="{{ route('distribution-events.store') }}"
-          method="POST">
+    <form id="distributionEventCreateForm" action="{{ route('distribution-events.store') }}" method="POST">
         @csrf
 
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-white fw-semibold">
-                <i class="bi bi-calendar-event me-1"></i> Event Details
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    {{-- Distribution Type --}}
-                    <div class="col-12 col-md-12">
-                        <label class="form-label">Distribution Type <span class="text-danger">*</span></label>
-                        <div class="btn-group w-100" role="group">
-                            <input type="radio" class="btn-check" name="type" id="type_physical" value="physical"
-                                   {{ old('type', 'physical') === 'physical' ? 'checked' : '' }}>
-                            <label class="btn btn-outline-secondary" for="type_physical">
-                                <i class="bi bi-box-seam me-1"></i> Physical Resources
-                            </label>
-                            <input type="radio" class="btn-check" name="type" id="type_financial" value="financial"
-                                   {{ old('type') === 'financial' ? 'checked' : '' }}>
-                            <label class="btn btn-outline-success" for="type_financial">
-                                <i class="bi bi-cash-stack me-1"></i> Financial Assistance
-                            </label>
+        <div class="row g-4">
+            {{-- Left Column: Core Details --}}
+            <div class="col-12 col-xl-8">
+                {{-- Type Selection Card --}}
+                <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+                    <div class="card-body p-4">
+                        <label class="form-label fw-bold text-uppercase small text-muted mb-3 tracking-wider">
+                            <i class="bi bi-layers me-1"></i> Distribution Type
+                        </label>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <input type="radio" class="btn-check" name="type" id="type_physical" value="physical"
+                                       {{ old('type', 'physical') === 'physical' ? 'checked' : '' }}>
+                                <label class="btn btn-outline-primary w-100 p-4 text-start d-flex align-items-center border-2 rounded-3" for="type_physical">
+                                    <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3 text-primary">
+                                        <i class="bi bi-box-seam fs-3"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold fs-5">Physical Resources</div>
+                                        <div class="small opacity-75">Seeds, fertilizers, tools, etc.</div>
+                                    </div>
+                                    <i class="bi bi-check-circle-fill ms-auto fs-4 check-icon invisible"></i>
+                                </label>
+                            </div>
+                            <div class="col-md-6">
+                                <input type="radio" class="btn-check" name="type" id="type_financial" value="financial"
+                                       {{ old('type') === 'financial' ? 'checked' : '' }}>
+                                <label class="btn btn-outline-success w-100 p-4 text-start d-flex align-items-center border-2 rounded-3" for="type_financial">
+                                    <div class="bg-success bg-opacity-10 rounded-circle p-3 me-3 text-success">
+                                        <i class="bi bi-cash-stack fs-3"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold fs-5">Financial Assistance</div>
+                                        <div class="small opacity-75">Cash grants, subsidies, etc.</div>
+                                    </div>
+                                    <i class="bi bi-check-circle-fill ms-auto fs-4 check-icon invisible"></i>
+                                </label>
+                            </div>
                         </div>
                         @error('type')
-                            <div class="text-danger small mt-1">{{ $message }}</div>
+                            <div class="text-danger small mt-2">{{ $message }}</div>
                         @enderror
                     </div>
+                </div>
 
-                    {{-- Event Name --}}
-                    <div class="col-12">
-                        <label for="name" class="form-label">Event Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control @error('name') is-invalid @enderror"
-                               id="name" name="name" value="{{ old('name') }}" 
-                               placeholder="e.g., Q1 Rice Seed Distribution 2024" required>
-                        @error('name')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
+                {{-- Unified Configuration Card --}}
+                <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+                    <div class="card-header bg-white py-3 border-bottom-0">
+                        <h6 class="mb-0 fw-bold d-flex align-items-center">
+                            <i class="bi bi-gear-fill me-2 text-primary"></i>
+                            Event Configuration
+                        </h6>
                     </div>
+                    <div class="card-body p-4 pt-2">
+                        {{-- Row 1: Core Details --}}
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control border-0 bg-light @error('name') is-invalid @enderror"
+                                           id="name" name="name" value="{{ old('name') }}" 
+                                           placeholder="Event Name" required>
+                                    <label for="name">Event Name <span class="text-danger">*</span></label>
+                                </div>
+                                @error('name')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
 
-                    {{-- Barangay --}}
-                    <div class="col-12 col-md-6">
-                        <label for="barangay_id" class="form-label">Barangay <span class="text-danger">*</span></label>
-                        <select class="form-select @error('barangay_id') is-invalid @enderror"
-                                id="barangay_id" name="barangay_id" required>
-                            <option value="" disabled {{ old('barangay_id') ? '' : 'selected' }}>Select Barangay</option>
-                            @foreach($barangays as $barangay)
-                                <option value="{{ $barangay->id }}" {{ old('barangay_id') == $barangay->id ? 'selected' : '' }}>
-                                    {{ $barangay->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('barangay_id')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    {{-- Program Name --}}
-                    <div class="col-12 col-md-6">
-                        <label for="program_name_id" class="form-label">Program Name <span class="text-danger">*</span></label>
-                        <select class="form-select @error('program_name_id') is-invalid @enderror"
-                                id="program_name_id" name="program_name_id" required>
-                            <option value="" disabled {{ old('program_name_id') ? '' : 'selected' }}>Select Program Name</option>
-                            @foreach($programNames as $program)
-                                <option value="{{ $program->id }}"
-                                        data-agency-id="{{ $program->agency_id }}"
-                                        {{ old('program_name_id') == $program->id ? 'selected' : '' }}>
-                                    {{ $program->name }} — {{ $program->agency->name ?? 'N/A' }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('program_name_id')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    {{-- Resource Type --}}
-                    <div class="col-12 col-md-6">
-                        <label for="resource_type_id" class="form-label">Resource Type <span class="text-danger">*</span></label>
-                        <div class="d-flex align-items-center gap-2">
-                            <select class="form-select @error('resource_type_id') is-invalid @enderror"
-                                    id="resource_type_id" name="resource_type_id" required>
-                                <option value="" disabled {{ old('resource_type_id') ? '' : 'selected' }}>Select Resource Type</option>
-                                @foreach($resourceTypes as $type)
-                                    <option value="{{ $type->id }}"
-                                            data-unit="{{ $type->unit }}"
-                                            data-agency-id="{{ $type->agency_id }}"
-                                            {{ old('resource_type_id') == $type->id ? 'selected' : '' }}>
-                                        {{ $type->name }} ({{ $type->unit }}) — {{ $type->agency->name ?? 'N/A' }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <span id="unitDisplay" class="badge bg-secondary d-none"></span>
-                        </div>
-                        @error('resource_type_id')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                        <small class="text-muted">Filtered by program's agency</small>
-                    </div>
-
-                    {{-- Distribution Date --}}
-                    <div class="col-12 col-md-6">
-                        <label for="distribution_date" class="form-label">Distribution Date <span class="text-danger">*</span></label>
-                        <input type="date"
-                               class="form-control @error('distribution_date') is-invalid @enderror"
-                               id="distribution_date" name="distribution_date"
-                               value="{{ old('distribution_date') }}" required>
-                        @error('distribution_date')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    {{-- Total Fund Budget (Financial only) --}}
-                    <div class="col-12 col-md-6 d-none" id="totalFundGroup">
-                        <label for="total_fund_amount" class="form-label">Total Fund Budget (PHP) <span class="text-danger">*</span></label>
-                        <input type="number" step="0.01" min="1" max="9999999999.99"
-                               class="form-control @error('total_fund_amount') is-invalid @enderror"
-                               id="total_fund_amount" name="total_fund_amount"
-                               value="{{ old('total_fund_amount') }}"
-                               placeholder="e.g. 500000.00">
-                        @error('total_fund_amount')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="col-12 d-none" id="financialComplianceFields">
-                        <div class="border rounded p-3 bg-light">
-                            <h6 class="mb-3">Legal and Compliance Details (Financial)</h6>
-                            <p class="text-muted small mb-3">Capture what is available now. Use status and reason to document missing details without blocking event creation.</p>
-                            <div class="row g-3">
-                                <div class="col-12 col-md-4">
-                                    <label for="legal_basis_type" class="form-label">Legal Basis Type</label>
-                                    <select class="form-select @error('legal_basis_type') is-invalid @enderror" id="legal_basis_type" name="legal_basis_type">
-                                        <option value="" selected disabled>Select legal basis type</option>
-                                        <option value="resolution" {{ old('legal_basis_type') === 'resolution' ? 'selected' : '' }}>Resolution</option>
-                                        <option value="ordinance" {{ old('legal_basis_type') === 'ordinance' ? 'selected' : '' }}>Ordinance</option>
-                                        <option value="memo" {{ old('legal_basis_type') === 'memo' ? 'selected' : '' }}>Memo</option>
-                                        <option value="special_order" {{ old('legal_basis_type') === 'special_order' ? 'selected' : '' }}>Special Order</option>
-                                        <option value="other" {{ old('legal_basis_type') === 'other' ? 'selected' : '' }}>Other</option>
-                                    </select>
-                                    @error('legal_basis_type')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-12 col-md-4">
-                                    <label for="legal_basis_reference_no" class="form-label">Legal Basis Reference No.</label>
-                                    <input type="text" maxlength="150" class="form-control @error('legal_basis_reference_no') is-invalid @enderror" id="legal_basis_reference_no" name="legal_basis_reference_no" value="{{ old('legal_basis_reference_no') }}" placeholder="e.g. RES-2026-014">
-                                    @error('legal_basis_reference_no')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-12 col-md-4">
-                                    <label for="legal_basis_date" class="form-label">Legal Basis Date</label>
-                                    <input type="date" class="form-control @error('legal_basis_date') is-invalid @enderror" id="legal_basis_date" name="legal_basis_date" value="{{ old('legal_basis_date') }}">
-                                    @error('legal_basis_date')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-12 col-md-6">
-                                    <label for="fund_source" class="form-label">Fund Source</label>
-                                    <select class="form-select @error('fund_source') is-invalid @enderror" id="fund_source" name="fund_source">
-                                        <option value="" selected disabled>Select fund source</option>
-                                        <option value="lgu_trust_fund" {{ old('fund_source') === 'lgu_trust_fund' ? 'selected' : '' }}>LGU Trust Fund</option>
-                                        <option value="nga_transfer" {{ old('fund_source') === 'nga_transfer' ? 'selected' : '' }}>NGA Transfer</option>
-                                        <option value="local_program" {{ old('fund_source') === 'local_program' ? 'selected' : '' }}>Local Program</option>
-                                        <option value="other" {{ old('fund_source') === 'other' ? 'selected' : '' }}>Other</option>
-                                    </select>
-                                    @error('fund_source')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-12 col-md-6" id="trustAccountGroup">
-                                    <label for="trust_account_code" class="form-label">Trust Account Code</label>
-                                    <input type="text" maxlength="100" class="form-control @error('trust_account_code') is-invalid @enderror" id="trust_account_code" name="trust_account_code" value="{{ old('trust_account_code') }}" placeholder="Optional">
-                                    @error('trust_account_code')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-12 col-md-4">
-                                    <label for="fund_release_reference" class="form-label">Fund Release Reference</label>
-                                    <input type="text" maxlength="150" class="form-control @error('fund_release_reference') is-invalid @enderror" id="fund_release_reference" name="fund_release_reference" value="{{ old('fund_release_reference') }}">
-                                    @error('fund_release_reference')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-12 col-md-4">
-                                    <label for="liquidation_status" class="form-label">Liquidation Status</label>
-                                    <select class="form-select @error('liquidation_status') is-invalid @enderror" id="liquidation_status" name="liquidation_status">
-                                        <option value="not_required" {{ old('liquidation_status', 'not_required') === 'not_required' ? 'selected' : '' }}>Not Required</option>
-                                        <option value="pending" {{ old('liquidation_status') === 'pending' ? 'selected' : '' }}>Pending</option>
-                                        <option value="submitted" {{ old('liquidation_status') === 'submitted' ? 'selected' : '' }}>Submitted</option>
-                                        <option value="verified" {{ old('liquidation_status') === 'verified' ? 'selected' : '' }}>Verified</option>
-                                    </select>
-                                    @error('liquidation_status')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-12 col-md-4" id="liquidationDueDateGroup">
-                                    <label for="liquidation_due_date" class="form-label">Liquidation Due Date</label>
-                                    <input type="date" class="form-control @error('liquidation_due_date') is-invalid @enderror" id="liquidation_due_date" name="liquidation_due_date" value="{{ old('liquidation_due_date') }}">
-                                    @error('liquidation_due_date')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-12 col-md-4" id="liquidationSubmittedAtGroup">
-                                    <label for="liquidation_submitted_at" class="form-label">Liquidation Submitted At</label>
-                                    <input type="datetime-local" class="form-control @error('liquidation_submitted_at') is-invalid @enderror" id="liquidation_submitted_at" name="liquidation_submitted_at" value="{{ old('liquidation_submitted_at') }}">
-                                    @error('liquidation_submitted_at')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-12 col-md-4" id="liquidationReferenceGroup">
-                                    <label for="liquidation_reference_no" class="form-label">Liquidation Reference No.</label>
-                                    <input type="text" maxlength="150" class="form-control @error('liquidation_reference_no') is-invalid @enderror" id="liquidation_reference_no" name="liquidation_reference_no" value="{{ old('liquidation_reference_no') }}">
-                                    @error('liquidation_reference_no')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-12 col-md-4" id="farmcReferenceGroup">
-                                    <label for="farmc_reference_no" class="form-label">FARMC Reference No.</label>
-                                    <input type="text" maxlength="150" class="form-control @error('farmc_reference_no') is-invalid @enderror" id="farmc_reference_no" name="farmc_reference_no" value="{{ old('farmc_reference_no') }}">
-                                    @error('farmc_reference_no')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-12 col-md-4" id="farmcEndorsedAtGroup">
-                                    <label for="farmc_endorsed_at" class="form-label">FARMC Endorsed At</label>
-                                    <input type="datetime-local" class="form-control @error('farmc_endorsed_at') is-invalid @enderror" id="farmc_endorsed_at" name="farmc_endorsed_at" value="{{ old('farmc_endorsed_at') }}">
-                                    @error('farmc_endorsed_at')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-12 col-md-12">
-                                    <div class="form-check mt-2">
-                                        <input class="form-check-input" type="checkbox" value="1" id="requires_farmc_endorsement" name="requires_farmc_endorsement" {{ old('requires_farmc_endorsement') ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="requires_farmc_endorsement">
-                                            Requires FARMC endorsement for this event
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-12 col-md-12" id="legalRemarksGroup">
-                                    <label for="legal_basis_remarks" class="form-label">Legal/Compliance Remarks</label>
-                                    <textarea class="form-control @error('legal_basis_remarks') is-invalid @enderror" id="legal_basis_remarks" name="legal_basis_remarks" rows="2" maxlength="1000">{{ old('legal_basis_remarks') }}</textarea>
-                                    @error('legal_basis_remarks')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-
-                                <div class="col-12">
-                                    <hr>
-                                    <h6 class="mb-1">General Compliance Availability</h6>
-                                    <p class="text-muted small mb-0">Set one overall status for legal/compliance details in this event.</p>
-                                </div>
-
-                                @php
-                                    $overallStatus = old('compliance_overall_status', 'not_available_yet');
-                                    $overallReason = old('compliance_overall_reason');
-                                    $overallReasonHidden = $overallStatus === 'provided';
-                                @endphp
-                                <div class="col-12 col-md-4">
-                                    <label for="compliance_overall_status" class="form-label">General Compliance Status</label>
-                                    <select
-                                        class="form-select @error('compliance_overall_status') is-invalid @enderror"
-                                        id="compliance_overall_status"
-                                        name="compliance_overall_status"
-                                    >
-                                        @foreach($complianceStatusLabels as $statusValue => $statusLabel)
-                                            <option value="{{ $statusValue }}" {{ $overallStatus === $statusValue ? 'selected' : '' }}>{{ $statusLabel }}</option>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select class="form-select border-0 bg-light @error('barangay_id') is-invalid @enderror"
+                                            id="barangay_id" name="barangay_id" required>
+                                        <option value="" disabled {{ old('barangay_id') ? '' : 'selected' }}>Select Barangay</option>
+                                        @foreach($barangays as $barangay)
+                                            <option value="{{ $barangay->id }}" {{ old('barangay_id') == $barangay->id ? 'selected' : '' }}>
+                                                {{ $barangay->name }}
+                                            </option>
                                         @endforeach
                                     </select>
-                                    @error('compliance_overall_status')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <label for="barangay_id">Target Barangay <span class="text-danger">*</span></label>
                                 </div>
-                                <div class="col-12 col-md-8 {{ $overallReasonHidden ? 'd-none' : '' }}" id="compliance_overall_reason_group">
-                                    <label for="compliance_overall_reason" class="form-label">General Compliance Reason</label>
-                                    <input
-                                        type="text"
-                                        maxlength="500"
-                                        class="form-control @error('compliance_overall_reason') is-invalid @enderror"
-                                        id="compliance_overall_reason"
-                                        name="compliance_overall_reason"
-                                        value="{{ $overallReason }}"
-                                        placeholder="Explain why legal/compliance details are not fully provided yet"
-                                    >
-                                    @error('compliance_overall_reason')
-                                        <div class="invalid-feedback">{{ $message }}</div>
+                                @error('barangay_id')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="date"
+                                           class="form-control border-0 bg-light @error('distribution_date') is-invalid @enderror"
+                                           id="distribution_date" name="distribution_date"
+                                           value="{{ old('distribution_date') }}" required>
+                                    <label for="distribution_date">Distribution Date <span class="text-danger">*</span></label>
+                                </div>
+                                @error('distribution_date')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <hr class="border-light mb-4">
+
+                        {{-- Row 2: Resource Details --}}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select class="form-select border-0 bg-light @error('program_name_id') is-invalid @enderror"
+                                            id="program_name_id" name="program_name_id" required>
+                                        <option value="" disabled {{ old('program_name_id') ? '' : 'selected' }}>Select Program</option>
+                                        @foreach($programNames as $program)
+                                            <option value="{{ $program->id }}"
+                                                    data-agency-id="{{ $program->agency_id }}"
+                                                    {{ old('program_name_id') == $program->id ? 'selected' : '' }}>
+                                                {{ $program->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <label for="program_name_id">Funding Program <span class="text-danger">*</span></label>
+                                </div>
+                                @error('program_name_id')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select class="form-select border-0 bg-light @error('resource_type_id') is-invalid @enderror"
+                                            id="resource_type_id" name="resource_type_id" required>
+                                        <option value="" disabled {{ old('resource_type_id') ? '' : 'selected' }}>Select Resource Type</option>
+                                        @foreach($resourceTypes as $type)
+                                            <option value="{{ $type->id }}"
+                                                    data-unit="{{ $type->unit }}"
+                                                    data-agency-id="{{ $type->agency_id }}"
+                                                    {{ old('resource_type_id') == $type->id ? 'selected' : '' }}>
+                                                {{ $type->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <label for="resource_type_id">Resource Type <span class="text-danger">*</span></label>
+                                </div>
+                                <span id="unitDisplay" class="position-absolute end-0 top-50 translate-middle-y me-4 badge bg-primary bg-opacity-10 text-primary d-none fw-bold" style="z-index: 5;"></span>
+                                @error('resource_type_id')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-12 d-none transition-all" id="totalFundGroup">
+                                <div class="p-3 rounded bg-success bg-opacity-5 border border-success border-opacity-10 mt-2">
+                                    <label for="total_fund_amount" class="form-label fw-bold text-success small mb-2 text-uppercase tracking-wider">
+                                        <i class="bi bi-cash me-1"></i> Total Fund Budget (PHP)
+                                    </label>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text border-0 bg-white text-success fw-bold">₱</span>
+                                        <input type="number" step="0.01" min="1" max="9999999999.99"
+                                               class="form-control border-0 bg-white @error('total_fund_amount') is-invalid @enderror"
+                                               id="total_fund_amount" name="total_fund_amount"
+                                               value="{{ old('total_fund_amount') }}"
+                                               placeholder="0.00">
+                                    </div>
+                                    @error('total_fund_amount')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        {{-- Submit Buttons --}}
-        <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-success">
-                <i class="bi bi-check-lg me-1"></i> Create Event
-            </button>
-            <a href="{{ route('distribution-events.index') }}" class="btn btn-outline-secondary">Cancel</a>
-        </div>
-    </form>
+                {{-- Financial Compliance Section (Moved to Full Width below main card) --}}
+                <div id="financialComplianceFields" class="d-none animate__animated animate__fadeIn">
+                    <div class="card border-0 shadow-sm overflow-hidden mb-4">
+                        <div class="card-header bg-success bg-opacity-10 py-3 border-0">
+                            <h6 class="mb-0 fw-bold text-success d-flex align-items-center">
+                                <i class="bi bi-shield-check me-2"></i>
+                                Compliance & Regulatory Details
+                            </h6>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row g-4">
+                                {{-- Legal Basis Group --}}
+                                <div class="col-md-6">
+                                    <h6 class="small fw-bold text-uppercase text-muted mb-3">Authorization</h6>
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <div class="form-floating">
+                                                <select class="form-select border-0 bg-light" id="legal_basis_type" name="legal_basis_type">
+                                                    <option value="" selected disabled>Select type...</option>
+                                                    <option value="resolution">Resolution</option>
+                                                    <option value="ordinance">Ordinance</option>
+                                                    <option value="memo">Memo</option>
+                                                    <option value="special_order">Special Order</option>
+                                                    <option value="other">Other</option>
+                                                </select>
+                                                <label for="legal_basis_type">Legal Basis Type</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-7">
+                                            <div class="form-floating">
+                                                <input type="text" class="form-control border-0 bg-light" id="legal_basis_reference_no" name="legal_basis_reference_no" placeholder="Ref No.">
+                                                <label for="legal_basis_reference_no">Reference No.</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-5">
+                                            <div class="form-floating">
+                                                <input type="date" class="form-control border-0 bg-light" id="legal_basis_date" name="legal_basis_date">
+                                                <label for="legal_basis_date">Basis Date</label>
+                                            </div>
+                                        </div>
+                                        <div id="legalRemarksGroup" class="col-12 d-none">
+                                            <div class="form-floating">
+                                                <textarea class="form-control border-0 bg-light" id="legal_basis_remarks" name="legal_basis_remarks" style="height: 100px" placeholder="Remarks"></textarea>
+                                                <label for="legal_basis_remarks">Legal Basis Remarks</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Fund Control Group --}}
+                                <div class="col-md-6 border-start border-light ps-md-4">
+                                    <h6 class="small fw-bold text-uppercase text-muted mb-3">Fund Control</h6>
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <div class="form-floating">
+                                                <select class="form-select border-0 bg-light" id="fund_source" name="fund_source">
+                                                    <option value="" selected disabled>Select source...</option>
+                                                    <option value="lgu_trust_fund">LGU Trust Fund</option>
+                                                    <option value="nga_transfer">NGA Transfer</option>
+                                                    <option value="local_program">Local Program</option>
+                                                    <option value="other">Other</option>
+                                                </select>
+                                                <label for="fund_source">Fund Source</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 d-none" id="trustAccountGroup">
+                                            <div class="form-floating">
+                                                <input type="text" class="form-control border-0 bg-light" id="trust_account_code" name="trust_account_code" placeholder="Code">
+                                                <label for="trust_account_code">Trust Account Code</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-floating">
+                                                <input type="text" class="form-control border-0 bg-light" id="fund_release_reference" name="fund_release_reference" placeholder="Ref">
+                                                <label for="fund_release_reference">Release Reference (DV/Check No.)</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-12"><hr class="my-2 border-light"></div>
+
+                                {{-- Liquidation Group --}}
+                                <div class="col-md-6">
+                                    <h6 class="small fw-bold text-uppercase text-muted mb-3">Liquidation Monitoring</h6>
+                                    <div class="row g-2">
+                                        <div class="col-12 mb-2">
+                                            <div class="form-floating">
+                                                <select class="form-select border-0 bg-light" id="liquidation_status" name="liquidation_status">
+                                                    <option value="not_required">Not Required</option>
+                                                    <option value="pending">Pending</option>
+                                                    <option value="submitted">Submitted</option>
+                                                    <option value="verified">Verified</option>
+                                                </select>
+                                                <label for="liquidation_status">Liquidation Status</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 d-none" id="liquidationDueDateGroup">
+                                            <div class="form-floating mb-2">
+                                                <input type="date" class="form-control border-0 bg-light" id="liquidation_due_date" name="liquidation_due_date">
+                                                <label for="liquidation_due_date">Due Date</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 d-none" id="liquidationSubmittedAtGroup">
+                                            <div class="form-floating mb-2">
+                                                <input type="datetime-local" class="form-control border-0 bg-light" id="liquidation_submitted_at" name="liquidation_submitted_at">
+                                                <label for="liquidation_submitted_at">Date Submitted</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 d-none" id="liquidationReferenceGroup">
+                                            <div class="form-floating">
+                                                <input type="text" class="form-control border-0 bg-light" id="liquidation_reference_no" name="liquidation_reference_no" placeholder="Ref">
+                                                <label for="liquidation_reference_no">Liquidation Ref No.</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Additional Flags --}}
+                                <div class="col-md-6 border-start border-light ps-md-4">
+                                    <h6 class="small fw-bold text-uppercase text-muted mb-3">Special Endorsements</h6>
+                                    <div class="row g-2">
+                                        <div class="col-12 mb-2">
+                                            <div class="form-check form-switch p-3 bg-light rounded-3 shadow-none border-0">
+                                                <div class="d-flex align-items-center justify-content-between">
+                                                    <label class="form-check-label small fw-bold text-muted mb-0" for="requires_farmc_endorsement">
+                                                        <i class="bi bi-person-check me-2"></i>Requires FARMC Endorsement
+                                                    </label>
+                                                    <input class="form-check-input ms-0" type="checkbox" role="switch" id="requires_farmc_endorsement" name="requires_farmc_endorsement" value="1">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="farmcReferenceGroup" class="col-12 d-none mb-2">
+                                            <div class="form-floating">
+                                                <input type="text" class="form-control border-0 bg-light" id="farmc_reference_no" name="farmc_reference_no" placeholder="Ref">
+                                                <label for="farmc_reference_no">FARMC Reference No.</label>
+                                            </div>
+                                        </div>
+                                        <div id="farmcEndorsedAtGroup" class="col-12 d-none">
+                                            <div class="form-floating">
+                                                <input type="datetime-local" class="form-control border-0 bg-light" id="farmc_endorsed_at" name="farmc_endorsed_at">
+                                                <label for="farmc_endorsed_at">Endorsement Date</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-12"><hr class="my-2 border-light"></div>
+
+                                {{-- General Audit Status --}}
+                                <div class="col-12">
+                                    <div class="row align-items-center g-3">
+                                        <div class="col-md-4">
+                                            <div class="form-floating">
+                                                <select class="form-select border-0 bg-light fw-bold" id="compliance_overall_status" name="compliance_overall_status">
+                                                    @foreach($complianceStatusLabels as $statusValue => $statusLabel)
+                                                        <option value="{{ $statusValue }}">{{ $statusLabel }}</option>
+                                                    @endforeach
+                                                </select>
+                                                <label for="compliance_overall_status">Verification Status</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-8 d-none" id="compliance_overall_reason_group">
+                                            <div class="form-floating">
+                                                <textarea class="form-control border-0 bg-light" id="compliance_overall_reason" name="compliance_overall_reason" placeholder="Reason" style="height: 60px"></textarea>
+                                                <label for="compliance_overall_reason">Pending Reason / Missing Documents</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Right Column: Side Actions & Compliance (if financial) --}}
+            <div class="col-12 col-xl-4">
+                <div class="sticky-top" style="top: 1.5rem; z-index: 10;">
+                    {{-- Action Card --}}
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-body p-4 text-center">
+                            <div class="d-grid gap-3">
+                                <button type="submit" class="btn btn-primary btn-lg shadow-sm py-3 fw-bold">
+                                    <i class="bi bi-plus-circle me-2"></i> Create Event
+                                </button>
+                                <a href="{{ route('distribution-events.index') }}" class="btn btn-outline-secondary py-2">
+                                    Cancel
+                                </a>
+                            </div>
+                            <hr class="my-4">
+                            <div class="text-start">
+                                <h6 class="small fw-bold text-uppercase text-muted mb-3">Quick Checklist</h6>
+                                <div class="d-flex align-items-center mb-2 small text-muted">
+                                    <i class="bi bi-check2-circle text-success me-2"></i> Ensure date is correct
+                                </div>
+                                <div class="d-flex align-items-center mb-2 small text-muted">
+                                    <i class="bi bi-check2-circle text-success me-2"></i> Resource type matches agency
+                                </div>
+                                <div class="d-flex align-items-center small text-muted">
+                                    <i class="bi bi-check2-circle text-success me-2"></i> Beneficiaries can be added later
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
 
     <!-- Confirmation Modal -->
     <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg">
-                <div class="modal-header bg-success text-white border-0 py-3">
+                <div class="modal-header bg-primary text-white border-0 py-3">
                     <h5 class="modal-title d-flex align-items-center" id="confirmationModalLabel">
-                        <i class="bi bi-check2-circle me-2 fs-4"></i>
-                        Confirm Distribution Event Details
+                        <i class="bi bi-shield-check me-2 fs-4"></i>
+                        Confirm Event Details
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4 bg-light">
-                    <p class="text-muted mb-4">Please review the event details below before creating.</p>
-                    <div id="summaryContent" class="mb-0" style="max-height: 60vh; overflow-y: auto;">
+                    <p class="text-muted mb-4">Please review the event configuration before proceeding. These details define how resources will be distributed.</p>
+                    <div id="summaryContent" class="mb-0">
                         <!-- Summary will be injected here -->
                     </div>
                 </div>
                 <div class="modal-footer border-0 p-4 bg-white">
-                    <button type="button" class="btn btn-outline-secondary px-4 py-2" data-bs-dismiss="modal">
-                        <i class="bi bi-pencil me-1"></i> Edit Details
+                    <button type="button" class="btn btn-light px-4 py-2" data-bs-dismiss="modal">
+                        <i class="bi bi-pencil me-1"></i> Make Changes
                     </button>
-                    <button type="button" class="btn btn-success px-4 py-2" id="confirmSubmitBtn">
-                        <i class="bi bi-check2-circle me-1"></i> Confirm & Create
+                    <button type="button" class="btn btn-primary px-4 py-2 shadow-sm" id="confirmSubmitBtn">
+                        <i class="bi bi-check2-circle me-1"></i> Proceed to Create
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
+    {{-- Toast and AJAX Notice Templates --}}
     <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090;">
-        <div id="distributionEventCreateToast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body" id="distributionEventCreateToastMessage"></div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        <div id="distributionEventCreateToast" class="toast align-items-center border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex p-2">
+                <div class="toast-body fw-medium" id="distributionEventCreateToastMessage"></div>
+                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
         </div>
     </div>
 </div>
-@endsection
+
+@push('styles')
+<style>
+    .btn-check:checked + .btn-outline-primary,
+    .btn-check:checked + .btn-outline-success {
+        border-width: 2px;
+        background-color: transparent !important;
+        color: inherit !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .btn-check:checked + .btn-outline-primary { border-color: var(--bs-primary) !important; color: var(--bs-primary) !important; }
+    .btn-check:checked + .btn-outline-success { border-color: var(--bs-success) !important; color: var(--bs-success) !important; }
+    
+    .btn-check:checked + label .check-icon {
+        visibility: visible !important;
+    }
+    
+    .input-group-text {
+        border-color: #dee2e6;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+    }
+    
+    .transition-all {
+        transition: all 0.3s ease-in-out;
+    }
+    
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: "›";
+        font-size: 1.2rem;
+        line-height: 1;
+        vertical-align: middle;
+    }
+    
+    /* Skeleton Loading State */
+    .skeleton {
+        background: #f6f7f8;
+        background-image: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
+        background-repeat: no-repeat;
+        background-size: 800px 104px; 
+        display: inline-block;
+        position: relative; 
+        animation-duration: 1s;
+        animation-fill-mode: forwards; 
+        animation-iteration-count: infinite;
+        animation-name: placeholderShimmer;
+        animation-timing-function: linear;
+        border-radius: 4px;
+    }
+
+    @keyframes placeholderShimmer {
+        0% { background-position: -468px 0; }
+        100% { background-position: 468px 0; }
+    }
+
+    .skeleton-text { height: 1rem; width: 100%; margin-bottom: 0.5rem; }
+    .skeleton-label { height: 0.75rem; width: 40%; margin-bottom: 0.5rem; }
+    .skeleton-input { height: 2.5rem; width: 100%; margin-bottom: 1rem; }
+    .skeleton-card { height: 200px; width: 100%; }
+
+    #formLoader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: white;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        padding: 2rem;
+    }
+
+    .form-floating > .form-control:focus, 
+    .form-floating > .form-control:not(:placeholder-shown),
+    .form-floating > .form-select {
+        padding-top: 1.625rem;
+        padding-bottom: 0.625rem;
+    }
+
+    .form-floating > label {
+        padding-left: 1rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .form-floating > .form-control,
+    .form-floating > .form-select {
+        border-radius: 12px !important;
+        font-weight: 500;
+    }
+
+    #unitDisplay {
+        pointer-events: none;
+        font-size: 0.7rem;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        border: none !important;
+    }
+
+    .input-group-lg > .form-control {
+        font-size: 1.5rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+    }
+
+    .card {
+        border-radius: 16px !important;
+    }
+
+    .btn-lg {
+        border-radius: 12px !important;
+    }
+
+    .bg-opacity-5 { --bs-bg-opacity: 0.05; }
+    
+    .tracking-wider { letter-spacing: 0.05em; }
+
+    .animate__fadeIn {
+        animation: fadeIn 0.4s ease-in-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+@endpush
+
 
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const formLoader = document.getElementById('formLoader');
+    if (formLoader) {
+        setTimeout(() => {
+            formLoader.style.transition = 'opacity 0.5s ease';
+            formLoader.style.opacity = '0';
+            setTimeout(() => formLoader.remove(), 500);
+        }, 300);
+    }
+
     const resourceSelect = document.getElementById('resource_type_id');
     const programSelect = document.getElementById('program_name_id');
     const unitDisplay = document.getElementById('unitDisplay');
@@ -824,10 +1038,20 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!summaryContent) return;
         
         var formData = new FormData(form);
-        var html = '<div class="row g-4">';
+        var html = '<div class="row g-3">';
 
-        function addSummarySection(title, fields, icon) {
-            var sectionHtml = '<div class="col-12"><div class="d-flex align-items-center mb-2 text-success"><i class="bi ' + icon + ' me-2"></i><h6 class="mb-0 fw-bold text-uppercase small tracking-wider">' + title + '</h6></div><div class="row g-3 bg-white p-3 rounded border shadow-sm mx-0">';
+        function addSummarySection(title, fields, icon, colorClass = 'primary') {
+            var sectionHtml = '<div class="col-12 mb-2">' +
+                '<div class="d-flex align-items-center mb-2">' +
+                    '<div class="bg-' + colorClass + ' bg-opacity-10 text-' + colorClass + ' rounded-circle p-2 me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">' +
+                        '<i class="bi ' + icon + '"></i>' +
+                    '</div>' +
+                    '<h6 class="mb-0 fw-bold text-uppercase small tracking-wider">' + title + '</h6>' +
+                '</div>' +
+                '<div class="card border-0 shadow-sm bg-white overflow-hidden">' +
+                    '<div class="card-body p-3">' +
+                        '<div class="row g-3">';
+            
             var hasFields = false;
 
             fields.forEach(function(field) {
@@ -842,7 +1066,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     } else if (input && (input.type === 'checkbox' || input.type === 'radio')) {
                         if (input.type === 'radio') {
                              var checkedRadio = form.querySelector('input[name="' + field + '"]:checked');
-                             value = checkedRadio ? checkedRadio.nextElementSibling.textContent.trim() : 'N/A';
+                             // Find the label text for the radio
+                             if (checkedRadio) {
+                                 var labelEl = form.querySelector('label[for="' + checkedRadio.id + '"]');
+                                 value = labelEl ? labelEl.textContent.trim() : checkedRadio.value;
+                             } else {
+                                 value = 'N/A';
+                             }
                         } else {
                              value = input.checked ? 'Yes' : 'No';
                         }
@@ -854,27 +1084,34 @@ document.addEventListener('DOMContentLoaded', function () {
                     value = field.value;
                 }
 
-                if (value && value !== 'N/A' && value !== 'Select...' && value !== 'Select Barangay' && value !== 'Select Program Name' && value !== 'Select Resource Type') {
+                if (value && value !== 'N/A' && !value.includes('Select')) {
                     hasFields = true;
-                    sectionHtml += '<div class="col-md-6"><div class="small text-muted mb-1">' + label + '</div><div class="fw-bold">' + value + '</div></div>';
+                    sectionHtml += '<div class="col-md-6">' +
+                        '<div class="small text-muted mb-0" style="font-size: 0.75rem;">' + label + '</div>' +
+                        '<div class="fw-bold text-dark">' + value + '</div>' +
+                    '</div>';
                 }
             });
 
-            sectionHtml += '</div></div>';
+            sectionHtml += '</div></div></div></div>';
             if (hasFields) html += sectionHtml;
         }
 
-        // 1. Event Details
-        addSummarySection('Event Details', [
-            'name',
+        // 1. Core Configuration
+        addSummarySection('Core Configuration', [
             'type',
+            'name',
             'barangay_id',
-            'program_name_id',
-            'resource_type_id',
             'distribution_date'
-        ], 'bi-calendar-event');
+        ], 'bi-info-circle', 'primary');
 
-        // 2. Financial Details (if financial)
+        // 2. Resource Details
+        addSummarySection('Resource Details', [
+            'program_name_id',
+            'resource_type_id'
+        ], 'bi-box-seam', 'primary');
+
+        // 3. Financial & Compliance (if financial)
         var type = form.querySelector('input[name="type"]:checked')?.value;
         if (type === 'financial') {
             addSummarySection('Financial Details', [
@@ -882,17 +1119,23 @@ document.addEventListener('DOMContentLoaded', function () {
                 'fund_source',
                 'trust_account_code',
                 'fund_release_reference'
-            ], 'bi-cash-stack');
+            ], 'bi-cash-stack', 'success');
 
             addSummarySection('Legal & Compliance', [
                 'legal_basis_type',
                 'legal_basis_reference_no',
                 'legal_basis_date',
+                'legal_basis_remarks',
                 'liquidation_status',
                 'liquidation_due_date',
+                'liquidation_submitted_at',
+                'liquidation_reference_no',
+                'requires_farmc_endorsement',
+                'farmc_reference_no',
+                'farmc_endorsed_at',
                 'compliance_overall_status',
                 'compliance_overall_reason'
-            ], 'bi-shield-check');
+            ], 'bi-shield-check', 'success');
         }
 
         html += '</div>';
@@ -923,3 +1166,4 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @endpush
+@endsection
