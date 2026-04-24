@@ -7,10 +7,10 @@
 @endsection
 
 @section('content')
-<div class="container-fluid py-4">
+<div class="container-fluid pb-4">
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h2">System Settings</h1>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h2 mb-0">System Settings</h1>
     </div>
 
     @php $activeTab = $activeTab ?? 'agencies'; @endphp
