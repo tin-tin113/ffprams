@@ -11,6 +11,7 @@ use App\Models\Beneficiary;
 use App\Models\DirectAssistance;
 use App\Models\DistributionEvent;
 use App\Models\ProgramName;
+use App\Models\ResourceType;
 use App\Services\AuditLogService;
 use App\Services\ProgramEligibilityService;
 use App\Services\ReleaseOutcomeService;
@@ -107,12 +108,14 @@ class DirectAssistanceController extends Controller
                 ->whereYear('created_at', now()->year)
                 ->count(),
         ];
+        $assistancePurposes = AssistancePurpose::orderBy('name')->get();
 
         return view('direct_assistance.index', compact(
             'directAssistance',
             'agencies',
             'programs',
             'stats',
+            'assistancePurposes',
         ));
     }
 
@@ -429,5 +432,97 @@ class DirectAssistanceController extends Controller
         }
 
         return view('direct_assistance.barangay_summary', compact('analytics'));
+    }
+
+    /**
+     * Store multiple direct assistance records in bulk.
+     */
+    public function storeBulk(Request $request): RedirectResponse
+    {
+        $bulkRules = [
+            'allocations' => ['required', 'array', 'min:1'],
+            'allocations.*.selected' => ['nullable'],
+            'allocations.*.beneficiary_id' => ['required_if:allocations.*.selected,1', 'distinct', 'exists:beneficiaries,id'],
+            'allocations.*.program_name_id' => ['required_if:allocations.*.selected,1', 'exists:program_names,id'],
+            'allocations.*.resource_type_id' => ['required_if:allocations.*.selected,1', 'exists:resource_types,id'],
+            'allocations.*.quantity' => ['nullable', 'numeric', 'min:0', 'max:9999.99'],
+            'allocations.*.amount' => ['nullable', 'numeric', 'min:0'],
+            'allocations.*.assistance_purpose_id' => ['nullable', 'exists:assistance_purposes,id'],
+        ];
+
+        $request->validate($bulkRules);
+
+        try {
+            DB::beginTransaction();
+
+            $createdCount = 0;
+            $errors = [];
+
+            foreach ($request->input('allocations') as $idx => $row) {
+                // Skip if not selected
+                if (! isset($row['selected']) || ! $row['selected']) {
+                    continue;
+                }
+
+                $beneficiary = Beneficiary::findOrFail($row['beneficiary_id']);
+                $program = ProgramName::findOrFail($row['program_name_id']);
+                $resourceType = ResourceType::findOrFail($row['resource_type_id']);
+
+                // Eligibility check
+                $eligibilityService = app(ProgramEligibilityService::class);
+                $eligibility = $eligibilityService->checkEligibility($beneficiary, $program);
+
+                if (! $eligibility['is_eligible']) {
+                    $errors[] = "Beneficiary {$beneficiary->full_name} is not eligible for {$program->name}: {$eligibility['reason']}";
+                    continue;
+                }
+
+                // Check for duplicates
+                $duplicate = DirectAssistance::where('beneficiary_id', $beneficiary->id)
+                    ->where('program_name_id', $program->id)
+                    ->where('resource_type_id', $resourceType->id)
+                    ->where('status', '!=', 'not_received')
+                    ->whereDate('created_at', today())
+                    ->first();
+
+                if ($duplicate) {
+                    $errors[] = "Beneficiary {$beneficiary->full_name} already has a similar record today.";
+                    continue;
+                }
+
+                // Create Direct Assistance record
+                DirectAssistance::create([
+                    'beneficiary_id' => $beneficiary->id,
+                    'program_name_id' => $program->id,
+                    'resource_type_id' => $resourceType->id,
+                    'quantity' => $row['quantity'] ?? null,
+                    'amount' => $row['amount'] ?? null,
+                    'assistance_purpose_id' => $row['assistance_purpose_id'] ?? null,
+                    'status' => 'planned',
+                    'created_by' => auth()->id(),
+                ]);
+
+                $createdCount++;
+            }
+
+            if ($createdCount === 0 && ! empty($errors)) {
+                DB::rollBack();
+                return back()->with('error', 'No records created. Errors: '.implode(' ', $errors));
+            }
+
+            DB::commit();
+
+            $msg = "Successfully created {$createdCount} direct assistance records.";
+            if (! empty($errors)) {
+                $msg .= ' Some records were skipped: '.implode(' ', $errors);
+            }
+
+            return redirect()->route('direct-assistance.index')->with('success', $msg);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Bulk Direct Assistance Error: '.$e->getMessage());
+
+            return back()->with('error', 'An error occurred while saving records. Please try again.');
+        }
     }
 }

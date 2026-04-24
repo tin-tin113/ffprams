@@ -318,6 +318,53 @@
                                 </div>
 
                                 {{-- Batch Controls --}}
+                                <div class="bg-light p-3 border rounded shadow-sm mb-3" style="background-color: #f8fafc !important;">
+                                    <div class="row g-3 align-items-end">
+                                        <div class="col-md-3">
+                                            <label class="form-label small fw-bold text-primary mb-1">
+                                                <i class="bi bi-lightning-charge-fill me-1"></i> Quick Set: Program
+                                            </label>
+                                            @php
+                                                $allPrograms = \App\Models\ProgramName::active()->orderBy('name')->get();
+                                            @endphp
+                                            <select id="quickSetProgram" class="form-select form-select-sm border-primary-subtle">
+                                                <option value="">Select Program</option>
+                                                @foreach($allPrograms as $prog)
+                                                    <option value="{{ $prog->id }}">{{ $prog->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label small fw-bold text-primary mb-1">Resource Type</label>
+                                            <select id="quickSetResource" class="form-select form-select-sm border-primary-subtle" disabled>
+                                                <option value="">Select Program First</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label id="quickSetValueLabel" class="form-label small fw-bold text-primary mb-1">Qty/Amt</label>
+                                            <input type="number" id="quickSetValue" class="form-control form-control-sm border-primary-subtle" step="0.01" placeholder="Value">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label small fw-bold text-primary mb-1">Purpose</label>
+                                            <select id="quickSetPurpose" class="form-select form-select-sm border-primary-subtle">
+                                                <option value="">Select Purpose</option>
+                                                @foreach($assistancePurposes as $purpose)
+                                                    <option value="{{ $purpose->id }}">{{ $purpose->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2 d-grid">
+                                            <button type="button" id="btnQuickSetApply" class="btn btn-success btn-sm fw-bold">
+                                                <i class="bi bi-check-all me-1"></i> Apply
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 small text-muted">
+                                        <i class="bi bi-info-circle me-1"></i> This will update all rows in the table below.
+                                    </div>
+                                </div>
+
+                                {{-- Batch Controls --}}
                                 <div class="row g-2 mb-3">
                                     <div class="col-auto">
                                         <button type="button" id="batch_add_row" class="btn btn-sm btn-primary">
@@ -1009,6 +1056,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (isSingleForm) {
                 toggleValueInputs();
+            } else {
+                // For batch rows, trigger change to update quantity/amount input name
+                resourceTypeSelect.dispatchEvent(new Event('change'));
             }
         } catch (error) {
             console.error('Error loading resource types:', error);
@@ -1058,6 +1108,45 @@ document.addEventListener('DOMContentLoaded', function () {
         batchSummary.style.display = isEmpty ? 'none' : 'block';
         batchRemoveBtn.disabled = isEmpty;
         batchSubmitBtn.disabled = isEmpty;
+
+        if (!isEmpty) {
+            validateBatchRows();
+        }
+    }
+
+    function validateBatchRows() {
+        if (!batchTbody || !batchSummaryStatus) return;
+        
+        const rows = batchTbody.querySelectorAll('tr');
+        let isValid = true;
+        let incompleteCount = 0;
+
+        rows.forEach(row => {
+            const bId = row.querySelector('.batch-beneficiary-id')?.value;
+            const pId = row.querySelector('.batch-program')?.value;
+            const rId = row.querySelector('.batch-resource')?.value;
+            const qty = row.querySelector('.batch-quantity')?.value;
+
+            // All fields must be present and quantity must be > 0
+            const rowIsComplete = bId && pId && rId && qty && parseFloat(qty) > 0;
+
+            if (!rowIsComplete) {
+                isValid = false;
+                incompleteCount++;
+                row.classList.add('table-warning');
+            } else {
+                row.classList.remove('table-warning');
+            }
+        });
+
+        if (isValid && rows.length > 0) {
+            batchSummaryStatus.innerHTML = '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> Ready</span>';
+            batchSubmitBtn.disabled = false;
+        } else if (rows.length > 0) {
+            batchSummaryStatus.innerHTML = `<span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i> ${incompleteCount} Incomplete Row(s)</span>`;
+        } else {
+            batchSummaryStatus.innerHTML = '';
+        }
     }
 
     function getBatchSelectedBeneficiaryIds() {
@@ -1157,7 +1246,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const suggestionsId = `batch_beneficiary_suggestions_${index}`;
         row.innerHTML = `
             <td class="text-center">
-                <input type="checkbox" class="form-check-input batch-row-checkbox">
+                <input type="checkbox" name="allocations[${index}][selected]" value="1" class="form-check-input batch-row-checkbox" checked>
             </td>
             <td>
                 <input type="text" class="form-control form-control-sm batch-beneficiary-search"
@@ -1254,6 +1343,7 @@ document.addEventListener('DOMContentLoaded', function () {
             beneficiaryIdInput.value = String(selectedBeneficiary.id);
             beneficiarySearch.value = selectedBeneficiary.display;
             loadBatchProgramsForBeneficiary(selectedBeneficiary.id);
+            validateBatchRows();
         }
 
         beneficiarySearch.addEventListener('input', () => {
@@ -1313,6 +1403,25 @@ document.addEventListener('DOMContentLoaded', function () {
             loadResourceTypesByProgram(programSelect, resourceSelect);
         });
 
+        // Toggle quantity/amount for batch row
+        resourceSelect.addEventListener('change', () => {
+            const selected = resourceSelect.options[resourceSelect.selectedIndex];
+            const unit = selected ? selected.dataset.unit : '';
+            const isFinancial = unit === 'PHP';
+            const quantityInput = row.querySelector('.batch-quantity');
+
+            if (isFinancial) {
+                quantityInput.name = `allocations[${index}][amount]`;
+                quantityInput.placeholder = 'Amount (PHP)';
+                quantityInput.title = 'Enter amount in PHP';
+            } else {
+                quantityInput.name = `allocations[${index}][quantity]`;
+                quantityInput.placeholder = 'Qty';
+                quantityInput.title = 'Enter quantity';
+                if (unit) quantityInput.placeholder += ` (${unit})`;
+            }
+        });
+
         // Remove row
         row.querySelector('.batch-remove-row').addEventListener('click', () => {
             row.remove();
@@ -1323,6 +1432,12 @@ document.addEventListener('DOMContentLoaded', function () {
         row.querySelector('.batch-row-checkbox').addEventListener('change', () => {
             updateBatchSelectAll();
         });
+
+        // Validation triggers
+        [programSelect, resourceSelect, beneficiaryIdInput].forEach(el => {
+            el.addEventListener('change', validateBatchRows);
+        });
+        row.querySelector('.batch-quantity').addEventListener('input', validateBatchRows);
 
         if (preset && preset.beneficiary) {
             beneficiaryMap.set(preset.beneficiary.display, preset.beneficiary);
@@ -1383,6 +1498,114 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (batchFinderClassification) {
         batchFinderClassification.addEventListener('change', searchBatchBeneficiaries);
+    }
+
+    // ---- Allocations Quick Set Logic ----
+    const quickSetProgram = document.getElementById('quickSetProgram');
+    const quickSetResource = document.getElementById('quickSetResource');
+    const quickSetValue = document.getElementById('quickSetValue');
+    const quickSetValueLabel = document.getElementById('quickSetValueLabel');
+    const quickSetPurpose = document.getElementById('quickSetPurpose');
+    const btnQuickSetApply = document.getElementById('btnQuickSetApply');
+
+    if (quickSetProgram) {
+        quickSetProgram.addEventListener('change', async function() {
+            await loadResourceTypesByProgram(quickSetProgram, quickSetResource);
+        });
+    }
+
+    if (quickSetResource) {
+        quickSetResource.addEventListener('change', function() {
+            const selected = quickSetResource.options[quickSetResource.selectedIndex];
+            const unit = selected ? selected.dataset.unit : '';
+            if (unit === 'PHP') {
+                quickSetValueLabel.textContent = 'Amount (PHP)';
+                quickSetValue.placeholder = 'e.g. 1000.00';
+            } else {
+                quickSetValueLabel.textContent = 'Quantity' + (unit ? ` (${unit})` : '');
+                quickSetValue.placeholder = 'Qty';
+            }
+        });
+    }
+
+    if (btnQuickSetApply) {
+        btnQuickSetApply.addEventListener('click', async function() {
+            const pId = quickSetProgram.value;
+            const rId = quickSetResource.value;
+            const val = quickSetValue.value;
+            const purpId = quickSetPurpose.value;
+
+            if (!pId && !rId && !val && !purpId) {
+                alert('Please set at least one value in the Quick Set bar.');
+                return;
+            }
+
+            const selectedRows = batchTbody.querySelectorAll('tr');
+            let appliedCount = 0;
+            const resourceCache = new Map(); // Cache to avoid redundant API calls
+
+            for (const row of selectedRows) {
+                const checkbox = row.querySelector('.batch-row-checkbox');
+                if (checkbox && !checkbox.checked) continue;
+
+                const programSelect = row.querySelector('.batch-program');
+                const resourceSelect = row.querySelector('.batch-resource');
+                const quantityInput = row.querySelector('.batch-quantity');
+                const purposeSelect = row.querySelector('.batch-purpose');
+
+                // 1. Apply Program if provided and available for this row
+                if (pId && programSelect && !programSelect.disabled) {
+                    const hasOption = Array.from(programSelect.options).some(opt => opt.value === pId);
+                    if (hasOption) {
+                        programSelect.value = pId;
+                        
+                        // 2. Load Resources for this row (with caching)
+                        if (!resourceCache.has(pId)) {
+                            await loadResourceTypesByProgram(programSelect, resourceSelect);
+                            // Store the HTML options of the resource select to reuse
+                            resourceCache.set(pId, resourceSelect.innerHTML);
+                        } else {
+                            resourceSelect.innerHTML = resourceCache.get(pId);
+                            resourceSelect.disabled = false;
+                        }
+                    }
+                }
+
+                // 3. Apply Resource if provided and available
+                if (rId && resourceSelect && !resourceSelect.disabled) {
+                    const hasOption = Array.from(resourceSelect.options).some(opt => opt.value === rId);
+                    if (hasOption) {
+                        resourceSelect.value = rId;
+                        // Trigger change to update input names (quantity/amount)
+                        resourceSelect.dispatchEvent(new Event('change'));
+                    }
+                }
+
+                // 4. Apply Value
+                if (val && quantityInput && !quantityInput.disabled) {
+                    quantityInput.value = val;
+                    quantityInput.dispatchEvent(new Event('input')); // Trigger validation
+                }
+
+                // 5. Apply Purpose
+                if (purpId && purposeSelect && !purposeSelect.disabled) {
+                    purposeSelect.value = purpId;
+                    purposeSelect.dispatchEvent(new Event('change')); // Trigger validation
+                }
+
+                appliedCount++;
+                
+                // Flash the row to show it was updated
+                row.style.backgroundColor = '#f0f9ff';
+                setTimeout(() => row.style.backgroundColor = '', 500);
+            }
+
+            if (appliedCount === 0) {
+                alert('No rows found/selected to apply values to.');
+            } else {
+                validateBatchRows();
+            }
+        });
     }
 });
 </script>

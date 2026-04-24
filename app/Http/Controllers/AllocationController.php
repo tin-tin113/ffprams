@@ -590,10 +590,12 @@ class AllocationController extends Controller
         $bulkRules = [
             'release_method' => ['required', 'in:direct'],
             'allocations' => ['required', 'array', 'min:1'],
-            'allocations.*.beneficiary_id' => ['required', 'distinct', 'exists:beneficiaries,id'],
-            'allocations.*.program_name_id' => ['required', 'exists:program_names,id'],
-            'allocations.*.resource_type_id' => ['required', 'exists:resource_types,id'],
-            'allocations.*.quantity' => ['required', 'numeric', 'min:0.01', 'max:9999.99'],
+            'allocations.*.selected' => ['nullable'],
+            'allocations.*.beneficiary_id' => ['required_if:allocations.*.selected,1', 'distinct', 'exists:beneficiaries,id'],
+            'allocations.*.program_name_id' => ['required_if:allocations.*.selected,1', 'exists:program_names,id'],
+            'allocations.*.resource_type_id' => ['required_if:allocations.*.selected,1', 'exists:resource_types,id'],
+            'allocations.*.quantity' => ['nullable', 'numeric', 'min:0', 'max:9999.99'],
+            'allocations.*.amount' => ['nullable', 'numeric', 'min:0'],
             'allocations.*.assistance_purpose_id' => ['nullable', 'exists:assistance_purposes,id'],
         ];
 
@@ -647,8 +649,8 @@ class AllocationController extends Controller
                             'beneficiary_id' => $beneficiary->id,
                             'program_name_id' => $program->id,
                             'resource_type_id' => $resourceType->id,
-                            'quantity' => $row['quantity'],
-                            'amount' => null,
+                            'quantity' => $row['quantity'] ?? null,
+                            'amount' => $row['amount'] ?? null,
                             'assistance_purpose_id' => $row['assistance_purpose_id'] ?? null,
                         ]);
 

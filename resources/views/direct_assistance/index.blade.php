@@ -13,9 +13,14 @@
             <h1 class="h3 mb-0">Direct Assistance Management</h1>
             <p class="text-muted mb-0">Manage direct assistance records to beneficiaries</p>
         </div>
-        <a href="{{ route('direct-assistance.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i> Add Direct Assistance
-        </a>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#batchModeModal">
+                <i class="bi bi-layers me-1"></i> Batch Mode
+            </button>
+            <a href="{{ route('direct-assistance.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i> Add Direct Assistance
+            </a>
+        </div>
     </div>
 
     <!-- Summary Cards -->
@@ -291,4 +296,539 @@
         </div>
     </div>
 </div>
+
+<!-- Batch Mode Modal -->
+<div class="modal fade" id="batchModeModal" tabindex="-1" aria-labelledby="batchModeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="batchModeModalLabel">
+                    <i class="bi bi-layers-fill me-2"></i>Batch Direct Assistance Mode
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <form id="batchModeForm" action="{{ route('direct-assistance.storeBulk') }}" method="POST">
+                    @csrf
+                    <div class="bg-light p-3 border-bottom shadow-sm" style="background-color: #f8fafc !important;">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-primary mb-1">
+                                    <i class="bi bi-lightning-charge-fill me-1"></i> Quick Set: Program
+                                </label>
+                                <select id="quickSetProgram" class="form-select form-select-sm border-primary-subtle">
+                                    <option value="">Select Program</option>
+                                    @foreach($programs as $prog)
+                                        <option value="{{ $prog->id }}">{{ $prog->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-primary mb-1">Resource Type</label>
+                                <select id="quickSetResource" class="form-select form-select-sm border-primary-subtle" disabled>
+                                    <option value="">Select Program First</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label id="quickSetValueLabel" class="form-label small fw-bold text-primary mb-1">Qty/Amt</label>
+                                <input type="number" id="quickSetValue" class="form-control form-control-sm border-primary-subtle" step="0.01" placeholder="Value">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-primary mb-1">Purpose</label>
+                                <select id="quickSetPurpose" class="form-select form-select-sm border-primary-subtle">
+                                    <option value="">Select Purpose</option>
+                                    @foreach($assistancePurposes as $purpose)
+                                        <option value="{{ $purpose->id }}">{{ $purpose->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-grid">
+                                <button type="button" id="btnQuickSetApply" class="btn btn-success btn-sm fw-bold">
+                                    <i class="bi bi-check-all me-1"></i> Apply
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mt-2 small text-muted">
+                            <i class="bi bi-info-circle me-1"></i> This will update all <strong>selected</strong> rows below.
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0" id="batchTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 40px;" class="text-center">
+                                        <input type="checkbox" class="form-check-input" id="batchSelectAll" checked>
+                                    </th>
+                                    <th style="width: 250px;">Beneficiary</th>
+                                    <th style="width: 200px;">Program</th>
+                                    <th style="width: 200px;">Resource Type</th>
+                                    <th style="width: 150px;">Value (Qty/Amt)</th>
+                                    <th style="width: 180px;">Assistance Purpose</th>
+                                    <th style="width: 50px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="batchTbody">
+                                <!-- Dynamic rows will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </form>
+
+                <div id="batchEmptyState" class="text-center py-5 d-none">
+                    <i class="bi bi-plus-circle text-muted" style="font-size: 3rem;"></i>
+                    <p class="mt-2 text-muted">No rows added. Click "Add Row" to start.</p>
+                </div>
+            </div>
+            <div class="modal-footer bg-light justify-content-between">
+                <div>
+                    <button type="button" class="btn btn-outline-primary" id="batchAddRow">
+                        <i class="bi bi-plus-lg me-1"></i> Add Row
+                    </button>
+                    <span class="ms-3 text-muted small" id="batchSummaryText">0 rows added</span>
+                    <span class="ms-3 small" id="batchValidationStatus"></span>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" form="batchModeForm" class="btn btn-primary" id="batchSubmitBtn">
+                        <i class="bi bi-save me-1"></i> Save All Records
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const batchModal = document.getElementById('batchModeModal');
+    const batchTbody = document.getElementById('batchTbody');
+    const batchAddRowBtn = document.getElementById('batchAddRow');
+    const batchSelectAll = document.getElementById('batchSelectAll');
+    const batchSummaryText = document.getElementById('batchSummaryText');
+    const batchEmptyState = document.getElementById('batchEmptyState');
+    const batchForm = document.getElementById('batchModeForm');
+    const batchSubmitBtn = document.getElementById('batchSubmitBtn');
+    const batchValidationStatus = document.getElementById('batchValidationStatus');
+
+    let rowIndex = 0;
+
+    // Helper functions (copied from allocations/index.blade.php for consistency)
+    async function fetchEligiblePrograms(beneficiaryId) {
+        if (!beneficiaryId) return [];
+        const response = await fetch(`/api/eligible-programs/${beneficiaryId}`);
+        if (!response.ok) throw new Error('Failed to fetch eligible programs');
+        return await response.json();
+    }
+
+    async function loadResourceTypesByProgram(programSelect, resourceTypeSelect) {
+        const programId = programSelect.value;
+        if (!programId) {
+            resourceTypeSelect.innerHTML = '<option value="" selected disabled>Select Program First</option>';
+            resourceTypeSelect.disabled = true;
+            return;
+        }
+
+        try {
+            resourceTypeSelect.disabled = true;
+            const response = await fetch(`/api/programs/${programId}/resource-types`);
+            if (!response.ok) throw new Error('Failed to fetch resource types');
+            const resources = await response.json();
+
+            resourceTypeSelect.innerHTML = '<option value="" selected disabled>Select Resource</option>';
+            resources.forEach(res => {
+                const option = document.createElement('option');
+                option.value = res.id;
+                option.textContent = res.name;
+                option.dataset.unit = res.unit;
+                resourceTypeSelect.appendChild(option);
+            });
+
+            resourceTypeSelect.disabled = false;
+            
+            // Trigger change to update quantity/amount input name for batch row
+            resourceTypeSelect.dispatchEvent(new Event('change'));
+        } catch (error) {
+            console.error('Error loading resource types:', error);
+            resourceTypeSelect.innerHTML = '<option value="" selected disabled>Error loading resources</option>';
+        }
+    }
+
+    function createBatchRow(index, preset = null) {
+        const row = document.createElement('tr');
+        row.dataset.rowIndex = index;
+        const suggestionsId = `batch_beneficiary_suggestions_${index}`;
+        row.innerHTML = `
+            <td class="text-center">
+                <input type="checkbox" name="records[${index}][selected]" value="1" class="form-check-input batch-row-checkbox" checked>
+            </td>
+            <td>
+                <input type="text" class="form-control form-control-sm batch-beneficiary-search"
+                       placeholder="Type beneficiary name..." data-row-index="${index}" list="${suggestionsId}" autocomplete="off" required>
+                <datalist id="${suggestionsId}"></datalist>
+                <input type="hidden" name="records[${index}][beneficiary_id]" class="batch-beneficiary-id">
+            </td>
+            <td>
+                <select name="records[${index}][program_name_id]" class="form-select form-select-sm batch-program" required disabled>
+                    <option value="">Select Beneficiary First</option>
+                </select>
+            </td>
+            <td>
+                <select name="records[${index}][resource_type_id]" class="form-select form-select-sm batch-resource" required disabled>
+                    <option value="">Select Program First</option>
+                </select>
+            </td>
+            <td>
+                <input type="number" step="0.01" min="0.01" name="records[${index}][quantity]"
+                       class="form-control form-control-sm batch-quantity" placeholder="Qty" required>
+            </td>
+            <td>
+                <select name="records[${index}][assistance_purpose_id]" class="form-select form-select-sm batch-purpose">
+                    <option value="">-</option>
+                    @foreach($assistancePurposes as $purpose)
+                        <option value="{{ $purpose->id }}">{{ $purpose->name }}</option>
+                    @endforeach
+                </select>
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-outline-danger batch-remove-row" title="Remove row">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+
+        const beneficiarySearch = row.querySelector('.batch-beneficiary-search');
+        const programSelect = row.querySelector('.batch-program');
+        const resourceSelect = row.querySelector('.batch-resource');
+        const beneficiaryIdInput = row.querySelector('.batch-beneficiary-id');
+        const suggestionList = row.querySelector(`#${suggestionsId}`);
+        const beneficiaryMap = new Map();
+        let beneficiarySearchTimeout;
+
+        async function loadBatchProgramsForBeneficiary(beneficiaryId) {
+            if (!beneficiaryId) {
+                programSelect.innerHTML = '<option value="" selected disabled>Select Beneficiary First</option>';
+                programSelect.disabled = true;
+                resourceSelect.innerHTML = '<option value="" selected disabled>Select Program First</option>';
+                resourceSelect.disabled = true;
+                return;
+            }
+
+            try {
+                const programs = await fetchEligiblePrograms(beneficiaryId);
+                programSelect.innerHTML = '<option value="" selected disabled>Select Program</option>';
+                resourceSelect.innerHTML = '<option value="" selected disabled>Select Program First</option>';
+
+                if (programs.length === 0) {
+                    programSelect.innerHTML = '<option value="" selected disabled>No eligible programs</option>';
+                    programSelect.disabled = true;
+                    return;
+                }
+
+                programs.forEach(prog => {
+                    const option = document.createElement('option');
+                    option.value = prog.id;
+                    option.textContent = prog.formatted;
+                    programSelect.appendChild(option);
+                });
+
+                programSelect.disabled = false;
+
+                if (programs.length === 1) {
+                    programSelect.value = String(programs[0].id);
+                    await loadResourceTypesByProgram(programSelect, resourceSelect);
+                }
+            } catch (error) {
+                console.error('Error loading batch eligible programs:', error);
+                programSelect.innerHTML = '<option value="" selected disabled>Error</option>';
+            }
+        }
+
+        function applyBatchBeneficiarySelection(displayValue) {
+            const selectedBeneficiary = beneficiaryMap.get(displayValue);
+            if (!selectedBeneficiary) {
+                beneficiaryIdInput.value = '';
+                loadBatchProgramsForBeneficiary('');
+                return;
+            }
+
+            beneficiaryIdInput.value = String(selectedBeneficiary.id);
+            beneficiarySearch.value = selectedBeneficiary.display;
+            loadBatchProgramsForBeneficiary(selectedBeneficiary.id);
+            validateBatchRows();
+        }
+
+        beneficiarySearch.addEventListener('input', () => {
+            const query = beneficiarySearch.value.trim();
+            beneficiaryIdInput.value = '';
+            beneficiaryMap.clear();
+            suggestionList.innerHTML = '';
+            clearTimeout(beneficiarySearchTimeout);
+
+            if (query.length < 2) {
+                loadBatchProgramsForBeneficiary('');
+                return;
+            }
+
+            beneficiarySearchTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(`/api/beneficiaries/search?q=${encodeURIComponent(query)}`);
+                    const data = await response.json();
+                    const results = data.results || [];
+
+                    suggestionList.innerHTML = '';
+                    beneficiaryMap.clear();
+
+                    results.forEach((beneficiary) => {
+                        beneficiaryMap.set(beneficiary.display, beneficiary);
+                        const option = document.createElement('option');
+                        option.value = beneficiary.display;
+                        suggestionList.appendChild(option);
+                    });
+
+                    if (results.length === 1) {
+                        applyBatchBeneficiarySelection(results[0].display);
+                    }
+                } catch (e) {
+                    console.error('Error searching beneficiary:', e);
+                }
+            }, 250);
+        });
+
+        beneficiarySearch.addEventListener('change', () => {
+            applyBatchBeneficiarySelection(beneficiarySearch.value.trim());
+        });
+
+        programSelect.addEventListener('change', () => {
+            loadResourceTypesByProgram(programSelect, resourceSelect);
+        });
+
+        resourceSelect.addEventListener('change', () => {
+            const selected = resourceSelect.options[resourceSelect.selectedIndex];
+            const unit = selected ? selected.dataset.unit : '';
+            const isFinancial = unit === 'PHP';
+            const quantityInput = row.querySelector('.batch-quantity');
+
+            if (isFinancial) {
+                quantityInput.name = `records[${index}][amount]`;
+                quantityInput.placeholder = 'Amount (PHP)';
+                quantityInput.title = 'Enter amount in PHP';
+            } else {
+                quantityInput.name = `records[${index}][quantity]`;
+                quantityInput.placeholder = 'Qty';
+                quantityInput.title = 'Enter quantity';
+                if (unit) quantityInput.placeholder += ` (${unit})`;
+            }
+        });
+
+        row.querySelector('.batch-remove-row').addEventListener('click', () => {
+            row.remove();
+            updateBatchSummary();
+        });
+
+        row.querySelector('.batch-row-checkbox').addEventListener('change', () => {
+            updateBatchSelectAll();
+        });
+
+        // Validation triggers
+        [programSelect, resourceSelect, beneficiaryIdInput].forEach(el => {
+            el.addEventListener('change', validateBatchRows);
+        });
+        row.querySelector('.batch-quantity').addEventListener('input', validateBatchRows);
+
+        batchTbody.appendChild(row);
+        updateBatchSummary();
+        return row;
+    }
+
+    function updateBatchSummary() {
+        const rows = batchTbody.querySelectorAll('tr');
+        const rowCount = rows.length;
+        batchSummaryText.textContent = `${rowCount} row${rowCount === 1 ? '' : 's'} added`;
+        batchEmptyState.classList.toggle('d-none', rowCount > 0);
+        batchSubmitBtn.disabled = rowCount === 0;
+
+        if (rowCount > 0) {
+            validateBatchRows();
+        } else {
+            batchValidationStatus.innerHTML = '';
+        }
+    }
+
+    function validateBatchRows() {
+        if (!batchTbody || !batchValidationStatus) return;
+        
+        const rows = batchTbody.querySelectorAll('tr');
+        let isValid = true;
+        let incompleteCount = 0;
+
+        rows.forEach(row => {
+            const bId = row.querySelector('.batch-beneficiary-id')?.value;
+            const pId = row.querySelector('.batch-program')?.value;
+            const rId = row.querySelector('.batch-resource')?.value;
+            const qty = row.querySelector('.batch-quantity')?.value;
+
+            // All fields must be present and quantity must be > 0
+            const rowIsComplete = bId && pId && rId && qty && parseFloat(qty) > 0;
+
+            if (!rowIsComplete) {
+                isValid = false;
+                incompleteCount++;
+                row.classList.add('table-warning');
+            } else {
+                row.classList.remove('table-warning');
+            }
+        });
+
+        if (isValid && rows.length > 0) {
+            batchValidationStatus.innerHTML = '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> Ready</span>';
+            batchSubmitBtn.disabled = false;
+        } else if (rows.length > 0) {
+            batchValidationStatus.innerHTML = `<span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i> ${incompleteCount} Incomplete</span>`;
+        } else {
+            batchValidationStatus.innerHTML = '';
+        }
+    }
+
+    function updateBatchSelectAll() {
+        const checkboxes = batchTbody.querySelectorAll('.batch-row-checkbox');
+        const checkedCount = batchTbody.querySelectorAll('.batch-row-checkbox:checked').length;
+        batchSelectAll.checked = checkboxes.length > 0 && checkedCount === checkboxes.length;
+        batchSelectAll.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+    }
+
+    batchAddRowBtn.addEventListener('click', () => {
+        createBatchRow(rowIndex++);
+    });
+
+    batchSelectAll.addEventListener('change', () => {
+        const checked = batchSelectAll.checked;
+        batchTbody.querySelectorAll('.batch-row-checkbox').forEach(cb => {
+            cb.checked = checked;
+        });
+    });
+
+    // Initialize with one row when modal opens if empty
+    batchModal.addEventListener('shown.bs.modal', function () {
+        if (batchTbody.querySelectorAll('tr').length === 0) {
+            createBatchRow(rowIndex++);
+        }
+    });
+
+    // Form submission
+    batchForm.addEventListener('submit', function() {
+        batchSubmitBtn.disabled = true;
+        batchSubmitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Processing...';
+    });
+
+    // ---- Quick Set Logic ----
+    const quickSetProgram = document.getElementById('quickSetProgram');
+    const quickSetResource = document.getElementById('quickSetResource');
+    const quickSetValue = document.getElementById('quickSetValue');
+    const quickSetValueLabel = document.getElementById('quickSetValueLabel');
+    const quickSetPurpose = document.getElementById('quickSetPurpose');
+    const btnQuickSetApply = document.getElementById('btnQuickSetApply');
+
+    if (quickSetProgram) {
+        quickSetProgram.addEventListener('change', async function() {
+            await loadResourceTypesByProgram(quickSetProgram, quickSetResource);
+        });
+    }
+
+    if (quickSetResource) {
+        quickSetResource.addEventListener('change', function() {
+            const selected = quickSetResource.options[quickSetResource.selectedIndex];
+            const unit = selected ? selected.dataset.unit : '';
+            if (unit === 'PHP') {
+                quickSetValueLabel.textContent = 'Amount (PHP)';
+                quickSetValue.placeholder = 'e.g. 1000.00';
+            } else {
+                quickSetValueLabel.textContent = 'Quantity' + (unit ? ` (${unit})` : '');
+                quickSetValue.placeholder = 'Qty';
+            }
+        });
+    }
+
+    if (btnQuickSetApply) {
+        btnQuickSetApply.addEventListener('click', async function() {
+            const pId = quickSetProgram.value;
+            const rId = quickSetResource.value;
+            const val = quickSetValue.value;
+            const purpId = quickSetPurpose.value;
+
+            if (!pId && !rId && !val && !purpId) {
+                alert('Please set at least one value in the Quick Set bar.');
+                return;
+            }
+
+            const selectedRows = batchTbody.querySelectorAll('tr');
+            let appliedCount = 0;
+            const resourceCache = new Map(); // Cache to avoid redundant API calls
+
+            for (const row of selectedRows) {
+                const checkbox = row.querySelector('.batch-row-checkbox');
+                if (!checkbox || !checkbox.checked) continue;
+
+                const programSelect = row.querySelector('.batch-program');
+                const resourceSelect = row.querySelector('.batch-resource');
+                const quantityInput = row.querySelector('.batch-quantity');
+                const purposeSelect = row.querySelector('.batch-purpose');
+
+                // 1. Apply Program if provided and available for this row
+                if (pId && !programSelect.disabled) {
+                    const hasOption = Array.from(programSelect.options).some(opt => opt.value === pId);
+                    if (hasOption) {
+                        programSelect.value = pId;
+                        
+                        // 2. Load Resources for this row (with caching)
+                        if (!resourceCache.has(pId)) {
+                            await loadResourceTypesByProgram(programSelect, resourceSelect);
+                            // Store the HTML options of the resource select to reuse
+                            resourceCache.set(pId, resourceSelect.innerHTML);
+                        } else {
+                            resourceSelect.innerHTML = resourceCache.get(pId);
+                            resourceSelect.disabled = false;
+                        }
+                    }
+                }
+
+                // 3. Apply Resource if provided and available
+                if (rId && !resourceSelect.disabled) {
+                    const hasOption = Array.from(resourceSelect.options).some(opt => opt.value === rId);
+                    if (hasOption) {
+                        resourceSelect.value = rId;
+                        // Trigger change to update input names (quantity/amount)
+                        resourceSelect.dispatchEvent(new Event('change'));
+                    }
+                }
+
+                // 4. Apply Value
+                if (val && !quantityInput.disabled) {
+                    quantityInput.value = val;
+                    quantityInput.dispatchEvent(new Event('input')); // Trigger validation
+                }
+
+                // 5. Apply Purpose
+                if (purpId && !purposeSelect.disabled) {
+                    purposeSelect.value = purpId;
+                    purposeSelect.dispatchEvent(new Event('change')); // Trigger validation
+                }
+
+                appliedCount++;
+                
+                // Flash the row to show it was updated
+                row.style.backgroundColor = '#f0f9ff';
+                setTimeout(() => row.style.backgroundColor = '', 500);
+            }
+
+            if (appliedCount === 0) {
+                alert('No selected/eligible rows found to apply values to.');
+            } else {
+                validateBatchRows();
+            }
+        });
+    }
+});
+</script>
+@endpush
 @endsection

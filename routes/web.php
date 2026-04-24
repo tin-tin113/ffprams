@@ -122,6 +122,8 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
         ->name('allocations.attachments.destroy');
 
     // Direct Assistance
+    Route::post('direct-assistance/bulk', [DirectAssistanceController::class, 'storeBulk'])
+        ->name('direct-assistance.storeBulk');
     Route::resource('direct-assistance', DirectAssistanceController::class);
     Route::post('direct-assistance/{direct_assistance}/mark-ready-for-release', [DirectAssistanceController::class, 'markReadyForRelease'])
         ->name('direct-assistance.mark-ready-for-release');
@@ -294,4 +296,3 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 });
 
 require __DIR__.'/auth.php';
-
