@@ -127,8 +127,12 @@
                                           data-confirm-title="Approve Beneficiary List"
                                           data-confirm-message="Are you sure you want to approve the current beneficiary list? This will track any future changes to the list.">
                                         @csrf
-                                        <button type="submit" class="dropdown-item">
+                                        <button type="submit" class="dropdown-item {{ $event->allocations->count() === 0 ? 'disabled opacity-50' : '' }}" 
+                                                {{ $event->allocations->count() === 0 ? 'disabled' : '' }}>
                                             <i class="bi bi-person-check me-2 text-success"></i> Approve Beneficiary List
+                                            @if($event->allocations->count() === 0)
+                                                <span class="small d-block text-muted ps-4">(Add participants first)</span>
+                                            @endif
                                         </button>
                                     </form>
                                 </li>
@@ -170,7 +174,6 @@
                                     </li>
                                 @endif
                             @endif
-
                             @if($event->status !== 'Completed')
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
@@ -190,6 +193,23 @@
                                     </li>
                                 @endif
                             @endif
+
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('distribution-events.distributionList', $event) }}" target="_blank">
+                                    <i class="bi bi-printer me-2 text-primary"></i> Print Distribution List
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('distribution-events.distributionListPdf', $event) }}">
+                                    <i class="bi bi-file-pdf me-2 text-danger"></i> Download PDF
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('distribution-events.distributionListCsv', $event) }}">
+                                    <i class="bi bi-file-earmark-spreadsheet me-2 text-success"></i> Export as CSV
+                                </a>
+                            </li>
                         </ul>
                     </div>
                     <a href="{{ route('distribution-events.index') }}" class="btn btn-outline-secondary px-4">
@@ -609,7 +629,8 @@
                               data-confirm-title="Approve Beneficiary List"
                               data-confirm-message="Are you sure you want to approve the current beneficiary list? This will track any future changes to the list.">
                             @csrf
-                            <button type="submit" class="btn btn-outline-primary">
+                            <button type="submit" class="btn btn-outline-primary {{ $event->allocations->count() === 0 ? 'disabled opacity-50' : '' }}"
+                                    {{ $event->allocations->count() === 0 ? 'disabled' : '' }}>
                                 <i class="bi bi-person-check me-1"></i> Approve List
                             </button>
                         </form>
@@ -1092,6 +1113,11 @@
                         <table class="table table-hover align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
+                                    <th style="width: 40px;">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="bulk_select_all_modal" checked>
+                                        </div>
+                                    </th>
                                     <th>Beneficiary Name</th>
                                     <th>Classification</th>
                                     @if($event->isFinancial())
@@ -1522,6 +1548,61 @@ document.addEventListener('DOMContentLoaded', function () {
     updateOverallComplianceReasonState();
 
     syncBulkSelectAllState();
+
+    // ---- Add All Modal Select All ----
+    const bulkSelectAllModal = document.getElementById('bulk_select_all_modal');
+    if (bulkSelectAllModal) {
+        bulkSelectAllModal.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.bulk-add-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = this.checked;
+                // Trigger input toggle
+                const row = cb.closest('tr');
+                if (row) {
+                    const inputs = row.querySelectorAll('input:not(.bulk-add-checkbox)');
+                    inputs.forEach(input => input.disabled = !this.checked);
+                }
+            });
+        });
+    }
+
+    // Monitor individual checkboxes to update master checkbox state and toggle inputs
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('bulk-add-checkbox')) {
+            // Toggle inputs in the same row
+            const row = e.target.closest('tr');
+            if (row) {
+                const inputs = row.querySelectorAll('input:not(.bulk-add-checkbox)');
+                inputs.forEach(input => {
+                    input.disabled = !e.target.checked;
+                    if (input.hasAttribute('required')) {
+                        // We keep the required attribute but disabled inputs are not validated
+                    }
+                });
+            }
+
+            if (!bulkSelectAllModal) return;
+            const checkboxes = Array.from(document.querySelectorAll('.bulk-add-checkbox'));
+            const checkedCount = checkboxes.filter(cb => cb.checked).length;
+            bulkSelectAllModal.checked = checkedCount === checkboxes.length;
+            bulkSelectAllModal.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+        }
+    });
+
+    // Also handle initial state of master checkbox when modal opens or rows are populated
+    // Since rows are added via JS, we should trigger a check
+    if (bulkSelectAllModal) {
+        const checkMaster = () => {
+            const checkboxes = Array.from(document.querySelectorAll('.bulk-add-checkbox'));
+            if (checkboxes.length === 0) return;
+            const checkedCount = checkboxes.filter(cb => cb.checked).length;
+            bulkSelectAllModal.checked = checkedCount === checkboxes.length;
+            bulkSelectAllModal.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+        };
+        
+        // Use a small delay or observer if needed, but since it's populated once:
+        setTimeout(checkMaster, 500);
+    }
 });
 </script>
 @endpush

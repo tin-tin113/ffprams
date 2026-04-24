@@ -513,6 +513,11 @@ class AllocationController extends Controller
                 $seenInRequest = [];
 
                 foreach ($request->input('allocations') as $row) {
+                    // Skip if not selected
+                    if (! isset($row['selected']) || ! $row['selected']) {
+                        continue;
+                    }
+
                     $beneficiary = Beneficiary::find($row['beneficiary_id']);
 
                     if (! $beneficiary || $beneficiary->barangay_id !== $event->barangay_id) {
@@ -600,6 +605,11 @@ class AllocationController extends Controller
         try {
             DB::transaction(function () use ($request, &$allocated, &$errors) {
                 foreach ($request->input('allocations') as $idx => $row) {
+                    // Skip if not selected
+                    if (! isset($row['selected']) || ! $row['selected']) {
+                        continue;
+                    }
+
                     try {
                         $beneficiary = Beneficiary::findOrFail($row['beneficiary_id']);
                         $program = ProgramName::findOrFail($row['program_name_id']);

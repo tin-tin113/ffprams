@@ -914,8 +914,9 @@ class DistributionEventController extends Controller
                 ->with('error', 'Beneficiary list approval is only allowed while event is Pending.');
         }
 
-        if ($event->isBeneficiaryListApproved()) {
-            return redirect()->back()->with('info', 'Beneficiary list has already been approved.');
+        if ($event->allocations()->count() === 0) {
+            return redirect()->back()
+                ->with('error', 'Cannot approve an empty beneficiary list. Please add at least one participant.');
         }
 
         DB::transaction(function () use ($event) {
