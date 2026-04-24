@@ -166,51 +166,7 @@ class DynamicAgencyForm {
         };
 
         const normalizeSection = (value) => String(value || 'general_information').trim().toLowerCase();
-        const identifierFieldNames = new Set(['rsbsa_number', 'fishr_number']);
 
-        const ensureFisherfolkIdentifierFields = (fields, agencyName) => {
-            const normalizedAgency = String(agencyName || '').trim().toUpperCase();
-            const normalizedClassification = String(classification || '').trim();
-            const safeFields = Array.isArray(fields) ? [...fields] : [];
-
-            if (normalizedClassification !== 'Fisherfolk') {
-                return safeFields;
-            }
-
-            const existingNames = new Set(
-                safeFields.map((field) => String(field?.field_name || '').trim().toLowerCase()).filter(Boolean)
-            );
-
-            if (normalizedAgency === 'DA' && !existingNames.has('rsbsa_number')) {
-                safeFields.push({
-                    id: 'fallback-da-rsbsa-number',
-                    field_name: 'rsbsa_number',
-                    display_label: 'RSBSA Number (DA)',
-                    field_type: 'text',
-                    is_required: false,
-                    help_text: null,
-                    form_section: 'fisherfolk_information',
-                    validation_rules: null,
-                    options: [],
-                });
-            }
-
-            if (normalizedAgency === 'BFAR' && !existingNames.has('fishr_number')) {
-                safeFields.push({
-                    id: 'fallback-bfar-fishr-number',
-                    field_name: 'fishr_number',
-                    display_label: 'FishR Number',
-                    field_type: 'text',
-                    is_required: false,
-                    help_text: null,
-                    form_section: 'fisherfolk_information',
-                    validation_rules: null,
-                    options: [],
-                });
-            }
-
-            return safeFields;
-        };
         // Core beneficiary fields are rendered in static form sections; skip them in dynamic cards to avoid duplicates.
         const reservedCoreFieldNames = new Set([
             // Classification-core fields rendered in static sections
@@ -225,28 +181,15 @@ class DynamicAgencyForm {
             'has_fishing_vessel',
             'fishing_vessel_type',
             'fishing_vessel_tonnage',
-            'fishing_vessel_tonnage',
         ]);
-        const allowedSections = (() => {
-            if (classification === 'Farmer') {
-                return new Set(['general_information', 'additional_information', 'farmer_information', 'dar_information']);
-            }
-
-            if (classification === 'Fisherfolk') {
-                return new Set(['general_information', 'additional_information', 'fisherfolk_information']);
-            }
-
-            return new Set(['general_information', 'additional_information', 'farmer_information', 'fisherfolk_information', 'dar_information']);
-        })();
 
         agencies.forEach(agency => {
             console.log(`Processing agency: ${agency.name}`);
-            const agencyName = String(agency.name || '').trim().toUpperCase();
 
             // Add hidden input for each selected agency to ensure it's in the form submission
             html += `<input type="hidden" name="agencies[${agency.id}]" value="1">`;
 
-            const formFields = ensureFisherfolkIdentifierFields(agency.form_fields, agencyName);
+            const formFields = Array.isArray(agency.form_fields) ? agency.form_fields : [];
 
             if (!formFields || formFields.length === 0) {
                 console.log(`Agency ${agency.name} has no form fields`);
@@ -254,13 +197,9 @@ class DynamicAgencyForm {
             }
 
             const visibleFields = formFields.filter((field) => {
-                const section = normalizeSection(field.form_section);
                 const fieldName = String(field.field_name || '').trim().toLowerCase();
-                const isDaRsbsaForFisherfolk = classification === 'Fisherfolk'
-                    && agencyName === 'DA'
-                    && fieldName === 'rsbsa_number';
 
-                return (allowedSections.has(section) || isDaRsbsaForFisherfolk) && !reservedCoreFieldNames.has(fieldName);
+                return !reservedCoreFieldNames.has(fieldName);
             });
 
             if (visibleFields.length === 0) {
@@ -280,22 +219,13 @@ class DynamicAgencyForm {
 
             const groupedFields = {};
             visibleFields.forEach((field) => {
-                let section = normalizeSection(field.form_section);
-                const fieldName = String(field.field_name || '').trim().toLowerCase();
-
-                if (classification === 'Fisherfolk' && agencyName === 'DA' && fieldName === 'rsbsa_number') {
-                    section = 'fisherfolk_information';
-                }
+                const section = normalizeSection(field.form_section);
 
                 if (!groupedFields[section]) {
                     groupedFields[section] = [];
                 }
-                let normalizedField = field;
-                if (classification === 'Fisherfolk' && identifierFieldNames.has(fieldName)) {
-                    normalizedField = { ...field, is_required: false };
-                }
 
-                groupedFields[section].push(normalizedField);
+                groupedFields[section].push(field);
             });
 
             const sectionOrder = ['general_information', 'additional_information', 'farmer_information', 'fisherfolk_information', 'dar_information'];

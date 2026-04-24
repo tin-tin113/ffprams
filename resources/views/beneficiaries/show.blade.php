@@ -10,7 +10,11 @@
 @php
     $darAgency = $beneficiary->agencies->first(fn ($a) => strtoupper((string) $a->name) === 'DAR');
     $hasDarAgency = !is_null($darAgency);
-    $darDynamicData = data_get($beneficiary->custom_fields, 'agency_dynamic.' . ($darAgency->id ?? '3'), []);
+    $darDynamicAll = (array) data_get($beneficiary->custom_fields, 'agency_dynamic', []);
+    $darDynamicAgencyKey = (string) ($darAgency->id ?? (array_key_first($darDynamicAll) ?? ''));
+    $darDynamicData = $darDynamicAgencyKey !== ''
+        ? data_get($beneficiary->custom_fields, 'agency_dynamic.' . $darDynamicAgencyKey, [])
+        : [];
 
     $hasDarDetails = $hasDarAgency
         || filled(data_get($darDynamicData, 'cloa_ep_number'))
@@ -83,7 +87,9 @@
     $coreUnavailabilityReasons = collect([
         'RSBSA/DA Fields' => $beneficiary->rsbsa_unavailability_reason,
         'FishR/BFAR Fields' => $beneficiary->fishr_unavailability_reason,
-        'CLOA/EP DAR Fields' => data_get($beneficiary->custom_field_unavailability_reasons, 'agency_dynamic.' . ($darAgency->id ?? '3') . '.cloa_ep_number'),
+        'CLOA/EP DAR Fields' => $darDynamicAgencyKey !== ''
+            ? data_get($beneficiary->custom_field_unavailability_reasons, 'agency_dynamic.' . $darDynamicAgencyKey . '.cloa_ep_number')
+            : null,
     ])->filter(fn ($reason) => filled($reason));
 @endphp
 

@@ -109,6 +109,8 @@ class BeneficiaryRequest extends FormRequest
         $agencyData = (array) $this->input('agencies', []);
         $agencyIds = $this->extractAgencyIds($agencyData);
         $selectedAgencies = Agency::whereIn('id', $agencyIds)->get();
+        $allowedAgencySections = $this->allowedAgencyFormSections($agencyIds);
+        $selectedAgencyFieldNames = $this->selectedAgencyFieldNames($agencyIds, $allowedAgencySections);
         $darAgencyId = Agency::query()
             ->whereRaw('LOWER(name) = ?', ['dar'])
             ->value('id');
@@ -135,7 +137,6 @@ class BeneficiaryRequest extends FormRequest
         $hasFishingVesselRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'has_fishing_vessel', false);
         $fishingVesselTypeRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'fishing_vessel_type', false);
         $fishingVesselTonnageRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'fishing_vessel_tonnage', false);
-        $residencyMonthsRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'length_of_residency_months', true);
         $residencyMonthsRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'length_of_residency_months', true);
 
         $rules = [
@@ -171,22 +172,6 @@ class BeneficiaryRequest extends FormRequest
                         }
                     }
 
-                    // Legacy hardcoded validation for backward compatibility
-                    $agenciesQuery = Agency::whereIn('id', $agencyIds)
-                        ->pluck('name')
-                        ->map(fn($n) => strtoupper($n));
-
-                    $selectedAgencies = $agenciesQuery ? $agenciesQuery->toArray() : [];
-
-                    if (is_array($selectedAgencies)) {
-                        if ($classification === 'Farmer' && in_array('BFAR', $selectedAgencies, true)) {
-                            $fail('BFAR (Bureau of Fisheries) cannot be selected for Farmer classification.');
-                        }
-
-                        if ($classification === 'Fisherfolk' && in_array('DAR', $selectedAgencies, true)) {
-                            $fail('DAR (Department of Agrarian Reform) cannot be selected for Fisherfolk classification.');
-                        }
-                    }
                 }
             ],
             // agencies.* validation is not needed - nested array structure validates agency IDs via the key extraction above
@@ -249,48 +234,40 @@ class BeneficiaryRequest extends FormRequest
             'association_name'   => ['nullable', 'required_if:association_member,true', 'required_if:association_member,1', 'string', 'max:255'],
         ];
 
-        // Validate fields based on EACH selected agency + classification
-        foreach ($selectedAgencies as $agency) {
-            $agencyName = strtoupper($agency->name);
+        $hasFarmerSection = in_array('farmer_information', $allowedAgencySections, true);
+        $hasFisherfolkSection = in_array('fisherfolk_information', $allowedAgencySections, true);
+        $hasRsbsaField = in_array('rsbsa_number', $selectedAgencyFieldNames, true);
+        $hasFishrField = in_array('fishr_number', $selectedAgencyFieldNames, true);
 
-            // DA with Farmer classification
-            if ($agencyName === 'DA' && $classification === 'Farmer') {
-                $rules['rsbsa_availability_status'] = ['required', 'in:provided,not_available_yet,not_applicable,to_be_verified'];
-                $rules['rsbsa_unavailability_reason'] = ['nullable', 'string', 'max:500'];
-                $rules['rsbsa_number'] = [$rsbsaNumberRequired ? 'required_if:rsbsa_availability_status,provided' : 'nullable', 'nullable', 'string', 'max:50', Rule::unique('beneficiaries', 'rsbsa_number')->ignore($beneficiaryId)];
-                $rules['farm_ownership'] = [$farmOwnershipRequired ? 'required_if:rsbsa_availability_status,provided' : 'nullable', 'nullable', Rule::in($farmOwnershipValues)];
-                $rules['farm_size_hectares'] = [$farmSizeRequired ? 'required_if:rsbsa_availability_status,provided' : 'nullable', 'nullable', 'numeric', 'min:0.01'];
-                $rules['primary_commodity'] = [$primaryCommodityRequired ? 'required_if:rsbsa_availability_status,provided' : 'nullable', 'nullable', 'string', 'max:255'];
-                $rules['farm_type'] = [$farmTypeRequired ? 'required_if:rsbsa_availability_status,provided' : 'nullable', 'nullable', Rule::in($farmTypeValues)];
-                $rules['organization_membership'] = [$organizationMembershipRequired ? 'required_if:rsbsa_availability_status,provided' : 'nullable', 'nullable', 'string', 'max:255'];
-            }
+        if ($classification === 'Farmer' && $hasFarmerSection && $hasRsbsaField) {
+            $rules['rsbsa_availability_status'] = ['required', 'in:provided,not_available_yet,not_applicable,to_be_verified'];
+            $rules['rsbsa_unavailability_reason'] = ['nullable', 'string', 'max:500'];
+            $rules['rsbsa_number'] = [$rsbsaNumberRequired ? 'required_if:rsbsa_availability_status,provided' : 'nullable', 'nullable', 'string', 'max:50', Rule::unique('beneficiaries', 'rsbsa_number')->ignore($beneficiaryId)];
+            $rules['farm_ownership'] = [$farmOwnershipRequired ? 'required_if:rsbsa_availability_status,provided' : 'nullable', 'nullable', Rule::in($farmOwnershipValues)];
+            $rules['farm_size_hectares'] = [$farmSizeRequired ? 'required_if:rsbsa_availability_status,provided' : 'nullable', 'nullable', 'numeric', 'min:0.01'];
+            $rules['primary_commodity'] = [$primaryCommodityRequired ? 'required_if:rsbsa_availability_status,provided' : 'nullable', 'nullable', 'string', 'max:255'];
+            $rules['farm_type'] = [$farmTypeRequired ? 'required_if:rsbsa_availability_status,provided' : 'nullable', 'nullable', Rule::in($farmTypeValues)];
+            $rules['organization_membership'] = [$organizationMembershipRequired ? 'required_if:rsbsa_availability_status,provided' : 'nullable', 'nullable', 'string', 'max:255'];
+        }
 
-            // DA with Fisherfolk classification
-            if ($agencyName === 'DA' && $classification === 'Fisherfolk') {
-                $rules['fishr_availability_status'] = ['required', 'in:provided,not_available_yet,not_applicable,to_be_verified'];
-                $rules['fishr_unavailability_reason'] = ['nullable', 'string', 'max:500'];
+        if ($classification === 'Fisherfolk' && $hasFisherfolkSection && ($hasRsbsaField || $hasFishrField)) {
+            $rules['fishr_availability_status'] = ['required', 'in:provided,not_available_yet,not_applicable,to_be_verified'];
+            $rules['fishr_unavailability_reason'] = ['nullable', 'string', 'max:500'];
+
+            if ($hasRsbsaField) {
                 $rules['rsbsa_number'] = [$rsbsaNumberRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', 'string', 'max:50', Rule::unique('beneficiaries', 'rsbsa_number')->ignore($beneficiaryId)];
-                $rules['fisherfolk_type'] = [$fisherfolkTypeRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', Rule::in($fisherfolkTypeValues)];
-                $rules['main_fishing_gear'] = [$mainFishingGearRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', 'string', 'max:255'];
-                $rules['has_fishing_vessel'] = [$hasFishingVesselRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', 'boolean'];
-                $rules['fishing_vessel_type'] = [$fishingVesselTypeRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', 'string', 'max:255'];
-                $rules['fishing_vessel_tonnage'] = [$fishingVesselTonnageRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', 'numeric', 'min:0'];
-                $rules['length_of_residency_months'] = [$residencyMonthsRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', 'integer', 'min:6'];
             }
 
-            // BFAR with Fisherfolk classification
-            if ($agencyName === 'BFAR' && $classification === 'Fisherfolk') {
-                $rules['fishr_availability_status'] = ['required', 'in:provided,not_available_yet,not_applicable,to_be_verified'];
-                $rules['fishr_unavailability_reason'] = ['nullable', 'string', 'max:500'];
+            if ($hasFishrField) {
                 $rules['fishr_number'] = [$fishrNumberRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', 'string', 'max:50', Rule::unique('beneficiaries', 'fishr_number')->ignore($beneficiaryId)];
-                $rules['fisherfolk_type'] = [$fisherfolkTypeRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', Rule::in($fisherfolkTypeValues)];
-                $rules['main_fishing_gear'] = [$mainFishingGearRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', 'string', 'max:255'];
-                $rules['has_fishing_vessel'] = [$hasFishingVesselRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', 'boolean'];
-                $rules['fishing_vessel_type'] = [$fishingVesselTypeRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', 'string', 'max:255'];
-                $rules['fishing_vessel_tonnage'] = [$fishingVesselTonnageRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', 'numeric', 'min:0'];
-                $rules['length_of_residency_months'] = [$residencyMonthsRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', 'integer', 'min:6'];
             }
 
+            $rules['fisherfolk_type'] = [$fisherfolkTypeRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', Rule::in($fisherfolkTypeValues)];
+            $rules['main_fishing_gear'] = [$mainFishingGearRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', 'string', 'max:255'];
+            $rules['has_fishing_vessel'] = [$hasFishingVesselRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', 'boolean'];
+            $rules['fishing_vessel_type'] = [$fishingVesselTypeRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', 'string', 'max:255'];
+            $rules['fishing_vessel_tonnage'] = [$fishingVesselTonnageRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', 'numeric', 'min:0'];
+            $rules['length_of_residency_months'] = [$residencyMonthsRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', 'integer', 'min:6'];
         }
 
         // If no fields have been set to required for farmer/fisherfolk/dar, make them optional
@@ -337,8 +314,6 @@ class BeneficiaryRequest extends FormRequest
 
         // ===== DYNAMIC AGENCY FORM FIELDS VALIDATION =====
         // Validate custom fields defined by each selected agency
-        $allowedAgencySections = $this->allowedAgencyFormSections((string) $classification);
-
         $dynamicAvailabilityExemptFieldNames = ['rsbsa_number', 'fishr_number'];
 
         foreach ($selectedAgencies as $agency) {
@@ -424,17 +399,9 @@ class BeneficiaryRequest extends FormRequest
             ->except(array_merge(self::NATIVE_FIELD_GROUPS, $agencyManagedFieldGroups))
             ->all();
 
-        // Build agency-classification context for custom field visibility
-        $agencyNamesCollection = $selectedAgencies ? $selectedAgencies->pluck('name') : collect([]);
-        $selectedAgencyNames = $agencyNamesCollection
-            ? $agencyNamesCollection->map(fn($n) => strtoupper((string) $n))->toArray()
-            : [];
-
-        $hasDa = is_array($selectedAgencyNames) && in_array('DA', $selectedAgencyNames, true);
-        $hasBfar = is_array($selectedAgencyNames) && in_array('BFAR', $selectedAgencyNames, true);
-        $hasDar = is_array($selectedAgencyNames) && in_array('DAR', $selectedAgencyNames, true);
-        $isFarmer = $classification === 'Farmer';
-        $isFisherfolk = $classification === 'Fisherfolk';
+        $hasFarmerSection = in_array('farmer_information', $allowedAgencySections, true);
+        $hasFisherfolkSection = in_array('fisherfolk_information', $allowedAgencySections, true);
+        $hasDarSection = in_array('dar_information', $allowedAgencySections, true);
 
         foreach ($customGroupSettings as $fieldGroup => $groupSetting) {
             $fieldType = strtolower((string) ($groupSetting['field_type'] ?? FormFieldOption::FIELD_TYPE_DROPDOWN));
@@ -446,9 +413,9 @@ class BeneficiaryRequest extends FormRequest
 
             // Determine visibility based on multi-agency selection + classification
             $isVisible = match ($placement) {
-                FormFieldOption::PLACEMENT_FARMER_INFORMATION => ($hasDa && $isFarmer) || $hasDar,
-                FormFieldOption::PLACEMENT_FISHERFOLK_INFORMATION => ($hasDa && $isFisherfolk) || $hasBfar,
-                FormFieldOption::PLACEMENT_DAR_INFORMATION => $hasDar,
+                FormFieldOption::PLACEMENT_FARMER_INFORMATION => $hasFarmerSection,
+                FormFieldOption::PLACEMENT_FISHERFOLK_INFORMATION => $hasFisherfolkSection,
+                FormFieldOption::PLACEMENT_DAR_INFORMATION => $hasDarSection,
                 default => true, // PLACEMENT_PERSONAL_INFORMATION and others are always visible
             };
 
@@ -828,15 +795,17 @@ class BeneficiaryRequest extends FormRequest
             $agencyData = (array) $this->input('agencies', []);
             $selectedAgencyIds = $this->extractAgencyIds($agencyData);
             $selectedAgencies = \App\Models\Agency::whereIn('id', $selectedAgencyIds)->get();
-            $classification = (string) $this->input('classification', '');
-            $allowedAgencySections = $this->allowedAgencyFormSections($classification);
+            $allowedAgencySections = $this->allowedAgencyFormSections($selectedAgencyIds);
+            $selectedAgencyFieldNames = $this->selectedAgencyFieldNames($selectedAgencyIds, $allowedAgencySections);
 
             // DAR validation is now handled by the dynamic agency field validation loop below.
 
-            $hasDaForFarmer = strtolower($classification) === 'farmer'
-                && $selectedAgencies->contains(fn ($agency) => strtoupper((string) $agency->name) === 'DA');
+            $hasFarmerSection = in_array('farmer_information', $allowedAgencySections, true);
+            $hasFisherfolkSection = in_array('fisherfolk_information', $allowedAgencySections, true);
+            $hasRsbsaField = in_array('rsbsa_number', $selectedAgencyFieldNames, true);
+            $hasFishrField = in_array('fishr_number', $selectedAgencyFieldNames, true);
 
-            if ($hasDaForFarmer) {
+            if ($hasFarmerSection && $hasRsbsaField) {
                 $status = (string) $this->input('rsbsa_availability_status', '');
                 $reason = $this->input('rsbsa_unavailability_reason');
                 $validStatuses = ['provided', 'not_available_yet', 'not_applicable', 'to_be_verified'];
@@ -854,10 +823,7 @@ class BeneficiaryRequest extends FormRequest
                 }
             }
 
-            $hasFishrSection = strtolower($classification) === 'fisherfolk'
-                && $selectedAgencies->contains(fn ($agency) => in_array(strtoupper((string) $agency->name), ['DA', 'BFAR'], true));
-
-            if ($hasFishrSection) {
+            if ($hasFisherfolkSection && ($hasRsbsaField || $hasFishrField)) {
                 $status = (string) $this->input('fishr_availability_status', '');
                 $reason = $this->input('fishr_unavailability_reason');
                 $validStatuses = ['provided', 'not_available_yet', 'not_applicable', 'to_be_verified'];
@@ -970,34 +936,52 @@ class BeneficiaryRequest extends FormRequest
     /**
      * @return array<int, string>
      */
-    private function allowedAgencyFormSections(string $classification): array
+    private function allowedAgencyFormSections(array $agencyIds): array
     {
-        $normalized = strtolower(trim($classification));
-
         $baseSections = [
             'general_information',
             'additional_information',
             '',
         ];
 
-        if ($normalized === 'farmer') {
-            return array_values(array_unique(array_merge($baseSections, [
-                'farmer_information',
-                'dar_information',
-            ])));
+        if (empty($agencyIds)) {
+            return $baseSections;
         }
 
-        if ($normalized === 'fisherfolk') {
-            return array_values(array_unique(array_merge($baseSections, [
-                'fisherfolk_information',
-            ])));
+        $dynamicSections = AgencyFormField::query()
+            ->whereIn('agency_id', $agencyIds)
+            ->where('is_active', true)
+            ->pluck('form_section')
+            ->map(fn ($section) => strtolower(trim((string) $section)))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        return array_values(array_unique(array_merge($baseSections, $dynamicSections)));
+    }
+
+    /**
+     * @param  array<int>  $agencyIds
+     * @param  array<int, string>  $allowedAgencySections
+     * @return array<int, string>
+     */
+    private function selectedAgencyFieldNames(array $agencyIds, array $allowedAgencySections): array
+    {
+        if (empty($agencyIds)) {
+            return [];
         }
 
-        return array_values(array_unique(array_merge($baseSections, [
-            'farmer_information',
-            'fisherfolk_information',
-            'dar_information',
-        ])));
+        return AgencyFormField::query()
+            ->whereIn('agency_id', $agencyIds)
+            ->where('is_active', true)
+            ->whereIn('form_section', $allowedAgencySections)
+            ->pluck('field_name')
+            ->map(fn ($name) => strtolower(trim((string) $name)))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 
 }
