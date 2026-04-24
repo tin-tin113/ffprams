@@ -58,15 +58,10 @@ class BeneficiaryRequest extends FormRequest
     {
         $classification = strtolower(trim((string) $this->input('classification', '')));
         $agencyIds = $this->extractAgencyIds((array) $this->input('agencies', []));
-        $selectedAgencyNames = Agency::query()
-            ->whereIn('id', $agencyIds)
-            ->pluck('name')
-            ->map(fn ($name) => strtoupper(trim((string) $name)))
-            ->all();
-
-        $hasDa = in_array('DA', $selectedAgencyNames, true);
-        $hasBfar = in_array('BFAR', $selectedAgencyNames, true);
-        $hasDar = in_array('DAR', $selectedAgencyNames, true);
+        $allowedAgencySections = $this->allowedAgencyFormSections($agencyIds);
+        $selectedAgencyFieldNames = $this->selectedAgencyFieldNames($agencyIds, $allowedAgencySections);
+        $hasRsbsaField = in_array('rsbsa_number', $selectedAgencyFieldNames, true);
+        $hasFishrField = in_array('fishr_number', $selectedAgencyFieldNames, true);
 
         $defaultReason = 'Specific agency or classification is missing for this section.';
         $updates = [];
@@ -74,11 +69,11 @@ class BeneficiaryRequest extends FormRequest
         $contextRules = [
             'rsbsa_unavailability_reason' => [
                 'status' => 'rsbsa_availability_status',
-                'is_applicable' => $classification === 'farmer' && $hasDa,
+                'is_applicable' => $classification === 'farmer' && $hasRsbsaField,
             ],
             'fishr_unavailability_reason' => [
                 'status' => 'fishr_availability_status',
-                'is_applicable' => $classification === 'fisherfolk' && ($hasDa || $hasBfar),
+                'is_applicable' => $classification === 'fisherfolk' && ($hasRsbsaField || $hasFishrField),
             ],
         ];
 

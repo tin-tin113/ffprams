@@ -236,21 +236,11 @@ class BeneficiaryController extends Controller
                 // Sync all selected agencies to pivot table with their identifiers
                 $agencies = Agency::whereIn('id', $agencyIds)->get();
                 foreach ($agencies as $agency) {
-                    $agencyName = strtoupper($agency->name);
-                    $identifier = null;
-
-                    // Extract the correct identifier for this agency from beneficiary data
-                    if ($agencyName === 'DA') {
-                        $identifier = $beneficiary->rsbsa_number ?? null;
-                    } elseif ($agencyName === 'BFAR') {
-                        $identifier = $beneficiary->fishr_number ?? null;
-                    } elseif ($agencyName === 'DAR') {
-                        $identifier = $this->extractDarIdentifierFromAgencyPayload(
-                            (int) $agency->id,
-                            $agencyFieldsData,
-                            $beneficiary,
-                        );
-                    }
+                    $identifier = $this->resolveAgencyIdentifierFromConfiguredFields(
+                        $agency,
+                        $beneficiary,
+                        $agencyFieldsData,
+                    );
 
                     // Attach agency with identifier and registration date
                     $beneficiary->agencies()->attach($agency->id, [
@@ -470,21 +460,11 @@ class BeneficiaryController extends Controller
             $agencyPivotData = [];
 
             foreach ($agencies as $agency) {
-                $agencyName = strtoupper($agency->name);
-                $identifier = null;
-
-                // Extract the correct identifier for this agency
-                if ($agencyName === 'DA') {
-                    $identifier = $beneficiary->rsbsa_number ?? null;
-                } elseif ($agencyName === 'BFAR') {
-                    $identifier = $beneficiary->fishr_number ?? null;
-                } elseif ($agencyName === 'DAR') {
-                    $identifier = $this->extractDarIdentifierFromAgencyPayload(
-                        (int) $agency->id,
-                        $agencyFieldsData,
-                        $beneficiary,
-                    );
-                }
+                $identifier = $this->resolveAgencyIdentifierFromConfiguredFields(
+                    $agency,
+                    $beneficiary,
+                    $agencyFieldsData,
+                );
 
                 // Get existing registration date if agency was already registered, otherwise use today
                 $existingPivot = $beneficiary->agencies()
@@ -624,6 +604,54 @@ class BeneficiaryController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $agencyFieldsData
+     */
+    private function resolveAgencyIdentifierFromConfiguredFields(Agency $agency, Beneficiary $beneficiary, array $agencyFieldsData): ?string
+    {
+        $identifierFields = $this->configuredIdentifierFields((int) $agency->id);
+
+        foreach ($identifierFields as $fieldName) {
+            $identifier = match ($fieldName) {
+                'cloa_ep_number' => $this->extractDarIdentifierFromAgencyPayload((int) $agency->id, $agencyFieldsData, $beneficiary),
+                'rsbsa_number' => $beneficiary->rsbsa_number,
+                'fishr_number' => $beneficiary->fishr_number,
+                default => null,
+            };
+
+            if (is_string($identifier) && trim($identifier) !== '') {
+                return trim($identifier);
+            }
+        }
+
+        $existingPivot = $beneficiary->agencies()->where('agency_id', $agency->id)->first();
+        $existingIdentifier = $existingPivot?->pivot?->identifier;
+
+        if (is_string($existingIdentifier) && trim($existingIdentifier) !== '') {
+            return trim($existingIdentifier);
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function configuredIdentifierFields(int $agencyId): array
+    {
+        return AgencyFormField::query()
+            ->where('agency_id', $agencyId)
+            ->where('is_active', true)
+            ->whereIn('field_name', ['rsbsa_number', 'fishr_number', 'cloa_ep_number'])
+            ->orderBy('sort_order')
+            ->pluck('field_name')
+            ->map(fn ($fieldName) => strtolower(trim((string) $fieldName)))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 
     private function isAgencyMetaFieldKey(string $key): bool
