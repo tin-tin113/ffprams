@@ -83,6 +83,7 @@ class BeneficiarySectionAvailabilityTest extends TestCase
      */
     private function createContext(): array
     {
+        $this->seed(\Database\Seeders\FormFieldOptionSeeder::class);
         $admin = User::factory()->create(['role' => 'admin']);
 
         $agency = Agency::create([

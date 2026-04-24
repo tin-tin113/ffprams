@@ -654,6 +654,19 @@
 </div>
 
 
+{{-- SECTION 5 — DAR/ARB Information --}}
+<div class="mb-5 bg-white rounded-3 p-4 border" id="dar-info-section" style="display: none;">
+    <div class="border-bottom pb-2 mb-4">
+        <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-briefcase me-2 text-muted"></i>DAR/ARB Information</h5>
+    </div>
+    <div class="row g-4">
+        @foreach($customFieldGroups->get('dar_information', collect()) as $customField)
+            @include('beneficiaries.partials.custom-field-input', ['customField' => $customField, 'beneficiaryCustomFields' => $beneficiaryCustomFields])
+        @endforeach
+    </div>
+</div>
+
+
 {{-- SECTION 6 — Dynamic Agency Form Fields --}}
 <div class="mb-5 bg-white rounded-3 p-4 border" id="agency-dynamic-fields-section">
     <div class="border-bottom pb-2 mb-4">
@@ -751,6 +764,10 @@ document.addEventListener('DOMContentLoaded', function () {
             farmerSection.style.display = 'block';
         } else if (classification === 'Fisherfolk') {
             fisherfolkSection.style.display = 'block';
+        }
+        
+        if (selectedAgencies.includes('DAR')) {
+            darSection.style.display = 'block';
         }
 
         toggleRsbsaAvailability();

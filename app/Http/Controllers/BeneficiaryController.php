@@ -72,7 +72,9 @@ class BeneficiaryController extends Controller
                         ->orWhere('contact_number', 'like', $like)
                         ->orWhere('rsbsa_number', 'like', $like)
                         ->orWhere('fishr_number', 'like', $like)
-                        ->orWhere('cloa_ep_number', 'like', $like);
+                        ->orWhereHas('agencies', function ($pivot) use ($like) {
+                            $pivot->where('beneficiary_agencies.identifier', 'like', $like);
+                        });
                 });
             })
             ->orderByDesc('created_at')
@@ -617,10 +619,6 @@ class BeneficiaryController extends Controller
             'beneficiaries_fishr_number_unique' => [
                 'field' => 'fishr_number',
                 'message' => 'A beneficiary with this FishR number already exists.',
-            ],
-            'beneficiaries_cloa_ep_number_unique' => [
-                'field' => 'cloa_ep_number',
-                'message' => 'A beneficiary with this CLOA/EP number already exists.',
             ],
         ];
 

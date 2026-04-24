@@ -47,12 +47,6 @@ final class BeneficiaryCoreFields
         'fishing_vessel_type',
         'fishing_vessel_tonnage',
         'length_of_residency_months',
-        'cloa_ep_number',
-        'arb_classification',
-        'landholding_description',
-        'land_area_awarded_hectares',
-        'ownership_scheme',
-        'barc_membership_status',
     ];
 
     /**
@@ -60,6 +54,8 @@ final class BeneficiaryCoreFields
      * Note: Some agency-specific fields are intentionally unlocked and managed per agency.
      */
     private const RESERVED_AGENCY_FORM_FIELD_NAMES = [
+        'rsbsa_number',
+        'fishr_number',
         'farm_ownership',
         'farm_size_hectares',
         'primary_commodity',
@@ -109,13 +105,6 @@ final class BeneficiaryCoreFields
         'fishing_vessel_type' => 'fishr_unavailability_reason',
         'fishing_vessel_tonnage' => 'fishr_unavailability_reason',
         'length_of_residency_months' => 'fishr_unavailability_reason',
-
-        'cloa_ep_number' => 'cloa_ep_unavailability_reason',
-        'arb_classification' => 'cloa_ep_unavailability_reason',
-        'landholding_description' => 'cloa_ep_unavailability_reason',
-        'land_area_awarded_hectares' => 'cloa_ep_unavailability_reason',
-        'ownership_scheme' => 'cloa_ep_unavailability_reason',
-        'barc_membership_status' => 'cloa_ep_unavailability_reason',
     ];
 
     /**
@@ -136,13 +125,6 @@ final class BeneficiaryCoreFields
         'fishing_vessel_type' => 'fisherfolk_information',
         'fishing_vessel_tonnage' => 'fisherfolk_information',
         'length_of_residency_months' => 'fisherfolk_information',
-
-        'cloa_ep_number' => 'dar_information',
-        'arb_classification' => 'dar_information',
-        'landholding_description' => 'dar_information',
-        'land_area_awarded_hectares' => 'dar_information',
-        'ownership_scheme' => 'dar_information',
-        'barc_membership_status' => 'dar_information',
     ];
 
     /**

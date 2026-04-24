@@ -55,7 +55,7 @@ class AgencyReservedFormFieldsTest extends TestCase
             ->assertJsonPath('0.form_fields.1.field_name', 'custom_registry_note');
     }
 
-    public function test_admin_can_add_reserved_field_name_for_agency_specific_static_field_management(): void
+    public function test_admin_cannot_add_reserved_field_name_as_dynamic_field(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $agency = $this->makeAgency();
@@ -69,24 +69,23 @@ class AgencyReservedFormFieldsTest extends TestCase
             ]);
 
         $response
-            ->assertOk()
-            ->assertJsonPath('success', true)
-            ->assertJsonPath('field.field_name', 'rsbsa_number');
+            ->assertStatus(422)
+            ->assertJsonPath('errors.field_name.0', "Classification core field 'rsbsa_number' is managed in the Classification Core Fields settings.");
 
-        $this->assertDatabaseHas('agency_form_fields', [
+        $this->assertDatabaseMissing('agency_form_fields', [
             'agency_id' => $agency->id,
             'field_name' => 'rsbsa_number',
         ]);
     }
 
-    public function test_admin_can_update_reserved_field_record(): void
+    public function test_admin_can_update_dynamic_field_record(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $agency = $this->makeAgency();
-        $legacyReserved = $this->makeFormField($agency, 'cloa_ep_number', 'Legacy CLOA/EP');
+        $customField = $this->makeFormField($agency, 'custom_project_id', 'Project ID');
 
         $response = $this->actingAs($admin)
-            ->put(route('admin.settings.agencies.form-fields.update', [$agency, 'fieldId' => $legacyReserved->id]), [
+            ->put(route('admin.settings.agencies.form-fields.update', [$agency, 'fieldId' => $customField->id]), [
                 'display_label' => 'Edited Label',
             ]);
 
@@ -95,8 +94,8 @@ class AgencyReservedFormFieldsTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonPath('field.display_label', 'Edited Label');
 
-        $legacyReserved->refresh();
-        $this->assertSame('Edited Label', $legacyReserved->display_label);
+        $customField->refresh();
+        $this->assertSame('Edited Label', $customField->display_label);
     }
 
     public function test_cleanup_reserved_endpoint_removes_reserved_fields_and_their_options_only(): void

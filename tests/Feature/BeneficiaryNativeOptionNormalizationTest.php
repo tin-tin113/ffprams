@@ -135,6 +135,26 @@ class BeneficiaryNativeOptionNormalizationTest extends TestCase
             'is_required' => true,
             'is_active' => true,
         ]);
+        
+        FormFieldOption::create([
+            'field_group' => 'civil_status',
+            'placement_section' => FormFieldOption::PLACEMENT_PERSONAL_INFORMATION,
+            'label' => 'Married',
+            'value' => 'married',
+            'sort_order' => 10,
+            'is_required' => true,
+            'is_active' => true,
+        ]);
+        
+        FormFieldOption::create([
+            'field_group' => 'highest_education',
+            'placement_section' => FormFieldOption::PLACEMENT_PERSONAL_INFORMATION,
+            'label' => 'Post Graduate',
+            'value' => 'post_graduate',
+            'sort_order' => 10,
+            'is_required' => false,
+            'is_active' => true,
+        ]);
     }
 
     /**

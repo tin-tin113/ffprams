@@ -8,14 +8,17 @@
 @endsection
 
 @php
-    $hasDarAgency = $beneficiary->agencies->contains(fn ($agency) => strtoupper((string) $agency->name) === 'DAR');
+    $darAgency = $beneficiary->agencies->first(fn ($a) => strtoupper((string) $a->name) === 'DAR');
+    $hasDarAgency = !is_null($darAgency);
+    $darDynamicData = data_get($beneficiary->custom_fields, 'agency_dynamic.' . ($darAgency->id ?? '3'), []);
+
     $hasDarDetails = $hasDarAgency
-        || filled($beneficiary->cloa_ep_number)
-        || filled($beneficiary->arb_classification)
-        || filled($beneficiary->landholding_description)
-        || filled($beneficiary->land_area_awarded_hectares)
-        || filled($beneficiary->ownership_scheme)
-        || filled($beneficiary->barc_membership_status);
+        || filled(data_get($darDynamicData, 'cloa_ep_number'))
+        || filled(data_get($darDynamicData, 'arb_classification'))
+        || filled(data_get($darDynamicData, 'landholding_description'))
+        || filled(data_get($darDynamicData, 'land_area_awarded_hectares'))
+        || filled(data_get($darDynamicData, 'ownership_scheme'))
+        || filled(data_get($darDynamicData, 'barc_membership_status'));
 
     $agencyFieldLabels = $agencyFieldLabels ?? [];
     $agencyNameById = $beneficiary->agencies
@@ -80,7 +83,7 @@
     $coreUnavailabilityReasons = collect([
         'RSBSA/DA Fields' => $beneficiary->rsbsa_unavailability_reason,
         'FishR/BFAR Fields' => $beneficiary->fishr_unavailability_reason,
-        'CLOA/EP DAR Fields' => $beneficiary->cloa_ep_unavailability_reason,
+        'CLOA/EP DAR Fields' => data_get($beneficiary->custom_field_unavailability_reasons, 'agency_dynamic.' . ($darAgency->id ?? '3') . '.cloa_ep_number'),
     ])->filter(fn ($reason) => filled($reason));
 @endphp
 
@@ -485,15 +488,15 @@
                                         <div class="row g-3">
                                             <div class="col-md-4">
                                                 <div class="info-label">CLOA/EP #</div>
-                                                <div class="info-value font-monospace">{{ $beneficiary->cloa_ep_number ?: '—' }}</div>
+                                                <div class="info-value font-monospace">{{ $darAgency?->pivot->identifier ?: data_get($darDynamicData, 'cloa_ep_number', '—') }}</div>
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="info-label">Classification</div>
-                                                <div class="info-value">{{ $beneficiary->arb_classification ?: '—' }}</div>
+                                                <div class="info-value">{{ data_get($darDynamicData, 'arb_classification', '—') }}</div>
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="info-label">Ownership Scheme</div>
-                                                <div class="info-value">{{ $beneficiary->ownership_scheme ?: '—' }}</div>
+                                                <div class="info-value">{{ data_get($darDynamicData, 'ownership_scheme', '—') }}</div>
                                             </div>
                                         </div>
                                     </div>

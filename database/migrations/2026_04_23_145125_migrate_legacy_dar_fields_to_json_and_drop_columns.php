@@ -59,6 +59,18 @@ return new class extends Migration
                             'custom_fields' => json_encode($customFields),
                             'custom_field_unavailability_reasons' => json_encode($reasons),
                         ]);
+
+                    // Sync to pivot table for searchability
+                    if ($beneficiary->cloa_ep_number) {
+                        DB::table('beneficiary_agencies')
+                            ->updateOrInsert(
+                                ['beneficiary_id' => $beneficiary->id, 'agency_id' => 3],
+                                [
+                                    'identifier' => $beneficiary->cloa_ep_number,
+                                    'updated_at' => now(),
+                                ]
+                            );
+                    }
                 }
             });
 

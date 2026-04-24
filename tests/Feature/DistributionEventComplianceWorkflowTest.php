@@ -20,9 +20,10 @@ class DistributionEventComplianceWorkflowTest extends TestCase
     public function test_physical_event_can_be_created_without_financial_compliance_fields(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
-        [$barangay, $resourceType, $program] = $this->makeEventFixtures();
+        [$barangay, $resourceType, $program] = $this->makeEventFixtures('bags');
 
         $response = $this->actingAs($admin)->post(route('distribution-events.store'), [
+            'name' => 'Physical Distribution Q2',
             'barangay_id' => $barangay->id,
             'resource_type_id' => $resourceType->id,
             'program_name_id' => $program->id,
@@ -40,9 +41,10 @@ class DistributionEventComplianceWorkflowTest extends TestCase
     public function test_financial_event_can_be_created_with_incomplete_compliance_details(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
-        [$barangay, $resourceType, $program] = $this->makeEventFixtures();
+        [$barangay, $resourceType, $program] = $this->makeEventFixtures('PHP');
 
         $response = $this->actingAs($admin)->post(route('distribution-events.store'), [
+            'name' => 'Financial Aid Q1',
             'barangay_id' => $barangay->id,
             'resource_type_id' => $resourceType->id,
             'program_name_id' => $program->id,
@@ -65,9 +67,10 @@ class DistributionEventComplianceWorkflowTest extends TestCase
     public function test_financial_event_can_move_to_ongoing_with_pending_compliance_data(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
-        [$barangay, $resourceType, $program] = $this->makeEventFixtures();
+        [$barangay, $resourceType, $program] = $this->makeEventFixtures('PHP');
 
         $event = DistributionEvent::create([
+            'name' => 'Financial Aid Q1',
             'barangay_id' => $barangay->id,
             'resource_type_id' => $resourceType->id,
             'program_name_id' => $program->id,
@@ -272,7 +275,7 @@ class DistributionEventComplianceWorkflowTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $event = $this->makeFinancialEvent($admin, 'Pending');
 
-        $response = $this->actingAs($admin)->post(route('distribution-events.updateCompliance', $event), [
+        $response = $this->actingAs($admin)->patch(route('distribution-events.updateCompliance', $event), [
             'compliance_states' => [
                 'fund_source' => DistributionEvent::COMPLIANCE_STATUS_NOT_AVAILABLE_YET,
             ],
@@ -291,7 +294,7 @@ class DistributionEventComplianceWorkflowTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $event = $this->makeFinancialEvent($admin, 'Pending');
 
-        $response = $this->actingAs($admin)->post(route('distribution-events.updateCompliance', $event), [
+        $response = $this->actingAs($admin)->patch(route('distribution-events.updateCompliance', $event), [
             'compliance_states' => [
                 'fund_source' => DistributionEvent::COMPLIANCE_STATUS_NOT_AVAILABLE_YET,
             ],
@@ -319,7 +322,7 @@ class DistributionEventComplianceWorkflowTest extends TestCase
     /**
      * @return array{Barangay, ResourceType, ProgramName}
      */
-    private function makeEventFixtures(): array
+    private function makeEventFixtures(string $unit = 'bags'): array
     {
         $agency = Agency::create([
             'name' => 'DA',
@@ -343,7 +346,7 @@ class DistributionEventComplianceWorkflowTest extends TestCase
 
         $resourceType = ResourceType::create([
             'name' => 'Compliance Resource '.uniqid(),
-            'unit' => 'PHP',
+            'unit' => $unit,
             'source_agency' => $agency->name,
             'agency_id' => $agency->id,
         ]);
@@ -353,9 +356,10 @@ class DistributionEventComplianceWorkflowTest extends TestCase
 
     private function makeFinancialEvent(User $admin, string $status): DistributionEvent
     {
-        [$barangay, $resourceType, $program] = $this->makeEventFixtures();
+        [$barangay, $resourceType, $program] = $this->makeEventFixtures('PHP');
 
         return DistributionEvent::create([
+            'name' => 'Financial Aid Q1',
             'barangay_id' => $barangay->id,
             'resource_type_id' => $resourceType->id,
             'program_name_id' => $program->id,

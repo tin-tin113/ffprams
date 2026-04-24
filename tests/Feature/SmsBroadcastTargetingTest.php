@@ -220,6 +220,7 @@ class SmsBroadcastTargetingTest extends TestCase
         ]);
 
         $eventTarget = DistributionEvent::create([
+            'name' => 'SMS Target Event',
             'barangay_id' => $barangayTarget->id,
             'resource_type_id' => $resourceType->id,
             'program_name_id' => $programTarget->id,
@@ -231,6 +232,7 @@ class SmsBroadcastTargetingTest extends TestCase
         ]);
 
         $eventOther = DistributionEvent::create([
+            'name' => 'SMS Other Event',
             'barangay_id' => $barangayOther->id,
             'resource_type_id' => $resourceType->id,
             'program_name_id' => $programOther->id,
@@ -242,6 +244,7 @@ class SmsBroadcastTargetingTest extends TestCase
         ]);
 
         $eventCompleted = DistributionEvent::create([
+            'name' => 'SMS Completed Event',
             'barangay_id' => $barangayOther->id,
             'resource_type_id' => $resourceType->id,
             'program_name_id' => $programTarget->id,

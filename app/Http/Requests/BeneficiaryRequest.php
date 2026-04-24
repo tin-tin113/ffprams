@@ -233,9 +233,9 @@ class BeneficiaryRequest extends FormRequest
                     $beneficiaryId = $this->route('beneficiary')?->id;
                     if ($beneficiaryId) {
                         $beneficiary = Beneficiary::find($beneficiaryId);
-                        if ($beneficiary && (!empty($beneficiary->rsbsa_number) ||
-                            !empty($beneficiary->fishr_number) ||
-                            !empty($beneficiary->cloa_ep_number))) {
+                        if ($beneficiary && (! empty($beneficiary->rsbsa_number) ||
+                            ! empty($beneficiary->fishr_number) ||
+                            $beneficiary->agencies()->wherePivotNotNull('identifier')->exists())) {
                             // Classification cannot be changed once identifiers are assigned
                             if ($value !== $beneficiary->classification) {
                                 $fail('Classification cannot be changed after registration numbers are assigned.');
@@ -297,7 +297,15 @@ class BeneficiaryRequest extends FormRequest
                 $rules['length_of_residency_months'] = [$residencyMonthsRequired ? 'required_if:fishr_availability_status,provided' : 'nullable', 'nullable', 'integer', 'min:6'];
             }
 
-
+            // DAR with Farmer classification
+            if ($agencyName === 'DAR' && $classification === 'Farmer') {
+                $rules['cloa_ep_number'] = [$cloaNumberRequired ? 'required' : 'nullable', 'string', 'max:255'];
+                $rules['arb_classification'] = [$arbClassificationRequired ? 'required' : 'nullable', Rule::in($arbClassificationValues)];
+                $rules['landholding_description'] = [$landholdingDescriptionRequired ? 'required' : 'nullable', 'string', 'max:500'];
+                $rules['land_area_awarded_hectares'] = [$landAreaAwardedRequired ? 'required' : 'nullable', 'numeric', 'min:0.01'];
+                $rules['ownership_scheme'] = [$ownershipSchemeRequired ? 'required' : 'nullable', Rule::in($ownershipSchemeValues)];
+                $rules['barc_membership_status'] = [$barcMembershipRequired ? 'required' : 'nullable', 'string', 'max:100'];
+            }
         }
 
         // If no fields have been set to required for farmer/fisherfolk/dar, make them optional
@@ -339,6 +347,24 @@ class BeneficiaryRequest extends FormRequest
         }
         if (!isset($rules['length_of_residency_months'])) {
             $rules['length_of_residency_months'] = ['nullable', 'integer', 'min:0'];
+        }
+        if (!isset($rules['cloa_ep_number'])) {
+            $rules['cloa_ep_number'] = ['nullable', 'string', 'max:255'];
+        }
+        if (!isset($rules['arb_classification'])) {
+            $rules['arb_classification'] = ['nullable', Rule::in($arbClassificationValues)];
+        }
+        if (!isset($rules['landholding_description'])) {
+            $rules['landholding_description'] = ['nullable', 'string', 'max:500'];
+        }
+        if (!isset($rules['land_area_awarded_hectares'])) {
+            $rules['land_area_awarded_hectares'] = ['nullable', 'numeric', 'min:0.01'];
+        }
+        if (!isset($rules['ownership_scheme'])) {
+            $rules['ownership_scheme'] = ['nullable', Rule::in($ownershipSchemeValues)];
+        }
+        if (!isset($rules['barc_membership_status'])) {
+            $rules['barc_membership_status'] = ['nullable', 'string', 'max:100'];
         }
 
 

@@ -46,13 +46,13 @@ class DuplicateDetectionService
     {
         $matches = collect();
 
-        $registrationFields = [
+        // 1. Check static schema columns (RSBSA, FishR)
+        $staticFields = [
             'rsbsa_number' => 'registration_number',
             'fishr_number' => 'registration_number',
-            'cloa_ep_number' => 'registration_number',
         ];
 
-        foreach ($registrationFields as $field => $matchType) {
+        foreach ($staticFields as $field => $matchType) {
             if (! empty($data[$field])) {
                 $existing = Beneficiary::withTrashed()
                     ->where($field, $data[$field])
@@ -66,6 +66,25 @@ class DuplicateDetectionService
                         'score' => 100,
                     ]);
                 }
+            }
+        }
+
+        // 2. Check dynamic identifiers in pivot table (DAR/CLOA-EP, etc.)
+        $dynamicIdentifier = $data['cloa_ep_number'] ?? null;
+        if (! empty($dynamicIdentifier)) {
+            $existing = Beneficiary::withTrashed()
+                ->whereHas('agencies', function ($q) use ($dynamicIdentifier) {
+                    $q->where('beneficiary_agencies.identifier', $dynamicIdentifier);
+                })
+                ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
+                ->first();
+
+            if ($existing) {
+                $matches->push([
+                    'beneficiary' => $existing,
+                    'match_type' => 'registration_number',
+                    'score' => 100,
+                ]);
             }
         }
 

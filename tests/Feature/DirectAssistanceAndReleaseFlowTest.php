@@ -279,7 +279,7 @@ class DirectAssistanceAndReleaseFlowTest extends TestCase
             'csv_file' => UploadedFile::fake()->createWithContent('allocations.csv', $csvContent),
         ]);
 
-        $response->assertRedirect(route('distribution-events.show', $event));
+        $response->assertRedirect(route('distribution-events.show', $event) . '#tab-beneficiaries');
 
         $this->assertSame(
             2,
@@ -307,7 +307,7 @@ class DirectAssistanceAndReleaseFlowTest extends TestCase
             'csv_file' => UploadedFile::fake()->createWithContent('allocations.csv', $csvContent),
         ]);
 
-        $response->assertRedirect(route('distribution-events.show', $event));
+        $response->assertRedirect(route('distribution-events.show', $event) . '#tab-beneficiaries');
 
         $eventAllocations = Allocation::where('distribution_event_id', $event->id)->get();
 
@@ -357,7 +357,7 @@ class DirectAssistanceAndReleaseFlowTest extends TestCase
             'csv_file' => UploadedFile::fake()->createWithContent('allocations.csv', $csvContent),
         ]);
 
-        $response->assertRedirect(route('distribution-events.show', $event));
+        $response->assertRedirect(route('distribution-events.show', $event) . '#tab-beneficiaries');
 
         $allocations = Allocation::where('distribution_event_id', $event->id)->get();
         $this->assertCount(1, $allocations);
@@ -404,7 +404,7 @@ class DirectAssistanceAndReleaseFlowTest extends TestCase
             'csv_file' => UploadedFile::fake()->createWithContent('allocations.csv', $csvContent),
         ]);
 
-        $response->assertRedirect(route('distribution-events.show', $event));
+        $response->assertRedirect(route('distribution-events.show', $event) . '#tab-beneficiaries');
         $response->assertSessionHas('import_error_report_file');
 
         $reportFile = $response->getSession()->get('import_error_report_file');
@@ -600,6 +600,7 @@ class DirectAssistanceAndReleaseFlowTest extends TestCase
         ]);
 
         $event = DistributionEvent::create([
+            'name' => 'CSV Import Event',
             'barangay_id' => $eventBarangay->id,
             'resource_type_id' => $resourceType->id,
             'program_name_id' => $program->id,
