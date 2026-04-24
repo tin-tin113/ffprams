@@ -21,12 +21,6 @@ class BeneficiaryRequest extends FormRequest
         'farm_ownership',
         'farm_type',
         'fisherfolk_type',
-        'cloa_ep_number',
-        'arb_classification',
-        'landholding_description',
-        'land_area_awarded_hectares',
-        'ownership_scheme',
-        'barc_membership_status',
     ];
 
     protected function prepareForValidation(): void
@@ -115,6 +109,9 @@ class BeneficiaryRequest extends FormRequest
         $agencyData = (array) $this->input('agencies', []);
         $agencyIds = $this->extractAgencyIds($agencyData);
         $selectedAgencies = Agency::whereIn('id', $agencyIds)->get();
+        $darAgencyId = Agency::query()
+            ->whereRaw('LOWER(name) = ?', ['dar'])
+            ->value('id');
         $fieldGroupSettings = $this->fieldGroupSettings();
         $classification = $this->input('classification');
 
@@ -123,16 +120,12 @@ class BeneficiaryRequest extends FormRequest
         $farmOwnershipValues = $this->allowedFieldValues('farm_ownership', $nativeFallbackValues['farm_ownership'], $agencyIds);
         $farmTypeValues = $this->allowedFieldValues('farm_type', $nativeFallbackValues['farm_type'], $agencyIds);
         $fisherfolkTypeValues = $this->allowedFieldValues('fisherfolk_type', $nativeFallbackValues['fisherfolk_type'], $agencyIds);
-        $arbClassificationValues = $this->allowedFieldValues('arb_classification', $nativeFallbackValues['arb_classification'], $agencyIds);
-        $ownershipSchemeValues = $this->allowedFieldValues('ownership_scheme', $nativeFallbackValues['ownership_scheme'], $agencyIds);
 
         $civilStatusRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'civil_status', true);
         $highestEducationRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'highest_education', false);
         $farmOwnershipRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'farm_ownership', true);
         $farmTypeRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'farm_type', true);
         $fisherfolkTypeRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'fisherfolk_type', true);
-        $arbClassificationRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'arb_classification', true);
-        $ownershipSchemeRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'ownership_scheme', true);
         $rsbsaNumberRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'rsbsa_number', false);
         $farmSizeRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'farm_size_hectares', true);
         $primaryCommodityRequired = $this->isFieldGroupRequired($fieldGroupSettings, 'primary_commodity', true);
@@ -398,12 +391,37 @@ class BeneficiaryRequest extends FormRequest
                         }
                     }
                 }
+
+                if ($fieldName === 'cloa_ep_number') {
+                    $rules[$inputKey][] = function ($attribute, $value, $fail) use ($beneficiaryId, $darAgencyId) {
+                        if (! is_string($value) || trim($value) === '') {
+                            return;
+                        }
+
+                        if (! $darAgencyId) {
+                            return;
+                        }
+
+                        $existing = Beneficiary::query()
+                            ->whereHas('agencies', function ($q) use ($value, $darAgencyId) {
+                                $q->where('beneficiary_agencies.agency_id', $darAgencyId)
+                                    ->where('beneficiary_agencies.identifier', trim($value));
+                            })
+                            ->when($beneficiaryId, fn ($q) => $q->where('id', '!=', $beneficiaryId))
+                            ->exists();
+
+                        if ($existing) {
+                            $fail('A beneficiary with this CLOA/EP number already exists.');
+                        }
+                    };
+                }
             }
         }
 
         // Custom field validation
+        $agencyManagedFieldGroups = $this->agencyManagedFieldGroups($agencyIds, $allowedAgencySections);
         $customGroupSettings = collect($fieldGroupSettings)
-            ->except(self::NATIVE_FIELD_GROUPS)
+            ->except(array_merge(self::NATIVE_FIELD_GROUPS, $agencyManagedFieldGroups))
             ->all();
 
         // Build agency-classification context for custom field visibility
@@ -507,8 +525,6 @@ class BeneficiaryRequest extends FormRequest
             'farm_ownership',
             'farm_type',
             'fisherfolk_type',
-            'arb_classification',
-            'ownership_scheme',
         ];
 
         if (! empty($agencyIds) && in_array($fieldGroup, $agencyBackedCoreGroups, true)) {
@@ -590,8 +606,6 @@ class BeneficiaryRequest extends FormRequest
             'farm_ownership',
             'farm_type',
             'fisherfolk_type',
-            'arb_classification',
-            'ownership_scheme',
         ];
         $agencyIds = $this->extractAgencyIds((array) $this->input('agencies', []));
 
@@ -719,8 +733,6 @@ class BeneficiaryRequest extends FormRequest
             'farm_ownership' => [],
             'farm_type' => [],
             'fisherfolk_type' => [],
-            'arb_classification' => [],
-            'ownership_scheme' => [],
         ];
     }
 
@@ -747,6 +759,29 @@ class BeneficiaryRequest extends FormRequest
                 ];
             })
             ->toArray();
+    }
+
+    /**
+     * @param  array<int>  $agencyIds
+     * @param  array<int, string>  $allowedAgencySections
+     * @return array<int, string>
+     */
+    private function agencyManagedFieldGroups(array $agencyIds, array $allowedAgencySections): array
+    {
+        if (empty($agencyIds)) {
+            return [];
+        }
+
+        return AgencyFormField::query()
+            ->whereIn('agency_id', $agencyIds)
+            ->where('is_active', true)
+            ->whereIn('form_section', $allowedAgencySections)
+            ->pluck('field_name')
+            ->map(fn ($name) => trim((string) $name))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 
     private function getGlobalFieldTypeValidationRule(string $fieldType): string

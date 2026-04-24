@@ -70,7 +70,7 @@ class DuplicateDetectionService
         }
 
         // 2. Check dynamic identifiers in pivot table (DAR/CLOA-EP, etc.)
-        $dynamicIdentifier = $data['cloa_ep_number'] ?? null;
+        $dynamicIdentifier = $this->extractDynamicIdentifier($data);
         if (! empty($dynamicIdentifier)) {
             $existing = Beneficiary::withTrashed()
                 ->whereHas('agencies', function ($q) use ($dynamicIdentifier) {
@@ -89,6 +89,27 @@ class DuplicateDetectionService
         }
 
         return $matches;
+    }
+
+    private function extractDynamicIdentifier(array $data): ?string
+    {
+        $agencies = $data['agencies'] ?? null;
+        if (! is_array($agencies)) {
+            return null;
+        }
+
+        foreach ($agencies as $agencyData) {
+            if (! is_array($agencyData)) {
+                continue;
+            }
+
+            $value = $agencyData['cloa_ep_number'] ?? null;
+            if (is_string($value) && trim($value) !== '') {
+                return trim($value);
+            }
+        }
+
+        return null;
     }
 
     /**

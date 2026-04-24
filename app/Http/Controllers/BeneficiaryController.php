@@ -72,8 +72,8 @@ class BeneficiaryController extends Controller
                         ->orWhere('contact_number', 'like', $like)
                         ->orWhere('rsbsa_number', 'like', $like)
                         ->orWhere('fishr_number', 'like', $like)
-                        ->orWhereHas('agencies', function ($pivot) use ($like) {
-                            $pivot->where('beneficiary_agencies.identifier', 'like', $like);
+                        ->orWhereHas('agencies', function ($aq) use ($like) {
+                            $aq->where('beneficiary_agencies.identifier', 'like', $like);
                         });
                 });
             })
@@ -168,7 +168,7 @@ class BeneficiaryController extends Controller
                 $beneficiaryFillable = (new Beneficiary())->getFillable();
 
                 unset($validated['agencies']);
-                unset($validated['rsbsa_availability_status'], $validated['fishr_availability_status']);
+                unset($validated['rsbsa_availability_status'], $validated['fishr_availability_status'], $validated['cloa_ep_availability_status']);
 
                 // Store unavailability reasons from dynamic fields
                 $customFieldReasons = (array) ($validated['custom_field_unavailability_reasons'] ?? []);
@@ -245,7 +245,11 @@ class BeneficiaryController extends Controller
                     } elseif ($agencyName === 'BFAR') {
                         $identifier = $beneficiary->fishr_number ?? null;
                     } elseif ($agencyName === 'DAR') {
-                        $identifier = $agencyFieldsData[$agency->id]['cloa_ep_number'] ?? null;
+                        $identifier = $this->extractDarIdentifierFromAgencyPayload(
+                            (int) $agency->id,
+                            $agencyFieldsData,
+                            $beneficiary,
+                        );
                     }
 
                     // Attach agency with identifier and registration date
@@ -396,7 +400,7 @@ class BeneficiaryController extends Controller
             $beneficiaryFillable = (new Beneficiary())->getFillable();
 
             unset($validated['agencies']);
-            unset($validated['rsbsa_availability_status'], $validated['fishr_availability_status']);
+            unset($validated['rsbsa_availability_status'], $validated['fishr_availability_status'], $validated['cloa_ep_availability_status']);
 
             // Store unavailability reasons from dynamic fields
             $customFieldReasons = (array) ($validated['custom_field_unavailability_reasons'] ?? []);
@@ -475,7 +479,11 @@ class BeneficiaryController extends Controller
                 } elseif ($agencyName === 'BFAR') {
                     $identifier = $beneficiary->fishr_number ?? null;
                 } elseif ($agencyName === 'DAR') {
-                    $identifier = $agencyFieldsData[$agency->id]['cloa_ep_number'] ?? null;
+                    $identifier = $this->extractDarIdentifierFromAgencyPayload(
+                        (int) $agency->id,
+                        $agencyFieldsData,
+                        $beneficiary,
+                    );
                 }
 
                 // Get existing registration date if agency was already registered, otherwise use today
@@ -590,6 +598,32 @@ class BeneficiaryController extends Controller
         $agencyIds = array_values(array_unique($agencyIds));
 
         return [$agencyIds, $agencyFieldsData];
+    }
+
+    /**
+     * Resolve DAR identifier from dynamic agency payload first, then fallback to existing pivot value.
+     *
+     * @param  array<int, array<string, mixed>>  $agencyFieldsData
+     */
+    private function extractDarIdentifierFromAgencyPayload(int $agencyId, array $agencyFieldsData, Beneficiary $beneficiary): ?string
+    {
+        $fieldData = $agencyFieldsData[$agencyId] ?? null;
+
+        if (is_array($fieldData)) {
+            $identifier = $fieldData['cloa_ep_number'] ?? null;
+            if (is_string($identifier) && trim($identifier) !== '') {
+                return trim($identifier);
+            }
+        }
+
+        $existingDarPivot = $beneficiary->agencies()->where('agency_id', $agencyId)->first();
+        $existingIdentifier = $existingDarPivot?->pivot?->identifier;
+
+        if (is_string($existingIdentifier) && trim($existingIdentifier) !== '') {
+            return trim($existingIdentifier);
+        }
+
+        return null;
     }
 
     private function isAgencyMetaFieldKey(string $key): bool
@@ -759,8 +793,6 @@ class BeneficiaryController extends Controller
             'civil_status',
             'highest_education',
             'id_type',
-            'arb_classification',
-            'ownership_scheme',
         ];
 
         $allGroups = FormFieldOption::query()
