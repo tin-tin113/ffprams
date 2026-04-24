@@ -225,6 +225,14 @@ class DistributionEventController extends Controller
         $unmarkedBeneficiariesCount = $event->unmarkedAllocationsCount();
         $allBeneficiariesMarked = $unmarkedBeneficiariesCount === 0;
 
+        // Analytics Data
+        $allocations = $event->allocations;
+        $totalAllocations = $allocations->count();
+        $totalAllocated = $totalAllocations;
+
+        $totalQuantity = $allocations->sum(fn($a) => (float) ($a->quantity ?? $a->amount ?? 0));
+        $totalDistributed = $allocations->filter(fn($a) => $a->release_outcome === 'received')->count();
+
         return view('distribution_events.show', compact(
             'event',
             'allocatedBeneficiaryIds',
@@ -234,6 +242,10 @@ class DistributionEventController extends Controller
             'completionComplianceReady',
             'unmarkedBeneficiariesCount',
             'allBeneficiariesMarked',
+            'totalAllocations',
+            'totalAllocated',
+            'totalQuantity',
+            'totalDistributed'
         ));
     }
 
@@ -456,10 +468,10 @@ class DistributionEventController extends Controller
                 ->with('error', 'Only admin can mark an event as Completed.');
         }
 
-        // Event can only start after admin list approval.
-        if ($newStatus === 'Ongoing' && ! $event->isBeneficiaryListApproved()) {
+        // Event can only transition from Pending after admin list approval.
+        if ($event->status === 'Pending' && $newStatus !== 'Pending' && ! $event->isBeneficiaryListApproved()) {
             return redirect()->back()
-                ->with('error', 'Approve the beneficiary list before starting this event.');
+                ->with('error', 'The beneficiary list must be approved before you can start or complete this event.');
         }
 
         if ($newStatus === 'Completed' && ! $event->hasAllBeneficiariesMarked()) {
@@ -601,10 +613,11 @@ class DistributionEventController extends Controller
 
         unset(
             $validated['compliance_states'],
-            $validated['compliance_reasons'],
-            $validated['compliance_overall_status'],
-            $validated['compliance_overall_reason'],
+            $validated['compliance_reasons']
         );
+
+        $validated['compliance_overall_status'] = $overallStatus;
+        $validated['compliance_overall_reason'] = $overallReason;
 
         if ($this->hasComplianceFieldStatesColumn()) {
             $normalizedStates = $this->normalizeComplianceFieldStates(
@@ -671,6 +684,11 @@ class DistributionEventController extends Controller
                         ? DistributionEvent::COMPLIANCE_STATUS_PROVIDED
                         : DistributionEvent::COMPLIANCE_STATUS_NOT_AVAILABLE_YET;
                 }
+            } else {
+                // If the user manually set a status (e.g. through Overall status), 
+                // we should ONLY override it to Provided if it's currently NOT Provided 
+                // BUT the field actually has a value and the user didn't explicitly pick something else.
+                // Actually, if they picked something like 'to_be_verified' overall, we should respect that.
             }
 
             $reason = isset($inputReasons[$field])
@@ -817,8 +835,8 @@ class DistributionEventController extends Controller
             }
         }
 
-        if (! in_array($event->liquidation_status, ['verified'], true)) {
-            $issues[] = 'Liquidation status must be Verified before completion.';
+        if (! in_array($event->liquidation_status, ['verified', 'not_required'], true)) {
+            $issues[] = 'Liquidation status must be Verified before completion (unless marked as Not Required).';
         }
 
         return array_values(array_unique($issues));
@@ -918,6 +936,7 @@ class DistributionEventController extends Controller
             );
         });
 
-        return redirect()->back()->with('success', 'Beneficiary list approved. You can now start the event.');
+        return redirect()->to(route('distribution-events.show', $event) . '#tab-beneficiaries')
+            ->with('success', 'Beneficiary list approved. You can now start the event.');
     }
 }

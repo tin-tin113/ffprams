@@ -3,344 +3,467 @@
 @section('title', 'Direct Assistance Details')
 
 @section('breadcrumb')
+    <li class="breadcrumb-item"><a href="{{ route('direct-assistance.index') }}">Direct Assistance</a></li>
     <li class="breadcrumb-item active">{{ $directAssistance->beneficiary->full_name }}</li>
 @endsection
 
+@push('styles')
+<style>
+    /* Premium Dashboard Styles */
+    .record-header {
+        background: #fff;
+        border-radius: 1rem;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        margin-bottom: 2rem;
+    }
+    .nav-pills-custom .nav-link {
+        color: #64748b;
+        font-weight: 500;
+        padding: 0.8rem 1.5rem;
+        border-radius: 0.75rem;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+        margin-right: 0.5rem;
+    }
+    .nav-pills-custom .nav-link.active {
+        background: #f1f5f9;
+        color: #1e293b;
+        border-color: #e2e8f0;
+    }
+    .badge-soft-success { background-color: #dcfce7; color: #15803d; }
+    .badge-soft-warning { background-color: #fef3c7; color: #92400e; }
+    .badge-soft-info { background-color: #e0f2fe; color: #075985; }
+    .badge-soft-danger { background-color: #fee2e2; color: #991b1b; }
+    .badge-soft-primary { background-color: #e0e7ff; color: #3730a3; }
+    
+    .card-dashboard {
+        border: none;
+        border-radius: 1rem;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        margin-bottom: 1.5rem;
+    }
+    .card-dashboard .card-header {
+        background: transparent;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 1.25rem 1.5rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
+    .card-dashboard .card-body {
+        padding: 1.5rem;
+    }
+    
+    /* Ensure form text is dark */
+    .form-control, .form-select {
+        color: #1e293b !important;
+    }
+</style>
+@endpush
+
 @section('content')
-<div class="container-fluid">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
-        <div class="d-flex flex-wrap gap-2 justify-content-md-end">
-            <p class="text-muted mb-0">Direct Assistance Record</p>
-        </div>
-        <div>
-            @php($normalizedStatus = $directAssistance->normalized_status)
-            @if(in_array($normalizedStatus, ['planned', 'not_received'], true))
-                <form method="POST"
-                      action="{{ route('direct-assistance.mark-ready-for-release', $directAssistance) }}"
-                      class="d-inline"
-                      data-confirm-title="Set Ready for Release"
-                      data-confirm-message="Set this assistance to Ready for Release?">
-                    @csrf
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-bell me-1"></i> Ready for Release
-                    </button>
-                </form>
-            @endif
-            @if($normalizedStatus === 'ready_for_release')
-                <form method="POST"
-                      action="{{ route('direct-assistance.mark-released', $directAssistance) }}"
-                      class="d-inline"
-                      data-confirm-title="Mark as Released"
-                      data-confirm-message="Mark this assistance as Released now?">
-                    @csrf
-                    <button type="submit" class="btn btn-success">
-                        <i class="bi bi-check2-circle me-1"></i> Mark Released
-                    </button>
-                </form>
-                <form method="POST"
-                      action="{{ route('direct-assistance.mark-not-received', $directAssistance) }}"
-                      class="d-inline"
-                      data-confirm-title="Mark as Not Received"
-                      data-confirm-message="Mark this assistance as Not Received?">
-                    @csrf
-                    <button type="submit" class="btn btn-outline-danger">
-                        <i class="bi bi-x-circle me-1"></i> Not Received
-                    </button>
-                </form>
-            @endif
-            <a href="{{ route('direct-assistance.edit', $directAssistance) }}" class="btn btn-primary">
-                <i class="bi bi-pencil me-1"></i> Edit
-            </a>
-            <a href="{{ route('direct-assistance.index') }}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i> Back
-            </a>
+<div class="container-fluid py-4">
+    {{-- Header --}}
+    <div class="record-header mb-4">
+        <div class="row align-items-center g-3">
+            <div class="col-md-auto">
+                <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                    <i class="bi bi-hand-thumbs-up text-primary fs-3"></i>
+                </div>
+            </div>
+            <div class="col">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <h2 class="h4 fw-bold mb-0">Record #{{ $directAssistance->id }}</h2>
+                    @php
+                        $statusClass = match($directAssistance->normalized_status) {
+                            'planned'           => 'badge-soft-info',
+                            'ready_for_release' => 'badge-soft-warning',
+                            'released'          => 'badge-soft-success',
+                            'not_received'      => 'badge-soft-danger',
+                            default             => 'badge-soft-secondary',
+                        };
+                    @endphp
+                    <span class="badge {{ $statusClass }} px-3 py-2 rounded-pill">{{ ucfirst(str_replace('_', ' ', $directAssistance->status)) }}</span>
+                </div>
+                <p class="text-muted mb-0">
+                    <i class="bi bi-person me-1"></i> {{ $directAssistance->beneficiary->full_name }}
+                    <span class="mx-2 text-silver">|</span>
+                    <i class="bi bi-tag me-1"></i> {{ $directAssistance->programName->name }}
+                    <span class="mx-2 text-silver">|</span>
+                    <i class="bi bi-clock me-1"></i> Created {{ $directAssistance->created_at->diffForHumans() }}
+                </p>
+            </div>
+            <div class="col-md-auto">
+                <div class="d-flex gap-2">
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle px-4 shadow-sm" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-lightning-charge me-1"></i> Actions
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                            @php($normalizedStatus = $directAssistance->normalized_status)
+                            @if(in_array($normalizedStatus, ['planned', 'not_received'], true))
+                                <li>
+                                    <form action="{{ route('direct-assistance.mark-ready-for-release', $directAssistance) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="dropdown-item">
+                                            <i class="bi bi-bell me-2 text-primary"></i> Ready for Release
+                                        </button>
+                                    </form>
+                                </li>
+                            @endif
+                            @if($normalizedStatus === 'ready_for_release')
+                                <li>
+                                    <form action="{{ route('direct-assistance.mark-released', $directAssistance) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="dropdown-item">
+                                            <i class="bi bi-check2-circle me-2 text-success"></i> Mark Released
+                                        </button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <form action="{{ route('direct-assistance.mark-not-received', $directAssistance) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="dropdown-item">
+                                            <i class="bi bi-x-circle me-2 text-danger"></i> Not Received
+                                        </button>
+                                    </form>
+                                </li>
+                            @endif
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('direct-assistance.edit', $directAssistance) }}">
+                                    <i class="bi bi-pencil me-2 text-info"></i> Edit Details
+                                </a>
+                            </li>
+                            @if(auth()->user()->role === 'admin')
+                                <li>
+                                    <form action="{{ route('direct-assistance.destroy', $directAssistance) }}" method="POST"
+                                          data-confirm-title="Delete Record" data-confirm-message="Permanent delete this assistance record?">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="bi bi-trash me-2"></i> Delete Record
+                                        </button>
+                                    </form>
+                                </li>
+                            @endif
+                        </ul>
+                    </div>
+                    <a href="{{ route('direct-assistance.index') }}" class="btn btn-outline-secondary px-4">
+                        <i class="bi bi-arrow-left me-1"></i> Back
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="row g-3 mb-4">
-        <!-- Main Details -->
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm mb-3">
-                <div class="card-header bg-white fw-semibold">
-                    <i class="bi bi-info-circle me-1"></i> Assistance Details
+    {{-- Tabs --}}
+    <ul class="nav nav-pills nav-pills-custom mb-4" id="assistanceTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-overview">
+                <i class="bi bi-info-circle me-2"></i> Overview
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-beneficiary">
+                <i class="bi bi-person me-2"></i> Beneficiary Profile
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-history">
+                <i class="bi bi-clock-history me-2"></i> History
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-documents">
+                <i class="bi bi-files me-2"></i> Documents
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="assistanceTabsContent">
+        {{-- Overview Tab --}}
+        <div class="tab-pane fade show active" id="tab-overview">
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    <div class="card card-dashboard">
+                        <div class="card-header">Assistance Details</div>
+                        <div class="card-body">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block mb-1">Program</label>
+                                    <div class="fw-semibold">{{ $directAssistance->programName->name }}</div>
+                                    <div class="small text-muted">{{ $directAssistance->programName->agency->name }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block mb-1">Resource Type</label>
+                                    <div class="fw-semibold">{{ $directAssistance->resourceType->name }}</div>
+                                    <div class="small text-muted">Unit: {{ $directAssistance->resourceType->unit }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block mb-1">Amount / Quantity</label>
+                                    <div class="h5 fw-bold text-primary mb-0">{{ $directAssistance->getDisplayValue() }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block mb-1">Assistance Purpose</label>
+                                    <div class="fw-semibold text-info">{{ $directAssistance->assistancePurpose->name }}</div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="text-muted small d-block mb-1">Remarks</label>
+                                    <div class="p-3 bg-light rounded-3 text-muted">{{ $directAssistance->remarks ?: 'No remarks provided.' }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card card-dashboard">
+                        <div class="card-header">Tracking Information</div>
+                        <div class="card-body">
+                            <div class="row g-4">
+                                <div class="col-md-4">
+                                    <label class="text-muted small d-block mb-1">Current Status</label>
+                                    <span class="badge {{ $statusClass }}">{{ ucfirst(str_replace('_', ' ', $directAssistance->status)) }}</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="text-muted small d-block mb-1">Released At</label>
+                                    <div class="fw-semibold">{{ $directAssistance->distributed_at ? $directAssistance->distributed_at->format('M d, Y h:i A') : '—' }}</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="text-muted small d-block mb-1">Released By</label>
+                                    <div class="fw-semibold">{{ $directAssistance->distributedBy->name ?? '—' }}</div>
+                                </div>
+                                @if($directAssistance->distributionEvent)
+                                    <div class="col-12">
+                                        <hr class="my-3">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div>
+                                                <label class="text-muted small d-block mb-1">Linked Distribution Event</label>
+                                                <div class="fw-semibold">{{ $directAssistance->distributionEvent->name ?: 'Event #' . $directAssistance->distributionEvent->id }}</div>
+                                                <div class="small text-muted">{{ $directAssistance->distributionEvent->distribution_date->format('M d, Y') }}</div>
+                                            </div>
+                                            <a href="{{ route('distribution-events.show', $directAssistance->distributionEvent) }}" class="btn btn-sm btn-outline-primary">
+                                                View Event <i class="bi bi-arrow-right ms-1"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <dl class="row">
-                        <dt class="col-sm-3">Program</dt>
-                        <dd class="col-sm-9">
-                            {{ $directAssistance->programName->name ?? 'N/A' }}
-                            <small class="text-muted">({{ $directAssistance->programName->agency->name ?? 'N/A' }})</small>
-                        </dd>
 
-                        <dt class="col-sm-3">Resource Type</dt>
-                        <dd class="col-sm-9">
-                            {{ $directAssistance->resourceType->name ?? 'N/A' }}
-                            <small class="text-muted">({{ $directAssistance->resourceType->unit ?? 'N/A' }})</small>
-                        </dd>
-
-                        <dt class="col-sm-3">Amount/Quantity</dt>
-                        <dd class="col-sm-9">
-                            <strong>{{ $directAssistance->getDisplayValue() }}</strong>
-                        </dd>
-
-                        <dt class="col-sm-3">Assistance Purpose</dt>
-                        <dd class="col-sm-9">{{ $directAssistance->assistancePurpose->name ?? 'N/A' }}</dd>
-
-                        <dt class="col-sm-3">Remarks</dt>
-                        <dd class="col-sm-9">{{ $directAssistance->remarks ?? '—' }}</dd>
-                    </dl>
-                </div>
-            </div>
-
-            <!-- Beneficiary Profile -->
-            <div class="card border-0 shadow-sm mb-3">
-                <div class="card-header bg-white fw-semibold">
-                    <i class="bi bi-person me-1"></i> Beneficiary Information
-                </div>
-                <div class="card-body">
-                    <dl class="row">
-                        <dt class="col-sm-3">Full Name</dt>
-                        <dd class="col-sm-9">{{ $directAssistance->beneficiary->full_name ?? 'N/A' }}</dd>
-
-                        <dt class="col-sm-3">Barangay</dt>
-                        <dd class="col-sm-9">{{ $directAssistance->beneficiary->barangay->name ?? 'N/A' }}</dd>
-
-                        <dt class="col-sm-3">Agency</dt>
-                        <dd class="col-sm-9">{{ $directAssistance->beneficiary->agency->name ?? 'N/A' }}</dd>
-
-                        <dt class="col-sm-3">Classification</dt>
-                        <dd class="col-sm-9">{{ $directAssistance->beneficiary->classification ?? 'N/A' }}</dd>
-
-                        <dt class="col-sm-3">Contact Number</dt>
-                        <dd class="col-sm-9">{{ $directAssistance->beneficiary->contact_number ?? 'N/A' }}</dd>
-
-                        <dt class="col-sm-3">Status</dt>
-                        <dd class="col-sm-9">
-                            @if($directAssistance->beneficiary->status === 'Active')
-                                <span class="badge bg-success">Active</span>
-                            @else
-                                <span class="badge bg-danger">Inactive</span>
-                            @endif
-                        </dd>
-                    </dl>
-                </div>
-            </div>
-
-            <!-- Distribution Tracking -->
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white fw-semibold">
-                    <i class="bi bi-truck me-1"></i> Distribution Information
-                </div>
-                <div class="card-body">
-                    <dl class="row">
-                        <dt class="col-sm-3">Status</dt>
-                        <dd class="col-sm-9">
-                            @switch($normalizedStatus)
-                                @case('planned')
-                                    <span class="badge bg-warning text-dark">Planned</span>
-                                    @break
-                                @case('ready_for_release')
-                                    <span class="badge bg-primary">Ready for Release</span>
-                                    @break
-                                @case('released')
-                                    <span class="badge bg-success">Released</span>
-                                    @break
-                                @case('not_received')
-                                    <span class="badge bg-danger">Not Received</span>
-                                    @break
-                                @default
-                                    <span class="badge bg-secondary">{{ $directAssistance->status_label }}</span>
-                                    @break
-                            @endswitch
-                        </dd>
-
-                        <dt class="col-sm-3">Released At</dt>
-                        <dd class="col-sm-9">
-                            @if($directAssistance->distributed_at)
-                                {{ $directAssistance->distributed_at->format('M d, Y H:i:s') }}
-                            @else
-                                <span class="text-muted">—</span>
-                            @endif
-                        </dd>
-
-                        <dt class="col-sm-3">Released By</dt>
-                        <dd class="col-sm-9">
-                            @if($directAssistance->distributedBy)
-                                {{ $directAssistance->distributedBy->name }}
-                                <small class="text-muted">({{ $directAssistance->distributedBy->email }})</small>
-                            @else
-                                <span class="text-muted">—</span>
-                            @endif
-                        </dd>
-
-                        <dt class="col-sm-3">Release Outcome</dt>
-                        <dd class="col-sm-9">
-                            @if($directAssistance->release_outcome)
-                                <span class="badge bg-secondary">{{ ucfirst(str_replace('_', ' ', $directAssistance->release_outcome)) }}</span>
-                            @else
-                                <span class="text-muted">—</span>
-                            @endif
-                        </dd>
-                    </dl>
+                <div class="col-lg-4">
+                    <div class="card card-dashboard h-100">
+                        <div class="card-header">Record Timeline</div>
+                        <div class="card-body p-0">
+                            <ul class="list-group list-group-flush small">
+                                <li class="list-group-item d-flex justify-content-between p-3">
+                                    <span class="text-muted">Created By</span>
+                                    <span class="fw-semibold text-end">{{ $directAssistance->createdBy->name }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between p-3">
+                                    <span class="text-muted">Created At</span>
+                                    <span class="fw-semibold text-end">{{ $directAssistance->created_at->format('M d, Y h:i A') }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between p-3">
+                                    <span class="text-muted">Last Updated</span>
+                                    <span class="fw-semibold text-end">{{ $directAssistance->updated_at->format('M d, Y h:i A') }}</span>
+                                </li>
+                            </ul>
+                            <div class="p-4 text-center">
+                                <div class="d-grid">
+                                    <button class="btn btn-sm btn-outline-info" onclick="window.print()">
+                                        <i class="bi bi-printer me-1"></i> Print Acknowledgment
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <div class="card border-0 shadow-sm mt-3">
-                <div class="card-header bg-white fw-semibold">
-                    <i class="bi bi-paperclip me-1"></i> Direct Assistance Documents
+        {{-- Beneficiary Tab --}}
+        <div class="tab-pane fade" id="tab-beneficiary">
+            <div class="card card-dashboard">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Beneficiary Profile</span>
+                    <a href="{{ route('beneficiaries.show', $directAssistance->beneficiary) }}" class="btn btn-sm btn-link text-primary p-0">
+                        View Full Profile <i class="bi bi-box-arrow-up-right ms-1"></i>
+                    </a>
                 </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="text-muted small d-block mb-1">Full Name</label>
+                            <div class="fw-bold fs-5 text-dark">{{ $directAssistance->beneficiary->full_name }}</div>
+                            <div class="small text-muted">{{ $directAssistance->beneficiary->gender }} | {{ $directAssistance->beneficiary->age ?: 'Age N/A' }}</div>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <label class="text-muted small d-block mb-1">Classification</label>
+                            <span class="badge badge-soft-primary fs-6 px-3 py-2">{{ $directAssistance->beneficiary->classification }}</span>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small d-block mb-1">Address / Barangay</label>
+                            <div class="fw-semibold text-dark">{{ $directAssistance->beneficiary->barangay->name }}</div>
+                            <div class="small text-muted">FFPRAMS Area 1</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small d-block mb-1">Contact Number</label>
+                            <div class="fw-semibold text-dark">{{ $directAssistance->beneficiary->contact_number ?: 'Not provided' }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small d-block mb-1">Primary Agency</label>
+                            <div class="fw-semibold text-dark">{{ $directAssistance->beneficiary->agency->name }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- History Tab --}}
+        <div class="tab-pane fade" id="tab-history">
+            <div class="card card-dashboard">
+                <div class="card-header">Beneficiary Assistance History</div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Program / Type</th>
+                                    <th>Resource</th>
+                                    <th>Amount/Qty</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{-- Direct Assistance Records --}}
+                                @foreach($directAssistance->beneficiary->directAssistanceRecords as $history)
+                                    <tr class="{{ $history->id === $directAssistance->id ? 'table-info' : '' }}">
+                                        <td>
+                                            <div class="fw-semibold">{{ $history->programName->name }}</div>
+                                            <span class="badge badge-soft-primary small">Direct Assistance</span>
+                                        </td>
+                                        <td>{{ $history->resourceType->name }}</td>
+                                        <td>{{ $history->getDisplayValue() }}</td>
+                                        <td>
+                                            @php
+                                                $hStatusClass = match($history->normalized_status) {
+                                                    'released' => 'badge-soft-success',
+                                                    'not_received' => 'badge-soft-danger',
+                                                    default => 'badge-soft-warning',
+                                                };
+                                            @endphp
+                                            <span class="badge {{ $hStatusClass }}">{{ ucfirst($history->status) }}</span>
+                                        </td>
+                                        <td>{{ $history->created_at->format('M d, Y') }}</td>
+                                    </tr>
+                                @endforeach
+                                
+                                {{-- Event Allocations --}}
+                                @foreach($directAssistance->beneficiary->allocations as $alloc)
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">{{ $alloc->distributionEvent->programName->name }}</div>
+                                            <span class="badge badge-soft-purple small">Event Distribution</span>
+                                        </td>
+                                        <td>{{ $alloc->distributionEvent->resourceType->name }}</td>
+                                        <td>{{ $alloc->distributionEvent->isFinancial() ? '₱' . number_format($alloc->amount, 2) : number_format($alloc->quantity, 1) }}</td>
+                                        <td>
+                                            @php
+                                                $aStatusClass = match($alloc->release_outcome) {
+                                                    'received' => 'badge-soft-success',
+                                                    'not_received' => 'badge-soft-danger',
+                                                    default => 'badge-soft-warning',
+                                                };
+                                            @endphp
+                                            <span class="badge {{ $aStatusClass }}">{{ $alloc->release_outcome ? ucfirst(str_replace('_', ' ', $alloc->release_outcome)) : 'Pending' }}</span>
+                                        </td>
+                                        <td>{{ $alloc->distributionEvent->distribution_date->format('M d, Y') }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Documents Tab --}}
+        <div class="tab-pane fade" id="tab-documents">
+            <div class="card card-dashboard">
+                <div class="card-header">Record Attachments</div>
                 <div class="card-body">
                     <form action="{{ route('direct-assistance.attachments.store', $directAssistance) }}"
                           method="POST"
                           enctype="multipart/form-data"
-                          class="row g-3 align-items-end mb-3"
+                          class="row g-3 align-items-end mb-4 p-3 bg-light rounded-3"
                           data-submit-spinner>
                         @csrf
                         <div class="col-md-4">
-                            <label for="direct_assistance_document_type" class="form-label">Document Type</label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="direct_assistance_document_type"
-                                   name="document_type"
-                                   maxlength="100"
-                                   placeholder="e.g. Receipt, Acknowledgment Slip">
+                            <label for="direct_assistance_document_type" class="form-label small fw-bold">Document Type</label>
+                            <input type="text" class="form-control form-control-sm" id="direct_assistance_document_type" name="document_type" placeholder="e.g. Receipt">
                         </div>
                         <div class="col-md-5">
-                            <label for="direct_assistance_attachment" class="form-label">Attachment File <span class="text-danger">*</span></label>
-                            <input type="file"
-                                   class="form-control"
-                                   id="direct_assistance_attachment"
-                                   name="attachment"
-                                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.txt"
-                                   required>
-                            <div class="form-text">Supported files: PDF, JPG, JPEG, PNG, DOC, DOCX, XLS, XLSX, CSV, TXT. Maximum: 10 MB.</div>
+                            <label for="direct_assistance_attachment" class="form-label small fw-bold">Attachment File</label>
+                            <input type="file" class="form-control form-control-sm" id="direct_assistance_attachment" name="attachment" required>
                         </div>
                         <div class="col-md-3">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="bi bi-upload me-1"></i> Upload Document
+                            <button type="submit" class="btn btn-primary btn-sm w-100 py-2">
+                                <i class="bi bi-upload me-1"></i> Upload File
                             </button>
                         </div>
                     </form>
 
-                    @if($directAssistance->attachments->isNotEmpty())
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0 table-responsive-cards">
-                                <thead class="table-light">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Document Type</th>
+                                    <th>Filename</th>
+                                    <th>Size</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($directAssistance->attachments as $attachment)
                                     <tr>
-                                        <th>Type</th>
-                                        <th>File Name</th>
-                                        <th>Size</th>
-                                        <th>Uploaded By</th>
-                                        <th>Uploaded At</th>
-                                        <th class="text-end">Actions</th>
+                                        <td><span class="badge badge-soft-info">{{ $attachment->document_type ?: 'General' }}</span></td>
+                                        <td>
+                                            <div class="fw-semibold text-break">{{ $attachment->original_name }}</div>
+                                            <div class="small text-muted">{{ $attachment->uploader->name }} | {{ $attachment->created_at->format('M d, Y') }}</div>
+                                        </td>
+                                        <td>{{ number_format($attachment->size_bytes / 1024, 1) }} KB</td>
+                                        <td class="text-end">
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ route('direct-assistance.attachments.view', [$directAssistance, $attachment]) }}" class="btn btn-outline-secondary" target="_blank">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a href="{{ route('direct-assistance.attachments.download', [$directAssistance, $attachment]) }}" class="btn btn-outline-primary">
+                                                    <i class="bi bi-download"></i>
+                                                </a>
+                                                @if(auth()->user()->role === 'admin')
+                                                    <form action="{{ route('direct-assistance.attachments.destroy', [$directAssistance, $attachment]) }}" method="POST" class="d-inline"
+                                                          data-confirm-title="Delete Document" data-confirm-message="Delete this document?">
+                                                        @csrf @method('DELETE')
+                                                        <button type="submit" class="btn btn-outline-danger">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                @endif
+                                            </div>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($directAssistance->attachments as $attachment)
-                                        <tr>
-                                            <td data-label="Type">{{ $attachment->document_type ?: 'Uncategorized' }}</td>
-                                            <td class="text-break" data-label="File Name">{{ $attachment->original_name }}</td>
-                                            <td data-label="Size">{{ number_format($attachment->size_bytes / 1024, 2) }} KB</td>
-                                            <td data-label="Uploaded By">{{ $attachment->uploader?->name ?? 'System' }}</td>
-                                            <td data-label="Uploaded At">{{ $attachment->created_at->format('M d, Y h:i A') }}</td>
-                                            <td class="text-end text-nowrap" data-label="Actions">
-                                                <a href="{{ route('direct-assistance.attachments.view', [$directAssistance, $attachment]) }}"
-                                                   class="btn btn-sm btn-outline-secondary me-1"
-                                                   target="_blank"
-                                                   rel="noopener">
-                                                    <i class="bi bi-eye"></i> View
-                                                </a>
-                                                <a href="{{ route('direct-assistance.attachments.download', [$directAssistance, $attachment]) }}"
-                                                   class="btn btn-sm btn-outline-primary me-1">
-                                                    <i class="bi bi-download"></i> Download
-                                                </a>
-                                                <form action="{{ route('direct-assistance.attachments.destroy', [$directAssistance, $attachment]) }}"
-                                                      method="POST"
-                                                      class="d-inline"
-                                                      data-confirm-title="Delete Attachment"
-                                                      data-confirm-message="Delete {{ $attachment->original_name }} from this direct assistance record?">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                        <i class="bi bi-trash"></i> Delete
-                                                    </button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @else
-                        <p class="text-muted mb-0">
-                            <i class="bi bi-inbox me-1"></i>
-                            No direct assistance documents uploaded yet.
-                        </p>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        <!-- Sidebar -->
-        <div class="col-lg-4">
-            <!-- Record Metadata -->
-            <div class="card border-0 shadow-sm mb-3">
-                <div class="card-header bg-white fw-semibold">
-                    <i class="bi bi-clock-history me-1"></i> Record Timeline
-                </div>
-                <div class="card-body">
-                    <dl class="row mb-0">
-                        <dt class="col-sm-6 text-muted small">Created On</dt>
-                        <dd class="col-sm-6 small">{{ $directAssistance->created_at->format('M d, Y H:i') }}</dd>
-
-                        <dt class="col-sm-6 text-muted small">Created By</dt>
-                        <dd class="col-sm-6 small">{{ $directAssistance->createdBy->name ?? 'N/A' }}</dd>
-
-                        <dt class="col-sm-6 text-muted small">Last Updated</dt>
-                        <dd class="col-sm-6 small">{{ $directAssistance->updated_at->format('M d, Y H:i') }}</dd>
-                    </dl>
-                </div>
-            </div>
-
-            <!-- Distribution Event Link -->
-            @if($directAssistance->distributionEvent)
-                <div class="card border-0 shadow-sm mb-3">
-                    <div class="card-header bg-white fw-semibold">
-                        <i class="bi bi-link-45deg me-1"></i> Linked Event
-                    </div>
-                    <div class="card-body">
-                        <p class="mb-2">
-                            <strong>Resource:</strong> {{ $directAssistance->distributionEvent->resourceType->name ?? 'N/A' }}
-                        </p>
-                        <p class="mb-2">
-                            <strong>Barangay:</strong> {{ $directAssistance->distributionEvent->barangay->name ?? 'N/A' }}
-                        </p>
-                        <p class="mb-3">
-                            <strong>Date:</strong> {{ $directAssistance->distributionEvent->distribution_date->format('M d, Y') }}
-                        </p>
-                        <a href="{{ route('distribution-events.show', $directAssistance->distributionEvent) }}" class="btn btn-sm btn-outline-primary w-100">
-                            View Distribution Event
-                        </a>
-                    </div>
-                </div>
-            @endif
-
-            <!-- Actions -->
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white fw-semibold">
-                    Actions
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="{{ route('beneficiaries.show', $directAssistance->beneficiary) }}" class="btn btn-outline-info btn-sm">
-                            <i class="bi bi-person-check me-1"></i> View Beneficiary Profile
-                        </a>
-                        <a href="{{ route('direct-assistance.edit', $directAssistance) }}" class="btn btn-outline-primary btn-sm">
-                            <i class="bi bi-pencil me-1"></i> Edit Record
-                        </a>
-                        <a href="{{ route('direct-assistance.index') }}" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-arrow-left me-1"></i> Back to List
-                        </a>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center py-5 text-muted">
+                                            <i class="bi bi-file-earmark-text fs-1 d-block mb-3 opacity-25"></i>
+                                            No attachments yet.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

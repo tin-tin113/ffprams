@@ -63,6 +63,8 @@ class DistributionEvent extends Model
         'farmc_endorsed_at',
         'farmc_reference_no',
         'compliance_field_states',
+        'compliance_overall_status',
+        'compliance_overall_reason',
     ];
 
     protected function casts(): array

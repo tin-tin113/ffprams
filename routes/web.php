@@ -79,7 +79,7 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
         ->name('distribution-events.updateStatus');
     Route::post('distribution-events/{event}/approve-beneficiary-list', [DistributionEventController::class, 'approveBeneficiaryList'])
         ->name('distribution-events.approveBeneficiaryList');
-    Route::post('distribution-events/{event}/compliance', [DistributionEventController::class, 'updateCompliance'])
+    Route::patch('distribution-events/{event}/compliance', [DistributionEventController::class, 'updateCompliance'])
         ->name('distribution-events.updateCompliance');
     Route::post('distribution-events/{event}/attachments', [RecordAttachmentController::class, 'storeForEvent'])
         ->name('distribution-events.attachments.store');

@@ -409,7 +409,7 @@ class AllocationController extends Controller
                 return redirect()->back()->with('error', $e->getMessage());
             }
 
-            return redirect()->route('distribution-events.show', $event)
+            return redirect()->to(route('distribution-events.show', $event) . '#tab-beneficiaries')
                 ->with('success', 'Beneficiary allocated successfully.');
         }
 
@@ -576,7 +576,7 @@ class AllocationController extends Controller
             return redirect()->back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('distribution-events.show', $event)
+        return redirect()->to(route('distribution-events.show', $event) . '#tab-beneficiaries')
             ->with('success', "{$allocated} allocated, {$skipped} skipped.");
     }
 
@@ -918,7 +918,7 @@ class AllocationController extends Controller
                 $warning .= " Sample issues: {$sampleIssues}";
             }
 
-            $response = redirect()->route('distribution-events.show', $event)
+            $response = redirect()->to(route('distribution-events.show', $event) . '#tab-beneficiaries')
                 ->with('warning', $warning);
 
             if ($errorReportFile !== null) {
@@ -935,7 +935,7 @@ class AllocationController extends Controller
             $message .= " Sample issues: {$sampleIssues}";
         }
 
-        $response = redirect()->route('distribution-events.show', $event)
+        $response = redirect()->to(route('distribution-events.show', $event) . '#tab-beneficiaries')
             ->with('success', $message);
 
         if ($errorReportFile !== null) {

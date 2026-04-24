@@ -191,23 +191,23 @@
                                 <td data-label="Value">{{ $assistance->getDisplayValue() }}</td>
                                 @php($normalizedStatus = $assistance->normalized_status)
                                 <td data-label="Status">
-                                    @switch($normalizedStatus)
-                                        @case('planned')
-                                            <span class="badge bg-warning text-dark">Planned</span>
-                                            @break
-                                        @case('ready_for_release')
-                                            <span class="badge bg-primary">Ready for Release</span>
-                                            @break
-                                        @case('released')
-                                            <span class="badge bg-success">Released</span>
-                                            @break
-                                        @case('not_received')
-                                            <span class="badge bg-danger">Not Received</span>
-                                            @break
-                                        @default
-                                            <span class="badge bg-secondary">{{ $assistance->status_label }}</span>
-                                            @break
-                                    @endswitch
+                                @switch($normalizedStatus)
+                                    @case('planned')
+                                        <span class="badge badge-soft-warning">Planned</span>
+                                        @break
+                                    @case('ready_for_release')
+                                        <span class="badge badge-soft-primary">Ready for Release</span>
+                                        @break
+                                    @case('released')
+                                        <span class="badge badge-soft-success">Released</span>
+                                        @break
+                                    @case('not_received')
+                                        <span class="badge badge-soft-danger">Not Received</span>
+                                        @break
+                                    @default
+                                        <span class="badge badge-soft-secondary">{{ $assistance->status_label }}</span>
+                                        @break
+                                @endswitch
                                 </td>
                                 <td data-label="Released At">
                                     @if($assistance->distributed_at)

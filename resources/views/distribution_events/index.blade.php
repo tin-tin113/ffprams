@@ -207,13 +207,13 @@
                                             default => 'bg-secondary',
                                         };
                                     @endphp
-                                    <span class="badge {{ $agencyBadge }}">{{ $agencyName }}</span>
+                                    <span class="badge {{ str_replace('bg-', 'badge-soft-', $agencyBadge) }}">{{ $agencyName }}</span>
                                 </td>
                                 <td data-label="Type">
                                     @if($event->type === 'financial')
-                                        <span class="badge bg-success">Financial</span>
+                                        <span class="badge badge-soft-success">Financial</span>
                                     @else
-                                        <span class="badge bg-secondary">Physical</span>
+                                        <span class="badge badge-soft-secondary">Physical</span>
                                     @endif
                                 </td>
                                 <td data-label="Distribution Date">{{ $event->distribution_date->format('M d, Y') }}</td>
@@ -226,7 +226,7 @@
                                             default     => 'bg-secondary',
                                         };
                                     @endphp
-                                    <span class="badge {{ $statusBadge }}">{{ $event->status }}</span>
+                                    <span class="badge {{ str_replace('bg-', 'badge-soft-', $statusBadge) }}">{{ $event->status }}</span>
                                 </td>
                                 <td class="text-center" data-label="Beneficiaries">{{ $event->allocations_count }}</td>
                                 <td data-label="Created By">{{ $event->createdBy->name }}</td>

@@ -27,7 +27,7 @@ class RecordAttachmentController extends Controller
         return $this->storeForTarget(
             $request,
             $event,
-            fn () => redirect()->route('distribution-events.show', $event),
+            fn () => redirect()->to(route('distribution-events.show', $event) . '#tab-documents'),
         );
     }
 
@@ -46,7 +46,7 @@ class RecordAttachmentController extends Controller
         return $this->destroyForTarget(
             $event,
             $recordAttachment,
-            fn () => redirect()->route('distribution-events.show', $event),
+            fn () => redirect()->to(route('distribution-events.show', $event) . '#tab-documents'),
         );
     }
 

@@ -55,6 +55,15 @@
             --color-dark-navy: #1b2a4a;
         }
 
+        /* Soft Badges */
+        .badge-soft-success { background-color: rgba(25, 135, 84, 0.1) !important; color: #198754 !important; border: 1px solid rgba(25, 135, 84, 0.15) !important; }
+        .badge-soft-info { background-color: rgba(13, 202, 240, 0.1) !important; color: #0891b2 !important; border: 1px solid rgba(13, 202, 240, 0.15) !important; }
+        .badge-soft-warning { background-color: rgba(255, 193, 7, 0.15) !important; color: #997404 !important; border: 1px solid rgba(255, 193, 7, 0.2) !important; }
+        .badge-soft-danger { background-color: rgba(220, 53, 69, 0.1) !important; color: #dc3545 !important; border: 1px solid rgba(220, 53, 69, 0.15) !important; }
+        .badge-soft-primary { background-color: rgba(13, 110, 253, 0.1) !important; color: #0d6efd !important; border: 1px solid rgba(13, 110, 253, 0.15) !important; }
+        .badge-soft-secondary { background-color: rgba(108, 117, 125, 0.1) !important; color: #4b5563 !important; border: 1px solid rgba(108, 117, 125, 0.15) !important; }
+        .badge-soft-purple { background-color: rgba(111, 66, 193, 0.1) !important; color: #6f42c1 !important; border: 1px solid rgba(111, 66, 193, 0.15) !important; }
+
         * {
             margin: 0;
             padding: 0;

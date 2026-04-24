@@ -179,6 +179,10 @@ class DirectAssistanceController extends Controller
         $directAssistance->load([
             'beneficiary.barangay',
             'beneficiary.agency',
+            'beneficiary.directAssistanceRecords.programName',
+            'beneficiary.directAssistanceRecords.resourceType',
+            'beneficiary.allocations.distributionEvent.programName',
+            'beneficiary.allocations.distributionEvent.resourceType',
             'programName.agency',
             'resourceType',
             'assistancePurpose',
