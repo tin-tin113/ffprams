@@ -37,19 +37,28 @@ class GeoMapController extends Controller
         $validated = $request->validate([
             'agency_id' => ['nullable', 'integer', 'exists:agencies,id'],
             'program_name_id' => ['nullable', 'integer', 'exists:program_names,id'],
+            'quadrant' => ['nullable', 'string'],
+            'status' => ['nullable', 'string', 'in:completed,ongoing,pending,none'],
+            'sector' => ['nullable', 'string', 'in:farmer,fisherfolk,both'],
         ]);
 
         $lineAgencyFilter = $validated['agency_id'] ?? null;
         $programFilter = $validated['program_name_id'] ?? null;
+        $quadrantFilter = $validated['quadrant'] ?? null;
+        $statusFilter = $validated['status'] ?? null;
+        $sectorFilter = $validated['sector'] ?? null;
 
-        $cacheKey = GeoMapCache::buildDataCacheKey($lineAgencyFilter, $programFilter);
+        $cacheKey = GeoMapCache::buildDataCacheKey($lineAgencyFilter, $programFilter, $quadrantFilter, $statusFilter, $sectorFilter);
 
         try {
-            $result = Cache::remember($cacheKey, now()->addSeconds(GeoMapCache::ttlSeconds()), function () use ($lineAgencyFilter, $programFilter) {
+            $result = Cache::remember($cacheKey, now()->addSeconds(GeoMapCache::ttlSeconds()), function () use ($lineAgencyFilter, $programFilter, $quadrantFilter, $statusFilter, $sectorFilter) {
                 // Geo-Map scoped to E.B. Magalona, Negros Occidental
                 $barangays = DB::table('barangays')
                     ->where('municipality', '=', 'E.B. Magalona')
                     ->where('province', '=', 'Negros Occidental')
+                    ->when($quadrantFilter, function ($q) use ($quadrantFilter) {
+                        $q->where('quadrant', '=', $quadrantFilter);
+                    })
                     ->leftJoin('beneficiaries', function ($join) use ($lineAgencyFilter) {
                         $join->on('barangays.id', '=', 'beneficiaries.barangay_id')
                             ->whereNull('beneficiaries.deleted_at')
@@ -90,6 +99,7 @@ class GeoMapController extends Controller
                         'barangays.name',
                         'barangays.latitude',
                         'barangays.longitude',
+                        'barangays.quadrant',
                     )
                     // Beneficiary counts
                     ->selectRaw('COUNT(DISTINCT beneficiaries.id) as total_beneficiaries')
@@ -114,7 +124,7 @@ class GeoMapController extends Controller
                     ->selectRaw("MAX(CASE WHEN distribution_events.status = 'Completed' THEN 1 ELSE 0 END) as has_completed")
                     ->selectRaw("MAX(CASE WHEN distribution_events.status = 'Ongoing' THEN 1 ELSE 0 END) as has_ongoing")
                     ->selectRaw("MAX(CASE WHEN distribution_events.status = 'Pending' THEN 1 ELSE 0 END) as has_pending")
-                    ->groupBy('barangays.id', 'barangays.name', 'barangays.latitude', 'barangays.longitude')
+                    ->groupBy('barangays.id', 'barangays.name', 'barangays.latitude', 'barangays.longitude', 'barangays.quadrant')
                     ->orderBy('barangays.name')
                     ->get();
 
@@ -136,6 +146,15 @@ class GeoMapController extends Controller
                     })
                     ->when($programFilter, function ($query) use ($programFilter) {
                         $query->where('allocations.program_name_id', '=', $programFilter);
+                    })
+                    ->when($sectorFilter, function ($query) use ($sectorFilter) {
+                        if ($sectorFilter === 'farmer') {
+                            $query->whereIn('beneficiaries.classification', ['Farmer', 'Both']);
+                        } elseif ($sectorFilter === 'fisherfolk') {
+                            $query->whereIn('beneficiaries.classification', ['Fisherfolk', 'Both']);
+                        } elseif ($sectorFilter === 'both') {
+                            $query->where('beneficiaries.classification', 'Both');
+                        }
                     })
                     ->selectRaw('beneficiaries.barangay_id as barangay_id')
                     ->selectRaw('COUNT(*) as total_allocations')
@@ -233,32 +252,54 @@ class GeoMapController extends Controller
                     $resourcesByBarangay,
                     $directAssistanceByBarangay,
                     $fundAllocatedByBarangay,
-                    $cashDisbursedByBarangay
+                    $cashDisbursedByBarangay,
+                    $statusFilter,
+                    $sectorFilter
                 ) {
                     if ($barangay->has_completed) {
                         $status = 'completed';
-                        $pinColor = '#28a745';
+                        $pinColor = '#10b981'; // Emerald
                     } elseif ($barangay->has_ongoing) {
                         $status = 'ongoing';
-                        $pinColor = '#ffc107';
+                        $pinColor = '#f59e0b'; // Amber
                     } elseif ($barangay->has_pending) {
                         $status = 'pending';
-                        $pinColor = '#0d6efd';
+                        $pinColor = '#3b82f6'; // Blue
                     } else {
                         $status = 'none';
-                        $pinColor = '#dc3545';
+                        $pinColor = '#ef4444'; // Red
+                    }
+
+                    // Apply server-side filters to the mapping results
+                    if ($statusFilter && $status !== $statusFilter) return null;
+                    if ($sectorFilter) {
+                        if ($sectorFilter === 'farmer' && (int)$barangay->total_farmers === 0) return null;
+                        if ($sectorFilter === 'fisherfolk' && (int)$barangay->total_fisherfolk === 0) return null;
+                        if ($sectorFilter === 'both' && (int)$barangay->total_both === 0) return null;
                     }
 
                     $allocationStats = $allocationsByBarangay->get($barangay->id);
                     $directAssistance = $directAssistanceByBarangay->get($barangay->id);
 
-                    $totalBeneficiaries = (int) $barangay->total_beneficiaries;
+                    // If a sector filter is active, adjust the display count to reflect only that sector
+                    $originalTotal = (int) $barangay->total_beneficiaries;
+                    $filteredTotal = $originalTotal;
+                    
+                    if ($sectorFilter === 'farmer') {
+                        $filteredTotal = (int) $barangay->total_farmers;
+                    } elseif ($sectorFilter === 'fisherfolk') {
+                        $filteredTotal = (int) $barangay->total_fisherfolk;
+                    } elseif ($sectorFilter === 'both') {
+                        $filteredTotal = (int) $barangay->total_both;
+                    }
+
+                    $totalBeneficiaries = $filteredTotal;
                     $totalAllocations = (int) ($allocationStats->total_allocations ?? 0);
                     $totalDistributed = (int) ($allocationStats->total_distributed ?? 0);
                     $beneficiariesReached = (int) ($allocationStats->beneficiaries_reached ?? 0);
                     $totalPendingAllocations = (int) ($allocationStats->total_pending_allocations ?? 0);
 
-                    // Coverage rate: what % of beneficiaries have received at least one distribution
+                    // Coverage rate: what % of beneficiaries (filtered) have received at least one distribution
                     $coverageRate = $totalBeneficiaries > 0
                         ? round(($beneficiariesReached / $totalBeneficiaries) * 100, 1)
                         : 0;
@@ -266,6 +307,7 @@ class GeoMapController extends Controller
                     return [
                         'id' => $barangay->id,
                         'name' => $barangay->name,
+                        'quadrant' => $barangay->quadrant,
                         'latitude' => $barangay->latitude,
                         'longitude' => $barangay->longitude,
                         // Household metrics
@@ -309,7 +351,7 @@ class GeoMapController extends Controller
                         // Resources
                         'resources_distributed' => $resourcesByBarangay[$barangay->id] ?? 'None',
                     ];
-                })->values()->all();
+                })->filter()->values()->all();
 
                 return [
                     'data' => $data,

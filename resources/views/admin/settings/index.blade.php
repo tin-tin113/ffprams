@@ -46,7 +46,6 @@
                             <i class="bi bi-building"></i> Agencies Management
                         </h5>
                         <div class="d-flex align-items-center gap-3">
-                            @if($agencies->total() > 0)
                         </div>
                     </div>
                 </div>
@@ -335,7 +334,6 @@
                     </div>
                 </div>
             </div>
-        </div>
 
         <!-- ========== FORM FIELDS TAB ========== -->
         <div class="tab-pane fade {{ $activeTab === 'form-fields' ? 'show active' : '' }}" id="form-fields-content" role="tabpanel" aria-labelledby="form-fields-tab">

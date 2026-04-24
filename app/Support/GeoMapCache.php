@@ -33,13 +33,16 @@ class GeoMapCache
         return (int) Cache::increment(self::VERSION_KEY);
     }
 
-    public static function buildDataCacheKey(?int $agencyId, ?int $programNameId): string
+    public static function buildDataCacheKey(?int $agencyId, ?int $programNameId, ?string $quadrant = null, ?string $status = null, ?string $sector = null): string
     {
         return sprintf(
-            'geo-map:v%s:agency:%s:program:%s',
+            'geo-map:v%s:agency:%s:program:%s:quadrant:%s:status:%s:sector:%s',
             self::currentVersion(),
             $agencyId ?? 'all',
-            $programNameId ?? 'all'
+            $programNameId ?? 'all',
+            $quadrant ?? 'all',
+            $status ?? 'all',
+            $sector ?? 'all'
         );
     }
 
