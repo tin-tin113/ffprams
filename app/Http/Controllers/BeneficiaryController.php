@@ -88,7 +88,9 @@ class BeneficiaryController extends Controller
             'total_all' => Beneficiary::count(),
             'total_active' => Beneficiary::where('status', 'Active')->count(),
             'with_documents' => Beneficiary::has('attachments')->count(),
-            'without_documents' => Beneficiary::doesntHave('attachments')->count(),
+            'new_this_month' => Beneficiary::whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->count(),
         ];
 
         $activeFilterCount = collect([

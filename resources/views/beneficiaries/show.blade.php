@@ -213,17 +213,26 @@
     }
 
     .avatar-circle {
-        width: 64px;
-        height: 64px;
-        background: #f1f5f9;
-        color: #64748b;
+        width: 80px;
+        height: 80px;
+        color: #fff;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 50%;
-        font-size: 1.5rem;
-        border: 2px solid #fff;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border-radius: 20px;
+        font-size: 2rem;
+        font-weight: 700;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        text-transform: uppercase;
+    }
+    .header-content {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+    .beneficiary-header {
+        background: linear-gradient(to right, #ffffff, #f8fafc);
+        border: 1px solid #edf2f7;
     }
 
     @media print {
@@ -236,15 +245,20 @@
 @section('content')
 <div class="container-fluid py-4">
     {{-- Header --}}
-    <div class="beneficiary-header">
+    @php
+        $initials = collect(explode(' ', $beneficiary->full_name))->map(fn($n) => $n[0] ?? '')->take(2)->join('');
+        $bgColors = ['bg-primary', 'bg-success', 'bg-info', 'bg-warning', 'bg-purple'];
+        $bgColor = $bgColors[$beneficiary->id % count($bgColors)];
+    @endphp
+    <div class="beneficiary-header shadow-sm rounded-4 p-4 mb-4">
         <div class="row align-items-center g-4">
             <div class="col-md-7">
-                <div class="d-flex align-items-center gap-4">
-                    <div class="avatar-circle flex-shrink-0">
-                        <i class="bi bi-person-fill"></i>
+                <div class="header-content">
+                    <div class="avatar-circle {{ $bgColor }} flex-shrink-0">
+                        {{ $initials }}
                     </div>
                     <div>
-                        <h2 class="mb-1 fw-bold text-dark">{{ $beneficiary->full_name }}</h2>
+                        <h2 class="mb-2 fw-bold text-dark">{{ $beneficiary->full_name }}</h2>
                         <div class="d-flex flex-wrap gap-2">
                             @php
                                 $classBadge = match($beneficiary->classification) {
@@ -254,14 +268,14 @@
                                     default      => 'bg-soft-secondary',
                                 };
                             @endphp
-                            <span class="badge {{ $classBadge }} px-3 py-2 rounded-pill">
+                            <span class="badge {{ $classBadge }} px-3 py-2 rounded-pill shadow-sm">
                                 <i class="bi bi-person-badge me-1"></i> {{ $beneficiary->classification }}
                             </span>
-                            <span class="badge {{ $beneficiary->status === 'Active' ? 'badge-soft-success' : 'badge-soft-danger' }} px-3 py-2 rounded-pill">
+                            <span class="badge {{ $beneficiary->status === 'Active' ? 'badge-soft-success' : 'badge-soft-danger' }} px-3 py-2 rounded-pill shadow-sm">
                                 <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> {{ $beneficiary->status }}
                             </span>
                             @if($beneficiary->barangay)
-                                <span class="badge bg-light text-muted border px-3 py-2 rounded-pill">
+                                <span class="badge bg-white text-muted border px-3 py-2 rounded-pill shadow-sm">
                                     <i class="bi bi-geo-alt me-1"></i> Barangay {{ $beneficiary->barangay->name }}
                                 </span>
                             @endif
@@ -271,8 +285,8 @@
             </div>
             <div class="col-md-5">
                 <div class="d-flex justify-content-md-end gap-3 no-print">
-                    <a href="{{ route('beneficiaries.index') }}" class="btn btn-light rounded-pill px-4">
-                        <i class="bi bi-arrow-left me-1"></i> Back
+                    <a href="{{ route('beneficiaries.index') }}" class="btn btn-white border rounded-pill px-4 shadow-sm">
+                        <i class="bi bi-arrow-left me-1"></i> Registry
                     </a>
                     <a href="{{ route('beneficiaries.edit', $beneficiary) }}" class="btn btn-primary rounded-pill px-4 shadow-sm">
                         <i class="bi bi-pencil-square me-1"></i> Edit Profile
