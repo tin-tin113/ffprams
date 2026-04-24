@@ -168,6 +168,9 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
     Route::get('sms/beneficiaries', [SmsController::class, 'beneficiaries'])->name('sms.beneficiaries');
     Route::post('sms/preview', [SmsController::class, 'preview'])->name('sms.preview');
     Route::post('sms/send', [SmsController::class, 'send'])->name('sms.send');
+    Route::post('sms/templates', [SmsController::class, 'storeTemplate'])->name('sms.templates.store');
+    Route::put('sms/templates/{template}', [SmsController::class, 'updateTemplate'])->name('sms.templates.update');
+    Route::delete('sms/templates/{template}', [SmsController::class, 'destroyTemplate'])->name('sms.templates.destroy');
 
     // Operational read pages
     Route::get('allocations', [AllocationController::class, 'index'])->name('allocations.index');

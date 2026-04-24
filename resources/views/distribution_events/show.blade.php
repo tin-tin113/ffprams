@@ -237,6 +237,11 @@
                 <i class="bi bi-files me-2"></i> Documents
             </button>
         </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-sms">
+                <i class="bi bi-chat-left-text me-2"></i> SMS Broadcast
+            </button>
+        </li>
     </ul>
 
     <div class="tab-content" id="eventTabsContent">
@@ -611,6 +616,108 @@
     </div>
 
     </div>{{-- End Overview Tab --}}
+
+    {{-- SMS Broadcast Tab --}}
+    <div class="tab-pane fade" id="tab-sms" role="tabpanel">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="card card-dashboard shadow-sm border-0">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                                <i class="bi bi-broadcast text-primary fs-5"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0 fw-bold">Event SMS Broadcast</h5>
+                                <p class="text-muted small mb-0">Message all {{ number_format($totalAllocated) }} participants of this event</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <form id="eventSmsForm">
+                            <div class="mb-4">
+                                <label class="form-label small fw-bold">1. Message Content</label>
+                                <textarea class="form-control shadow-none" id="eventSmsMessage" rows="6" placeholder="Type your message to beneficiaries..."></textarea>
+                                <div class="d-flex justify-content-between mt-2">
+                                    <div class="small text-muted">
+                                        <span id="eventCharCount">0</span> characters | 
+                                        <span id="eventSegmentCount">1</span> segment(s)
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-light text-dark border">Cost: <span id="eventCostCount">0</span> segments total</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="form-label small fw-bold mb-0">2. Select Recipients</label>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none x-small" id="eventSmsSelectAllBtn">Select All</button>
+                                        <span class="text-muted x-small">|</span>
+                                        <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none x-small" id="eventSmsDeselectAllBtn">Clear</button>
+                                    </div>
+                                </div>
+                                <div class="input-group input-group-sm mb-2">
+                                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                                    <input type="text" class="form-control border-start-0 shadow-none" id="eventSmsSearch" placeholder="Search by name...">
+                                </div>
+                                <div class="border rounded-3 overflow-hidden bg-white" style="max-height: 250px; overflow-y: auto;">
+                                    <table class="table table-sm table-hover align-middle mb-0" id="eventSmsTable">
+                                        <thead class="table-light sticky-top" style="z-index: 10;">
+                                            <tr>
+                                                <th class="ps-3" style="width: 40px;"></th>
+                                                <th class="small fw-bold">Beneficiary Name</th>
+                                                <th class="small fw-bold">Contact</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($event->allocations as $allocation)
+                                                <tr class="event-sms-row">
+                                                    <td class="ps-3 text-center">
+                                                        <input type="checkbox" class="form-check-input event-sms-checkbox" value="{{ $allocation->beneficiary->id }}" {{ $allocation->beneficiary->contact_number ? 'checked' : 'disabled' }}>
+                                                    </td>
+                                                    <td>
+                                                        <div class="small fw-semibold text-truncate" style="max-width: 250px;">{{ $allocation->beneficiary->full_name }}</div>
+                                                    </td>
+                                                    <td>
+                                                        @if($allocation->beneficiary->contact_number)
+                                                            <div class="x-small text-muted">{{ $allocation->beneficiary->contact_number }}</div>
+                                                        @else
+                                                            <span class="badge bg-danger bg-opacity-10 text-danger x-small" style="font-size: 0.65rem;">No Contact</span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="mt-2 text-end">
+                                    <small class="text-muted"><span id="eventSelectedCount">0</span> recipients selected</small>
+                                </div>
+                            </div>
+
+                            <div class="p-3 bg-light rounded-3 border mb-4">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-info-circle-fill text-info me-2"></i>
+                                    <span class="fw-bold small">Broadcast Summary</span>
+                                </div>
+                                <ul class="list-unstyled small mb-0 text-muted">
+                                    <li class="mb-1"><i class="bi bi-check2 me-1"></i> Total Selected: <strong id="summarySelectedCount">0</strong></li>
+                                    <li class="mb-1"><i class="bi bi-check2 me-1"></i> Estimated Segments: <strong id="summarySegmentCount">0</strong></li>
+                                    <li><i class="bi bi-check2 me-1"></i> Total Cost: <strong id="summaryTotalCost">0</strong> segments</li>
+                                </ul>
+                            </div>
+
+                            <button type="button" class="btn btn-primary w-100 py-3 fw-bold shadow-sm" id="sendEventSmsBtn" disabled>
+                                <i class="bi bi-send-fill me-2"></i> Send Broadcast
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     {{-- Beneficiaries Tab --}}
     <div class="tab-pane fade" id="tab-beneficiaries" role="tabpanel">
@@ -1722,6 +1829,109 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+
+    // ---- Event SMS Broadcast Logic ----
+    const eventSmsMessage = document.getElementById('eventSmsMessage');
+    const sendEventSmsBtn = document.getElementById('sendEventSmsBtn');
+    const eventCharCount = document.getElementById('eventCharCount');
+    const eventSegmentCount = document.getElementById('eventSegmentCount');
+    const eventSelectedCount = document.getElementById('eventSelectedCount');
+    const summarySelectedCount = document.getElementById('summarySelectedCount');
+    const summarySegmentCount = document.getElementById('summarySegmentCount');
+    const summaryTotalCost = document.getElementById('summaryTotalCost');
+    const eventSmsCheckboxes = document.querySelectorAll('.event-sms-checkbox');
+    const eventSmsSearch = document.getElementById('eventSmsSearch');
+
+    function updateEventSmsStats() {
+        const charCount = eventSmsMessage?.value.length || 0;
+        const segments = charCount <= 160 ? 1 : Math.ceil(charCount / 153);
+        const selectedCount = Array.from(eventSmsCheckboxes).filter(cb => cb.checked).length;
+        
+        if (eventCharCount) eventCharCount.textContent = charCount;
+        if (eventSegmentCount) eventSegmentCount.textContent = segments;
+        if (eventSelectedCount) eventSelectedCount.textContent = selectedCount;
+        if (summarySelectedCount) summarySelectedCount.textContent = selectedCount;
+        if (summarySegmentCount) summarySegmentCount.textContent = segments;
+        if (summaryTotalCost) summaryTotalCost.textContent = segments * selectedCount;
+        
+        if (sendEventSmsBtn) {
+            sendEventSmsBtn.disabled = charCount < 5 || selectedCount === 0;
+        }
+    }
+
+    if (eventSmsMessage) {
+        eventSmsMessage.addEventListener('input', updateEventSmsStats);
+    }
+
+    eventSmsCheckboxes.forEach(cb => {
+        cb.addEventListener('change', updateEventSmsStats);
+    });
+
+    if (eventSmsSearch) {
+        eventSmsSearch.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            document.querySelectorAll('.event-sms-row').forEach(row => {
+                const name = row.querySelector('.fw-semibold').textContent.toLowerCase();
+                row.style.display = name.includes(query) ? '' : 'none';
+            });
+        });
+    }
+
+    document.getElementById('eventSmsSelectAllBtn')?.addEventListener('click', () => {
+        eventSmsCheckboxes.forEach(cb => { if(!cb.disabled) cb.checked = true; });
+        updateEventSmsStats();
+    });
+
+    document.getElementById('eventSmsDeselectAllBtn')?.addEventListener('click', () => {
+        eventSmsCheckboxes.forEach(cb => cb.checked = false);
+        updateEventSmsStats();
+    });
+
+    if (sendEventSmsBtn) {
+        sendEventSmsBtn.addEventListener('click', async function() {
+            const selectedIds = Array.from(eventSmsCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+
+            if (!confirm(`Are you sure you want to send this broadcast to ${selectedIds.length} selected participants?`)) return;
+
+            const btn = this;
+            const originalContent = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending...';
+
+            try {
+                const response = await fetch('{{ route("sms.send") }}', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        recipient_type: 'selected',
+                        beneficiary_ids: selectedIds,
+                        message: eventSmsMessage.value
+                    })
+                });
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+
+                alert('Broadcast started successfully!');
+                eventSmsMessage.value = '';
+                updateEventSmsStats();
+            } catch (e) {
+                alert('Error: ' + e.message);
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.disabled = eventSmsMessage.value.length < 5;
+            }
+        });
+    }
+    
+    updateEventSmsStats();
 
     // ---- Add All Modal Select All ----
     const bulkSelectAllModal = document.getElementById('bulk_select_all_modal');

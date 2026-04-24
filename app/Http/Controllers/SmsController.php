@@ -9,6 +9,7 @@ use App\Models\DistributionEvent;
 use App\Models\ProgramName;
 use App\Models\ResourceType;
 use App\Models\SmsLog;
+use App\Models\SmsTemplate;
 use App\Services\AuditLogService;
 use App\Services\SemaphoreService;
 use Illuminate\Http\JsonResponse;
@@ -42,13 +43,10 @@ class SmsController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        // Default templates
-        $templates = [
-            ['name' => 'Assistance Approved', 'content' => 'Assistance approved — please coordinate with the MAO office.'],
-            ['name' => 'Distribution Reminder', 'content' => 'Your scheduled distribution is on [date]. Please bring a valid ID.'],
-            ['name' => 'Visit MAO', 'content' => 'Please visit the Municipal Agriculture Office for your assistance claims.'],
-            ['name' => 'Update Info', 'content' => 'Reminder: Please update your beneficiary information at the MAO office.'],
-        ];
+        // Load templates from database
+        $templates = SmsTemplate::where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
         $summary = [
             'total' => SmsLog::count(),
@@ -313,6 +311,44 @@ class SmsController extends Controller
         return response()->json([
             'success' => $success,
             'message' => $success ? 'Delivery status updated' : 'Failed to process callback',
+        ]);
+    }
+    public function storeTemplate(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:sms_templates,name',
+            'content' => 'required|string',
+        ]);
+
+        $template = SmsTemplate::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'template' => $template,
+        ]);
+    }
+
+    public function updateTemplate(Request $request, SmsTemplate $template): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:sms_templates,name,'.$template->id,
+            'content' => 'required|string',
+        ]);
+
+        $template->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'template' => $template,
+        ]);
+    }
+
+    public function destroyTemplate(SmsTemplate $template): JsonResponse
+    {
+        $template->delete();
+
+        return response()->json([
+            'success' => true,
         ]);
     }
 }
