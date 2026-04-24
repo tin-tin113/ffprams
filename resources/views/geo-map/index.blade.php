@@ -7,94 +7,293 @@
 
 @push('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet-control-layers-tree/L.Control.Layers.Tree.css" />
 <style>
-    .geom-container { display: flex; flex-direction: column; gap: 1rem; }
-    #map { height: 600px; width: 100%; border-radius: 0.5rem; z-index: 1; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    @media (min-height: 900px) { #map { height: 65vh; } }
+    .geom-container { display: grid; grid-template-columns: 1fr; gap: 1rem; position: relative; overflow: hidden; }
+    #map { height: 600px; width: 100%; border-radius: 1rem; z-index: 1; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 4px solid #fff; }
+    @media (min-height: 900px) { #map { height: 70vh; } }
     .leaflet-control { z-index: 400 !important; }
-    .map-legend { background: rgba(255,255,255,0.95); backdrop-filter: blur(4px); border-radius: 0.4rem; padding: 0.6rem 0.8rem; font-size: 0.78rem; line-height: 1.8; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-    .legend-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; }
-    .pin-marker { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
-    .pin-icon svg { width: 28px; height: 36px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); transition: transform 0.15s ease; }
-    .pin-marker:hover .pin-icon svg { transform: scale(1.2); }
-    .pin-count { position: absolute; top: 5px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 10px; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
-    .pin-label.leaflet-tooltip { background: rgba(255,255,255,0.9); border: none; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); padding: 4px 8px; font-size: 11px; font-weight: 600; color: #333; }
+    
+    /* Glassmorphism Effects */
+    .glass-effect {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px) saturate(180%);
+        -webkit-backdrop-filter: blur(12px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .map-legend { 
+        background: rgba(255,255,255,0.85); 
+        backdrop-filter: blur(8px); 
+        border-radius: 0.75rem; 
+        padding: 0.75rem 1rem; 
+        font-size: 0.8rem; 
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        border: 1px solid rgba(255,255,255,0.4);
+    }
+    .legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; box-shadow: 0 0 0 2px rgba(255,255,255,0.8); }
+    
+    /* Premium Pin Design */
+    .pin-marker-container { position: relative; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .pin-marker-container:hover { transform: translateY(-5px) scale(1.1); z-index: 1000 !important; }
+    .pin-shadow { 
+        position: absolute; 
+        bottom: -2px; 
+        left: 50%; 
+        transform: translateX(-50%); 
+        width: 14px; 
+        height: 4px; 
+        background: rgba(0,0,0,0.2); 
+        border-radius: 50%; 
+        filter: blur(2px);
+    }
+    .pin-main svg { width: 32px; height: 42px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); }
+    .pin-count { 
+        position: absolute; 
+        top: 8px; 
+        left: 50%; 
+        transform: translateX(-50%); 
+        color: #fff; 
+        font-size: 11px; 
+        font-weight: 800; 
+        text-shadow: 0 1px 2px rgba(0,0,0,0.5); 
+        pointer-events: none;
+    }
+
+    /* Pulsing Animation for Ongoing distribution */
+    @keyframes pin-pulse {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
+        70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(255, 193, 7, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+    }
+    .pin-pulse-effect {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: rgba(255, 193, 7, 0.4);
+        animation: pin-pulse 2s infinite;
+        z-index: -1;
+    }
+
+    .pin-label.leaflet-tooltip { 
+        background: rgba(255,255,255,0.95); 
+        border: none; 
+        border-radius: 20px; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+        padding: 6px 12px; 
+        font-size: 12px; 
+        font-weight: 700; 
+        color: #2c3e50;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
     .pin-label.leaflet-tooltip::before { display: none; }
-    .filters-bar { background: #fff; border-radius: 0.5rem; padding: 1rem; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border: 1px solid #e9ecef; }
-    .filters-bar .filter-group { display: flex; gap: 0.6rem; align-items: flex-end; flex-wrap: wrap; }
-    .filters-bar .filter-item { display: flex; flex-direction: column; gap: 0.3rem; }
-    .filters-bar label { font-size: 0.8rem; font-weight: 600; color: #495057; margin: 0; }
-    .filters-bar select { font-size: 0.85rem; border-radius: 0.35rem; border: 1px solid #dee2e6; padding: 0.4rem 0.6rem; }
-    .summary-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.8rem; }
-    .stat-card { background: #fff; border-radius: 0.4rem; padding: 0.8rem; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #e9ecef; }
-    .stat-card .stat-value { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.3rem; }
-    .stat-card .stat-label { font-size: 0.75rem; color: #6c757d; font-weight: 500; }
-    .barangay-info-modal .modal-dialog { max-width: 700px; }
-    .barangay-info-modal .modal-header { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none; padding: 1rem; }
-    .barangay-info-modal .modal-title { font-size: 1.1rem; font-weight: 600; }
-    .barangay-info-modal .btn-close { filter: brightness(0) invert(1); }
-    .barangay-info-modal .modal-body { max-height: 75vh; overflow-y: auto; padding: 1.2rem; }
-    .info-section { margin-bottom: 1.2rem; }
-    .info-section:last-child { margin-bottom: 0; }
-    .info-section-title { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #28a745; margin-bottom: 0.7rem; display: flex; align-items: center; gap: 0.4rem; }
-    .info-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
-    .info-row:last-child { border-bottom: none; }
-    .info-row .label { color: #6c757d; font-weight: 500; }
-    .info-row .value { font-weight: 600; color: #333; }
-    .info-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 0.8rem; }
-    .info-stat-box { background: #f8f9fa; border-radius: 0.35rem; padding: 0.6rem; text-align: center; border: 1px solid #e9ecef; }
-    .info-stat-box .value { font-size: 1.3rem; font-weight: 700; color: #28a745; }
-    .info-stat-box .label { font-size: 0.7rem; color: #6c757d; margin-top: 0.2rem; }
-    .badge-info { display: inline-block; padding: 0.4rem 0.8rem; border-radius: 0.3rem; font-size: 0.8rem; font-weight: 600; }
-    .badge-info.completed { background: #d4edda; color: #28a745; }
-    .badge-info.ongoing { background: #fff3cd; color: #856404; }
-    .badge-info.pending { background: #d1ecf1; color: #0c5460; }
-    .badge-info.none { background: #f8d7da; color: #721c24; }
-    .beneficiary-list { margin-top: 0.8rem; }
-    .beneficiary-item { background: #f8f9fa; border-left: 3px solid #28a745; padding: 0.7rem; margin-bottom: 0.6rem; border-radius: 0.25rem; font-size: 0.85rem; }
-    .beneficiary-item .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.4rem; }
-    .beneficiary-item .name { font-weight: 600; color: #333; margin-bottom: 0.1rem; }
-    .beneficiary-item .subtext { color: #6c757d; font-size: 0.76rem; }
-    .beneficiary-item .meta { display: grid; grid-template-columns: 1fr; gap: 0.15rem; margin-top: 0.45rem; }
-    .beneficiary-item .meta-row { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.77rem; color: #495057; }
-    .beneficiary-item .meta-row .label { color: #6c757d; }
-    .beneficiary-item .meta-row .value { font-weight: 600; color: #343a40; text-align: right; }
-    .beneficiary-item .actions { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.55rem; }
-    .beneficiary-item .actions .btn { --bs-btn-padding-y: 0.2rem; --bs-btn-padding-x: 0.45rem; --bs-btn-font-size: 0.72rem; }
-    .beneficiary-item .chip-row { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.45rem; }
-    .beneficiary-item .chip { border-radius: 999px; padding: 0.14rem 0.48rem; font-size: 0.66rem; font-weight: 700; }
-    .beneficiary-item .chip-urgent { background: #fde2e1; color: #a61b17; }
-    .beneficiary-item .chip-unverified { background: #fff3cd; color: #7a5d00; }
-    .beneficiary-item .chip-duplicate { background: #ece7ff; color: #4a2f8d; }
-    .beneficiary-badge { display: inline-block; background: #e7f5e9; color: #2e7d32; padding: 0.2rem 0.4rem; border-radius: 0.2rem; font-size: 0.7rem; font-weight: 600; margin-top: 0.3rem; }
-    .no-data { text-align: center; padding: 1rem; color: #999; font-style: italic; }
-    @media (max-width: 991.98px) { #map { height: 50vh; min-height: 400px; } .filters-bar { padding: 0.8rem; } .stat-card { padding: 0.6rem; } }
+
+    /* Filters & Stats Layout */
+    .filters-bar { 
+        background: #fff; 
+        border-radius: 1rem; 
+        padding: 1.25rem; 
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05); 
+        border: 1px solid #f0f0f0;
+    }
+    .summary-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; }
+    .stat-card { 
+        background: #fff; 
+        border-radius: 1rem; 
+        padding: 1.25rem; 
+        text-align: center; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.04); 
+        border: 1px solid #f0f0f0;
+        transition: transform 0.3s ease;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+    .stat-card .stat-value { font-size: 1.75rem; font-weight: 800; margin-bottom: 0.2rem; letter-spacing: -0.5px; }
+    .stat-card .stat-label { font-size: 0.8rem; color: #8e9aaf; font-weight: 600; text-transform: uppercase; }
+
+    /* Premium Modal Styling */
+    .premium-modal .modal-content {
+        border: none;
+        border-radius: 1.5rem;
+        overflow: hidden;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    .premium-modal .modal-header {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 1.5rem 2rem;
+        border: none;
+    }
+    .premium-modal .modal-body {
+        padding: 2rem;
+        background: #fff;
+    }
+    .premium-modal .btn-close { filter: brightness(0) invert(1); }
+
+    /* Centered Modal Fix */
+    .modal-dialog-centered {
+        display: flex;
+        align-items: center;
+        min-height: calc(100% - 3.5rem);
+    }
+
+    /* Premium Pin Design - Redesigned for clarity and high counts */
+    .pin-marker-container { 
+        position: relative; 
+        width: 40px; 
+        height: 50px; 
+        cursor: pointer; 
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        display: flex;
+        justify-content: center;
+    }
+    .pin-marker-container:hover { transform: translateY(-8px) scale(1.15); z-index: 1000 !important; }
+    
+    .pin-main {
+        position: relative;
+        width: 38px;
+        height: 38px;
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.25));
+    }
+
+    .pin-droplet {
+        fill: currentColor;
+        stroke: #fff;
+        stroke-width: 2;
+    }
+
+    .pin-badge {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 22px;
+        height: 22px;
+        background: #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        z-index: 2;
+    }
+
+    .pin-count {
+        color: #111827;
+        font-size: 10px;
+        font-weight: 800;
+        line-height: 1;
+        text-align: center;
+    }
+
+    .pin-count.small-text { font-size: 8px; }
+
+    /* Stem of the pin */
+    .pin-stem {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 12px solid currentColor;
+        filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
+    }
+    .pin-stem::after {
+        content: '';
+        position: absolute;
+        top: -14px;
+        left: -6px;
+        width: 12px;
+        height: 12px;
+        background: currentColor;
+        border-radius: 50%;
+    }
+
+    /* Pulsing Animation for Ongoing distribution */
+    @keyframes pin-pulse {
+        0% { transform: scale(0.8); opacity: 1; }
+        100% { transform: scale(2.2); opacity: 0; }
+    }
+    .pin-pulse-effect {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 4px solid rgba(255, 193, 7, 0.8);
+        animation: pin-pulse 1.5s infinite;
+        z-index: -1;
+    }
+
+    .pin-label.leaflet-tooltip { 
+        background: #fff; 
+        border: none; 
+        border-radius: 8px; 
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); 
+        padding: 8px 12px; 
+        font-size: 13px; 
+        font-weight: 700; 
+        color: #111827;
+        border-bottom: 3px solid #10b981;
+    }
+
+    /* Progress bar and other styles */
+    .progress-coverage { height: 10px; border-radius: 10px; background: #f3f4f6; overflow: hidden; }
+    .progress-coverage-bar { height: 100%; background: linear-gradient(90deg, #10b981, #34d399); border-radius: 10px; transition: width 1s ease-out; }
+    
+    .beneficiary-item { 
+        background: #f9fafb; 
+        border: 1px solid #f3f4f6;
+        padding: 1.25rem; 
+        margin-bottom: 1rem; 
+        border-radius: 1rem; 
+        transition: all 0.3s ease;
+    }
+    .beneficiary-item:hover { transform: translateY(-2px); border-color: #10b981; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); background: #fff; }
+
+    .stat-card { border: none; border-radius: 1.25rem; padding: 1.5rem; transition: all 0.3s ease; }
+    .stat-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+    
+    @media (max-width: 991.98px) { #map { height: 50vh; min-height: 450px; } }
     @media (max-width: 575.98px) { #map { height: 45vh; min-height: 350px; } .filters-bar { padding: 0.6rem; } .summary-stats { grid-template-columns: repeat(2, 1fr); } .barangay-info-modal .modal-dialog { max-width: calc(100vw - 1rem); } }
 </style>
 @endpush
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid py-4">
     <div class="geom-container">
-        <div>
-            <h2 class="h4 mb-1"><i class="bi bi-map me-2 text-success"></i>Beneficiary Distribution Map</h2>
-            <p class="text-muted small mb-0">E.B. Magalona, Negros Occidental - Interactive Geo-Located Resource Allocation Overview</p>
+        <div class="d-flex justify-content-between align-items-end flex-wrap gap-3">
+            <div>
+                <h1 class="h3 fw-bold mb-1 text-dark">Geo-Insights Dashboard</h1>
+                <p class="text-muted small mb-0">E.B. Magalona Distribution & Beneficiary Real-time Mapping</p>
+            </div>
+            <div class="search-container">
+                <i class="bi bi-search"></i>
+                <input type="text" id="mapSearch" class="form-control" placeholder="Search Barangay...">
+            </div>
         </div>
-        <div class="filters-bar">
-            <div class="filter-group modern-filter-grid">
-                <div class="filter-item" style="flex: 1; min-width: 150px;">
-                    <label for="agencyFilter">Agency</label>
-                    <select id="agencyFilter" class="form-select form-select-sm modern-filter-select">
+
+        <div class="filters-bar glass-effect">
+            <div class="filter-group d-flex align-items-center gap-3 flex-wrap">
+                <div class="filter-item">
+                    <label>Line Agency</label>
+                    <select id="agencyFilter" class="form-select form-select-sm">
                         <option value="">All Agencies</option>
                         @foreach($agencies as $agency)
                             <option value="{{ $agency->id }}">{{ $agency->name }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div class="filter-item" style="flex: 1; min-width: 150px;">
-                    <label for="statusFilter">Status</label>
-                    <select id="statusFilter" class="form-select form-select-sm modern-filter-select">
+                <div class="filter-item">
+                    <label>Distribution Status</label>
+                    <select id="statusFilter" class="form-select form-select-sm">
                         <option value="">All Statuses</option>
                         <option value="completed">Completed</option>
                         <option value="ongoing">Ongoing</option>
@@ -102,88 +301,117 @@
                         <option value="none">No Distribution</option>
                     </select>
                 </div>
-                <div class="filter-item" style="flex: 1; min-width: 150px;">
-                    <label for="sectorFilter">Beneficiary Type</label>
-                    <select id="sectorFilter" class="form-select form-select-sm modern-filter-select">
-                        <option value="">All Types</option>
+                <div class="filter-item">
+                    <label>Sector</label>
+                    <select id="sectorFilter" class="form-select form-select-sm">
+                        <option value="">All Sectors</option>
                         <option value="farmer">Farmer</option>
                         <option value="fisherfolk">Fisherfolk</option>
                         <option value="both">Both</option>
                     </select>
                 </div>
-                <button class="btn btn-sm btn-outline-secondary" id="clearFilters"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+                <div class="ms-auto">
+                    <button class="btn btn-sm btn-light text-dark fw-bold border" id="clearFilters">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset View
+                    </button>
+                </div>
             </div>
         </div>
+
         <div class="summary-stats">
             <div class="stat-card">
                 <div class="stat-value text-success" id="stat-barangays">--</div>
-                <div class="stat-label"><i class="bi bi-geo-alt me-1"></i>Barangays</div>
+                <div class="stat-label">Barangays</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value text-primary" id="stat-beneficiaries">--</div>
-                <div class="stat-label"><i class="bi bi-people me-1"></i>Beneficiaries</div>
+                <div class="stat-label">Total Beneficiaries</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value text-success" id="stat-events">--</div>
-                <div class="stat-label"><i class="bi bi-calendar me-1"></i>Events</div>
+                <div class="stat-value text-warning" id="stat-events">--</div>
+                <div class="stat-label">Total Events</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value text-info" id="stat-reach">--</div>
-                <div class="stat-label"><i class="bi bi-percent me-1"></i>Avg Coverage</div>
+                <div class="stat-value text-info" id="stat-reach">--%</div>
+                <div class="stat-label">Municipality Reach</div>
             </div>
         </div>
+
         <div id="map"></div>
     </div>
 </div>
 
-<div class="modal fade barangay-info-modal" id="barangayInfoModal" tabindex="-1">
-    <div class="modal-dialog">
+<!-- Premium Centered Modal -->
+<div class="modal fade premium-modal" id="barangayModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-pin-map-fill me-2"></i><span id="modal-barangay-name">--</span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div>
+                    <h4 class="modal-title fw-bold mb-0" id="panel-barangay-name">Barangay Name</h4>
+                    <p class="mb-0 small text-white-50" id="panel-subtitle">E.B. Magalona, Negros Occidental</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="info-section">
-                    <div class="info-section-title"><i class="bi bi-info-circle"></i>Status</div>
-                    <span class="badge-info" id="modal-status-badge" style="display: inline-block; margin-bottom: 0.8rem;">--</span>
-                    <div class="info-row"><span class="label">Coverage Rate</span><span class="value" id="modal-coverage">0%</span></div>
-                    <div class="info-row"><span class="label">Last Distribution</span><span class="value" id="modal-last-dist">N/A</span></div>
-                </div>
-                <div class="info-section">
-                    <div class="info-section-title"><i class="bi bi-people"></i>Beneficiaries</div>
-                    <div class="info-stat-grid">
-                        <div class="info-stat-box"><div class="value" id="modal-total-benef">0</div><div class="label">Total Registered</div></div>
-                        <div class="info-stat-box"><div class="value" id="modal-reached">0</div><div class="label">Reached</div></div>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="info-section">
+                            <div class="info-section-title"><i class="bi bi-graph-up-arrow"></i>Distribution Performance</div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="text-muted small fw-bold">Coverage Rate</span>
+                                <span class="fw-bold text-success" id="panel-coverage">0%</span>
+                            </div>
+                            <div class="progress-coverage mb-3">
+                                <div class="progress-coverage-bar" id="panel-coverage-bar" style="width: 0%"></div>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <span class="badge-info" id="panel-status-badge">STATUS</span>
+                                <span class="text-muted small ms-3">Last Activity: <span id="panel-last-dist" class="text-dark fw-bold">N/A</span></span>
+                            </div>
+                        </div>
+
+                        <div class="info-section">
+                            <div class="info-section-title"><i class="bi bi-people-fill"></i>Beneficiary Mix</div>
+                            <div class="info-stat-grid">
+                                <div class="info-stat-box">
+                                    <div class="value" id="panel-total-benef">0</div>
+                                    <div class="label">Registered</div>
+                                </div>
+                                <div class="info-stat-box">
+                                    <div class="value" id="panel-reached">0</div>
+                                    <div class="label">Served</div>
+                                </div>
+                            </div>
+                            <div class="mt-3 d-flex gap-2 flex-wrap">
+                                <div class="badge bg-light text-dark border px-3 py-2"><i class="bi bi-flower1 text-success me-1"></i> <span id="panel-farmers">0</span> Farmers</div>
+                                <div class="badge bg-light text-dark border px-3 py-2"><i class="bi bi-water text-primary me-1"></i> <span id="panel-fisherfolk">0</span> Fisherfolk</div>
+                            </div>
+                        </div>
+
+                        <div class="info-section mb-0">
+                            <div class="info-section-title"><i class="bi bi-cash-coin"></i>Financial & Resources</div>
+                            <div class="p-3 bg-light rounded-3 border mb-2">
+                                <div class="text-muted small mb-1">Fund Allocated</div>
+                                <div class="fw-bold text-dark h5 mb-0" id="panel-fund-allocated">₱0</div>
+                            </div>
+                            <div class="p-3 bg-light rounded-3 border">
+                                <div class="text-muted small mb-1">Total Events Conducted</div>
+                                <div class="fw-bold text-dark h5 mb-0" id="panel-total-events">0</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="info-row"><span class="label"><i class="bi bi-flower1 me-1"></i>Farmers</span><span class="value" id="modal-farmers">0</span></div>
-                    <div class="info-row"><span class="label"><i class="bi bi-water me-1"></i>Fisherfolk</span><span class="value" id="modal-fisherfolk">0</span></div>
-                    <div class="info-row"><span class="label"><i class="bi bi-shuffle me-1"></i>Both</span><span class="value" id="modal-both">0</span></div>
-                </div>
-                <div class="info-section">
-                    <div class="info-section-title"><i class="bi bi-calendar-event"></i>Distribution Events</div>
-                    <div class="info-stat-grid">
-                        <div class="info-stat-box"><div class="value" id="modal-total-events">0</div><div class="label">Total Events</div></div>
-                        <div class="info-stat-box"><div class="value" id="modal-completed-events">0</div><div class="label">Completed</div></div>
+                    
+                    <div class="col-md-6">
+                        <div class="info-section mb-0">
+                            <div class="info-section-title d-flex justify-content-between">
+                                <span><i class="bi bi-list-stars"></i>Beneficiary Directory</span>
+                                <span class="badge bg-success" id="panel-beneficiary-count">0</span>
+                            </div>
+                            <div id="panel-beneficiary-list" class="beneficiary-list" style="max-height: 500px; overflow-y: auto;">
+                                <!-- Loaded via AJAX -->
+                            </div>
+                        </div>
                     </div>
-                    <div class="info-row"><span class="label">Physical Events</span><span class="value" id="modal-physical">0</span></div>
-                    <div class="info-row"><span class="label">Financial Events</span><span class="value" id="modal-financial">0</span></div>
-                </div>
-                <div class="info-section">
-                    <div class="info-section-title"><i class="bi bi-box-seam"></i>Allocations & Assistance</div>
-                    <div class="info-stat-grid">
-                        <div class="info-stat-box"><div class="value" id="modal-allocations">0</div><div class="label">Allocations</div></div>
-                        <div class="info-stat-box"><div class="value" id="modal-direct-assist">0</div><div class="label">Direct Assistance</div></div>
-                    </div>
-                </div>
-                <div class="info-section">
-                    <div class="info-section-title"><i class="bi bi-cash-stack"></i>Financial</div>
-                    <div class="info-row"><span class="label">Fund Allocated</span><span class="value text-success" id="modal-fund-allocated">₱0</span></div>
-                    <div class="info-row"><span class="label">Cash Disbursed</span><span class="value text-success" id="modal-cash-disbursed">₱0</span></div>
-                </div>
-                <div class="info-section">
-                    <div class="info-section-title"><i class="bi bi-people-fill"></i>Registered Beneficiaries<span class="badge bg-success ms-2" id="beneficiary-count">0</span></div>
-                    <div id="beneficiary-list-container" class="beneficiary-list"></div>
                 </div>
             </div>
         </div>
@@ -208,41 +436,51 @@ document.addEventListener('DOMContentLoaded', function () {
         maxZoom: 16
     });
 
-    // Street Map Layer
-    const streetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
-        maxZoom: 16,
-        name: 'Street Map'
+    // Layers Configuration
+    const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+        subdomains: 'abcd',
+        maxZoom: 20
     });
 
-    // Satellite Map Layer
+    const osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
+    });
+
     const satelliteMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: '&copy; Esri',
-        maxZoom: 16,
-        name: 'Satellite'
+        maxZoom: 17
     });
 
-    // Add Street Map by default
-    streetMap.addTo(map);
+    // Set Carto Light as default
+    cartoLight.addTo(map);
 
-    // Layer control for street/satellite toggle
     const baseLayers = {
-        'Street Map': streetMap,
+        'Modern View': cartoLight,
+        'Original View': osmStandard,
         'Satellite': satelliteMap
     };
-    L.control.layers(baseLayers, null, { position: 'topleft', collapsed: true }).addTo(map);
+    L.control.layers(baseLayers, null, { position: 'topleft' }).addTo(map);
 
-    // Legend
-    const legend = L.control({ position: 'bottomright' });
+    // Custom Legend
+    const legend = L.control({ position: 'bottomleft' });
     legend.onAdd = function() {
-        const div = L.DomUtil.create('div', 'map-legend');
-        div.innerHTML = '<strong>Distribution Status</strong><br><span class="legend-dot" style="background: #28a745;"></span>Completed<br><span class="legend-dot" style="background: #ffc107;"></span>Ongoing<br><span class="legend-dot" style="background: #0d6efd;"></span>Pending<br><span class="legend-dot" style="background: #dc3545;"></span>No Distribution';
+        const div = L.DomUtil.create('div', 'map-legend glass-effect');
+        div.innerHTML = `
+            <div class="fw-bold mb-2">Distribution Activity</div>
+            <div class="d-flex align-items-center mb-1"><span class="legend-dot" style="background: #10b981;"></span>Completed</div>
+            <div class="d-flex align-items-center mb-1"><span class="legend-dot" style="background: #f59e0b;"></span>Ongoing</div>
+            <div class="d-flex align-items-center mb-1"><span class="legend-dot" style="background: #3b82f6;"></span>Pending</div>
+            <div class="d-flex align-items-center"><span class="legend-dot" style="background: #ef4444;"></span>No Data</div>
+        `;
         return div;
     };
     legend.addTo(map);
 
     let markers = {};
     let barangayDataMap = {};
+    const barangayModal = new bootstrap.Modal(document.getElementById('barangayModal'));
 
     async function loadMapData() {
         const params = new URLSearchParams();
@@ -254,31 +492,56 @@ document.addEventListener('DOMContentLoaded', function () {
             const response = await fetch(`{{ route('geo-map.data') }}?${params}`, { headers: { 'Accept': 'application/json' } });
             if (!response.ok) throw new Error('Failed to load map data');
             const result = await response.json();
+            
+            // Clear existing markers
             Object.values(markers).forEach(m => map.removeLayer(m));
             markers = {};
             barangayDataMap = {};
 
             result.data.forEach(barangay => {
                 barangayDataMap[barangay.id] = barangay;
+                
+                const isOngoing = barangay.distribution_status === 'ongoing';
                 const color = barangay.pin_color;
-                const svg = `<svg viewBox="0 0 24 32" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C7.03 0 3 4.03 3 9c0 5.25 9 23 9 23s9-17.75 9-23c0-4.97-4.03-9-9-9z" fill="${color}" stroke="white" stroke-width="2"/></svg>`;
-                const html = `<div class="pin-marker">${svg}<div class="pin-count">${barangay.total_beneficiaries}</div></div>`;
+                const count = barangay.total_beneficiaries;
+                const displayCount = count > 999 ? (count/1000).toFixed(1) + 'k' : count;
+                const isSmall = String(displayCount).length > 2;
+                
+                // Redesigned Pin HTML - Cleaner Droplet Style
+                const pinHtml = `
+                    <div class="pin-marker-container" style="color: ${color};">
+                        ${isOngoing ? '<div class="pin-pulse-effect"></div>' : ''}
+                        <div class="pin-main">
+                            <svg viewBox="0 0 38 38" width="38" height="38">
+                                <circle cx="19" cy="19" r="17" class="pin-droplet" />
+                            </svg>
+                            <div class="pin-badge">
+                                <span class="pin-count ${isSmall ? 'small-text' : ''}">${displayCount}</span>
+                            </div>
+                        </div>
+                        <div class="pin-stem"></div>
+                    </div>
+                `;
 
                 const marker = L.marker([barangay.latitude, barangay.longitude], {
-                    icon: L.divIcon({ html: html, iconSize: [28, 36], className: 'pin-marker-icon' })
-                }).bindTooltip(barangay.name, { direction: 'top', className: 'pin-label' })
-                  .on('click', () => showBarangayInfo(barangay))
+                    icon: L.divIcon({ 
+                        html: pinHtml, 
+                        iconSize: [40, 50], 
+                        iconAnchor: [20, 50], 
+                        className: 'custom-pin' 
+                    })
+                }).bindTooltip(`<div class="text-center"><strong>${barangay.name}</strong><br><span class="text-success small">${barangay.coverage_rate}% Reached</span></div>`, { 
+                    direction: 'top', 
+                    className: 'pin-label',
+                    offset: [0, -50]
+                }).on('click', () => openBarangayModal(barangay))
                   .addTo(map);
+                
                 markers[barangay.id] = marker;
             });
 
-            let tb = 0, te = 0, tc = 0;
-            result.data.forEach(b => { tb += b.total_beneficiaries; te += b.total_events; tc += b.coverage_rate; });
-            const ac = result.data.length > 0 ? Math.round(tc / result.data.length) : 0;
-            document.getElementById('stat-barangays').textContent = result.data.length;
-            document.getElementById('stat-beneficiaries').textContent = tb.toLocaleString();
-            document.getElementById('stat-events').textContent = te;
-            document.getElementById('stat-reach').textContent = ac + '%';
+            // Update Global Stats
+            updateGlobalStats(result.data);
 
             if (Object.keys(markers).length > 0) {
                 const group = new L.featureGroup(Object.values(markers));
@@ -289,39 +552,92 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function showBarangayInfo(barangay) {
-        const modal = new bootstrap.Modal(document.getElementById('barangayInfoModal'));
-        document.getElementById('modal-barangay-name').textContent = barangay.name;
-        const sb = document.getElementById('modal-status-badge');
-        sb.textContent = barangay.distribution_status.toUpperCase();
-        sb.className = `badge-info ${barangay.distribution_status}`;
-        document.getElementById('modal-coverage').textContent = `${barangay.coverage_rate}%`;
-        document.getElementById('modal-last-dist').textContent = barangay.last_distribution_date ? new Date(barangay.last_distribution_date).toLocaleDateString('en-PH') : 'N/A';
-        document.getElementById('modal-total-benef').textContent = barangay.total_beneficiaries;
-        document.getElementById('modal-reached').textContent = barangay.beneficiaries_reached;
-        document.getElementById('modal-farmers').textContent = barangay.total_farmers;
-        document.getElementById('modal-fisherfolk').textContent = barangay.total_fisherfolk;
-        document.getElementById('modal-both').textContent = barangay.total_both;
-        document.getElementById('modal-total-events').textContent = barangay.total_events;
-        document.getElementById('modal-completed-events').textContent = barangay.events_completed;
-        document.getElementById('modal-physical').textContent = barangay.total_physical_events;
-        document.getElementById('modal-financial').textContent = barangay.total_financial_events;
-        document.getElementById('modal-allocations').textContent = barangay.total_allocations;
-        document.getElementById('modal-direct-assist').textContent = barangay.total_direct_assistance;
-        const fa = Number(barangay.total_fund_allocated || 0);
-        const cd = Number(barangay.total_cash_disbursed || 0);
-        document.getElementById('modal-fund-allocated').textContent = '₱' + fa.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        document.getElementById('modal-cash-disbursed').textContent = '₱' + cd.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-
-        // Load beneficiaries for this barangay
-        loadBeneficiaries(barangay.id);
-
-        modal.show();
+    function darkenColor(col, amt) {
+        let usePound = false;
+        if (col[0] == "#") { col = col.slice(1); usePound = true; }
+        let num = parseInt(col, 16);
+        let r = (num >> 16) - amt;
+        if (r > 255) r = 255; else if (r < 0) r = 0;
+        let b = ((num >> 8) & 0x00FF) - amt;
+        if (b > 255) b = 255; else if (b < 0) b = 0;
+        let g = (num & 0x0000FF) - amt;
+        if (g > 255) g = 255; else if (g < 0) g = 0;
+        return (usePound ? "#" : "") + (g | (b << 8) | (r << 16)).toString(16).padStart(6, '0');
     }
 
+    function updateGlobalStats(data) {
+        let tb = 0, te = 0, tc = 0;
+        data.forEach(b => { 
+            tb += b.total_beneficiaries; 
+            te += b.total_events; 
+            tc += b.coverage_rate; 
+        });
+        const ac = data.length > 0 ? Math.round(tc / data.length) : 0;
+        
+        animateNumber('stat-barangays', data.length);
+        animateNumber('stat-beneficiaries', tb);
+        animateNumber('stat-events', te);
+        document.getElementById('stat-reach').textContent = ac + '%';
+    }
+
+    function animateNumber(id, finalValue) {
+        const el = document.getElementById(id);
+        let startValue = 0;
+        const duration = 1000;
+        const step = (finalValue - startValue) / (duration / 16);
+        
+        const update = () => {
+            startValue += step;
+            if (startValue >= finalValue) {
+                el.textContent = finalValue.toLocaleString();
+            } else {
+                el.textContent = Math.floor(startValue).toLocaleString();
+                requestAnimationFrame(update);
+            }
+        };
+        update();
+    }
+
+    function openBarangayModal(barangay) {
+        document.getElementById('panel-barangay-name').textContent = barangay.name;
+        document.getElementById('panel-coverage').textContent = `${barangay.coverage_rate}%`;
+        document.getElementById('panel-coverage-bar').style.width = `${barangay.coverage_rate}%`;
+        
+        const sb = document.getElementById('panel-status-badge');
+        sb.textContent = (barangay.distribution_status || 'Pending').toUpperCase();
+        sb.className = `badge-info ${barangay.distribution_status || 'pending'}`;
+        
+        document.getElementById('panel-last-dist').textContent = barangay.last_distribution_date ? new Date(barangay.last_distribution_date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
+        
+        document.getElementById('panel-total-benef').textContent = (barangay.total_beneficiaries || 0).toLocaleString();
+        document.getElementById('panel-reached').textContent = (barangay.beneficiaries_reached || 0).toLocaleString();
+        document.getElementById('panel-farmers').textContent = (barangay.total_farmers || 0).toLocaleString();
+        document.getElementById('panel-fisherfolk').textContent = (barangay.total_fisherfolk || 0).toLocaleString();
+        document.getElementById('panel-total-events').textContent = (barangay.total_events || 0).toLocaleString();
+        
+        const fa = Number(barangay.total_fund_allocated || 0);
+        document.getElementById('panel-fund-allocated').textContent = '₱' + fa.toLocaleString('en-PH', {minimumFractionDigits: 0});
+
+        loadBeneficiaries(barangay.id);
+        barangayModal.show();
+    }
+
+    // Search Functionality
+    document.getElementById('mapSearch').addEventListener('input', function(e) {
+        const query = e.target.value.toLowerCase();
+        for (let id in barangayDataMap) {
+            if (barangayDataMap[id].name.toLowerCase().includes(query)) {
+                const b = barangayDataMap[id];
+                map.flyTo([b.latitude, b.longitude], 15);
+                setTimeout(() => openBarangayModal(b), 800);
+                break;
+            }
+        }
+    });
+
     function loadBeneficiaries(barangayId) {
-        const container = document.getElementById('beneficiary-list-container');
-        const countBadge = document.getElementById('beneficiary-count');
+        const container = document.getElementById('panel-beneficiary-list');
+        const countBadge = document.getElementById('panel-beneficiary-count');
 
         const escapeHtml = (value) => {
             return String(value ?? '').replace(/[&<>"']/g, function (char) {
@@ -348,48 +664,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const copyToClipboard = async (text) => {
             if (!text) return false;
-
-            if (navigator.clipboard && window.isSecureContext) {
-                try {
-                    await navigator.clipboard.writeText(text);
-                    return true;
-                } catch (_) {
-                    // Fall back to legacy method below.
-                }
-            }
-
             try {
-                const helper = document.createElement('textarea');
-                helper.value = text;
-                helper.style.position = 'fixed';
-                helper.style.left = '-9999px';
-                helper.style.top = '0';
-                document.body.appendChild(helper);
-                helper.focus();
-                helper.select();
-                const copied = document.execCommand('copy');
-                document.body.removeChild(helper);
-                return copied;
+                await navigator.clipboard.writeText(text);
+                return true;
             } catch (_) {
                 return false;
             }
         };
 
-        // Show loading state
-        container.innerHTML = '<div class="no-data">Loading beneficiaries...</div>';
+        container.innerHTML = '<div class="text-center py-4"><div class="spinner-border spinner-border-sm text-success"></div><div class="small text-muted mt-2">Fetching records...</div></div>';
 
         fetch(`/api/barangay/${barangayId}/beneficiaries`, {
             headers: { 'Accept': 'application/json' }
         })
-        .then(response => {
-            if (!response.ok) throw new Error('Failed to load beneficiaries');
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
             countBadge.textContent = data.beneficiaries.length;
 
             if (data.beneficiaries.length === 0) {
-                container.innerHTML = '<div class="no-data">No beneficiaries registered in this barangay</div>';
+                container.innerHTML = '<div class="text-center py-4 text-muted small">No beneficiaries found</div>';
                 return;
             }
 
@@ -397,20 +690,9 @@ document.addEventListener('DOMContentLoaded', function () {
             data.beneficiaries.forEach(benef => {
                 const classification = benef.classification || 'Unknown';
                 const classColor = classification === 'Farmer' ? 'success' : classification === 'Fisherfolk' ? 'info' : 'warning';
-                const latestType = benef.latest_assistance_type || 'No assistance yet';
-                const latestDate = formatDate(benef.latest_assistance_date);
                 const safeName = escapeHtml(benef.full_name || benef.name || 'N/A');
                 const safeCode = escapeHtml(benef.beneficiary_code || ('BEN-' + benef.id));
-                const safeAgency = escapeHtml(benef.agency_name || 'Unassigned');
-                const safeAddress = escapeHtml(benef.full_address || 'No address provided');
-                const safeContact = benef.contact_number ? escapeHtml(benef.contact_number) : 'No contact';
-                const statusText = (benef.status || 'Unknown').toString();
-                const statusColor = statusText.toLowerCase() === 'active' ? 'success' : 'secondary';
-                const assistanceCount = Number(benef.assistance_count_this_year || 0).toLocaleString('en-PH');
-                const safeLatestType = escapeHtml(latestType);
-                const safeLatestDate = escapeHtml(latestDate);
-                const safeProfileUrl = escapeHtml(benef.profile_url || '#');
-                const safeSmsUrl = escapeHtml(benef.sms_url || '#');
+                const safeContact = benef.contact_number ? escapeHtml(benef.contact_number) : 'N/A';
                 const hasContact = !!(benef.contact_number && String(benef.contact_number).trim() !== '');
 
                 const chips = [];
@@ -420,47 +702,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 html += `
                     <div class="beneficiary-item">
-                        <div class="header">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
                             <div>
-                                <div class="name">${safeName}</div>
-                                <div class="subtext">${safeCode}</div>
+                                <div class="fw-bold text-dark" style="font-size: 0.95rem;">${safeName}</div>
+                                <div class="text-muted" style="font-size: 0.75rem; letter-spacing: 0.5px;">${safeCode}</div>
                             </div>
-                            <div>
-                                <span class="badge bg-${classColor}" style="font-size: 0.68rem;">${escapeHtml(classification)}</span>
-                                <span class="badge bg-${statusColor} ms-1" style="font-size: 0.68rem;">${escapeHtml(statusText)}</span>
-                            </div>
+                            <span class="badge bg-${classColor}-subtle text-${classColor} border border-${classColor}" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;">${classification.toUpperCase()}</span>
                         </div>
-                        <div class="meta">
-                            <div class="meta-row">
-                                <span class="label">Latest Assistance</span>
-                                <span class="value">${safeLatestType}</span>
-                            </div>
-                            <div class="meta-row">
-                                <span class="label">Latest Date</span>
-                                <span class="value">${safeLatestDate}</span>
-                            </div>
-                            <div class="meta-row">
-                                <span class="label">Assistance This Year</span>
-                                <span class="value">${assistanceCount}</span>
-                            </div>
-                            <div class="meta-row">
-                                <span class="label">Agency</span>
-                                <span class="value">${safeAgency}</span>
-                            </div>
-                            <div class="meta-row">
-                                <span class="label">Address</span>
-                                <span class="value">${safeAddress}</span>
-                            </div>
-                            <div class="meta-row">
-                                <span class="label">Contact</span>
-                                <span class="value">${safeContact}</span>
-                            </div>
+                        <div class="small text-muted mb-2">
+                            <i class="bi bi-telephone me-1"></i> ${safeContact}
                         </div>
-                        ${chips.length ? `<div class="chip-row">${chips.join('')}</div>` : ''}
-                        <div class="actions">
-                            <a href="${safeProfileUrl}" class="btn btn-outline-success btn-sm">View Profile</a>
-                            <a href="${safeSmsUrl}" class="btn btn-outline-primary btn-sm">Open SMS</a>
-                            <button type="button" class="btn btn-outline-secondary btn-sm js-copy-contact" data-contact="${encodeURIComponent(String(benef.contact_number || ''))}" ${hasContact ? '' : 'disabled'}>${hasContact ? 'Copy Contact' : 'No Contact'}</button>
+                        ${chips.length ? `<div class="chip-row mb-3">${chips.join('')}</div>` : ''}
+                        <div class="d-flex gap-2">
+                            <a href="${benef.profile_url}" class="btn btn-sm btn-light border flex-grow-1 fw-bold" style="font-size: 0.75rem;">View</a>
+                            <button type="button" class="btn btn-sm btn-light border js-copy-contact" data-contact="${safeContact}" ${hasContact ? '' : 'disabled'}>
+                                <i class="bi bi-clipboard"></i>
+                            </button>
                         </div>
                     </div>
                 `;
@@ -469,35 +726,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
             container.querySelectorAll('.js-copy-contact').forEach((button) => {
                 button.addEventListener('click', async () => {
-                    const encodedContact = button.getAttribute('data-contact') || '';
-                    let contact = '';
-
-                    try {
-                        contact = decodeURIComponent(encodedContact);
-                    } catch (_) {
-                        contact = encodedContact;
-                    }
-
-                    if (!contact) {
-                        return;
-                    }
-
-                    const originalLabel = button.textContent;
+                    const contact = button.getAttribute('data-contact');
                     const copied = await copyToClipboard(contact);
-                    if (!copied) {
-                        window.prompt('Copy this contact number:', contact);
-                    }
-
-                    button.textContent = copied ? 'Copied' : 'Manual Copy';
-                    setTimeout(() => {
-                        button.textContent = originalLabel;
-                    }, 1000);
+                    const originalIcon = button.innerHTML;
+                    button.innerHTML = copied ? '<i class="bi bi-check text-success"></i>' : '<i class="bi bi-x text-danger"></i>';
+                    setTimeout(() => { button.innerHTML = originalIcon; }, 1500);
                 });
             });
-        })
-        .catch(error => {
-            console.error('Error loading beneficiaries:', error);
-            container.innerHTML = '<div class="no-data">Error loading beneficiaries</div>';
         });
     }
 
