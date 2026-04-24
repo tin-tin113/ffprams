@@ -148,7 +148,7 @@
                             </div>
                             <div>
                                 <div class="stat-card-value text-primary fs-3 fw-bold">{{ number_format($totalEvents) }}</div>
-                                <div class="stat-card-label fw-bold text-uppercase small text-muted">Total Operations</div>
+                                <div class="stat-card-label fw-bold text-uppercase small text-muted">Total Events</div>
                             </div>
                         </div>
                     </div>
@@ -161,7 +161,7 @@
                             </div>
                             <div>
                                 <div class="stat-card-value text-success fs-3 fw-bold">₱{{ number_format($totalAllocatedAmount, 2) }}</div>
-                                <div class="stat-card-label fw-bold text-uppercase small text-muted">Investment Reach</div>
+                                <div class="stat-card-label fw-bold text-uppercase small text-muted">Total Amount Distributed</div>
                             </div>
                         </div>
                     </div>
@@ -182,6 +182,18 @@
             </div>
 
             <div class="row g-4">
+                <div class="col-lg-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4">
+                            <h5 class="card-title fw-bold mb-0">Assistance Over Time (Monthly Trend)</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <div style="height: 300px;">
+                                <canvas id="trendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="col-lg-7">
                     <div class="card border-0 shadow-sm">
                         <div class="card-header bg-transparent border-0 pt-4 px-4">
@@ -221,7 +233,8 @@
                                     <th>Barangay</th>
                                     <th>Resource</th>
                                     <th>Status</th>
-                                    <th class="text-end pe-4">Reach</th>
+                                    <th>Reach</th>
+                                    <th class="text-end pe-4">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -239,11 +252,16 @@
                                             <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">{{ $event->status ?? '-' }}</span>
                                         @endif
                                     </td>
-                                    <td class="text-end pe-4">
-                                        <div class="d-flex align-items-center justify-content-end gap-2">
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
                                             <span class="fw-bold">{{ $event->allocations_count }}</span>
                                             <small class="text-muted">Allocated</small>
                                         </div>
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <a href="{{ route('distribution-events.show', $event) }}" class="btn btn-soft-primary btn-sm rounded-pill px-3">
+                                            View Event
+                                        </a>
                                     </td>
                                 </tr>
                                 @empty
@@ -289,6 +307,7 @@
                                             <th class="ps-4">Beneficiary</th>
                                             <th>Barangay</th>
                                             <th>Resource</th>
+                                            <th>Reason for Help</th>
                                             <th class="text-end">Value</th>
                                             <th>Method</th>
                                             <th class="pe-4">Status</th>
@@ -298,11 +317,14 @@
                                         @forelse($allocations as $allocation)
                                         <tr>
                                             <td class="ps-4">
-                                                <div class="fw-semibold text-dark">{{ $allocation->beneficiary?->full_name ?? 'N/A' }}</div>
-                                                <small class="text-muted">{{ $allocation->created_at?->format('M d, Y') }}</small>
+                                                <a href="{{ route('beneficiaries.show', $allocation->beneficiary) }}" class="fw-semibold text-primary text-decoration-none">
+                                                    {{ $allocation->beneficiary?->full_name ?? 'N/A' }}
+                                                </a>
+                                                <small class="text-muted d-block">{{ $allocation->created_at?->format('M d, Y') }}</small>
                                             </td>
                                             <td>{{ $allocation->distributionEvent?->barangay?->name ?? $allocation->beneficiary?->barangay?->name ?? 'N/A' }}</td>
                                             <td><span class="badge bg-light text-dark border">{{ $allocation->resourceType?->name ?? 'N/A' }}</span></td>
+                                            <td><small class="text-muted">{{ $allocation->assistancePurpose?->name ?? 'N/A' }}</small></td>
                                             <td class="text-end">
                                                 @if($allocation->amount) <div class="fw-bold">₱{{ number_format($allocation->amount, 2) }}</div> @endif
                                                 @if($allocation->quantity) <small class="text-muted">{{ number_format($allocation->quantity, 1) }} units</small> @endif
@@ -339,6 +361,7 @@
                                         <tr>
                                             <th class="ps-4">Beneficiary</th>
                                             <th>Resource</th>
+                                            <th>Reason for Help</th>
                                             <th class="text-end">Value</th>
                                             <th>Status</th>
                                             <th class="pe-4">Date Distributed</th>
@@ -348,10 +371,13 @@
                                         @forelse($directAssistanceRecords as $record)
                                         <tr>
                                             <td class="ps-4">
-                                                <div class="fw-semibold text-dark">{{ $record->beneficiary?->full_name ?? 'N/A' }}</div>
-                                                <small class="text-muted">Recorded: {{ $record->created_at?->format('M d, Y') }}</small>
+                                                <a href="{{ route('beneficiaries.show', $record->beneficiary) }}" class="fw-semibold text-primary text-decoration-none">
+                                                    {{ $record->beneficiary?->full_name ?? 'N/A' }}
+                                                </a>
+                                                <small class="text-muted d-block">Recorded: {{ $record->created_at?->format('M d, Y') }}</small>
                                             </td>
                                             <td><span class="badge bg-light text-dark border">{{ $record->resourceType?->name ?? 'N/A' }}</span></td>
+                                            <td><small class="text-muted">{{ $record->assistancePurpose?->name ?? 'N/A' }}</small></td>
                                             <td class="text-end">
                                                 @if($record->amount) <div class="fw-bold">₱{{ number_format($record->amount, 2) }}</div> @endif
                                                 @if($record->quantity) <small class="text-muted">{{ number_format($record->quantity, 1) }} units</small> @endif
@@ -383,6 +409,17 @@
         <!-- Reach Tab -->
         <div class="tab-pane fade" id="reach" role="tabpanel">
             <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 px-4 pt-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                        <h5 class="card-title fw-bold mb-0">People Helped</h5>
+                        <div class="search-box">
+                            <div class="input-group input-group-sm bg-light rounded-pill px-2" style="max-width: 300px;">
+                                <span class="input-group-text bg-transparent border-0"><i class="bi bi-search"></i></span>
+                                <input type="text" id="reachSearch" class="form-control bg-transparent border-0" placeholder="Search for a name...">
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
@@ -402,7 +439,9 @@
                                                 <i class="bi bi-person-fill"></i>
                                             </div>
                                             <div>
-                                                <span class="d-block fw-bold text-dark">{{ $beneficiary->full_name ?? 'N/A' }}</span>
+                                                <a href="{{ route('beneficiaries.show', $beneficiary) }}" class="d-block fw-bold text-primary text-decoration-none">
+                                                    {{ $beneficiary->full_name ?? 'N/A' }}
+                                                </a>
                                                 <small class="text-muted">{{ $beneficiary->barangay?->name ?? 'No Barangay' }}</small>
                                             </div>
                                         </div>
@@ -623,6 +662,52 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 cutout: '70%'
             }
+        });
+    }
+
+    const trendCtx = document.getElementById('trendChart');
+    if (trendCtx) {
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: {!! json_encode($monthlyTrend->pluck('month')) !!},
+                datasets: [{
+                    label: 'Items Distributed',
+                    data: {!! json_encode($monthlyTrend->pluck('total')) !!},
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#0d6efd'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    // Reach search filter
+    const reachSearch = document.getElementById('reachSearch');
+    if (reachSearch) {
+        reachSearch.addEventListener('keyup', function() {
+            const filter = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#reach tbody tr');
+            rows.forEach(row => {
+                const name = row.querySelector('.fw-bold')?.textContent.toLowerCase() || '';
+                if (name.includes(filter)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
         });
     }
 

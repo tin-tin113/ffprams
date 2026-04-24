@@ -979,16 +979,110 @@
             border: 1px solid #cfd8e3;
             border-radius: 0.65rem;
             background-color: #fff;
-            min-height: 2.45rem;
-            font-size: 0.9rem;
-            padding-top: 0.45rem;
-            padding-bottom: 0.45rem;
-            box-shadow: none;
-            transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+            padding: 1rem 1.25rem;
+            padding-bottom: 0.5rem;
         }
 
-        .modern-filter-grid .form-control::placeholder {
+        /* --- Notification Styles --- */
+        .notification-dropdown {
+            width: 290px;
+            padding: 0;
+            border: none;
+            border-radius: 0.6rem;
+            overflow: hidden;
+            margin-top: 8px !important;
+        }
+
+        .notification-header {
+            padding: 0.75rem 1rem;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .notification-header h6 {
+            margin: 0;
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .notification-list {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background-color 0.2s;
+            display: flex;
+            gap: 0.75rem;
+            text-decoration: none !important;
+            color: inherit !important;
+        }
+
+        .notification-item:hover {
+            background-color: #f8fafc;
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 0.9rem;
+        }
+
+        .notification-icon.high {
+            background-color: #fee2e2;
+            color: #ef4444;
+        }
+
+        .notification-icon.medium {
+            background-color: #ffedd5;
+            color: #f97316;
+        }
+
+        .notification-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #1e293b;
+            margin-bottom: 0.1rem;
+            display: block;
+        }
+
+        .notification-message {
+            font-size: 0.75rem;
+            color: #64748b;
+            line-height: 1.3;
+            display: block;
+            margin-bottom: 0.15rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .notification-time {
+            font-size: 0.65rem;
             color: #94a3b8;
+            font-weight: 500;
         }
 
         .modern-filter-grid .form-control:focus,
@@ -996,6 +1090,10 @@
             border-color: #22c55e;
             box-shadow: 0 0 0 0.18rem rgba(34, 197, 94, 0.12);
             transform: translateY(-1px);
+        }
+
+        .modern-filter-grid .form-control::placeholder {
+            color: #94a3b8;
         }
 
         .modern-filter-input::placeholder {
@@ -1282,30 +1380,44 @@
                         data-bs-toggle="dropdown"
                         aria-expanded="false">
                     <i class="bi bi-bell"></i>
-                    <span class="badge rounded-pill bg-secondary">0</span>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="notificationDropdown">
-                    <li><h6 class="dropdown-header">Notifications</h6></li>
-                    <li><span class="dropdown-item-text text-muted small">No new notifications right now.</span></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <a class="dropdown-item" href="{{ route('distribution-events.index') }}">
-                            <i class="bi bi-calendar-event me-2"></i> Distribution Events
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" href="{{ route('sms.index') }}">
-                            <i class="bi bi-chat-dots me-2"></i> SMS Broadcast
-                        </a>
-                    </li>
-                    @if(Auth::user()->isAdmin())
-                    <li>
-                        <a class="dropdown-item" href="{{ route('admin.audit-logs.index') }}">
-                            <i class="bi bi-journal-text me-2"></i> Audit Logs
-                        </a>
-                    </li>
+                    @if(count($globalAlerts) > 0)
+                        <span class="badge rounded-pill bg-danger">
+                            {{ count($globalAlerts) }}
+                        </span>
                     @endif
-                </ul>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end shadow-lg notification-dropdown" aria-labelledby="notificationDropdown">
+                    <div class="notification-header">
+                        <h6>Notifications</h6>
+                        @if(count($globalAlerts) > 0)
+                            <span class="badge bg-soft-danger rounded-pill">{{ count($globalAlerts) }} New</span>
+                        @endif
+                    </div>
+                    <div class="notification-list">
+                        @forelse($globalAlerts as $alert)
+                            <a href="{{ $alert['url'] }}" class="notification-item">
+                                <div class="notification-icon {{ $alert['priority'] === 'high' ? 'high' : 'medium' }}">
+                                    <i class="bi {{ $alert['icon'] }}"></i>
+                                </div>
+                                <div class="notification-body">
+                                    <span class="notification-title">{{ $alert['title'] }}</span>
+                                    <span class="notification-message">{{ $alert['message'] }}</span>
+                                    <span class="notification-time">{{ $alert['time'] }}</span>
+                                </div>
+                            </a>
+                        @empty
+                            <div class="p-4 text-center">
+                                <i class="bi bi-bell-slash text-muted mb-2 d-block" style="font-size: 2rem;"></i>
+                                <span class="text-muted small">No new notifications right now.</span>
+                            </div>
+                        @endforelse
+                    </div>
+                    <div class="p-2 border-top bg-light text-center">
+                        <a href="{{ route('distribution-events.index') }}" class="small text-decoration-none fw-600 text-muted">
+                            View All Events
+                        </a>
+                    </div>
+                </div>
             </div>
 
             <!-- User Dropdown -->

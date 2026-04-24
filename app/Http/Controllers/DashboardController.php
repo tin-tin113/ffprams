@@ -121,6 +121,7 @@ class DashboardController extends Controller
         $programDisbursementChart = $this->getProgramDisbursementChartData();
         $monthlyReleaseMethodTrend = $this->getMonthlyReleaseMethodTrendData();
 
+
         return view('dashboard', [
             'totalBeneficiaries' => $totalBeneficiaries,
             'totalFarmers' => $totalFarmers,

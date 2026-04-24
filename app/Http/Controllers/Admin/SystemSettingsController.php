@@ -141,8 +141,8 @@ class SystemSettingsController extends Controller
 
         $summary = [
             'total' => ProgramName::count(),
-            'active' => ProgramName::where('is_active', true)->count(),
-            'inactive' => ProgramName::where('is_active', false)->count(),
+            'active_events' => DistributionEvent::whereIn('status', ['Pending', 'Ongoing'])->count(),
+            'total_docs' => ProgramLegalRequirement::count(),
         ];
 
         return view('admin.settings.program-names.index', compact('agencies', 'programNames', 'summary', 'agencyClassificationMap'));

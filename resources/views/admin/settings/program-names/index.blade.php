@@ -40,12 +40,12 @@
         <div class="col-12 col-md-4">
             <div class="card border-0 shadow-sm overflow-hidden h-100 glass-card">
                 <div class="card-body p-4 d-flex align-items-center gap-3">
-                    <div class="rounded-circle bg-success-subtle p-3 text-success">
-                        <i class="bi bi-check-circle-fill fs-4"></i>
+                    <div class="rounded-circle bg-info-subtle p-3 text-info">
+                        <i class="bi bi-calendar-check-fill fs-4"></i>
                     </div>
                     <div>
-                        <div class="text-muted small fw-semibold text-uppercase tracking-wider">Active Programs</div>
-                        <div class="h3 fw-bold mb-0">{{ number_format($summary['active'] ?? 0) }}</div>
+                        <div class="text-muted small fw-semibold text-uppercase tracking-wider">Active Distributions</div>
+                        <div class="h3 fw-bold mb-0">{{ number_format($summary['active_events'] ?? 0) }}</div>
                     </div>
                 </div>
             </div>
@@ -53,12 +53,12 @@
         <div class="col-12 col-md-4">
             <div class="card border-0 shadow-sm overflow-hidden h-100 glass-card">
                 <div class="card-body p-4 d-flex align-items-center gap-3">
-                    <div class="rounded-circle bg-secondary-subtle p-3 text-secondary">
-                        <i class="bi bi-pause-circle-fill fs-4"></i>
+                    <div class="rounded-circle bg-warning-subtle p-3 text-warning">
+                        <i class="bi bi-file-earmark-text-fill fs-4"></i>
                     </div>
                     <div>
-                        <div class="text-muted small fw-semibold text-uppercase tracking-wider">Inactive Programs</div>
-                        <div class="h3 fw-bold mb-0">{{ number_format($summary['inactive'] ?? 0) }}</div>
+                        <div class="text-muted small fw-semibold text-uppercase tracking-wider">Compliance Docs</div>
+                        <div class="h3 fw-bold mb-0">{{ number_format($summary['total_docs'] ?? 0) }}</div>
                     </div>
                 </div>
             </div>

@@ -12,7 +12,9 @@ use App\Models\ProgramName;
 use App\Models\ResourceType;
 use App\Observers\GeoMapCacheObserver;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use App\Services\NotificationService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -40,5 +42,11 @@ class AppServiceProvider extends ServiceProvider
         DirectAssistance::observe(GeoMapCacheObserver::class);
         Barangay::observe(GeoMapCacheObserver::class);
         ResourceType::observe(GeoMapCacheObserver::class);
+
+        // Share notifications globally across all views
+        View::composer('*', function ($view) {
+            $notificationService = app(NotificationService::class);
+            $view->with('globalAlerts', $notificationService->getAttentionRequiredEvents());
+        });
     }
 }
