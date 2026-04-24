@@ -1042,7 +1042,7 @@ class AllocationController extends Controller
             return redirect()->back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('distribution-events.show', $allocation->distribution_event_id)
+        return redirect()->to(route('distribution-events.show', $allocation->distribution_event_id) . '#tab-beneficiaries')
             ->with('success', 'Allocation updated successfully.');
     }
 
@@ -1073,7 +1073,7 @@ class AllocationController extends Controller
         });
 
         if ($event) {
-            return redirect()->route('distribution-events.show', $event)
+            return redirect()->to(route('distribution-events.show', $event) . '#tab-beneficiaries')
                 ->with('success', 'Allocation removed successfully.');
         }
 
@@ -1122,7 +1122,7 @@ class AllocationController extends Controller
             'allocations',
         );
 
-        return redirect()->back()
+        return redirect()->to(url()->previous() . '#tab-beneficiaries')
             ->with('success', 'Allocation marked as distributed.');
     }
 
@@ -1161,7 +1161,7 @@ class AllocationController extends Controller
             'allocations',
         );
 
-        return redirect()->back()
+        return redirect()->to(url()->previous() . '#tab-beneficiaries')
             ->with('success', 'Allocation marked as Ready for Release.');
     }
 
@@ -1211,7 +1211,7 @@ class AllocationController extends Controller
             'allocations',
         );
 
-        return redirect()->back()
+        return redirect()->to(url()->previous() . '#tab-beneficiaries')
             ->with('success', 'Allocation marked as not received (' . $reason . ').');
     }
 
@@ -1295,7 +1295,7 @@ class AllocationController extends Controller
             ? 'marked as distributed'
             : 'marked as not received';
 
-        return redirect()->back()
+        return redirect()->to(url()->previous() . '#tab-beneficiaries')
             ->with('success', "{$updated} allocation(s) {$label}. {$skipped} skipped.");
     }
 

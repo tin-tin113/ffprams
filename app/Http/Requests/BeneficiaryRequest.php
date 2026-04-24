@@ -715,38 +715,14 @@ class BeneficiaryRequest extends FormRequest
     private function nativeFieldFallbackValues(): array
     {
         return [
-            'civil_status' => ['Single', 'Married', 'Widowed', 'Separated'],
-            'highest_education' => [
-                'No Formal Education',
-                'Elementary',
-                'High School',
-                'Vocational',
-                'College',
-                'Post Graduate',
-            ],
-            'id_type' => [
-                'PhilSys ID',
-                "Voter's ID",
-                "Driver's License",
-                'Passport',
-                'Senior Citizen ID',
-                'PWD ID',
-                'Postal ID',
-                'TIN ID',
-            ],
-            'farm_ownership' => ['Registered Owner', 'Tenant', 'Lessee', 'Owner', 'Share Tenant'],
-            'farm_type' => ['Irrigated', 'Rainfed Upland', 'Rainfed Lowland', 'Upland'],
-            'fisherfolk_type' => ['Capture Fishing', 'Aquaculture', 'Post-Harvest', 'Fish Farming', 'Fish Vendor', 'Fish Worker'],
-            'arb_classification' => [
-                'Agricultural Lessee',
-                'Regular Farmworker',
-                'Seasonal Farmworker',
-                'Other Farmworker',
-                'Actual Tiller',
-                'Collective/Cooperative',
-                'Others',
-            ],
-            'ownership_scheme' => ['Individual', 'Collective', 'Cooperative'],
+            'civil_status' => [],
+            'highest_education' => [],
+            'id_type' => [],
+            'farm_ownership' => [],
+            'farm_type' => [],
+            'fisherfolk_type' => [],
+            'arb_classification' => [],
+            'ownership_scheme' => [],
         ];
     }
 

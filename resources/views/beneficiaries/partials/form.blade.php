@@ -126,38 +126,14 @@
     $arbClassificationRequired = $isGroupRequired('arb_classification', true);
     $ownershipSchemeRequired = $isGroupRequired('ownership_scheme', true);
 
-    $civilStatusOptions = $normalizeFieldOptions($fo['civil_status'] ?? [], ['Single', 'Married', 'Widowed', 'Separated']);
-    $highestEducationOptions = $normalizeFieldOptions($fo['highest_education'] ?? [], [
-        'No Formal Education',
-        'Elementary',
-        'High School',
-        'Vocational',
-        'College',
-        'Post Graduate',
-    ]);
-    $idTypeOptions = $normalizeFieldOptions($fo['id_type'] ?? [], [
-        'PhilSys ID',
-        "Voter's ID",
-        "Driver's License",
-        'Passport',
-        'Senior Citizen ID',
-        'PWD ID',
-        'Postal ID',
-        'TIN ID',
-    ]);
-    $farmOwnershipOptions = $normalizeFieldOptions($fo['farm_ownership'] ?? [], ['Registered Owner', 'Tenant', 'Lessee']);
-    $farmTypeOptions = $normalizeFieldOptions($fo['farm_type'] ?? [], ['Irrigated', 'Rainfed Upland', 'Rainfed Lowland']);
-    $fisherfolkTypeOptions = $normalizeFieldOptions($fo['fisherfolk_type'] ?? [], ['Capture Fishing', 'Aquaculture', 'Post-Harvest']);
-    $arbClassificationOptions = $normalizeFieldOptions($fo['arb_classification'] ?? [], [
-        'Agricultural Lessee',
-        'Regular Farmworker',
-        'Seasonal Farmworker',
-        'Other Farmworker',
-        'Actual Tiller',
-        'Collective/Cooperative',
-        'Others',
-    ]);
-    $ownershipSchemeOptions = $normalizeFieldOptions($fo['ownership_scheme'] ?? [], ['Individual', 'Collective', 'Cooperative']);
+    $civilStatusOptions = $normalizeFieldOptions($fo['civil_status'] ?? [], []);
+    $highestEducationOptions = $normalizeFieldOptions($fo['highest_education'] ?? [], []);
+    $idTypeOptions = $normalizeFieldOptions($fo['id_type'] ?? [], []);
+    $farmOwnershipOptions = $normalizeFieldOptions($fo['farm_ownership'] ?? [], []);
+    $farmTypeOptions = $normalizeFieldOptions($fo['farm_type'] ?? [], []);
+    $fisherfolkTypeOptions = $normalizeFieldOptions($fo['fisherfolk_type'] ?? [], []);
+    $arbClassificationOptions = $normalizeFieldOptions($fo['arb_classification'] ?? [], []);
+    $ownershipSchemeOptions = $normalizeFieldOptions($fo['ownership_scheme'] ?? [], []);
     $rsbsaAvailabilityStatus = old(
         'rsbsa_availability_status',
         filled($beneficiary->rsbsa_unavailability_reason ?? null) ? 'not_available_yet' : 'provided'
