@@ -178,6 +178,7 @@ class AllocationController extends Controller
     {
         $query = $request->input('q', '');
         $barangayId = $request->input('barangay_id');
+        $agencyId = $request->input('agency_id');
         $classification = $request->input('classification');
 
         $beneficiaries = Beneficiary::with('barangay')
@@ -199,6 +200,11 @@ class AllocationController extends Controller
         // Filter by classification
         if ($classification && in_array($classification, ['Farmer', 'Fisherfolk'])) {
             $beneficiaries->where('classification', $classification);
+        }
+
+        // Filter by agency
+        if ($agencyId) {
+            $beneficiaries->where('agency_id', $agencyId);
         }
 
         $results = $beneficiaries

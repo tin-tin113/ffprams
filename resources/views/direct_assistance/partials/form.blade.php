@@ -18,21 +18,37 @@
 
     <!-- Beneficiary Selection (Always Visible) -->
     <div class="col-12">
-        <label for="beneficiarySelect" class="form-label fw-semibold">Beneficiary <span class="text-danger">*</span></label>
-        <select class="form-select @error('beneficiary_id') is-invalid @enderror"
-                name="beneficiary_id"
-                id="beneficiarySelect"
-                {{ $isEdit ? 'disabled' : 'required' }}>
-            <option value="" selected disabled>Select Beneficiary</option>
-            @foreach($beneficiaries as $beneficiary)
-                <option value="{{ $beneficiary->id }}"
-                        data-agency="{{ $beneficiary->agency->name }}"
-                        data-classification="{{ $beneficiary->classification }}"
-                        {{ old('beneficiary_id', $isEdit ? $directAssistance->beneficiary_id : '') == $beneficiary->id ? 'selected' : '' }}>
-                    {{ $beneficiary->full_name }} - {{ $beneficiary->barangay->name ?? 'N/A' }} ({{ $beneficiary->agency->name ?? 'N/A' }})
-                </option>
-            @endforeach
-        </select>
+        <div class="row g-2">
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Filter by Agency</label>
+                <select id="beneficiaryAgencyFilter" class="form-select">
+                    <option value="">All Agencies</option>
+                    @php
+                        $agencies = \App\Models\Agency::active()->orderBy('name')->get();
+                    @endphp
+                    @foreach($agencies as $agency)
+                        <option value="{{ $agency->name }}">{{ $agency->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-8">
+                <label for="beneficiarySelect" class="form-label fw-semibold">Beneficiary <span class="text-danger">*</span></label>
+                <select class="form-select @error('beneficiary_id') is-invalid @enderror"
+                        name="beneficiary_id"
+                        id="beneficiarySelect"
+                        {{ $isEdit ? 'disabled' : 'required' }}>
+                    <option value="" selected disabled>Select Beneficiary</option>
+                    @foreach($beneficiaries as $beneficiary)
+                        <option value="{{ $beneficiary->id }}"
+                                data-agency="{{ $beneficiary->agency->name }}"
+                                data-classification="{{ $beneficiary->classification }}"
+                                {{ old('beneficiary_id', $isEdit ? $directAssistance->beneficiary_id : '') == $beneficiary->id ? 'selected' : '' }}>
+                            {{ $beneficiary->full_name }} - {{ $beneficiary->barangay->name ?? 'N/A' }} ({{ $beneficiary->agency->name ?? 'N/A' }})
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
         @if($isEdit)
             <input type="hidden" name="beneficiary_id" value="{{ $directAssistance->beneficiary_id }}">
             <small class="text-muted d-block mt-2">
@@ -219,7 +235,29 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const beneficiaryAgencyFilter = document.getElementById('beneficiaryAgencyFilter');
         const beneficiarySelect = document.getElementById('beneficiarySelect');
+
+        if (beneficiaryAgencyFilter && beneficiarySelect) {
+            beneficiaryAgencyFilter.addEventListener('change', function() {
+                const agencyName = this.value;
+                const options = beneficiarySelect.querySelectorAll('option');
+                
+                options.forEach(opt => {
+                    if (!agencyName || opt.value === "" || opt.dataset.agency === agencyName) {
+                        opt.hidden = false;
+                    } else {
+                        opt.hidden = true;
+                    }
+                });
+
+                // Reset selection if current is hidden
+                if (beneficiarySelect.options[beneficiarySelect.selectedIndex]?.hidden) {
+                    beneficiarySelect.value = "";
+                    beneficiarySelect.dispatchEvent(new Event('change'));
+                }
+            });
+        }
         const programSelect = document.getElementById('programSelect');
         const resourceTypeSelect = document.getElementById('resourceTypeSelect');
         const quantityGroup = document.getElementById('quantityGroup');

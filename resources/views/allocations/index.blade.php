@@ -126,22 +126,31 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
+                                    <label class="form-label form-label-sm">Agency</label>
+                                    <select id="beneficiary_agency" class="form-select form-select-sm" data-beneficiary-filter="agency">
+                                        <option value="">All Agencies</option>
+                                        @foreach($agencies as $agency)
+                                            <option value="{{ $agency->id }}">{{ $agency->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
                                     <label class="form-label form-label-sm">Classification</label>
                                     <div class="btn-group btn-group-sm w-100" role="group">
                                         <input type="radio" class="btn-check" id="classification_all" name="beneficiary_classification"
                                                value="" checked data-beneficiary-filter="classification">
-                                        <label class="btn btn-outline-secondary" for="classification_all">All</label>
+                                        <label class="btn btn-outline-secondary px-1" for="classification_all">All</label>
                                         <input type="radio" class="btn-check" id="classification_farmer" name="beneficiary_classification"
                                                value="Farmer" data-beneficiary-filter="classification">
-                                        <label class="btn btn-outline-primary" for="classification_farmer">Farmer</label>
+                                        <label class="btn btn-outline-primary px-1" for="classification_farmer">Far</label>
                                         <input type="radio" class="btn-check" id="classification_fisherfolk" name="beneficiary_classification"
                                                value="Fisherfolk" data-beneficiary-filter="classification">
-                                        <label class="btn btn-outline-info" for="classification_fisherfolk">Fisherfolk</label>
+                                        <label class="btn btn-outline-info px-1" for="classification_fisherfolk">Fis</label>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label form-label-sm">Search by Name or Contact</label>
+                                <div class="col-md-4">
+                                    <label class="form-label form-label-sm">Search Name/Contact</label>
                                     <input type="text" id="beneficiary_search" class="form-control form-control-sm"
                                            placeholder="Type name or phone number..." data-beneficiary-filter="search">
                                 </div>
@@ -288,23 +297,23 @@
                                             <i class="bi bi-search me-1"></i> Find Beneficiary (Batch)
                                         </h6>
                                         <div class="row g-2 mb-2 modern-filter-grid">
-                                            <div class="col-md-3">
-                                                <select id="batch_beneficiary_barangay" class="form-select form-select-sm">
-                                                    <option value="">All Barangays</option>
-                                                    @foreach($barangays as $barangay)
-                                                        <option value="{{ $barangay->id }}">{{ $barangay->name }}</option>
+                                            <div class="col-md-2">
+                                                <select id="batch_beneficiary_agency" class="form-select form-select-sm">
+                                                    <option value="">All Agencies</option>
+                                                    @foreach($agencies as $agency)
+                                                        <option value="{{ $agency->id }}">{{ $agency->name }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
-                                            <div class="col-md-3">
+                                            <div class="col-md-2">
                                                 <select id="batch_beneficiary_classification" class="form-select form-select-sm">
                                                     <option value="">All Classifications</option>
                                                     <option value="Farmer">Farmer</option>
                                                     <option value="Fisherfolk">Fisherfolk</option>
                                                 </select>
                                             </div>
-                                            <div class="col-md-4">
-                                                <input type="text" id="batch_beneficiary_search" class="form-control form-control-sm" placeholder="Search name or contact...">
+                                            <div class="col-md-3">
+                                                <input type="text" id="batch_beneficiary_search" class="form-control form-control-sm" placeholder="Search name/contact...">
                                             </div>
                                             <div class="col-md-2 d-grid">
                                                 <button type="button" id="batch_beneficiary_search_btn" class="btn btn-sm btn-outline-primary">
@@ -448,24 +457,13 @@
         <div class="card-body">
             <form method="GET" action="{{ route('allocations.index') }}">
                 <div class="row g-2 align-items-end modern-filter-grid">
-                    <div class="col-xl-3 col-lg-3 col-md-6">
+                    <div class="col-xl-4 col-lg-4 col-md-6">
                         <label class="form-label">Program</label>
                         <select class="form-select" name="program_name_id">
                             <option value="">All Programs</option>
                             @foreach($programNames as $program)
                                 <option value="{{ $program->id }}" {{ (string) request('program_name_id') === (string) $program->id ? 'selected' : '' }}>
                                     {{ $program->name }} ({{ $program->agency->name ?? 'N/A' }})
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-xl-2 col-lg-2 col-md-6">
-                        <label class="form-label">Agency</label>
-                        <select class="form-select" name="agency_id">
-                            <option value="">All Agencies</option>
-                            @foreach($agencies as $agency)
-                                <option value="{{ $agency->id }}" {{ (string) request('agency_id') === (string) $agency->id ? 'selected' : '' }}>
-                                    {{ $agency->name }}
                                 </option>
                             @endforeach
                         </select>
@@ -851,6 +849,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // ===== BENEFICIARY SEARCH FUNCTIONALITY =====
     const searchInput = document.getElementById('beneficiary_search');
     const barangayFilter = document.getElementById('beneficiary_barangay');
+    const agencyFilter = document.getElementById('beneficiary_agency');
     const classificationFilters = document.querySelectorAll('[data-beneficiary-filter="classification"]');
     const resultsList = document.getElementById('results_list');
     const resultsCount = document.getElementById('results_count');
@@ -866,12 +865,14 @@ document.addEventListener('DOMContentLoaded', function () {
     async function performSearch() {
         const query = searchInput.value.trim();
         const barangayId = barangayFilter.value;
+        const agencyId = agencyFilter ? agencyFilter.value : '';
         const classification = document.querySelector('[data-beneficiary-filter="classification"]:checked')?.value || '';
 
         try {
             const params = new URLSearchParams();
             if (query) params.append('q', query);
             if (barangayId) params.append('barangay_id', barangayId);
+            if (agencyId) params.append('agency_id', agencyId);
             if (classification) params.append('classification', classification);
 
             const response = await fetch(`/api/beneficiaries/search?${params}`);
@@ -984,6 +985,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     barangayFilter.addEventListener('change', performSearch);
+    if (agencyFilter) agencyFilter.addEventListener('change', performSearch);
     classificationFilters.forEach(filter => {
         filter.addEventListener('change', performSearch);
     });
@@ -1089,6 +1091,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const summaryCount = document.getElementById('summary_count');
     const batchFinderSearchInput = document.getElementById('batch_beneficiary_search');
     const batchFinderBarangay = document.getElementById('batch_beneficiary_barangay');
+    const batchFinderAgency = document.getElementById('batch_beneficiary_agency');
     const batchFinderClassification = document.getElementById('batch_beneficiary_classification');
     const batchFinderSearchBtn = document.getElementById('batch_beneficiary_search_btn');
     const batchFinderResults = document.getElementById('batch_beneficiary_results');
@@ -1216,12 +1219,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const query = batchFinderSearchInput.value.trim();
         const barangayId = batchFinderBarangay ? batchFinderBarangay.value : '';
+        const agencyId = batchFinderAgency ? batchFinderAgency.value : '';
         const classification = batchFinderClassification ? batchFinderClassification.value : '';
 
         try {
             const params = new URLSearchParams();
             if (query) params.append('q', query);
             if (barangayId) params.append('barangay_id', barangayId);
+            if (agencyId) params.append('agency_id', agencyId);
             if (classification) params.append('classification', classification);
 
             const response = await fetch(`/api/beneficiaries/search?${params.toString()}`);
@@ -1496,11 +1501,16 @@ document.addEventListener('DOMContentLoaded', function () {
         batchFinderBarangay.addEventListener('change', searchBatchBeneficiaries);
     }
 
+    if (batchFinderAgency) {
+        batchFinderAgency.addEventListener('change', searchBatchBeneficiaries);
+    }
+
     if (batchFinderClassification) {
         batchFinderClassification.addEventListener('change', searchBatchBeneficiaries);
     }
 
     // ---- Allocations Quick Set Logic ----
+    const quickSetAgency = document.getElementById('quickSetAgency');
     const quickSetProgram = document.getElementById('quickSetProgram');
     const quickSetResource = document.getElementById('quickSetResource');
     const quickSetValue = document.getElementById('quickSetValue');

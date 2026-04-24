@@ -88,24 +88,13 @@
         </div>
         <div class="card-body">
             <form method="GET" action="{{ route('direct-assistance.index') }}" class="row g-2 align-items-end modern-filter-grid">
-                <div class="col-xl-3 col-lg-3 col-md-6">
-                    <label class="form-label">Program</label>
+                <div class="col-xl-4 col-lg-4 col-md-6">
+                    <label class="form-label text-primary fw-semibold"><i class="bi bi-tag me-1"></i> Program</label>
                     <select class="form-select" name="program_id">
                         <option value="">All Programs</option>
                         @foreach($programs as $program)
                             <option value="{{ $program->id }}" {{ request('program_id') == $program->id ? 'selected' : '' }}>
-                                {{ $program->name }} ({{ $program->agency->name ?? 'N/A' }})
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-xl-2 col-lg-2 col-md-6">
-                    <label class="form-label">Agency</label>
-                    <select class="form-select" name="agency_id">
-                        <option value="">All Agencies</option>
-                        @foreach($agencies as $agency)
-                            <option value="{{ $agency->id }}" {{ request('agency_id') == $agency->id ? 'selected' : '' }}>
-                                {{ $agency->name }}
+                                {{ $program->name }}
                             </option>
                         @endforeach
                     </select>
@@ -310,6 +299,52 @@
             <div class="modal-body p-0">
                 <form id="batchModeForm" action="{{ route('direct-assistance.storeBulk') }}" method="POST">
                     @csrf
+                    <div class="bg-white p-3 border-bottom shadow-sm">
+                        <div class="d-flex align-items-center mb-2">
+                            <h6 class="mb-0 text-primary small fw-bold">
+                                <i class="bi bi-search me-1"></i> Find Beneficiary (Batch)
+                            </h6>
+                        </div>
+                        <div class="row g-2 mb-2 modern-filter-grid">
+                            <div class="col-md-2">
+                                <select id="batch_beneficiary_agency" class="form-select form-select-sm">
+                                    <option value="">All Agencies</option>
+                                    @foreach($agencies as $agency)
+                                        <option value="{{ $agency->id }}">{{ $agency->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select id="batch_beneficiary_barangay" class="form-select form-select-sm">
+                                    <option value="">All Barangays</option>
+                                    @foreach($barangays as $barangay)
+                                        <option value="{{ $barangay->id }}">{{ $barangay->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select id="batch_beneficiary_classification" class="form-select form-select-sm">
+                                    <option value="">All Sectors</option>
+                                    <option value="Farmer">Farmer</option>
+                                    <option value="Fisherfolk">Fisherfolk</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" id="batch_beneficiary_search" class="form-control form-control-sm" placeholder="Search name/contact...">
+                            </div>
+                            <div class="col-md-2 d-grid">
+                                <button type="button" id="batch_beneficiary_search_btn" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-search"></i> Find
+                                </button>
+                            </div>
+                        </div>
+                        <div id="batch_beneficiary_results" class="list-group list-group-flush border rounded overflow-auto" style="max-height: 200px; display: none; background: white; position: absolute; z-index: 1050; width: calc(100% - 2rem); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                            <!-- Results will be injected here -->
+                        </div>
+                        <div id="batch_beneficiary_hint" class="small text-muted mt-1">
+                            <i class="bi bi-info-circle me-1"></i> Search and click "Add" to include beneficiaries in the batch table.
+                        </div>
+                    </div>
                     <div class="bg-light p-3 border-bottom shadow-sm" style="background-color: #f8fafc !important;">
                         <div class="row g-3 align-items-end">
                             <div class="col-md-3">
@@ -411,7 +446,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const batchSubmitBtn = document.getElementById('batchSubmitBtn');
     const batchValidationStatus = document.getElementById('batchValidationStatus');
 
-    let rowIndex = 0;
+    let batchRowIndex = 0;
+    let searchTimeout;
 
     // Helper functions (copied from allocations/index.blade.php for consistency)
     async function fetchEligiblePrograms(beneficiaryId) {
@@ -558,6 +594,15 @@ document.addEventListener('DOMContentLoaded', function() {
             validateBatchRows();
         }
 
+        if (preset && preset.beneficiary) {
+            const b = preset.beneficiary;
+            const display = b.display || `${b.name} (${b.classification}) - ${b.barangay}`;
+            beneficiaryMap.set(display, b);
+            beneficiarySearch.value = display;
+            beneficiaryIdInput.value = b.id;
+            loadBatchProgramsForBeneficiary(b.id);
+        }
+
         beneficiarySearch.addEventListener('input', () => {
             const query = beneficiarySearch.value.trim();
             beneficiaryIdInput.value = '';
@@ -698,7 +743,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     batchAddRowBtn.addEventListener('click', () => {
-        createBatchRow(rowIndex++);
+        createBatchRow(batchRowIndex++);
     });
 
     batchSelectAll.addEventListener('change', () => {
@@ -711,7 +756,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize with one row when modal opens if empty
     batchModal.addEventListener('shown.bs.modal', function () {
         if (batchTbody.querySelectorAll('tr').length === 0) {
-            createBatchRow(rowIndex++);
+            createBatchRow(batchRowIndex++);
         }
     });
 
@@ -719,6 +764,115 @@ document.addEventListener('DOMContentLoaded', function() {
     batchForm.addEventListener('submit', function() {
         batchSubmitBtn.disabled = true;
         batchSubmitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Processing...';
+    });
+
+    // ---- Batch Finder Logic ----
+    const batchFinderSearchInput = document.getElementById('batch_beneficiary_search');
+    const batchFinderBarangay = document.getElementById('batch_beneficiary_barangay');
+    const batchFinderAgency = document.getElementById('batch_beneficiary_agency');
+    const batchFinderClassification = document.getElementById('batch_beneficiary_classification');
+    const batchFinderSearchBtn = document.getElementById('batch_beneficiary_search_btn');
+    const batchFinderResults = document.getElementById('batch_beneficiary_results');
+
+    function renderBatchFinderResults(results) {
+        if (!batchFinderResults) return;
+        batchFinderResults.innerHTML = '';
+
+        if (results.length === 0) {
+            batchFinderResults.innerHTML = '<div class="p-3 text-center text-muted small">No beneficiaries found.</div>';
+            batchFinderResults.style.display = 'block';
+            return;
+        }
+
+        const selectedIds = Array.from(document.querySelectorAll('.batch-beneficiary-id'))
+            .map(input => input.value)
+            .filter(val => val !== '');
+
+        results.forEach(beneficiary => {
+            const isAlreadyAdded = selectedIds.includes(String(beneficiary.id));
+            const item = document.createElement('div');
+            item.className = 'list-group-item list-group-item-sm d-flex justify-content-between align-items-center py-2';
+            item.innerHTML = `
+                <div class="text-start">
+                    <div class="fw-bold small">${beneficiary.name}</div>
+                    <div class="text-muted" style="font-size: 0.75rem;">
+                        <span class="badge bg-light text-dark border me-1">${beneficiary.classification}</span>
+                        ${beneficiary.barangay}
+                    </div>
+                </div>
+            `;
+
+            const addBtn = document.createElement('button');
+            addBtn.type = 'button';
+            addBtn.className = isAlreadyAdded ? 'btn btn-sm btn-secondary' : 'btn btn-sm btn-outline-primary';
+            addBtn.innerHTML = isAlreadyAdded ? 'Added' : '<i class="bi bi-plus-lg"></i> Add';
+            addBtn.disabled = isAlreadyAdded;
+
+            addBtn.addEventListener('click', () => {
+                createBatchRow(batchRowIndex++, {
+                    beneficiary,
+                });
+                addBtn.textContent = 'Added';
+                addBtn.className = 'btn btn-sm btn-secondary';
+                addBtn.disabled = true;
+                updateBatchSummary();
+            });
+
+            item.appendChild(addBtn);
+            batchFinderResults.appendChild(item);
+        });
+
+        batchFinderResults.style.display = 'block';
+    }
+
+    async function searchBatchBeneficiaries() {
+        if (!batchFinderResults || !batchFinderSearchInput) return;
+
+        const query = batchFinderSearchInput.value.trim();
+        const barangayId = batchFinderBarangay ? batchFinderBarangay.value : '';
+        const agencyId = batchFinderAgency ? batchFinderAgency.value : '';
+        const classification = batchFinderClassification ? batchFinderClassification.value : '';
+
+        try {
+            const params = new URLSearchParams();
+            if (query) params.append('q', query);
+            if (barangayId) params.append('barangay_id', barangayId);
+            if (agencyId) params.append('agency_id', agencyId);
+            if (classification) params.append('classification', classification);
+
+            const response = await fetch(`/api/beneficiaries/search?${params.toString()}`);
+            const data = await response.json();
+            renderBatchFinderResults(Array.isArray(data.results) ? data.results : []);
+        } catch (error) {
+            console.error('Batch search error:', error);
+        }
+    }
+
+    if (batchFinderSearchInput) {
+        batchFinderSearchInput.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchBatchBeneficiaries();
+            } else {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(searchBatchBeneficiaries, 300);
+            }
+        });
+    }
+
+    if (batchFinderSearchBtn) {
+        batchFinderSearchBtn.addEventListener('click', searchBatchBeneficiaries);
+    }
+
+    [batchFinderBarangay, batchFinderAgency, batchFinderClassification].forEach(el => {
+        if (el) el.addEventListener('change', searchBatchBeneficiaries);
+    });
+
+    // Close results when clicking outside
+    document.addEventListener('click', (e) => {
+        if (batchFinderResults && !batchFinderResults.contains(e.target) && e.target !== batchFinderSearchInput) {
+            batchFinderResults.style.display = 'none';
+        }
     });
 
     // ---- Quick Set Logic ----
