@@ -40,6 +40,10 @@
         background: #e5e7eb;
         z-index: 0;
     }
+    #reviewRecipientList .last-child-no-border:last-child {
+        border-bottom: none !important;
+    }
+
     .sms-step-bubble {
         position: absolute;
         left: 0;
@@ -388,11 +392,20 @@
                                 <div class="sms-step-bubble">3</div>
                                 <h5 class="fw-bold mb-3">Review & Broadcast</h5>
                                 
-                                <div class="alert alert-info border-0 shadow-sm d-flex align-items-center mb-4">
+                                <div class="alert alert-info border-0 shadow-sm d-flex align-items-center mb-3">
                                     <i class="bi bi-info-circle-fill fs-4 me-3"></i>
                                     <div>
                                         You are about to send a broadcast to <strong id="reviewRecipientCount">0</strong> recipients. 
                                         Please ensure your message is clear and correct.
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label small fw-bold text-muted">Recipients Preview</label>
+                                    <div class="border rounded-3 bg-light p-2" style="max-height: 200px; overflow-y: auto;">
+                                        <div id="reviewRecipientList" class="small">
+                                            <div class="text-center py-3 text-muted">No recipients selected</div>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -616,6 +629,7 @@
                     <div class="x-small text-muted text-uppercase fw-bold mb-1">Sent At</div>
                     <div id="logSentAt"></div>
                 </div>
+
                 <div class="mb-3">
                     <div class="x-small text-muted text-uppercase fw-bold mb-1">Status</div>
                     <div id="logStatus"></div>
@@ -624,6 +638,54 @@
                     <div class="x-small text-muted text-uppercase fw-bold mb-1">Message Content</div>
                     <div id="logMessage" class="p-3 bg-light rounded border small"></div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Broadcast Result Modal --}}
+<div class="modal fade" id="broadcastResultModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body p-5 text-center">
+                <div id="resultSuccessIcon" style="display:none;">
+                    <div class="display-1 text-success mb-4">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                    <h3 class="fw-bold mb-2">Broadcast Complete!</h3>
+                </div>
+                <div id="resultPartialIcon" style="display:none;">
+                    <div class="display-1 text-warning mb-4">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                    </div>
+                    <h3 class="fw-bold mb-2">Broadcast Finished</h3>
+                    <p class="text-muted small">Some messages could not be sent.</p>
+                </div>
+                <div id="resultErrorIcon" style="display:none;">
+                    <div class="display-1 text-danger mb-4">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </div>
+                    <h3 class="fw-bold mb-2">Broadcast Failed</h3>
+                </div>
+
+                <div class="row g-3 mt-2">
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="display-6 fw-bold text-success" id="resSentCount">0</div>
+                            <div class="x-small text-muted text-uppercase fw-bold">Sent</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="display-6 fw-bold text-danger" id="resFailedCount">0</div>
+                            <div class="x-small text-muted text-uppercase fw-bold">Failed</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-primary btn-lg w-100 mt-5 fw-bold" onclick="location.reload()">
+                    Done & Refresh History
+                </button>
             </div>
         </div>
     </div>
@@ -658,20 +720,24 @@ document.addEventListener('DOMContentLoaded', function() {
         smsMessage: document.getElementById('smsMessage'),
         templateSelect: document.getElementById('templateSelect'),
         segmentCount: document.getElementById('segmentCount'),
+        charCount: document.getElementById('charCount'),
         broadcastBtn: document.getElementById('broadcastBtn'),
         saveAsTemplateBtn: document.getElementById('saveAsTemplateBtn'),
         reviewRecipientCount: document.getElementById('reviewRecipientCount'),
+        reviewRecipientList: document.getElementById('reviewRecipientList'),
         
         // Modals
         confirmModal: new bootstrap.Modal(document.getElementById('confirmBroadcastModal')),
         templateModal: new bootstrap.Modal(document.getElementById('templateModal')),
         logDetailModal: new bootstrap.Modal(document.getElementById('logDetailModal')),
+        resultModal: new bootstrap.Modal(document.getElementById('broadcastResultModal')),
         
         // Template Form
         templateForm: document.getElementById('templateForm'),
         templateId: document.getElementById('templateId'),
         templateName: document.getElementById('templateName'),
         templateContent: document.getElementById('templateContent'),
+        templateModalTitle: document.getElementById('templateModalTitle'),
         saveTemplateBtn: document.getElementById('saveTemplateBtn')
     };
 
@@ -740,7 +806,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
                 body: type === 'selected' ? null : JSON.stringify(body)
             });
+            
             const data = await response.json();
+            
+            if (!response.ok) {
+                console.error('Server error loading recipients:', data);
+                let errorMsg = data.message || 'Failed to load recipients';
+                if (data.errors) {
+                    const firstError = Object.values(data.errors)[0][0];
+                    errorMsg = `${errorMsg}: ${firstError}`;
+                }
+                throw new Error(errorMsg);
+            }
+            
+            if (!data.recipients) {
+                throw new Error('Response missing recipient data');
+            }
             
             // Start with none selected as per user request
             state.recipients = data.recipients.map(r => ({ ...r, _selected: false }));
@@ -750,7 +831,11 @@ document.addEventListener('DOMContentLoaded', function() {
             
             renderBeneficiaryList();
         } catch (e) {
-            elements.beneficiaryList.innerHTML = '<div class="alert alert-danger m-3 py-2 small">Failed to load recipients</div>';
+            console.error('JS Error loading recipients:', e);
+            elements.beneficiaryList.innerHTML = `<div class="alert alert-danger m-3 py-2 small">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                ${e.message || 'Failed to load recipients'}
+            </div>`;
         }
     }
 
@@ -832,6 +917,18 @@ document.addEventListener('DOMContentLoaded', function() {
         elements.selectedCount.textContent = count;
         elements.reviewRecipientCount.textContent = count;
         
+        // Render Review Recipient List
+        if (count === 0) {
+            elements.reviewRecipientList.innerHTML = '<div class="text-center py-3 text-muted">No recipients selected</div>';
+        } else {
+            elements.reviewRecipientList.innerHTML = selectedRecipients.map(r => `
+                <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-light last-child-no-border">
+                    <div class="fw-semibold small">${r.full_name}</div>
+                    <div class="text-muted" style="font-size: 0.75rem;">${r.contact_number}</div>
+                </div>
+            `).join('');
+        }
+        
         // Character Counting & Segments
         const charCount = state.message.length;
         elements.charCount.textContent = charCount;
@@ -891,17 +988,16 @@ document.addEventListener('DOMContentLoaded', function() {
             
             elements.confirmModal.hide();
             
-            // Success Toast/Alert
-            const alertHtml = `
-                <div class="alert alert-success border-0 shadow-sm mb-4">
-                    <i class="bi bi-check-circle-fill me-2"></i>
-                    Broadcast started! Sent: <strong>${data.sent}</strong>, Failed: <strong>${data.failed}</strong>. 
-                    Redirecting to history...
-                </div>
-            `;
-            document.querySelector('.container-fluid').insertAdjacentHTML('afterbegin', alertHtml);
+            // Show Result Modal
+            document.getElementById('resSentCount').textContent = data.sent;
+            document.getElementById('resFailedCount').textContent = data.failed;
             
-            setTimeout(() => location.reload(), 2000);
+            // Set correct icon
+            document.getElementById('resultSuccessIcon').style.display = (data.failed === 0 && data.sent > 0) ? 'block' : 'none';
+            document.getElementById('resultPartialIcon').style.display = (data.failed > 0 && data.sent > 0) ? 'block' : 'none';
+            document.getElementById('resultErrorIcon').style.display = (data.sent === 0) ? 'block' : 'none';
+            
+            elements.resultModal.show();
         } catch (e) {
             alert('Error: ' + e.message);
         } finally {

@@ -79,66 +79,101 @@ class SmsController extends Controller
 
     public function preview(Request $request): JsonResponse
     {
-        $request->validate([
-            'recipient_type' => ['required', Rule::in(['by_program', 'by_event', 'by_barangay', 'by_resource_type', 'by_direct_allocation', 'selected'])],
-            'program_name_id' => [
-                'required_if:recipient_type,by_program',
-                'nullable',
-                Rule::exists('program_names', 'id')->where(fn ($query) => $query->where('is_active', true)),
-            ],
-            'distribution_event_id' => [
-                'required_if:recipient_type,by_event',
-                'nullable',
-                Rule::exists('distribution_events', 'id')->where(
-                    fn ($query) => $query->whereIn('status', ['Pending', 'Ongoing'])
-                ),
-            ],
-            'barangay_id' => ['required_if:recipient_type,by_barangay', 'nullable', 'exists:barangays,id'],
-            'resource_type_id' => ['required_if:recipient_type,by_resource_type', 'nullable', 'exists:resource_types,id'],
-            'direct_allocation_status' => ['required_if:recipient_type,by_direct_allocation', 'nullable', Rule::in(['all', 'planned', 'ready_for_release', 'released', 'not_received'])],
-            'beneficiary_ids' => ['nullable', 'array'],
-            'beneficiary_ids.*' => ['integer', 'exists:beneficiaries,id'],
-        ]);
+        try {
+            $request->validate([
+                'recipient_type' => ['required', Rule::in(['by_program', 'by_event', 'by_barangay', 'by_resource_type', 'by_direct_allocation', 'selected'])],
+                'program_name_id' => [
+                    'required_if:recipient_type,by_program',
+                    'nullable',
+                    Rule::exists('program_names', 'id')->where(fn ($query) => $query->where('is_active', true)),
+                ],
+                'distribution_event_id' => [
+                    'required_if:recipient_type,by_event',
+                    'nullable',
+                    Rule::exists('distribution_events', 'id')->where(
+                        fn ($query) => $query->whereIn('status', ['Pending', 'Ongoing'])
+                    ),
+                ],
+                'barangay_id' => ['required_if:recipient_type,by_barangay', 'nullable', 'exists:barangays,id'],
+                'resource_type_id' => ['required_if:recipient_type,by_resource_type', 'nullable', 'exists:resource_types,id'],
+                'direct_allocation_status' => ['required_if:recipient_type,by_direct_allocation', 'nullable', Rule::in(['all', 'planned', 'ready_for_release', 'released', 'not_received'])],
+                'beneficiary_ids' => ['nullable', 'array'],
+                'beneficiary_ids.*' => ['integer', 'exists:beneficiaries,id'],
+            ]);
 
-        $query = $this->resolveRecipients($request);
+            $query = $this->resolveRecipients($request);
 
-        // If specific beneficiary IDs are provided (refined selection), further filter
-        if ($request->filled('beneficiary_ids')) {
-            $refinedIds = $request->beneficiary_ids;
-            $query->whereIn('id', $refinedIds);
+            // If specific beneficiary IDs are provided (refined selection), further filter
+            if ($request->filled('beneficiary_ids')) {
+                $refinedIds = $request->beneficiary_ids;
+                $query->whereIn('id', $refinedIds);
+            }
+
+            $recipients = $query->get();
+
+            return response()->json([
+                'count' => $recipients->count(),
+                'recipients' => $recipients->map(fn ($b) => [
+                    'id' => $b->id,
+                    'full_name' => $b->full_name,
+                    'barangay' => $b->barangay->name ?? null,
+                    'contact_number' => $b->contact_number,
+                    'classification' => $b->classification,
+                ])->values(),
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'errors' => $e->errors(),
+                'error' => true
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('SMS Preview Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
+            ]);
+            
+            return response()->json([
+                'message' => 'An error occurred while loading recipients: ' . $e->getMessage(),
+                'error' => true
+            ], 500);
         }
-
-        $recipients = $query->get();
-
-        return response()->json([
-            'count' => $recipients->count(),
-            'recipients' => $recipients->map(fn ($b) => [
-                'id' => $b->id,
-                'full_name' => $b->full_name,
-                'barangay' => $b->barangay->name ?? null,
-                'contact_number' => $b->contact_number,
-                'classification' => $b->classification,
-            ])->values(),
-        ]);
     }
 
     public function beneficiaries(): JsonResponse
     {
-        $beneficiaries = Beneficiary::with('barangay')
-            ->where('status', 'Active')
-            ->orderBy('full_name')
-            ->get();
+        try {
+            $beneficiaries = Beneficiary::with('barangay')
+                ->where('status', 'Active')
+                ->orderBy('full_name')
+                ->get();
 
-        return response()->json([
-            'count' => $beneficiaries->count(),
-            'recipients' => $beneficiaries->map(fn ($b) => [
-                'id' => $b->id,
-                'full_name' => $b->full_name,
-                'barangay' => $b->barangay->name ?? null,
-                'contact_number' => $b->contact_number,
-                'classification' => $b->classification,
-            ])->values(),
-        ]);
+            return response()->json([
+                'count' => $beneficiaries->count(),
+                'recipients' => $beneficiaries->map(fn ($b) => [
+                    'id' => $b->id,
+                    'full_name' => $b->full_name,
+                    'barangay' => $b->barangay->name ?? null,
+                    'contact_number' => $b->contact_number,
+                    'classification' => $b->classification,
+                ])->values(),
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'errors' => $e->errors(),
+                'error' => true
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('SMS Beneficiaries Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'message' => 'An error occurred while loading beneficiaries: ' . $e->getMessage(),
+                'error' => true
+            ], 500);
+        }
     }
 
     public function send(Request $request): JsonResponse
@@ -275,11 +310,17 @@ class SmsController extends Controller
                 break;
             case 'by_direct_allocation':
                 $status = $request->direct_allocation_status;
-                $query->whereHas('allocations', function ($a) use ($status) {
-                    $a->where('release_method', 'direct');
-                    if ($status && $status !== 'all') {
-                        $a->whereReleaseStatus($status);
-                    }
+                $query->where(function ($q) use ($status) {
+                    $q->whereHas('allocations', function ($a) use ($status) {
+                        $a->where('release_method', 'direct');
+                        if ($status && $status !== 'all') {
+                            $a->whereReleaseStatus($status);
+                        }
+                    })->orWhereHas('directAssistance', function ($d) use ($status) {
+                        if ($status && $status !== 'all') {
+                            $d->whereStatusNormalized($status);
+                        }
+                    });
                 });
                 break;
             case 'selected':
