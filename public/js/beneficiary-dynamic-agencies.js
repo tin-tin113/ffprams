@@ -167,22 +167,6 @@ class DynamicAgencyForm {
 
         const normalizeSection = (value) => String(value || 'general_information').trim().toLowerCase();
 
-        // Core beneficiary fields are rendered in static form sections; skip them in dynamic cards to avoid duplicates.
-        const reservedCoreFieldNames = new Set([
-            // Classification-core fields rendered in static sections
-            'farm_ownership',
-            'farm_size_hectares',
-            'primary_commodity',
-            'farm_type',
-            'organization_membership',
-            'fisherfolk_type',
-            'main_fishing_gear',
-            'length_of_residency_months',
-            'has_fishing_vessel',
-            'fishing_vessel_type',
-            'fishing_vessel_tonnage',
-        ]);
-
         agencies.forEach(agency => {
             console.log(`Processing agency: ${agency.name}`);
 
@@ -196,11 +180,7 @@ class DynamicAgencyForm {
                 return;
             }
 
-            const visibleFields = formFields.filter((field) => {
-                const fieldName = String(field.field_name || '').trim().toLowerCase();
-
-                return !reservedCoreFieldNames.has(fieldName);
-            });
+            const visibleFields = formFields;
 
             if (visibleFields.length === 0) {
                 console.log(`Agency ${agency.name} has no form fields for classification ${classification}`);

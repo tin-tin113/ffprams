@@ -86,32 +86,7 @@ class FormFieldOptionSeeder extends Seeder
                 ],
             ],
 
-            // ── ARB Classification ──────────────────
-            'arb_classification' => [
-                'placement_section' => FormFieldOption::PLACEMENT_DAR_INFORMATION,
-                'is_required' => true,
-                'options' => [
-                'Agricultural Lessee',
-                'Regular Farmworker',
-                'Seasonal Farmworker',
-                'Other Farmworker',
-                'Actual Tiller',
-                'Collective/Cooperative',
-                'Others',
-                ],
-            ],
-
-            // ── Ownership Scheme ────────────────────
-            'ownership_scheme' => [
-                'placement_section' => FormFieldOption::PLACEMENT_DAR_INFORMATION,
-                'is_required' => true,
-                'options' => [
-                'Individual',
-                'Collective',
-                'Cooperative',
-                ],
-            ],
-        ];
+            ];
 
         foreach ($groups as $fieldGroup => $groupConfig) {
             $options = $groupConfig['options'] ?? [];

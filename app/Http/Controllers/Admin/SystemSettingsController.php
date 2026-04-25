@@ -8,6 +8,7 @@ use App\Models\AgencyFormField;
 use App\Models\Allocation;
 use App\Models\AssistancePurpose;
 use App\Models\Beneficiary;
+use App\Models\DirectAssistance;
 use App\Models\DistributionEvent;
 use App\Models\FormFieldOption;
 use App\Models\ProgramName;
@@ -27,8 +28,6 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SystemSettingsController extends Controller
 {
@@ -43,44 +42,33 @@ class SystemSettingsController extends Controller
     /**
      * Show admin settings dashboard with all settings in tabs
      */
-    public function index(Request $request): View
+    public function index(): View
     {
-        $activeTab = $request->query('tab', 'agencies');
-
         // Agencies data
-        $agencies = Agency::with(['classifications' => function($q) {
-            $q->orderBy('name');
-        }])->orderBy('name')->paginate(25, ['*'], 'agencies_page')->withQueryString();
+        $agencies = Agency::with('classifications')
+            ->withCount([
+                'formFields as active_form_fields_count' => fn ($query) => $query->where('is_active', true),
+            ])
+            ->orderBy('name')
+            ->get();
 
         // Resource Types data
         $activeAgencies = Agency::where('is_active', true)->orderBy('name')->get();
-        $resourceTypes = ResourceType::with('agency')->orderBy('name')->paginate(25, ['*'], 'resource_types_page')->withQueryString();
+        $resourceTypes = ResourceType::with('agency')->orderBy('name')->get();
         $resourceUnitOptions = ResourceType::unitOptions();
-        $purposes = AssistancePurpose::orderBy('category')->orderBy('name')->paginate(25, ['*'], 'purposes_page')->withQueryString();
+        $purposes = AssistancePurpose::orderBy('category')->orderBy('name')->get();
         $purposeCategoryOptions = AssistancePurpose::getCategoryOptions();
 
         // Form Fields data
         $this->validateFormFieldOptions();
-        $hiddenGlobalGroups = BeneficiaryCoreFields::agencySpecificCoreFieldNames();
-        
-        $allGlobalFields = FormFieldOption::query()
-            ->whereNotIn('field_group', $hiddenGlobalGroups)
+        $formFields = FormFieldOption::query()
             ->orderBy('field_group')
             ->orderBy('sort_order')
             ->orderBy('label')
-            ->get();
-
-        // 1. Global / General fields (Placement: personal_information)
-        $globalFormFields = $allGlobalFields
-            ->filter(fn($f) => $f->placement_section === FormFieldOption::PLACEMENT_PERSONAL_INFORMATION)
+            ->get()
             ->groupBy('field_group');
 
-        // 2. Classification-specific Global fields (Custom fields added for Farmer/Fisherfolk/DAR)
-        $classificationCustomFields = $allGlobalFields
-            ->filter(fn($f) => $f->placement_section !== FormFieldOption::PLACEMENT_PERSONAL_INFORMATION)
-            ->groupBy('placement_section');
-
-        $fieldGroupMeta = $allGlobalFields->groupBy('field_group')->map(function ($options) {
+        $fieldGroupMeta = $formFields->map(function ($options) {
             $group = $options->first();
 
             return [
@@ -90,7 +78,7 @@ class SystemSettingsController extends Controller
                 'required' => $group->is_required ?? false,
                 'active' => (bool) $options->contains(fn ($option) => (bool) $option->is_active),
             ];
-        });
+        })->unique('group');
 
         $classificationCoreFields = collect($this->classificationCoreFieldDefinitions())
             ->map(function (array $definition): array {
@@ -108,22 +96,10 @@ class SystemSettingsController extends Controller
             })
             ->groupBy('classification');
 
-        return view('admin.settings.index', compact(
-            'activeTab',
-            'agencies', 
-            'activeAgencies', 
-            'resourceTypes', 
-            'resourceUnitOptions', 
-            'purposes', 
-            'purposeCategoryOptions', 
-            'globalFormFields', 
-            'classificationCustomFields',
-            'fieldGroupMeta', 
-            'classificationCoreFields'
-        ));
+        return view('admin.settings.index', compact('agencies', 'activeAgencies', 'resourceTypes', 'resourceUnitOptions', 'purposes', 'purposeCategoryOptions', 'formFields', 'fieldGroupMeta', 'classificationCoreFields'));
     }
 
-    public function indexProgramNames(Request $request): View
+    public function indexProgramNames(): View
     {
         $agencies = Agency::with('classifications:id,name')
             ->where('is_active', true)
@@ -136,29 +112,12 @@ class SystemSettingsController extends Controller
                 ];
             })
             ->all();
-
-        $programNames = ProgramName::with(['agency', 'legalRequirements'])
-            ->when($request->filled('search'), function ($query) use ($request) {
-                $query->where('name', 'like', '%' . $request->search . '%')
-                      ->orWhere('description', 'like', '%' . $request->search . '%');
-            })
-            ->when($request->filled('agency_id'), fn ($query) => $query->where('agency_id', $request->agency_id))
-            ->when($request->filled('classification'), function ($query) use ($request) {
-                if ($request->classification !== 'Both') {
-                    $query->whereIn('classification', [$request->classification, 'Both']);
-                }
-            })
-            ->when($request->filled('status'), function ($query) use ($request) {
-                $query->where('is_active', $request->status === 'active');
-            })
-            ->orderBy('name')
-            ->paginate(25)
-            ->withQueryString();
+        $programNames = ProgramName::with(['agency', 'legalRequirements'])->orderBy('name')->get();
 
         $summary = [
             'total' => ProgramName::count(),
-            'active_events' => DistributionEvent::whereIn('status', ['Pending', 'Ongoing'])->count(),
-            'total_docs' => ProgramLegalRequirement::count(),
+            'active' => ProgramName::where('is_active', true)->count(),
+            'inactive' => ProgramName::where('is_active', false)->count(),
         ];
 
         return view('admin.settings.program-names.index', compact('agencies', 'programNames', 'summary', 'agencyClassificationMap'));
@@ -356,15 +315,6 @@ class SystemSettingsController extends Controller
             ]);
 
             $agency->classifications()->sync($validated['classifications'] ?? []);
-
-            // Now that the agency's classification is synced, cascade the derived classification to its programs.
-            // A fresh agency instance is needed with the classifications relationship loaded.
-            $freshAgency = $agency->fresh(['classifications']);
-            $derivedClassification = $this->deriveProgramClassificationFromAgencyModel($freshAgency);
-            
-            ProgramName::where('agency_id', $agency->id)->update([
-                'classification' => $derivedClassification,
-            ]);
 
             $this->audit->log(
                 auth()->id(), 'updated', 'agencies', $agency->id,
@@ -605,9 +555,17 @@ class SystemSettingsController extends Controller
             'agency_id' => ['required', 'exists:agencies,id'],
             'description' => ['nullable', 'string', 'max:500'],
             'is_active' => ['boolean'],
+            'classification' => ['nullable', Rule::in(['Farmer', 'Fisherfolk', 'Both'])],
         ]);
 
         $derivedClassification = $this->deriveProgramClassificationFromAgency((int) $validated['agency_id']);
+
+        if (! empty($validated['classification']) && $validated['classification'] !== $derivedClassification) {
+            throw ValidationException::withMessages([
+                'classification' => ['Classification is defined by the selected agency and cannot be set manually.'],
+            ]);
+        }
+
         $validated['classification'] = $derivedClassification;
 
         // Ensure unique name per agency
@@ -649,9 +607,17 @@ class SystemSettingsController extends Controller
             'agency_id' => ['required', 'exists:agencies,id'],
             'description' => ['nullable', 'string', 'max:500'],
             'is_active' => ['boolean'],
+            'classification' => ['nullable', Rule::in(['Farmer', 'Fisherfolk', 'Both'])],
         ]);
 
         $derivedClassification = $this->deriveProgramClassificationFromAgency((int) $validated['agency_id']);
+
+        if (! empty($validated['classification']) && $validated['classification'] !== $derivedClassification) {
+            throw ValidationException::withMessages([
+                'classification' => ['Classification is defined by the selected agency and cannot be set manually.'],
+            ]);
+        }
+
         $validated['classification'] = $derivedClassification;
 
         // Ensure unique name per agency (exclude self)
@@ -697,11 +663,6 @@ class SystemSettingsController extends Controller
             ]);
         }
 
-        return $this->deriveProgramClassificationFromAgencyModel($agency);
-    }
-
-    private function deriveProgramClassificationFromAgencyModel(Agency $agency): string
-    {
         $classificationNames = $agency->classifications
             ->pluck('name')
             ->map(fn ($name) => strtolower(trim((string) $name)))
@@ -727,49 +688,6 @@ class SystemSettingsController extends Controller
         throw ValidationException::withMessages([
             'agency_id' => ['Selected agency has no valid classification mapping. Please configure agency classifications first.'],
         ]);
-    }
-
-    /**
-     * Resolve the derived classification for an agency (API).
-     * Used by the program modal to auto-populate classification.
-     */
-    public function resolveAgencyClassification(Agency $agency): JsonResponse
-    {
-        try {
-            $agency->load('classifications:id,name');
-
-            $classificationNames = $agency->classifications
-                ->pluck('name')
-                ->map(fn ($name) => strtolower(trim((string) $name)))
-                ->filter()
-                ->unique()
-                ->values();
-
-            $hasFarmer = $classificationNames->contains('farmer');
-            $hasFisherfolk = $classificationNames->contains('fisherfolk');
-
-            if ($hasFarmer && $hasFisherfolk) {
-                $classification = 'Both';
-            } elseif ($hasFarmer) {
-                $classification = 'Farmer';
-            } elseif ($hasFisherfolk) {
-                $classification = 'Fisherfolk';
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'classification' => null,
-                    'message' => 'This agency has no classification configured. Please configure agency classifications first.',
-                ], 422);
-            }
-
-            return response()->json([
-                'success' => true,
-                'classification' => $classification,
-            ]);
-        } catch (\Throwable $e) {
-            Log::error('Error resolving agency classification', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Failed to resolve classification'], 500);
-        }
     }
 
     public function toggleProgramStatus(Request $request, ProgramName $programName): JsonResponse
@@ -851,11 +769,11 @@ class SystemSettingsController extends Controller
         $path = "program-requirements/{$programName->id}/{$yearMonth}/{$storedName}";
 
         try {
-            $sha256 = hash_file('sha256', $file->getRealPath());
+            $fileContent = file_get_contents($file->getRealPath());
+            $sha256 = hash('sha256', $fileContent);
 
-            // Store the file using putFileAs for better memory efficiency
-            $directory = "program-requirements/{$programName->id}/{$yearMonth}";
-            Storage::disk('program_documents')->putFileAs($directory, $file, $storedName);
+            // Store the file
+            Storage::disk('program_documents')->put($path, $fileContent);
 
             $requirement = DB::transaction(function () use ($programName, $file, $path, $storedName, $mimeType, $extension, $sha256, $originalName, $request) {
                 $requirement = ProgramLegalRequirement::create([
@@ -912,27 +830,7 @@ class SystemSettingsController extends Controller
         ]);
     }
 
-    public function viewProgramLegalRequirement(ProgramName $programName, ProgramLegalRequirement $requirement): BinaryFileResponse
-    {
-        if (! Storage::disk('program_documents')->exists($requirement->path)) {
-            abort(404, 'File not found');
-        }
-
-        $this->audit->log(
-            auth()->id(), 'viewed', 'program_legal_requirements', $requirement->id,
-            [], $requirement->toArray(),
-        );
-
-        return response()->file(
-            Storage::disk('program_documents')->path($requirement->path),
-            [
-                'Content-Type' => $requirement->mime_type ?: 'application/octet-stream',
-                'X-Content-Type-Options' => 'nosniff',
-            ]
-        );
-    }
-
-    public function downloadProgramLegalRequirement(ProgramName $programName, ProgramLegalRequirement $requirement): BinaryFileResponse|StreamedResponse
+    public function downloadProgramLegalRequirement(ProgramLegalRequirement $requirement): Response
     {
         if (! Storage::disk('program_documents')->exists($requirement->path)) {
             abort(404, 'File not found');
@@ -952,7 +850,7 @@ class SystemSettingsController extends Controller
         );
     }
 
-    public function deleteProgramLegalRequirement(ProgramName $programName, ProgramLegalRequirement $requirement): JsonResponse
+    public function deleteProgramLegalRequirement(ProgramLegalRequirement $requirement): JsonResponse
     {
         try {
             DB::transaction(function () use ($requirement) {
@@ -999,34 +897,17 @@ class SystemSettingsController extends Controller
             'legalRequirements.uploader',
         ]);
 
-        // Aggregate statistics
-        $totalEvents = DistributionEvent::where('program_name_id', $programName->id)->count();
-        $activeDistributionsCount = DistributionEvent::where('program_name_id', $programName->id)
-            ->where('status', 'Ongoing')
-            ->count();
-        $complianceDocumentsCount = $programName->legalRequirements()->count();
-
-        // Standardize on Allocation as source of truth for financial/reach stats
-        $totalAllocatedAmount = (float) Allocation::where('program_name_id', $programName->id)->sum('amount');
-        
-        $beneficiaryIdsQuery = Allocation::where('program_name_id', $programName->id)
-            ->select('beneficiary_id')
-            ->distinct();
-            
-        $totalBeneficiaries = $beneficiaryIdsQuery->count();
-        $allBeneficiaryIds = $beneficiaryIdsQuery->pluck('beneficiary_id');
-
-        // Paginated datasets
         $events = DistributionEvent::query()
             ->where('program_name_id', $programName->id)
             ->with([
+                'allocations.beneficiary',
+                'allocations.resourceType',
+                'allocations.assistancePurpose',
                 'resourceType',
                 'barangay',
             ])
-            ->withCount('allocations')
             ->orderByDesc('distribution_date')
-            ->paginate(15, ['*'], 'events_page')
-            ->appends(request()->query());
+            ->get();
 
         // Include both event-based and direct allocations under this specific program.
         $allocations = Allocation::query()
@@ -1038,13 +919,10 @@ class SystemSettingsController extends Controller
                 'distributionEvent.barangay',
             ])
             ->orderByDesc('created_at')
-            ->paginate(25, ['*'], 'allocations_page')
-            ->appends(request()->query());
+            ->get();
 
-        // For the Direct Assistance tab, we use release_method = 'direct'
-        $directAssistanceRecords = Allocation::query()
+        $directAssistanceRecords = DirectAssistance::query()
             ->where('program_name_id', $programName->id)
-            ->where('release_method', 'direct')
             ->with([
                 'beneficiary',
                 'resourceType',
@@ -1052,66 +930,24 @@ class SystemSettingsController extends Controller
                 'distributionEvent.barangay',
             ])
             ->orderByDesc('created_at')
-            ->paginate(25, ['*'], 'da_page')
-            ->appends(request()->query());
-
-        // Server-side search for Reach tab
-        $searchTerm = request()->query('search');
-        $beneficiariesQuery = Beneficiary::query()
-            ->whereIn('id', $allBeneficiaryIds);
-
-        if ($searchTerm) {
-            $beneficiariesQuery->where(function($q) use ($searchTerm) {
-                $q->where('full_name', 'like', "%{$searchTerm}%")
-                  ->orWhere('rsbsa_number', 'like', "%{$searchTerm}%")
-                  ->orWhere('fishr_number', 'like', "%{$searchTerm}%");
-            });
-        }
-
-        $beneficiaries = $beneficiariesQuery->orderBy('full_name')
-            ->paginate(25, ['*'], 'beneficiaries_page')
-            ->appends(request()->query());
-            
-        $beneficiaryAllocationCounts = Allocation::where('allocations.program_name_id', $programName->id)
-            ->whereIn('beneficiary_id', $beneficiaries->pluck('id'))
-            ->selectRaw('beneficiary_id, count(*) as count')
-            ->groupBy('beneficiary_id')
-            ->pluck('count', 'beneficiary_id');
-
-        // Analytics Data for Insights Tab
-        $barangayReach = Allocation::where('allocations.program_name_id', $programName->id)
-            ->leftJoin('distribution_events', 'allocations.distribution_event_id', '=', 'distribution_events.id')
-            ->leftJoin('beneficiaries', 'allocations.beneficiary_id', '=', 'beneficiaries.id')
-            ->leftJoin('barangays', function($join) {
-                $join->on('distribution_events.barangay_id', '=', 'barangays.id')
-                     ->orOn('beneficiaries.barangay_id', '=', 'barangays.id');
-            })
-            ->selectRaw('barangays.name, count(*) as total')
-            ->whereNotNull('barangays.name')
-            ->groupBy('barangays.name')
-            ->orderByDesc('total')
-            ->limit(10)
             ->get();
 
-        $resourceMix = Allocation::where('allocations.program_name_id', $programName->id)
-            ->join('resource_types', 'allocations.resource_type_id', '=', 'resource_types.id')
-            ->selectRaw('resource_types.name, count(*) as total')
-            ->groupBy('resource_types.name')
+        $beneficiaryIds = collect()
+            ->merge($allocations->pluck('beneficiary_id'))
+            ->merge($directAssistanceRecords->pluck('beneficiary_id'))
+            ->unique()
+            ->values();
+
+        $beneficiaries = Beneficiary::query()
+            ->whereIn('id', $beneficiaryIds)
+            ->orderBy('full_name')
             ->get();
 
-        $purposeBreakdown = Allocation::where('allocations.program_name_id', $programName->id)
-            ->join('assistance_purposes', 'allocations.assistance_purpose_id', '=', 'assistance_purposes.id')
-            ->selectRaw('assistance_purposes.name, count(*) as total')
-            ->groupBy('assistance_purposes.name')
-            ->orderByDesc('total')
-            ->get();
-
-        $monthlyTrend = Allocation::where('program_name_id', $programName->id)
-            ->selectRaw("DATE_FORMAT(distributed_at, '%Y-%m') as month, count(*) as total, SUM(amount) as total_amount")
-            ->whereNotNull('distributed_at')
-            ->groupBy('month')
-            ->orderBy('month')
-            ->get();
+        $totalEvents = $events->count();
+        $totalAllocatedAmount = (float) $allocations->sum(function ($allocation) {
+            return (float) ($allocation->amount ?? 0);
+        });
+        $totalBeneficiaries = $beneficiaries->count();
 
         return view('admin.settings.program-names.detail', compact(
             'programName',
@@ -1120,15 +956,8 @@ class SystemSettingsController extends Controller
             'directAssistanceRecords',
             'beneficiaries',
             'totalEvents',
-            'activeDistributionsCount',
-            'complianceDocumentsCount',
             'totalAllocatedAmount',
             'totalBeneficiaries',
-            'beneficiaryAllocationCounts',
-            'barangayReach',
-            'resourceMix',
-            'purposeBreakdown',
-            'monthlyTrend'
         ));
     }
 
@@ -1177,8 +1006,14 @@ class SystemSettingsController extends Controller
             ->where('program_name_id', $programName->id)
             ->get();
 
+        $directAssistanceRecords = DirectAssistance::query()
+            ->where('program_name_id', $programName->id)
+            ->get();
+
         // Get unique beneficiary IDs
-        $beneficiaryIds = $allocations->pluck('beneficiary_id')
+        $beneficiaryIds = collect()
+            ->merge($allocations->pluck('beneficiary_id'))
+            ->merge($directAssistanceRecords->pluck('beneficiary_id'))
             ->unique()
             ->values();
 
@@ -1330,9 +1165,6 @@ class SystemSettingsController extends Controller
             'position_target_id' => ['nullable', 'integer', 'exists:form_field_options,id'],
             'is_required' => ['boolean'],
             'is_active' => ['boolean'],
-            'options' => ['nullable', 'array'],
-            'options.*.label' => ['required_with:options', 'string', 'max:255'],
-            'options.*.value' => ['nullable', 'string', 'max:255'],
         ]);
 
         $validated['field_group'] = $this->normalizeKey($validated['field_group']);
@@ -1349,27 +1181,21 @@ class SystemSettingsController extends Controller
             ], 422);
         }
 
-        if ($this->isAgencySpecificCoreFieldName($validated['field_group'])) {
-            return response()->json([
-                'success' => false,
-                'errors' => [
-                    'field_group' => [
-                        "Agency/classification core field '{$validated['field_group']}' is managed in Agencies > Manage Fields.",
-                    ],
-                ],
-            ], 422);
+        $isOptionBased = in_array($validated['field_type'], FormFieldOption::optionBasedFieldTypes(), true);
+        $normalizedValueSource = (string) ($validated['value'] ?? '');
+        if ($isOptionBased && trim($normalizedValueSource) === '') {
+            $normalizedValueSource = (string) ($validated['label'] ?? '');
         }
 
-        $isOptionBased = in_array($validated['field_type'], FormFieldOption::optionBasedFieldTypes(), true);
         $validated['value'] = $isOptionBased
-            ? $this->normalizeKey((string) ($validated['value'] ?? ''))
+            ? $this->normalizeKey($normalizedValueSource)
             : $validated['field_group'];
 
         if ($validated['field_group'] === '' || ($isOptionBased && $validated['value'] === '')) {
             return response()->json([
                 'success' => false,
                 'errors' => [
-                    'value' => ['Field group and value must contain letters or numbers.'],
+                    'value' => ['Field group and option label/value must contain letters or numbers.'],
                 ],
             ], 422);
         }
@@ -1415,6 +1241,15 @@ class SystemSettingsController extends Controller
             }
         }
 
+        if ($validated['placement_section'] === FormFieldOption::PLACEMENT_DAR_INFORMATION) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'placement_section' => ['DAR placement is not supported for global fields. Configure DAR fields under Agencies > Agency Fields.'],
+                ],
+            ], 422);
+        }
+
         $resolvedOrderMode = $this->resolveOrderMode(
             $validated['order_mode'] ?? null,
             $validated['sort_order'] ?? null,
@@ -1441,7 +1276,7 @@ class SystemSettingsController extends Controller
             $validated['placement_section']
         );
 
-        $option = DB::transaction(function () use ($validated, $resolvedOrderMode, $isOptionBased) {
+        $option = DB::transaction(function () use ($validated, $resolvedOrderMode) {
             $resolvedSortOrder = $this->resolveSortOrder(
                 $validated['field_group'],
                 null,
@@ -1457,43 +1292,26 @@ class SystemSettingsController extends Controller
                 'is_required' => $validated['is_required'] ?? false,
             ]);
 
-            if ($isOptionBased && !empty($validated['options'])) {
-                $sortOrder = $resolvedSortOrder;
-                foreach ($validated['options'] as $opt) {
-                    $option = FormFieldOption::create([
-                        'field_group' => $validated['field_group'],
-                        'field_type' => $validated['field_type'],
-                        'placement_section' => $validated['placement_section'],
-                        'label' => $opt['label'],
-                        'value' => $opt['value'] ?: $this->normalizeKey($opt['label']),
-                        'sort_order' => $sortOrder,
-                        'is_required' => $validated['is_required'] ?? false,
-                        'is_active' => $validated['is_active'] ?? true,
-                    ]);
-                    $sortOrder += 10;
-                }
-            } else {
-                $option = FormFieldOption::create([
-                    'field_group' => $validated['field_group'],
-                    'field_type' => $validated['field_type'],
-                    'placement_section' => $validated['placement_section'],
-                    'label' => $validated['label'],
-                    'value' => $validated['value'],
-                    'sort_order' => $resolvedSortOrder,
-                    'is_required' => $validated['is_required'] ?? false,
-                    'is_active' => $validated['is_active'] ?? true,
-                ]);
-            }
+            $option = FormFieldOption::create([
+                'field_group' => $validated['field_group'],
+                'field_type' => $validated['field_type'],
+                'placement_section' => $validated['placement_section'],
+                'label' => $validated['label'],
+                'value' => $validated['value'],
+                'sort_order' => $resolvedSortOrder,
+                'is_required' => $validated['is_required'] ?? false,
+                'is_active' => $validated['is_active'] ?? true,
+            ]);
 
             $this->normalizeGroupSortOrder($validated['field_group']);
-            if (isset($option)) $option->refresh();
+            $option->refresh();
 
             $this->audit->log(
-                auth()->id(), 'created', 'form_field_options', $option->id ?? 0,
-                [], $option ? $option->toArray() : [],
+                auth()->id(), 'created', 'form_field_options', $option->id,
+                [], $option->toArray(),
             );
 
-            return $option ?? null;
+            return $option;
         });
 
         return response()->json([
@@ -1516,18 +1334,8 @@ class SystemSettingsController extends Controller
             ], 422);
         }
 
-        if ($this->isAgencySpecificCoreFieldName((string) $formFieldOption->field_group)) {
-            return response()->json([
-                'success' => false,
-                'errors' => [
-                    'field_group' => [
-                        "Agency/classification core field '{$formFieldOption->field_group}' is managed in Agencies > Manage Fields.",
-                    ],
-                ],
-            ], 422);
-        }
-
         $validated = $request->validate([
+            'field_group' => ['sometimes', 'string', 'max:100'],
             'field_type' => ['required', Rule::in(FormFieldOption::supportedFieldTypes())],
             'placement_section' => ['required', Rule::in(FormFieldOption::allowedPlacements())],
             'label' => ['required', 'string', 'max:255'],
@@ -1540,33 +1348,112 @@ class SystemSettingsController extends Controller
         ]);
 
         $validated['field_type'] = strtolower(trim((string) $validated['field_type']));
+        $targetFieldGroup = array_key_exists('field_group', $validated)
+            ? $this->normalizeKey((string) $validated['field_group'])
+            : (string) $formFieldOption->field_group;
+
+        if ($targetFieldGroup === '') {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'field_group' => ['Field group must contain letters or numbers.'],
+                ],
+            ], 422);
+        }
+
+        if ($this->isPersonalInformationCoreFieldName($targetFieldGroup)) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'field_group' => [
+                        "Core personal-information field '{$targetFieldGroup}' is schema-managed and cannot be edited from Settings.",
+                    ],
+                ],
+            ], 422);
+        }
+
+        if ($overlapError = $this->globalAgencyOverlapError($targetFieldGroup)) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'field_group' => [$overlapError],
+                ],
+            ], 422);
+        }
 
         $isOptionBased = in_array($validated['field_type'], FormFieldOption::optionBasedFieldTypes(), true);
+        $normalizedValueSource = (string) ($validated['value'] ?? '');
+        if ($isOptionBased && trim($normalizedValueSource) === '') {
+            $normalizedValueSource = (string) ($validated['label'] ?? '');
+        }
+
         $validated['value'] = $isOptionBased
-            ? $this->normalizeKey((string) ($validated['value'] ?? ''))
-            : $formFieldOption->field_group;
+            ? $this->normalizeKey($normalizedValueSource)
+            : $targetFieldGroup;
 
         if ($isOptionBased && $validated['value'] === '') {
             return response()->json([
                 'success' => false,
                 'errors' => [
-                    'value' => ['Value must contain letters or numbers.'],
+                    'value' => ['Option label/value must contain letters or numbers.'],
                 ],
             ], 422);
         }
 
+        $targetGroupOptions = FormFieldOption::query()
+            ->where('field_group', $targetFieldGroup)
+            ->where('id', '!=', $formFieldOption->id)
+            ->orderBy('id')
+            ->get(['id', 'field_type']);
+
+        if ($targetGroupOptions->isNotEmpty()) {
+            $existingType = (string) ($targetGroupOptions->first()->field_type ?? FormFieldOption::FIELD_TYPE_DROPDOWN);
+            if ($existingType !== $validated['field_type']) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'field_type' => [
+                            "Field group '{$targetFieldGroup}' already exists as type '{$existingType}'. "
+                            . 'Use the same type for all entries under one group.',
+                        ],
+                    ],
+                ], 422);
+            }
+
+            if (! $isOptionBased) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'field_group' => [
+                            "Field group '{$targetFieldGroup}' already stores a single {$validated['field_type']} value.",
+                        ],
+                    ],
+                ], 422);
+            }
+        }
+
         $groupOptionsCount = FormFieldOption::query()
-            ->where('field_group', $formFieldOption->field_group)
+            ->where('field_group', $targetFieldGroup)
+            ->where('id', '!=', $formFieldOption->id)
             ->count();
 
-        if (! $isOptionBased && $groupOptionsCount > 1) {
+        if (! $isOptionBased && $groupOptionsCount > 0) {
             return response()->json([
                 'success' => false,
                 'errors' => [
                     'field_type' => [
-                        "Field group '{$formFieldOption->field_group}' has multiple options. "
-                        . 'Delete extra options before changing the type to a single-value field.',
+                        "Field group '{$targetFieldGroup}' already has an option. "
+                        . 'Single-value fields can only keep one item per field group.',
                     ],
+                ],
+            ], 422);
+        }
+
+        if ($validated['placement_section'] === FormFieldOption::PLACEMENT_DAR_INFORMATION) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'placement_section' => ['DAR placement is not supported for global fields. Configure DAR fields under Agencies > Agency Fields.'],
                 ],
             ], 422);
         }
@@ -1578,7 +1465,7 @@ class SystemSettingsController extends Controller
         );
 
         // Ensure unique field_group + value pair (exclude self)
-        $exists = FormFieldOption::where('field_group', $formFieldOption->field_group)
+        $exists = FormFieldOption::where('field_group', $targetFieldGroup)
             ->where('value', $validated['value'])
             ->where('id', '!=', $formFieldOption->id)
             ->exists();
@@ -1590,13 +1477,14 @@ class SystemSettingsController extends Controller
             ], 422);
         }
 
-        DB::transaction(function () use ($validated, $formFieldOption, $orderMode) {
+        DB::transaction(function () use ($validated, $formFieldOption, $orderMode, $targetFieldGroup) {
             $oldValues = $formFieldOption->toArray();
+            $previousFieldGroup = (string) $formFieldOption->field_group;
 
             $resolvedSortOrder = $formFieldOption->sort_order;
             if ($orderMode !== 'keep') {
                 $resolvedSortOrder = $this->resolveSortOrder(
-                    $formFieldOption->field_group,
+                    $targetFieldGroup,
                     $formFieldOption->id,
                     $orderMode,
                     $validated['position_target_id'] ?? null,
@@ -1604,7 +1492,7 @@ class SystemSettingsController extends Controller
                 );
             }
 
-            FormFieldOption::where('field_group', $formFieldOption->field_group)
+            FormFieldOption::where('field_group', $targetFieldGroup)
                 ->where('id', '!=', $formFieldOption->id)
                 ->update([
                     'field_type' => $validated['field_type'],
@@ -1613,6 +1501,7 @@ class SystemSettingsController extends Controller
                 ]);
 
             $formFieldOption->update([
+                'field_group' => $targetFieldGroup,
                 'field_type' => $validated['field_type'],
                 'placement_section' => $validated['placement_section'],
                 'label' => $validated['label'],
@@ -1622,7 +1511,10 @@ class SystemSettingsController extends Controller
                 'is_active' => $validated['is_active'] ?? true,
             ]);
 
-            $this->normalizeGroupSortOrder($formFieldOption->field_group);
+            $this->normalizeGroupSortOrder($targetFieldGroup);
+            if ($previousFieldGroup !== $targetFieldGroup) {
+                $this->normalizeGroupSortOrder($previousFieldGroup);
+            }
             $formFieldOption->refresh();
 
             $this->audit->log(
@@ -1872,11 +1764,9 @@ class SystemSettingsController extends Controller
     {
         try {
             $this->bootstrapAgencyCoreFields($agency);
-            $this->cleanupClassificationAgencyFieldOverlap($agency);
 
             $fields = $agency->formFields()
                 ->where('is_active', true)
-                ->whereNotIn('field_name', $this->classificationCoreFieldNames())
                 ->with('options')
                 ->orderBy('sort_order')
                 ->get()
@@ -1949,7 +1839,7 @@ class SystemSettingsController extends Controller
             $validated = $request->validate([
                 'field_name' => ['required', 'string', 'lowercase', 'regex:/^[a-z0-9_]+$/', 'max:255'],
                 'display_label' => ['required', 'string', 'max:255'],
-                'field_type' => ['required', 'in:text,textarea,number,decimal,date,datetime,dropdown,checkbox,radio'],
+                'field_type' => ['required', 'in:text,textarea,number,decimal,date,datetime,dropdown,checkbox'],
                 'is_required' => ['nullable', 'boolean'],
                 'help_text' => ['nullable', 'string'],
                 'form_section' => ['nullable', 'string'],
@@ -1969,17 +1859,6 @@ class SystemSettingsController extends Controller
                     'errors' => [
                         'field_name' => [
                             "Core personal-information field '{$validated['field_name']}' is schema-managed and cannot be added as a dynamic agency field.",
-                        ],
-                    ],
-                ], 422);
-            }
-
-            if ($this->isReservedAgencyFormFieldName($validated['field_name'])) {
-                return response()->json([
-                    'message' => 'Validation error',
-                    'errors' => [
-                        'field_name' => [
-                            "Classification core field '{$validated['field_name']}' is managed in the Classification Core Fields settings.",
                         ],
                     ],
                 ], 422);
@@ -2020,6 +1899,11 @@ class SystemSettingsController extends Controller
 
             $field = DB::transaction(function () use ($validated, $agency) {
                 $normalizedFieldType = $this->normalizeAgencyFieldType((string) $validated['field_type']);
+                $resolvedFormSection = $this->resolveAgencyFormSection(
+                    $agency,
+                    (string) $validated['field_name'],
+                    (string) ($validated['form_section'] ?? ''),
+                );
 
                 $field = $agency->formFields()->create([
                     'field_name' => $validated['field_name'],
@@ -2028,7 +1912,7 @@ class SystemSettingsController extends Controller
                     'is_required' => $validated['is_required'] ?? false,
                     'is_active' => true,
                     'help_text' => $validated['help_text'] ?? null,
-                    'form_section' => $validated['form_section'] ?? 'general_information',
+                    'form_section' => $resolvedFormSection,
                     'sort_order' => $validated['sort_order'] ?? 0,
                 ]);
 
@@ -2074,7 +1958,7 @@ class SystemSettingsController extends Controller
             $validated = $request->validate([
                 'field_name' => ['sometimes', 'string', 'lowercase', 'regex:/^[a-z0-9_]+$/', 'max:255'],
                 'display_label' => ['sometimes', 'string', 'max:255'],
-                'field_type' => ['sometimes', 'in:text,textarea,number,decimal,date,datetime,dropdown,checkbox,radio'],
+                'field_type' => ['sometimes', 'in:text,textarea,number,decimal,date,datetime,dropdown,checkbox'],
                 'is_required' => ['nullable', 'boolean'],
                 'help_text' => ['nullable', 'string'],
                 'form_section' => ['nullable', 'string'],
@@ -2090,17 +1974,6 @@ class SystemSettingsController extends Controller
         try {
             $field = $agency->formFields()->findOrFail($fieldId);
             $effectiveFieldName = (string) ($validated['field_name'] ?? $field->field_name);
-
-            if ($this->isReservedAgencyFormFieldName($effectiveFieldName)) {
-                return response()->json([
-                    'message' => 'Validation error',
-                    'errors' => [
-                        'field_name' => [
-                            "Classification core field '{$effectiveFieldName}' is managed in the Classification Core Fields settings.",
-                        ],
-                    ],
-                ], 422);
-            }
 
             if ($this->isPersonalInformationCoreFieldName($effectiveFieldName)) {
                 return response()->json([
@@ -2132,6 +2005,12 @@ class SystemSettingsController extends Controller
                 $validated['form_section'] = $reservedSection;
             }
 
+            $validated['form_section'] = $this->resolveAgencyFormSection(
+                $agency,
+                $effectiveFieldName,
+                (string) ($validated['form_section'] ?? $field->form_section ?? ''),
+            );
+
             // Check if new field_name already exists (if changing)
             if (isset($validated['field_name']) && $validated['field_name'] !== $field->field_name) {
                 if ($agency->formFields()->where('field_name', $validated['field_name'])->exists()) {
@@ -2157,7 +2036,7 @@ class SystemSettingsController extends Controller
 
                 $field->update($validated);
 
-                if (array_key_exists('options', $validated) || in_array($field->field_type, ['dropdown', 'checkbox', 'radio'], true)) {
+                if (array_key_exists('options', $validated) || in_array($field->field_type, ['dropdown', 'checkbox'], true)) {
                     $this->syncAgencyFieldOptions($field, $validated['options'] ?? []);
                 }
             });
@@ -2199,17 +2078,6 @@ class SystemSettingsController extends Controller
     {
         try {
             $field = $agency->formFields()->findOrFail($fieldId);
-
-            if ($this->isReservedAgencyFormFieldName((string) $field->field_name)) {
-                return response()->json([
-                    'message' => 'Validation error',
-                    'errors' => [
-                        'field_name' => [
-                            "Classification core field '{$field->field_name}' is managed in the Classification Core Fields settings.",
-                        ],
-                    ],
-                ], 422);
-            }
 
             DB::transaction(function () use ($field) {
                 // Delete associated options first
@@ -2440,6 +2308,43 @@ class SystemSettingsController extends Controller
         }
 
         return $normalized;
+    }
+
+    private function resolveAgencyFormSection(Agency $agency, string $fieldName, string $requestedSection = ''): string
+    {
+        $normalizedFieldName = strtolower(trim($fieldName));
+        $reservedSection = BeneficiaryCoreFields::reservedAgencyFormFieldSection($normalizedFieldName);
+        if ($reservedSection !== null) {
+            return $reservedSection;
+        }
+
+        if (strtoupper(trim((string) $agency->name)) === 'DAR') {
+            return 'dar_information';
+        }
+
+        $classificationNames = $agency->classifications()
+            ->pluck('name')
+            ->map(fn ($name) => strtolower(trim((string) $name)))
+            ->values()
+            ->all();
+
+        $hasFarmer = in_array('farmer', $classificationNames, true);
+        $hasFisherfolk = in_array('fisherfolk', $classificationNames, true);
+
+        if ($hasFarmer && ! $hasFisherfolk) {
+            return 'farmer_information';
+        }
+
+        if ($hasFisherfolk && ! $hasFarmer) {
+            return 'fisherfolk_information';
+        }
+
+        $normalizedRequested = strtolower(trim($requestedSection));
+        if (in_array($normalizedRequested, ['general_information', 'additional_information', 'farmer_information', 'fisherfolk_information', 'dar_information'], true)) {
+            return $normalizedRequested;
+        }
+
+        return 'general_information';
     }
 
     /**

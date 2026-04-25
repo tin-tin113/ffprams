@@ -123,8 +123,6 @@
     $farmOwnershipRequired = $isGroupRequired('farm_ownership', true);
     $farmTypeRequired = $isGroupRequired('farm_type', true);
     $fisherfolkTypeRequired = $isGroupRequired('fisherfolk_type', true);
-    $arbClassificationRequired = $isGroupRequired('arb_classification', true);
-    $ownershipSchemeRequired = $isGroupRequired('ownership_scheme', true);
 
     $civilStatusOptions = $normalizeFieldOptions($fo['civil_status'] ?? [], []);
     $highestEducationOptions = $normalizeFieldOptions($fo['highest_education'] ?? [], []);
@@ -132,8 +130,6 @@
     $farmOwnershipOptions = $normalizeFieldOptions($fo['farm_ownership'] ?? [], []);
     $farmTypeOptions = $normalizeFieldOptions($fo['farm_type'] ?? [], []);
     $fisherfolkTypeOptions = $normalizeFieldOptions($fo['fisherfolk_type'] ?? [], []);
-    $arbClassificationOptions = $normalizeFieldOptions($fo['arb_classification'] ?? [], []);
-    $ownershipSchemeOptions = $normalizeFieldOptions($fo['ownership_scheme'] ?? [], []);
     $rsbsaAvailabilityStatus = old(
         'rsbsa_availability_status',
         filled($beneficiary->rsbsa_unavailability_reason ?? null) ? 'not_available_yet' : 'provided'

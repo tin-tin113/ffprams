@@ -7,29 +7,27 @@
 @endsection
 
 @section('content')
-<div class="container-fluid pb-4">
+<div class="container-fluid py-4">
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h2 mb-0">System Settings</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">System Settings</h1>
     </div>
-
-    @php $activeTab = $activeTab ?? 'agencies'; @endphp
 
     <!-- Tab Navigation -->
     <ul class="nav nav-tabs mb-4" role="tablist" id="settingsTabs">
         <li class="nav-item" role="presentation">
-            <button class="nav-link {{ $activeTab === 'agencies' ? 'active' : '' }}" id="agencies-tab" data-bs-toggle="tab" data-bs-target="#agencies-content" type="button" role="tab" aria-controls="agencies-content" aria-selected="{{ $activeTab === 'agencies' ? 'true' : 'false' }}">
+            <button class="nav-link active" id="agencies-tab" data-bs-toggle="tab" data-bs-target="#agencies-content" type="button" role="tab" aria-controls="agencies-content" aria-selected="true">
                 <i class="bi bi-building"></i> Agencies
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link {{ $activeTab === 'resource-types' ? 'active' : '' }}" id="resource-types-tab" data-bs-toggle="tab" data-bs-target="#resource-types-content" type="button" role="tab" aria-controls="resource-types-content" aria-selected="{{ $activeTab === 'resource-types' ? 'true' : 'false' }}">
+            <button class="nav-link" id="resource-types-tab" data-bs-toggle="tab" data-bs-target="#resource-types-content" type="button" role="tab" aria-controls="resource-types-content" aria-selected="false">
                 <i class="bi bi-box"></i> Resource Types and Assistance Purposes
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link {{ $activeTab === 'form-fields' ? 'active' : '' }}" id="form-fields-tab" data-bs-toggle="tab" data-bs-target="#form-fields-content" type="button" role="tab" aria-controls="form-fields-content" aria-selected="{{ $activeTab === 'form-fields' ? 'true' : 'false' }}">
-                <i class="bi bi-file-earmark-text"></i> Form Fields
+            <button class="nav-link" id="form-fields-tab" data-bs-toggle="tab" data-bs-target="#form-fields-content" type="button" role="tab" aria-controls="form-fields-content" aria-selected="false">
+                <i class="bi bi-file-form"></i> Form Fields
             </button>
         </li>
     </ul>
@@ -38,15 +36,16 @@
     <div class="tab-content" id="settingsContent">
 
         <!-- ========== AGENCIES TAB ========== -->
-        <div class="tab-pane fade {{ $activeTab === 'agencies' ? 'show active' : '' }}" id="agencies-content" role="tabpanel" aria-labelledby="agencies-tab">
+        <div class="tab-pane fade show active" id="agencies-content" role="tabpanel" aria-labelledby="agencies-tab">
             <div class="card">
                 <div class="card-header bg-light">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
                             <i class="bi bi-building"></i> Agencies Management
                         </h5>
-                        <div class="d-flex align-items-center gap-3">
-                        </div>
+                        <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addAgencyModal">
+                            <i class="bi bi-plus-circle me-1"></i> Create Agency
+                        </button>
                     </div>
                 </div>
                 <div class="card-body p-0">
@@ -76,7 +75,7 @@
                                         </td>
                                         <td>
                                             <span class="badge bg-secondary">
-                                                {{ $agency->formFields()->where('is_active', true)->whereNotIn('field_name', \App\Support\BeneficiaryCoreFields::reservedAgencyFormFieldNames())->count() }} fields
+                                                {{ $agency->active_form_fields_count ?? 0 }} fields
                                             </span>
                                         </td>
                                         <td>
@@ -129,25 +128,11 @@
                         </table>
                     </div>
                 </div>
-                <div class="card-footer bg-white py-3 border-top-0">
-                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-                        <div class="text-muted small order-2 order-md-1">
-                            @if($agencies->total() > 0)
-                                Showing {{ number_format($agencies->firstItem()) }} to {{ number_format($agencies->lastItem()) }} of {{ number_format($agencies->total()) }} agencies
-                            @endif
-                        </div>
-                        @if($agencies->hasPages())
-                            <div class="pagination-container order-1 order-md-2">
-                                {{ $agencies->links() }}
-                            </div>
-                        @endif
-                    </div>
-                </div>
             </div>
         </div>
 
         <!-- ========== RESOURCE TYPES AND ASSISTANCE PURPOSES TAB ========== -->
-        <div class="tab-pane fade {{ $activeTab === 'resource-types' ? 'show active' : '' }}" id="resource-types-content" role="tabpanel" aria-labelledby="resource-types-tab">
+        <div class="tab-pane fade" id="resource-types-content" role="tabpanel" aria-labelledby="resource-types-tab">
             <!-- Nested Sub-Tabs -->
             <ul class="nav nav-tabs mb-3" role="tablist" id="resourceTypesPurposesTabs">
                 <li class="nav-item" role="presentation">
@@ -172,11 +157,9 @@
                                 <h5 class="mb-0">
                                     <i class="bi bi-box"></i> Resource Types
                                 </h5>
-                                <div class="d-flex align-items-center gap-3">
-                                    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addResourceTypeModal">
-                                        <i class="bi bi-plus-circle me-1"></i> Create Resource Type
-                                    </button>
-                                </div>
+                                <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addResourceTypeModal">
+                                    <i class="bi bi-plus-circle me-1"></i> Create Resource Type
+                                </button>
                             </div>
                         </div>
                         <div class="card-body p-0">
@@ -186,7 +169,6 @@
                                         <tr>
                                             <th>Name</th>
                                             <th>Unit</th>
-                                            <th>Category</th>
                                             <th>Agency</th>
                                             <th class="text-center" style="width: 120px;">Actions</th>
                                         </tr>
@@ -196,17 +178,6 @@
                                             <tr data-resource-type-id="{{ $resourceType->id }}">
                                                 <td><strong>{{ $resourceType->name }}</strong></td>
                                                 <td><small>{{ $resourceType->unit ?: 'N/A' }}</small></td>
-                                                <td>
-                                                    @if($resourceType->unit === 'PHP')
-                                                        <span class="badge bg-success">
-                                                            <i class="bi bi-cash-stack me-1"></i> Financial
-                                                        </span>
-                                                    @else
-                                                        <span class="badge bg-secondary">
-                                                            <i class="bi bi-box-seam me-1"></i> Physical
-                                                        </span>
-                                                    @endif
-                                                </td>
                                                 <td><small>{{ $resourceType->agency?->name ?? 'N/A' }}</small></td>
                                                 <td class="text-center">
                                                     <div class="btn-group btn-group-sm" role="group">
@@ -235,20 +206,6 @@
                                 </table>
                             </div>
                         </div>
-                        <div class="card-footer bg-white py-3 border-top-0">
-                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-                                <div class="text-muted small order-2 order-md-1">
-                                    @if($resourceTypes->total() > 0)
-                                        Showing {{ number_format($resourceTypes->firstItem()) }} to {{ number_format($resourceTypes->lastItem()) }} of {{ number_format($resourceTypes->total()) }} resource types
-                                    @endif
-                                </div>
-                                @if($resourceTypes->hasPages())
-                                    <div class="pagination-container order-1 order-md-2">
-                                        {{ $resourceTypes->links() }}
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -260,11 +217,9 @@
                                 <h5 class="mb-0">
                                     <i class="bi bi-check-circle"></i> Assistance Purposes
                                 </h5>
-                                <div class="d-flex align-items-center gap-3">
-                                    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addPurposeModal">
-                                        <i class="bi bi-plus-circle me-1"></i> Create Purpose
-                                    </button>
-                                </div>
+                                <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addPurposeModal">
+                                    <i class="bi bi-plus-circle me-1"></i> Create Purpose
+                                </button>
                             </div>
                         </div>
                         <div class="card-body p-0">
@@ -316,187 +271,164 @@
                                 </table>
                             </div>
                         </div>
-                        <div class="card-footer bg-white py-3 border-top-0">
-                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-                                <div class="text-muted small order-2 order-md-1">
-                                    @if($purposes->total() > 0)
-                                        Showing {{ number_format($purposes->firstItem()) }} to {{ number_format($purposes->lastItem()) }} of {{ number_format($purposes->total()) }} purposes
-                                    @endif
-                                </div>
-                                @if($purposes->hasPages())
-                                    <div class="pagination-container order-1 order-md-2">
-                                        {{ $purposes->links() }}
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
                     </div>
                 </div>
             </div>
+        </div>
 
         <!-- ========== FORM FIELDS TAB ========== -->
-        <div class="tab-pane fade {{ $activeTab === 'form-fields' ? 'show active' : '' }}" id="form-fields-content" role="tabpanel" aria-labelledby="form-fields-tab">
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="alert alert-info border-0 shadow-sm mb-0">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-info-circle-fill fs-4 me-3"></i>
-                            <div>
-                                <h6 class="mb-1 fw-bold">Manage Form Field Sections</h6>
-                                <p class="mb-0 small opacity-75">
-                                    Fields are organized into three main categories: <strong>Global Fields</strong> (for general information), 
-                                    <strong>Classification Fields</strong> (specific to Farmer, Fisherfolk, or DAR), and 
-                                    <strong>Agency Fields</strong> (managed in the Agencies tab).
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECTION: Global Form Fields (Generals) -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="mb-0 fw-bold">
-                            <i class="bi bi-globe2 text-primary me-2"></i> Global Form Fields
+        <div class="tab-pane fade" id="form-fields-content" role="tabpanel" aria-labelledby="form-fields-tab">
+            @php
+                $placementLabels = \App\Models\FormFieldOption::placementLabels();
+                $optionBasedTypes = \App\Models\FormFieldOption::optionBasedFieldTypes();
+                $groupedByPlacement = ($formFields ?? collect())
+                    ->groupBy(fn ($options) => $options->first()?->placement_section ?? \App\Models\FormFieldOption::PLACEMENT_PERSONAL_INFORMATION);
+                $personalFormFields = $groupedByPlacement->get(\App\Models\FormFieldOption::PLACEMENT_PERSONAL_INFORMATION, collect());
+            @endphp
+            <div class="card">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-file-form"></i> Global Form Fields
                         </h5>
-                        <small class="text-muted">Fields and options that apply to all beneficiaries (General Information)</small>
+                        <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addGlobalFieldModal">
+                            <i class="bi bi-plus-circle me-1"></i> Add Global Field
+                        </button>
                     </div>
-                    <button class="btn btn-primary btn-sm px-3" onclick="openAddGlobalFieldModal('{{ \App\Models\FormFieldOption::PLACEMENT_PERSONAL_INFORMATION }}', 'Global Form Field')">
-                        <i class="bi bi-plus-lg me-1"></i> Add Global Field
-                    </button>
                 </div>
                 <div class="card-body p-0">
+                    <div class="px-3 py-2 border-bottom bg-white">
+                        <small class="text-muted">
+                            These fields are shared across agencies and appear in beneficiary forms by placement section.
+                            Agency-specific fields are managed under Agencies > Manage Fields.
+                        </small>
+                    </div>
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
+                        <table class="table table-hover table-sm mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th style="width: 25%;">Field Group</th>
-                                    <th style="width: 15%;">Type</th>
-                                    <th style="width: 35%;">Options / Stored Value</th>
-                                    <th style="width: 10%;">Status</th>
-                                    <th style="width: 15%;" class="text-end">Actions</th>
+                                    <th>Field Group</th>
+                                    <th>Type</th>
+                                    <th>Placement</th>
+                                    <th>Required</th>
+                                    <th>Status</th>
+                                    <th>Options</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($globalFormFields as $group => $options)
-                                    @php $first = $options->first(); @endphp
-                                    <tr data-group="{{ $group }}">
-                                        <td class="fw-bold text-dark">{{ ucfirst(str_replace('_', ' ', $group)) }}</td>
+                                @forelse ($personalFormFields as $group => $options)
+                                    @php
+                                        $groupMeta = $options->first();
+                                        $groupType = $groupMeta->field_type ?? \App\Models\FormFieldOption::FIELD_TYPE_DROPDOWN;
+                                        $isOptionBasedGroup = in_array($groupType, $optionBasedTypes, true);
+                                        $groupPlacement = $groupMeta->placement_section ?? \App\Models\FormFieldOption::PLACEMENT_PERSONAL_INFORMATION;
+                                        $groupRequired = (bool) ($groupMeta->is_required ?? false);
+                                        $groupIsActive = (bool) $options->contains(fn ($option) => (bool) $option->is_active);
+                                        $groupOptionsCount = $options->count();
+                                        $collapseId = 'globalFieldOptionsGroup' . $loop->index;
+                                    @endphp
+                                    <tr class="global-field-group-row" data-collapse-target="#{{ $collapseId }}">
                                         <td>
-                                            <span class="badge bg-secondary-subtle text-secondary border">
-                                                {{ \App\Models\FormFieldOption::fieldTypeLabel($first->field_type) }}
+                                            <strong>{{ Str::title(str_replace('_', ' ', $group)) }}</strong>
+                                            <div><small class="text-muted">{{ $group }}</small></div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info text-dark">
+                                                {{ \App\Models\FormFieldOption::fieldTypeLabel($groupType) }}
                                             </span>
                                         </td>
                                         <td>
-                                            @if(in_array($first->field_type, \App\Models\FormFieldOption::optionBasedFieldTypes()))
-                                                @php $activeOptions = $options->where('is_active', true); @endphp
-                                                <div class="d-flex flex-wrap gap-1">
-                                                    @foreach($activeOptions->take(3) as $opt)
-                                                        <span class="badge bg-light text-dark border">{{ $opt->label }}</span>
-                                                    @endforeach
-                                                    @if($activeOptions->count() > 3)
-                                                        <span class="badge bg-light text-muted border">+{{ $activeOptions->count() - 3 }} more</span>
-                                                    @endif
-                                                    <button class="btn btn-link btn-sm p-0 ms-1 global-options-toggle" 
-                                                            data-bs-toggle="collapse" 
-                                                            data-bs-target="#collapse-{{ $group }}" 
-                                                            title="View all options">
-                                                        <small><i class="bi bi-chevron-down"></i> <span class="toggle-label">View</span></small>
-                                                    </button>
-                                                </div>
+                                            <small class="text-muted">
+                                                {{ $placementLabels[$groupPlacement] ?? Str::title(str_replace('_', ' ', $groupPlacement)) }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            @if ($groupRequired)
+                                                <span class="badge bg-danger">Required</span>
                                             @else
-                                                <small class="text-muted font-monospace">{{ $first->value }}</small>
+                                                <span class="badge bg-secondary">Optional</span>
                                             @endif
                                         </td>
                                         <td>
-                                            @if($first->is_active)
-                                                <span class="badge bg-success-subtle text-success">Active</span>
+                                            @if ($groupIsActive)
+                                                <span class="badge bg-success">Active</span>
                                             @else
-                                                <span class="badge bg-danger-subtle text-danger">Inactive</span>
+                                                <span class="badge bg-secondary">Inactive</span>
                                             @endif
                                         </td>
-                                        <td class="text-end">
-                                            <div class="btn-group btn-group-sm">
-                                                <button type="button" class="btn btn-outline-secondary add-global-option-btn" 
-                                                        title="Add option to group"
-                                                        data-field-group="{{ $group }}"
-                                                        data-field-type="{{ $first->field_type }}"
-                                                        data-placement="{{ $first->placement_section }}"
-                                                        data-required="{{ $first->is_required ? '1' : '0' }}">
-                                                    <i class="bi bi-plus"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-outline-primary edit-global-field-btn"
-                                                        title="Edit field settings"
-                                                        data-field-id="{{ $first->id }}"
-                                                        data-field-group="{{ $group }}"
-                                                        data-field-type="{{ $first->field_type }}"
-                                                        data-label="{{ $first->label }}"
-                                                        data-value="{{ $first->value }}"
-                                                        data-placement="{{ $first->placement_section }}"
-                                                        data-sort-order="{{ $first->sort_order }}"
-                                                        data-required="{{ $first->is_required ? '1' : '0' }}"
-                                                        data-active="{{ $first->is_active ? '1' : '0' }}">
-                                                    <i class="bi bi-pencil"></i>
+                                        <td>
+                                            <div class="d-flex align-items-center justify-content-between gap-2">
+                                                <span class="badge bg-light text-dark border">
+                                                    {{ $groupOptionsCount }} {{ Str::plural('option', $groupOptionsCount) }}
+                                                </span>
+                                                <button class="btn btn-sm btn-outline-secondary global-options-toggle"
+                                                        type="button"
+                                                        data-bs-toggle="collapse"
+                                                        data-bs-target="#{{ $collapseId }}"
+                                                        aria-expanded="false"
+                                                        aria-controls="{{ $collapseId }}"
+                                                        title="Show options">
+                                                    <span class="toggle-label">View</span>
+                                                    <i class="bi bi-chevron-down ms-1"></i>
                                                 </button>
                                             </div>
                                         </td>
                                     </tr>
-                                    @if(in_array($first->field_type, \App\Models\FormFieldOption::optionBasedFieldTypes()))
-                                        <tr class="collapse-row">
-                                            <td colspan="5" class="p-0 border-0">
-                                                <div class="collapse bg-light-subtle" id="collapse-{{ $group }}">
-                                                    <div class="p-3">
-                                                        <div class="d-flex align-items-center mb-2">
-                                                            <small class="fw-bold text-uppercase text-muted">Field Options List</small>
-                                                            <hr class="flex-grow-1 ms-2 mb-0 opacity-25">
-                                                        </div>
-                                                        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-2">
-                                                            @foreach($options as $opt)
-                                                                <div class="col">
-                                                                    <div class="d-flex justify-content-between align-items-center p-2 rounded bg-white border border-light-subtle shadow-xs">
-                                                                        <div>
-                                                                            <span class="fw-medium {{ $opt->is_active ? '' : 'text-decoration-line-through text-muted' }}">
-                                                                                {{ $opt->label }}
-                                                                            </span>
-                                                                            <div class="small text-muted font-monospace opacity-75">{{ $opt->value }}</div>
-                                                                        </div>
-                                                                        <div class="btn-group btn-group-xs ms-2">
-                                                                            <button type="button" class="btn btn-link text-primary p-0 hvr-grow edit-global-field-btn"
-                                                                                    data-field-id="{{ $opt->id }}"
-                                                                                    data-field-group="{{ $group }}"
-                                                                                    data-field-type="{{ $first->field_type }}"
-                                                                                    data-label="{{ $opt->label }}"
-                                                                                    data-value="{{ $opt->value }}"
-                                                                                    data-placement="{{ $opt->placement_section }}"
-                                                                                    data-sort-order="{{ $opt->sort_order }}"
-                                                                                    data-required="{{ $first->is_required ? '1' : '0' }}"
-                                                                                    data-active="{{ $opt->is_active ? '1' : '0' }}">
-                                                                                <i class="bi bi-pencil-square"></i>
-                                                                            </button>
-                                                                            <button type="button" class="btn btn-link text-danger p-0 ms-2 hvr-grow delete-global-field-btn"
-                                                                                    data-field-id="{{ $opt->id }}"
-                                                                                    data-field-label="{{ $opt->label }}">
-                                                                                <i class="bi bi-trash"></i>
-                                                                            </button>
-                                                                        </div>
+                                    <tr class="global-field-options-row">
+                                        <td colspan="6" class="p-0">
+                                            <div class="collapse" id="{{ $collapseId }}">
+                                                <div class="bg-light px-3 py-3 border-top">
+                                                    <div class="small text-muted mb-2">
+                                                        @if ($isOptionBasedGroup)
+                                                            Options under <strong>{{ Str::title(str_replace('_', ' ', $group)) }}</strong>
+                                                        @else
+                                                            Single-value field configuration for <strong>{{ Str::title(str_replace('_', ' ', $group)) }}</strong>
+                                                        @endif
+                                                    </div>
+                                                    <div class="list-group list-group-flush global-options-list">
+                                                        @foreach ($options as $option)
+                                                            <div class="list-group-item px-2 py-2 border rounded mb-2">
+                                                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                                                    <div>
+                                                                        <div class="fw-semibold">{{ $option->label }}</div>
+                                                                        @if ($isOptionBasedGroup)
+                                                                            <small class="text-muted">Value: <code>{{ $option->value }}</code></small>
+                                                                        @else
+                                                                            <small class="text-muted">Stored key: <code>{{ $option->value }}</code></small>
+                                                                        @endif
+                                                                    </div>
+                                                                    <div class="btn-group btn-group-sm" role="group" aria-label="Global field actions">
+                                                                        <button class="btn btn-outline-primary edit-global-field-btn"
+                                                                                data-field-id="{{ $option->id }}"
+                                                                                data-field-group="{{ $option->field_group }}"
+                                                                                data-field-type="{{ $groupType }}"
+                                                                                data-label="{{ $option->label }}"
+                                                                                data-value="{{ $option->value }}"
+                                                                                data-placement="{{ $option->placement_section }}"
+                                                                                data-sort-order="{{ $option->sort_order }}"
+                                                                                data-required="{{ $option->is_required ? '1' : '0' }}"
+                                                                                data-active="{{ $option->is_active ? '1' : '0' }}"
+                                                                                title="{{ $isOptionBasedGroup ? 'Edit option' : 'Edit field' }}">
+                                                                            <i class="bi bi-pencil"></i>
+                                                                        </button>
+                                                                        <button class="btn btn-outline-danger delete-global-field-btn"
+                                                                                data-field-id="{{ $option->id }}"
+                                                                                data-field-label="{{ $option->label }}"
+                                                                                title="{{ $isOptionBasedGroup ? 'Delete option' : 'Delete field' }}">
+                                                                            <i class="bi bi-trash"></i>
+                                                                        </button>
                                                                     </div>
                                                                 </div>
-                                                            @endforeach
-                                                        </div>
+                                                            </div>
+                                                        @endforeach
                                                     </div>
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    @endif
+                                            </div>
+                                        </td>
+                                    </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted py-5">
-                                            <i class="bi bi-journal-x fs-1 d-block mb-2 opacity-25"></i>
-                                            No global form fields defined yet.
-                                        </td>
+                                        <td colspan="6" class="text-center text-muted py-4">No form fields found</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -505,176 +437,165 @@
                 </div>
             </div>
 
-            <!-- SECTION: Classification Specific Fields -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-white py-3">
-                    <h5 class="mb-0 fw-bold">
-                        <i class="bi bi-diagram-3 text-info me-2"></i> Classification Specific Fields
+            <div class="card mt-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-collection"></i> Section-Specific Global Fields
                     </h5>
-                    <small class="text-muted">Core schema fields and custom global fields grouped by beneficiary classification</small>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Add section field">
+                        <button type="button" class="btn btn-outline-primary section-add-field-btn" data-placement="farmer_information" data-section-label="Farmer">
+                            Add Farmer Field
+                        </button>
+                        <button type="button" class="btn btn-outline-info section-add-field-btn" data-placement="fisherfolk_information" data-section-label="Fisherfolk">
+                            Add Fisherfolk Field
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body p-0">
-                    @php
-                        $placements = [
-                            'Farmer' => \App\Models\FormFieldOption::PLACEMENT_FARMER_INFORMATION,
-                            'Fisherfolk' => \App\Models\FormFieldOption::PLACEMENT_FISHERFOLK_INFORMATION
-                        ];
-                    @endphp
-
-                    @foreach(['Farmer', 'Fisherfolk'] as $classification)
-                        @php 
-                            $placementKey = $placements[$classification];
-                            $coreFields = $classificationCoreFields->get($classification, collect());
-                            $customFields = $classificationCustomFields->get($placementKey, collect())->groupBy('field_group');
+                    <div class="row g-0">
+                        @php
+                            $sectionConfigs = [
+                                ['placement' => \App\Models\FormFieldOption::PLACEMENT_FARMER_INFORMATION, 'title' => 'Farmer Section', 'badgeClass' => 'bg-primary'],
+                                ['placement' => \App\Models\FormFieldOption::PLACEMENT_FISHERFOLK_INFORMATION, 'title' => 'Fisherfolk Section', 'badgeClass' => 'bg-info text-dark'],
+                            ];
                         @endphp
-                        
-                        <div class="classification-section {{ !$loop->first ? 'border-top' : '' }}">
-                            <div class="px-4 py-3 bg-light d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0 fw-bold">
-                                    <span class="badge {{ $classification === 'Farmer' ? 'bg-primary' : ($classification === 'Fisherfolk' ? 'bg-info text-dark' : 'bg-warning text-dark') }} me-2">
-                                        {{ $classification }}
-                                    </span>
-                                    Fields
-                                </h6>
-                                <button class="btn btn-outline-primary btn-xs" onclick="openAddGlobalFieldModal('{{ $placementKey }}', '{{ $classification }}')">
-                                    <i class="bi bi-plus-lg me-1"></i> Add {{ $classification }} Field
-                                </button>
-                            </div>
-
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0 table-sm">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th style="width: 20%;" class="ps-4">Field Name / Group</th>
-                                            <th style="width: 15%;">Source</th>
-                                            <th style="width: 15%;">Type</th>
-                                            <th style="width: 30%;">Required Status / Options</th>
-                                            <th style="width: 20%;" class="text-end pe-4">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <!-- Core Fields -->
-                                        @foreach($coreFields as $core)
-                                            <tr class="table-white">
-                                                <td class="ps-4">
-                                                    <div class="fw-bold text-dark">{{ $core['label'] }}</div>
-                                                    <small class="text-muted font-monospace">{{ $core['field_name'] }}</small>
-                                                </td>
-                                                <td><span class="badge bg-secondary-subtle text-secondary border">System Core</span></td>
-                                                <td><span class="text-muted small">Text / Dropdown</span></td>
-                                                <td>
-                                                    <span class="badge {{ $core['is_required'] ? 'bg-danger-subtle text-danger' : 'bg-secondary-subtle text-secondary' }} border">
-                                                        {{ $core['is_required'] ? 'Required' : 'Optional' }}
-                                                    </span>
-                                                </td>
-                                                <td class="text-end pe-4">
-                                                    <div class="btn-group btn-group-sm">
-                                                        <button type="button" class="btn btn-outline-secondary btn-xs edit-classification-core-btn"
-                                                                data-field-name="{{ $core['field_name'] }}"
-                                                                data-label="{{ $core['label'] }}"
-                                                                data-required="{{ $core['is_required'] ? '1' : '0' }}"
-                                                                data-placement="{{ Str::title(str_replace('_', ' ', $core['placement_section'])) }}">
-                                                            <i class="bi bi-gear-fill me-1"></i> Configure
-                                                        </button>
-                                                        <button type="button" class="btn btn-outline-primary btn-xs toggle-core-required-btn"
-                                                                data-field-name="{{ $core['field_name'] }}"
-                                                                data-next-required="{{ $core['is_required'] ? '0' : '1' }}">
-                                                            {{ $core['is_required'] ? 'Set Optional' : 'Set Required' }}
-                                                        </button>
+                        @foreach ($sectionConfigs as $section)
+                            @php
+                                $sectionFields = $groupedByPlacement->get($section['placement'], collect());
+                            @endphp
+                            <div class="col-12 col-xl-4 border-end">
+                                <div class="p-3 border-bottom bg-white d-flex justify-content-between align-items-center">
+                                    <span class="badge {{ $section['badgeClass'] }}">{{ $section['title'] }}</span>
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-outline-secondary section-add-field-btn"
+                                        data-placement="{{ $section['placement'] }}"
+                                        data-section-label="{{ $section['title'] }}"
+                                    >
+                                        Add
+                                    </button>
+                                </div>
+                                <div class="p-3">
+                                    @forelse ($sectionFields as $group => $options)
+                                        @php
+                                            $meta = $options->first();
+                                            $groupType = $meta->field_type ?? \App\Models\FormFieldOption::FIELD_TYPE_DROPDOWN;
+                                            $activeCount = $options->where('is_active', true)->count();
+                                        @endphp
+                                        <div class="border rounded p-2 mb-2 bg-light">
+                                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                                <div>
+                                                    <div class="fw-semibold">{{ Str::title(str_replace('_', ' ', $group)) }}</div>
+                                                    <small class="text-muted">{{ $group }}</small>
+                                                    <div>
+                                                        <small class="badge bg-light text-dark border mt-1">
+                                                            {{ \App\Models\FormFieldOption::fieldTypeLabel($groupType) }}
+                                                            • {{ $activeCount }} {{ Str::plural('option', $activeCount) }}
+                                                        </small>
                                                     </div>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-
-                                        <!-- Custom Classification Fields -->
-                                        @foreach($customFields as $group => $options)
-                                            @php $first = $options->first(); @endphp
-                                            <tr class="table-white border-top">
-                                                <td class="ps-4">
-                                                    <div class="fw-bold text-info">{{ ucfirst(str_replace('_', ' ', $group)) }}</div>
-                                                    <small class="text-muted font-monospace">{{ $group }}</small>
-                                                </td>
-                                                <td><span class="badge bg-info-subtle text-info border">User Custom</span></td>
-                                                <td>
-                                                    <small class="badge bg-light text-muted border">
-                                                        {{ \App\Models\FormFieldOption::fieldTypeLabel($first->field_type) }}
-                                                    </small>
-                                                </td>
-                                                <td>
-                                                    @if(in_array($first->field_type, \App\Models\FormFieldOption::optionBasedFieldTypes()))
-                                                        <small class="text-muted">{{ $options->where('is_active', true)->count() }} options</small>
-                                                        <button class="btn btn-link btn-xs p-0 ms-1 global-options-toggle" data-bs-toggle="collapse" data-bs-target="#collapse-{{ $group }}">
-                                                            <i class="bi bi-chevron-down"></i>
-                                                        </button>
-                                                    @else
-                                                        <span class="badge {{ $first->is_required ? 'bg-danger-subtle text-danger' : 'bg-secondary-subtle text-secondary' }} border">
-                                                            {{ $first->is_required ? 'Required' : 'Optional' }}
-                                                        </span>
-                                                    @endif
-                                                </td>
-                                                <td class="text-end pe-4">
-                                                    <div class="btn-group btn-group-xs">
-                                                        <button type="button" class="btn btn-outline-secondary add-global-option-btn" 
-                                                                data-field-group="{{ $group }}"
-                                                                data-field-type="{{ $first->field_type }}"
-                                                                data-placement="{{ $first->placement_section }}"
-                                                                data-required="{{ $first->is_required ? '1' : '0' }}">
-                                                            <i class="bi bi-plus"></i>
-                                                        </button>
-                                                        <button type="button" class="btn btn-outline-primary edit-global-field-btn"
-                                                                data-field-id="{{ $first->id }}"
-                                                                data-field-group="{{ $group }}"
-                                                                data-field-type="{{ $first->field_type }}"
-                                                                data-label="{{ $first->label }}"
-                                                                data-value="{{ $first->value }}"
-                                                                data-placement="{{ $first->placement_section }}"
-                                                                data-sort-order="{{ $first->sort_order }}"
-                                                                data-required="{{ $first->is_required ? '1' : '0' }}"
-                                                                data-active="{{ $first->is_active ? '1' : '0' }}">
-                                                            <i class="bi bi-pencil"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            @if(in_array($first->field_type, \App\Models\FormFieldOption::optionBasedFieldTypes()))
-                                                <tr class="collapse-row">
-                                                    <td colspan="5" class="p-0 border-0">
-                                                        <div class="collapse bg-light-subtle" id="collapse-{{ $group }}">
-                                                            <div class="px-5 py-3 border-start border-4 border-info">
-                                                                <div class="row row-cols-1 row-cols-md-2 g-2">
-                                                                    @foreach($options as $opt)
-                                                                        <div class="col">
-                                                                            <div class="d-flex justify-content-between align-items-center p-2 rounded bg-white border border-light-subtle">
-                                                                                <span class="small fw-medium">{{ $opt->label }}</span>
-                                                                                <div class="btn-group btn-group-xs">
-                                                                                    <button type="button" class="btn btn-link text-primary p-0 edit-global-field-btn"
-                                                                                            data-field-id="{{ $opt->id }}"
-                                                                                            data-field-group="{{ $group }}"
-                                                                                            data-field-type="{{ $first->field_type }}"
-                                                                                            data-label="{{ $opt->label }}"
-                                                                                            data-value="{{ $opt->value }}"
-                                                                                            data-placement="{{ $opt->placement_section }}"
-                                                                                            data-sort-order="{{ $opt->sort_order }}"
-                                                                                            data-required="{{ $first->is_required ? '1' : '0' }}"
-                                                                                            data-active="{{ $opt->is_active ? '1' : '0' }}">
-                                                                                        <i class="bi bi-pencil"></i>
-                                                                                    </button>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    @endforeach
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            @endif
-                                        @endforeach
-                                    </tbody>
-                                </table>
+                                                </div>
+                                                <button
+                                                    class="btn btn-sm btn-outline-primary edit-global-field-btn"
+                                                    data-field-id="{{ $meta->id }}"
+                                                    data-field-group="{{ $meta->field_group }}"
+                                                    data-field-type="{{ $groupType }}"
+                                                    data-label="{{ $meta->label }}"
+                                                    data-value="{{ $meta->value }}"
+                                                    data-placement="{{ $meta->placement_section }}"
+                                                    data-sort-order="{{ $meta->sort_order }}"
+                                                    data-required="{{ $meta->is_required ? '1' : '0' }}"
+                                                    data-active="{{ $meta->is_active ? '1' : '0' }}"
+                                                    title="Edit"
+                                                >
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    @empty
+                                        <small class="text-muted">No fields configured.</small>
+                                    @endforelse
+                                </div>
                             </div>
-                        </div>
-                    @endforeach
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-diagram-3"></i> Classification Core Fields
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="px-3 py-2 border-bottom bg-white">
+                        <small class="text-muted">
+                            Manage required/optional behavior of core fields by classification.
+                            Supported classifications are <strong>Farmer</strong> and <strong>Fisherfolk</strong> only.
+                            DAR fields are managed in agency-specific dynamic fields under Agencies > Agency Fields.
+                        </small>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Classification</th>
+                                    <th>Field</th>
+                                    <th>Section</th>
+                                    <th>Required</th>
+                                    <th class="text-center" style="width: 120px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse(($classificationCoreFields ?? collect())->flatten(1) as $coreField)
+                                    <tr data-core-field-name="{{ $coreField['field_name'] }}">
+                                        <td>
+                                            <span class="badge {{ $coreField['classification'] === 'Farmer' ? 'bg-primary' : 'bg-info text-dark' }}">
+                                                {{ $coreField['classification'] }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold classification-core-field-label">{{ $coreField['label'] }}</div>
+                                            <small class="text-muted">{{ $coreField['field_name'] }}</small>
+                                        </td>
+                                        <td><small class="text-muted">{{ Str::title(str_replace('_', ' ', $coreField['placement_section'])) }}</small></td>
+                                        <td>
+                                            <span class="badge {{ $coreField['is_required'] ? 'bg-danger' : 'bg-secondary' }} core-required-badge">
+                                                {{ $coreField['is_required'] ? 'Required' : 'Optional' }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm" role="group" aria-label="Classification core field actions">
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-outline-secondary edit-classification-core-btn"
+                                                    data-field-name="{{ $coreField['field_name'] }}"
+                                                    data-label="{{ $coreField['label'] }}"
+                                                    data-required="{{ $coreField['is_required'] ? '1' : '0' }}"
+                                                    data-placement="{{ Str::title(str_replace('_', ' ', $coreField['placement_section'])) }}"
+                                                    title="Edit"
+                                                >
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-outline-primary toggle-core-required-btn"
+                                                    data-field-name="{{ $coreField['field_name'] }}"
+                                                    data-next-required="{{ $coreField['is_required'] ? '0' : '1' }}"
+                                                >
+                                                    {{ $coreField['is_required'] ? 'Set Optional' : 'Set Required' }}
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-4">No classification core fields configured.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -888,7 +809,6 @@
                             <option value="datetime">Date & Time</option>
                             <option value="dropdown">Dropdown</option>
                             <option value="checkbox">Checkboxes</option>
-                            <option value="radio">Radio Buttons</option>
                         </select>
                     </div>
 
@@ -910,14 +830,15 @@
                         <textarea class="form-control" id="fieldHelpText" name="help_text" rows="2" placeholder="Optional help text for users..."></textarea>
                     </div>
 
-                    <div class="mb-3">
+                    <div class="mb-3 d-none" id="fieldSectionWrapper">
                         <label for="fieldSection" class="form-label">Form Section</label>
                         <select class="form-select" id="fieldSection" name="form_section">
                             <option value="">General Information</option>
                             <option value="farmer_information">Farmer Information</option>
                             <option value="fisherfolk_information">Fisherfolk Information</option>
-                            <option value="dar_information">DAR/ARB Information</option>
+                            <option value="dar_information">DAR Information</option>
                         </select>
+                        <small class="text-muted">Section is auto-assigned based on agency and field context.</small>
                     </div>
 
                     <div class="mb-3">
@@ -968,15 +889,9 @@
                         <small class="text-muted">All labels under one field group use the same field type.</small>
                     </div>
 
-                    <div class="mb-3" id="globalFieldLabelWrapper">
+                    <div class="mb-3">
                         <label for="globalFieldLabel" class="form-label" id="globalFieldLabelLabel">Option Label <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="globalFieldLabel" required placeholder="e.g., Small Farmer">
-                    </div>
-
-                    <div class="mb-3 d-none" id="globalFieldOptionsWrapper">
-                        <label for="globalFieldOptionsInput" class="form-label">Options (one per line)</label>
-                        <textarea class="form-control" id="globalFieldOptionsInput" rows="5" placeholder="Label|value"></textarea>
-                        <small class="text-muted">Use this to add multiple options at once. Format: Label|value</small>
                     </div>
 
                     <div class="mb-3" id="globalFieldValueWrapper">
@@ -985,15 +900,14 @@
                         <small class="text-muted" id="globalFieldValueHelp">Stored key value for this option.</small>
                     </div>
 
-                    <div class="mb-3" id="globalFieldPlacementWrapper">
+                    <div class="mb-3">
                         <label for="globalFieldPlacement" class="form-label">Display Section (Global Fields Only) <span class="text-danger">*</span></label>
                         <select class="form-select" id="globalFieldPlacement" required>
                             <option value="personal_information">Agency &amp; Personal Information</option>
                             <option value="farmer_information">DA/RSBSA Information (Farmer)</option>
                             <option value="fisherfolk_information">BFAR/FishR Information (Fisherfolk)</option>
-                            <option value="dar_information">DAR/ARB Information</option>
                         </select>
-                        <div id="globalFieldPlacementDisplay" class="form-control bg-light d-none" readonly></div>
+                        <input type="text" class="form-control bg-light d-none mt-2" id="globalFieldPlacementDisplay" readonly>
                     </div>
 
                     <div class="mb-3">
@@ -1054,21 +968,6 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Resource Category <span class="text-danger">*</span></label>
-                        <div class="btn-group w-100" role="group">
-                            <input type="radio" class="btn-check" name="category_toggle" id="rtCategoryPhysical" value="physical" checked>
-                            <label class="btn btn-outline-secondary" for="rtCategoryPhysical">
-                                <i class="bi bi-box-seam me-1"></i> Physical Resource
-                            </label>
-                            
-                            <input type="radio" class="btn-check" name="category_toggle" id="rtCategoryFinancial" value="financial">
-                            <label class="btn btn-outline-success" for="rtCategoryFinancial">
-                                <i class="bi bi-cash-stack me-1"></i> Financial Assistance
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
                         <label for="rtUnit" class="form-label">Unit Type <span class="text-danger">*</span></label>
                         <select class="form-select" id="rtUnit" name="unit" required>
                             <option value="" selected disabled>Select unit type...</option>
@@ -1076,7 +975,7 @@
                                 <option value="{{ $unitValue }}">{{ $unitLabel }}</option>
                             @endforeach
                         </select>
-                        <small class="text-muted" id="rtUnitHelp">Use PHP for cash assistance (amount-based).</small>
+                        <small class="text-muted">Use PHP for cash assistance (amount-based).</small>
                     </div>
                 </form>
             </div>
@@ -1116,21 +1015,6 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Resource Category <span class="text-danger">*</span></label>
-                        <div class="btn-group w-100" role="group">
-                            <input type="radio" class="btn-check" name="edit_category_toggle" id="editRtCategoryPhysical" value="physical">
-                            <label class="btn btn-outline-secondary" for="editRtCategoryPhysical">
-                                <i class="bi bi-box-seam me-1"></i> Physical Resource
-                            </label>
-                            
-                            <input type="radio" class="btn-check" name="edit_category_toggle" id="editRtCategoryFinancial" value="financial">
-                            <label class="btn btn-outline-success" for="editRtCategoryFinancial">
-                                <i class="bi bi-cash-stack me-1"></i> Financial Assistance
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
                         <label for="editRtUnit" class="form-label">Unit Type <span class="text-danger">*</span></label>
                         <select class="form-select" id="editRtUnit" name="unit" required>
                             <option value="" selected disabled>Select unit type...</option>
@@ -1138,7 +1022,7 @@
                                 <option value="{{ $unitValue }}">{{ $unitLabel }}</option>
                             @endforeach
                         </select>
-                        <small class="text-muted" id="editRtUnitHelp">Use PHP for cash assistance (amount-based).</small>
+                        <small class="text-muted">Use PHP for cash assistance (amount-based).</small>
                     </div>
                 </form>
             </div>
@@ -1307,19 +1191,6 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Helper function for button loading state
-    function setButtonLoading(btn, isLoading, originalText = '') {
-        if (!btn) return;
-        if (isLoading) {
-            btn.dataset.originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Processing...`;
-        } else {
-            btn.disabled = false;
-            btn.innerHTML = originalText || btn.dataset.originalText || 'Save';
-        }
-    }
-
     const purposeCategoryOptionsElement = document.getElementById('purposeCategoryOptionsData');
     const purposeCategoryOptions = purposeCategoryOptionsElement
         ? JSON.parse(purposeCategoryOptionsElement.dataset.options || '{}')
@@ -1555,7 +1426,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 is_required: classificationCoreFieldRequiredInput && classificationCoreFieldRequiredInput.checked ? 1 : 0,
             };
 
-            setButtonLoading(saveClassificationCoreFieldBtn, true);
+            saveClassificationCoreFieldBtn.disabled = true;
 
             try {
                 const response = await fetch(`/admin/settings/classification-core-fields/${encodeURIComponent(fieldName)}`, {
@@ -1614,7 +1485,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     classificationCoreFieldErrors.classList.remove('d-none');
                 }
             } finally {
-                setButtonLoading(saveClassificationCoreFieldBtn, false);
+                saveClassificationCoreFieldBtn.disabled = false;
             }
         });
     }
@@ -1682,7 +1553,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.getElementById('saveAgencyBtn').addEventListener('click', async function() {
-        const btn = this;
         const form = document.getElementById('agencyForm');
         if (!form.checkValidity()) {
             form.reportValidity();
@@ -1705,8 +1575,6 @@ document.addEventListener('DOMContentLoaded', function() {
             classifications: classifications
         };
 
-        setButtonLoading(btn, true);
-
         try {
             const response = await fetch('/admin/settings/agencies', {
                 method: 'POST',
@@ -1721,7 +1589,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!response.ok) {
                 const error = await response.json();
                 alert('Error: ' + (error.message || 'Failed to save agency'));
-                setButtonLoading(btn, false);
                 return;
             }
 
@@ -1730,7 +1597,6 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error saving agency:', error);
             alert('Error saving agency');
-            setButtonLoading(btn, false);
         }
     });
 
@@ -1766,7 +1632,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     document.getElementById('saveEditAgencyBtn').addEventListener('click', async function() {
-        const btn = this;
         const form = document.getElementById('editAgencyForm');
         if (!form.checkValidity()) {
             form.reportValidity();
@@ -1790,8 +1655,6 @@ document.addEventListener('DOMContentLoaded', function() {
             classifications: classifications
         };
 
-        setButtonLoading(btn, true);
-
         try {
             const response = await fetch(`/admin/settings/agencies/${agencyId}`, {
                 method: 'PUT',
@@ -1806,7 +1669,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!response.ok) {
                 const error = await response.json();
                 alert('Error: ' + (error.message || 'Failed to update agency'));
-                setButtonLoading(btn, false);
                 return;
             }
 
@@ -1815,7 +1677,6 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error updating agency:', error);
             alert('Error updating agency');
-            setButtonLoading(btn, false);
         }
     });
 
@@ -1895,7 +1756,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const agencyFieldOptionsInput = document.getElementById('fieldOptionsInput');
 
     function isAgencyOptionType(fieldType) {
-        return ['dropdown', 'checkbox', 'radio'].includes(String(fieldType || '').toLowerCase());
+        return ['dropdown', 'checkbox'].includes(String(fieldType || '').toLowerCase());
     }
 
     function toggleAgencyFieldOptions(fieldType) {
@@ -2100,7 +1961,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     document.getElementById('saveFieldBtn').addEventListener('click', async function() {
-        const btn = this;
         const form = document.getElementById('fieldForm');
         if (!form.checkValidity()) {
             form.reportValidity();
@@ -2120,7 +1980,7 @@ document.addEventListener('DOMContentLoaded', function() {
             options: serializeAgencyFieldOptions(agencyFieldOptionsInput ? agencyFieldOptionsInput.value : '')
         };
 
-        setButtonLoading(btn, true);
+        console.log('Sending form data:', formData);
 
         try {
             let url = `/admin/settings/agencies/${agencyId}/form-fields`;
@@ -2130,6 +1990,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 url += `/${fieldId}`;
                 method = 'PUT';
             }
+
+            console.log(`${method} request to ${url}`);
 
             const response = await fetch(url, {
                 method: method,
@@ -2141,6 +2003,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify(formData)
             });
 
+            console.log('Response status:', response.status);
+
             if (!response.ok) {
                 const error = await response.json();
                 console.error('Server error:', error);
@@ -2151,17 +2015,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     alert('Error: ' + errorMessage);
                 }
-                setButtonLoading(btn, false);
                 return;
             }
 
             const result = await response.json();
+            console.log('Field saved successfully:', result);
             bootstrap.Modal.getInstance(document.getElementById('addFieldModal')).hide();
             loadFormFields(agencyId);
         } catch (error) {
             console.error('Error saving field:', error);
             alert('Error saving field: ' + error.message);
-            setButtonLoading(btn, false);
         }
     });
 
@@ -2197,12 +2060,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const globalFieldValueInput = document.getElementById('globalFieldValue');
     const globalFieldValueHelp = document.getElementById('globalFieldValueHelp');
     const globalFieldPlacementInput = document.getElementById('globalFieldPlacement');
+    const globalFieldPlacementDisplay = document.getElementById('globalFieldPlacementDisplay');
     const globalFieldSortOrderInput = document.getElementById('globalFieldSortOrder');
     const globalFieldRequiredInput = document.getElementById('globalFieldRequired');
     const globalFieldActiveInput = document.getElementById('globalFieldActive');
-    const globalFieldLabelWrapper = document.getElementById('globalFieldLabelWrapper');
-    const globalFieldOptionsWrapper = document.getElementById('globalFieldOptionsWrapper');
-    const globalFieldOptionsInput = document.getElementById('globalFieldOptionsInput');
     const optionBasedGlobalTypes = ['dropdown', 'radio', 'checkbox'];
 
     document.querySelectorAll('.global-options-toggle').forEach((toggleBtn) => {
@@ -2258,42 +2119,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function applyGlobalFieldTypeState(fieldType) {
         const optionBased = isOptionBasedGlobalType(fieldType);
-        const valueLabel = document.getElementById('globalFieldValueLabel');
-        const valueWrapper = document.getElementById('globalFieldValueWrapper');
-        const labelLabel = document.getElementById('globalFieldLabelLabel');
-        const isEdit = globalFieldModal.dataset.mode === 'edit';
-        const isAddOption = globalFieldModal.dataset.mode === 'add_option';
 
         globalFieldLabelLabel.innerHTML = optionBased
             ? 'Option Label <span class="text-danger">*</span>'
             : 'Field Label <span class="text-danger">*</span>';
 
-        if (optionBased && !isEdit && !isAddOption) {
-            globalFieldOptionsWrapper.classList.remove('d-none');
-            globalFieldOptionsInput.disabled = false;
-            globalFieldLabelWrapper.classList.add('d-none');
-            globalFieldValueWrapper.classList.add('d-none');
-            globalFieldLabelInput.required = false;
-            globalFieldValueInput.required = false;
-        } else {
-            globalFieldOptionsWrapper.classList.add('d-none');
-            globalFieldOptionsInput.disabled = true;
-            globalFieldLabelWrapper.classList.remove('d-none');
-            globalFieldValueWrapper.classList.remove('d-none');
-            globalFieldLabelInput.required = true;
-            
-            globalFieldValueInput.disabled = !optionBased;
-            globalFieldValueInput.required = optionBased;
-            globalFieldValueLabel.innerHTML = optionBased
-                ? 'Option Value <span class="text-danger">*</span>'
-                : 'Stored Value';
-            globalFieldValueHelp.textContent = optionBased
-                ? 'Stored key value for this option.'
-                : 'Single-value field types automatically use the field group as the stored key.';
+        globalFieldValueWrapper.classList.toggle('d-none', !optionBased);
+        globalFieldValueInput.disabled = !optionBased;
+        globalFieldValueInput.required = optionBased;
+        globalFieldValueLabel.innerHTML = optionBased
+            ? 'Option Value <span class="text-danger">*</span>'
+            : 'Stored Value';
+        globalFieldValueHelp.textContent = optionBased
+            ? 'Stored key value for this option.'
+            : 'Single-value field types automatically use the field group as the stored key.';
 
-            if (!optionBased) {
-                globalFieldValueInput.value = normalizeKey(globalFieldGroupInput.value);
-            }
+        if (!optionBased) {
+            globalFieldValueInput.value = normalizeKey(globalFieldGroupInput.value);
         }
     }
 
@@ -2307,64 +2149,60 @@ document.addEventListener('DOMContentLoaded', function() {
         globalFieldModal.dataset.mode = mode;
         globalFieldModalTitle.textContent = isEdit ? 'Edit Global Form Field' : 'Add Global Form Field';
         globalFieldSaveBtn.textContent = isEdit ? 'Update Field' : 'Save Field';
-        globalFieldGroupInput.readOnly = isEdit;
+        globalFieldGroupInput.readOnly = false;
         globalFieldGroupHelp.textContent = isEdit
-            ? 'Field group is locked while editing an existing option.'
+            ? 'Field group can be updated while editing this option.'
             : 'Lowercase, alphanumeric, and underscores only.';
+
+        if (globalFieldPlacementInput && globalFieldPlacementDisplay) {
+            globalFieldPlacementInput.classList.remove('d-none');
+            globalFieldPlacementDisplay.classList.add('d-none');
+            globalFieldPlacementDisplay.value = '';
+        }
     }
 
     function resetGlobalFieldForm() {
         globalFieldForm.reset();
         globalFieldIdInput.value = '';
         globalFieldTypeInput.value = 'dropdown';
-        globalFieldTypeInput.disabled = false;
-        globalFieldGroupInput.readOnly = false;
         globalFieldActiveInput.checked = true;
-        globalFieldOptionsInput.value = '';
         applyGlobalFieldTypeState(globalFieldTypeInput.value);
         clearGlobalFieldErrors();
         setGlobalFieldModalMode('create');
     }
 
-    window.openAddGlobalFieldModal = function(placement = 'personal_information', label = null) {
-        resetGlobalFieldForm();
-        setGlobalFieldModalMode('create');
-
-        if (placement) {
-            globalFieldPlacementInput.value = placement;
-            
-            // If classification label is provided, show read-only section and hide select
-            if (label) {
-                const placementDisplay = document.getElementById('globalFieldPlacementDisplay');
-                
-                globalFieldPlacementInput.classList.add('d-none');
-                placementDisplay.textContent = label + ' Section';
-                placementDisplay.classList.remove('d-none');
-                
-                globalFieldModalTitle.textContent = 'Add ' + label + ' Specific Field';
-            }
-        }
-        
-        bootstrap.Modal.getOrCreateInstance(globalFieldModal).show();
-    };
-
     globalFieldModal.addEventListener('show.bs.modal', function() {
-        // Mode is handled in open-button click or openAddGlobalFieldModal call
-    });
-
-    globalFieldLabelInput.addEventListener('blur', function() {
-        if (isOptionBasedGlobalType(globalFieldTypeInput.value) && !globalFieldValueInput.value) {
-            globalFieldValueInput.value = normalizeKey(this.value);
+        if ((globalFieldModal.dataset.mode || 'create') !== 'edit') {
+            resetGlobalFieldForm();
         }
     });
 
     globalFieldModal.addEventListener('hidden.bs.modal', function() {
         resetGlobalFieldForm();
-        
-        // Reset display state
-        const placementDisplay = document.getElementById('globalFieldPlacementDisplay');
-        globalFieldPlacementInput.classList.remove('d-none');
-        placementDisplay.classList.add('d-none');
+    });
+
+    window.openAddGlobalFieldModal = function(placement = 'personal_information', sectionLabel = 'Global') {
+        resetGlobalFieldForm();
+        setGlobalFieldModalMode('create');
+
+        globalFieldPlacementInput.value = placement || 'personal_information';
+
+        if (globalFieldPlacementInput && globalFieldPlacementDisplay) {
+            globalFieldPlacementInput.classList.add('d-none');
+            globalFieldPlacementDisplay.classList.remove('d-none');
+            globalFieldPlacementDisplay.value = `${sectionLabel} section`;
+        }
+
+        globalFieldModalTitle.textContent = `Add ${sectionLabel} Field`;
+        bootstrap.Modal.getOrCreateInstance(globalFieldModal).show();
+    };
+
+    document.querySelectorAll('.section-add-field-btn').forEach((button) => {
+        button.addEventListener('click', function() {
+            const placement = this.dataset.placement || 'personal_information';
+            const sectionLabel = this.dataset.sectionLabel || 'Global';
+            window.openAddGlobalFieldModal(placement, sectionLabel);
+        });
     });
 
     globalFieldGroupInput.addEventListener('blur', function() {
@@ -2401,42 +2239,17 @@ document.addEventListener('DOMContentLoaded', function() {
             globalFieldActiveInput.checked = this.dataset.active !== '0';
             clearGlobalFieldErrors();
 
-            // When editing, hide the section selection as it's group-level
-            const placementDisplay = document.getElementById('globalFieldPlacementDisplay');
-            globalFieldPlacementInput.classList.add('d-none');
-            const sections = {
-                'personal_information': 'Global Form Field',
-                'farmer_information': 'Farmer Specific',
-                'fisherfolk_information': 'Fisherfolk Specific',
-                'dar_information': 'DAR/ARB Information'
-            };
-            placementDisplay.textContent = sections[globalFieldPlacementInput.value] || globalFieldPlacementInput.value;
-            placementDisplay.classList.remove('d-none');
+            if (globalFieldPlacementInput && globalFieldPlacementDisplay) {
+                const placementMap = {
+                    personal_information: 'Agency & Personal Information',
+                    farmer_information: 'DA/RSBSA Information (Farmer)',
+                    fisherfolk_information: 'BFAR/FishR Information (Fisherfolk)',
+                };
 
-            bootstrap.Modal.getOrCreateInstance(globalFieldModal).show();
-        });
-    });
-
-    document.querySelectorAll('.add-global-option-btn').forEach((btn) => {
-        btn.addEventListener('click', function() {
-            setGlobalFieldModalMode('add_option');
-            resetGlobalFieldForm();
-
-            globalFieldGroupInput.value = this.dataset.fieldGroup || '';
-            globalFieldTypeInput.value = this.dataset.fieldType || 'dropdown';
-            globalFieldPlacementInput.value = this.dataset.placement || 'personal_information';
-            globalFieldRequiredInput.checked = this.dataset.required === '1';
-            
-            applyGlobalFieldTypeState(globalFieldTypeInput.value);
-            globalFieldGroupInput.readOnly = true;
-            globalFieldTypeInput.disabled = true;
-            
-            const placementDisplay = document.getElementById('globalFieldPlacementDisplay');
-            globalFieldPlacementInput.classList.add('d-none');
-            placementDisplay.textContent = 'Group: ' + globalFieldGroupInput.value;
-            placementDisplay.classList.remove('d-none');
-            
-            globalFieldModalTitle.textContent = 'Add Alternative Option';
+                globalFieldPlacementInput.classList.add('d-none');
+                globalFieldPlacementDisplay.classList.remove('d-none');
+                globalFieldPlacementDisplay.value = placementMap[globalFieldPlacementInput.value] || globalFieldPlacementInput.value;
+            }
 
             bootstrap.Modal.getOrCreateInstance(globalFieldModal).show();
         });
@@ -2475,7 +2288,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     globalFieldSaveBtn.addEventListener('click', async function() {
-        const btn = this;
         if (!globalFieldForm.checkValidity()) {
             globalFieldForm.reportValidity();
             return;
@@ -2489,7 +2301,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const optionBased = isOptionBasedGlobalType(fieldType);
 
         const fieldGroup = normalizeKey(globalFieldGroupInput.value);
-        const optionValue = optionBased ? normalizeKey(globalFieldValueInput.value) : fieldGroup;
+        const normalizedLabelValue = normalizeKey(globalFieldLabelInput.value);
+        const optionValue = optionBased
+            ? (normalizeKey(globalFieldValueInput.value) || normalizedLabelValue)
+            : fieldGroup;
         const sortOrderRaw = globalFieldSortOrderInput.value.trim();
 
         globalFieldGroupInput.value = fieldGroup;
@@ -2497,13 +2312,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!fieldGroup || (optionBased && !optionValue)) {
             globalFieldErrors.textContent = optionBased
-                ? 'Field group and option value must contain letters or numbers.'
+                ? 'Field group and option label/value must contain letters or numbers.'
                 : 'Field group must contain letters or numbers.';
             globalFieldErrors.classList.remove('d-none');
             return;
         }
 
         const payload = {
+            field_group: fieldGroup,
             field_type: fieldType,
             placement_section: globalFieldPlacementInput.value,
             label: globalFieldLabelInput.value,
@@ -2513,29 +2329,18 @@ document.addEventListener('DOMContentLoaded', function() {
             is_active: globalFieldActiveInput.checked
         };
 
-        if (optionBased && globalFieldModal.dataset.mode === 'create' && globalFieldOptionsInput.value.trim() !== '') {
-            payload.options = serializeAgencyFieldOptions(globalFieldOptionsInput.value);
-            if (!payload.label) payload.label = 'Group Base';
-        }
-
-        if (!isEditMode) {
-            payload.field_group = fieldGroup;
-        }
-
-        setButtonLoading(btn, true);
-
         try {
             const response = await fetch(
                 isEditMode ? `/admin/settings/form-fields/${fieldOptionId}` : '/admin/settings/form-fields',
                 {
-                    method: isEditMode ? 'PUT' : 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
+                method: isEditMode ? 'PUT' : 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
                 }
             );
 
@@ -2551,7 +2356,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     : (result.message || `Failed to ${isEditMode ? 'update' : 'save'} field`);
                 globalFieldErrors.textContent = message;
                 globalFieldErrors.classList.remove('d-none');
-                setButtonLoading(btn, false);
                 return;
             }
 
@@ -2560,72 +2364,10 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             globalFieldErrors.textContent = `Error ${isEditMode ? 'updating' : 'saving'} form field.`;
             globalFieldErrors.classList.remove('d-none');
-            setButtonLoading(btn, false);
         }
     });
 
     // ========== RESOURCE TYPE MANAGEMENT ==========
-    function filterUnitsByCategory(selectElement, helpTextElement, category) {
-        if (!selectElement) return;
-        
-        const options = selectElement.options;
-        for (let i = 0; i < options.length; i++) {
-            const option = options[i];
-            if (option.value === "") continue;
-            
-            if (category === 'financial') {
-                // Financial: ONLY PHP
-                if (option.value === 'PHP') {
-                    option.hidden = false;
-                    option.disabled = false;
-                } else {
-                    option.hidden = true;
-                    option.disabled = true;
-                }
-            } else {
-                // Physical: EVERYTHING EXCEPT PHP
-                if (option.value === 'PHP') {
-                    option.hidden = true;
-                    option.disabled = true;
-                } else {
-                    option.hidden = false;
-                    option.disabled = false;
-                }
-            }
-        }
-        
-        if (category === 'financial') {
-            selectElement.value = 'PHP';
-            if (helpTextElement) helpTextElement.innerHTML = '<i class="bi bi-info-circle me-1"></i> Financial assistance is restricted to PHP (Pesos) unit.';
-        } else {
-            if (selectElement.value === 'PHP') {
-                selectElement.value = '';
-            }
-            if (helpTextElement) helpTextElement.innerHTML = '<i class="bi bi-info-circle me-1"></i> Physical resources cannot use PHP (Pesos) as a unit.';
-        }
-    }
-
-    // Add listeners for category toggles
-    document.querySelectorAll('input[name="category_toggle"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            filterUnitsByCategory(
-                document.getElementById('rtUnit'),
-                document.getElementById('rtUnitHelp'),
-                this.value
-            );
-        });
-    });
-
-    document.querySelectorAll('input[name="edit_category_toggle"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            filterUnitsByCategory(
-                document.getElementById('editRtUnit'),
-                document.getElementById('editRtUnitHelp'),
-                this.value
-            );
-        });
-    });
-
     function ensureUnitOption(selectElement, unitValue) {
         if (!selectElement || !unitValue) {
             return;
@@ -2645,18 +2387,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('addResourceTypeModal').addEventListener('show.bs.modal', function() {
         document.getElementById('resourceTypeForm').reset();
         document.getElementById('resourceTypeId').value = '';
-        
-        // Default to physical and filter
-        document.getElementById('rtCategoryPhysical').checked = true;
-        filterUnitsByCategory(
-            document.getElementById('rtUnit'),
-            document.getElementById('rtUnitHelp'),
-            'physical'
-        );
     });
 
     document.getElementById('saveResourceTypeBtn').addEventListener('click', async function() {
-        const btn = this;
         const form = document.getElementById('resourceTypeForm');
         if (!form.checkValidity()) {
             form.reportValidity();
@@ -2668,8 +2401,6 @@ document.addEventListener('DOMContentLoaded', function() {
             unit: document.getElementById('rtUnit').value,
             agency_id: document.getElementById('rtAgency').value
         };
-
-        setButtonLoading(btn, true);
 
         try {
             const response = await fetch('/admin/settings/resource-types', {
@@ -2685,7 +2416,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!response.ok) {
                 const error = await response.json();
                 alert('Error: ' + (error.message || 'Failed to save resource type'));
-                setButtonLoading(btn, false);
                 return;
             }
 
@@ -2694,7 +2424,6 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error saving resource type:', error);
             alert('Error saving resource type');
-            setButtonLoading(btn, false);
         }
     });
 
@@ -2718,23 +2447,6 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('editRtAgency').value = rt.agency_id;
             ensureUnitOption(document.getElementById('editRtUnit'), rt.unit || '');
             document.getElementById('editRtUnit').value = rt.unit || '';
-
-            // Set category based on unit and apply filter
-            if (rt.unit === 'PHP') {
-                document.getElementById('editRtCategoryFinancial').checked = true;
-                filterUnitsByCategory(
-                    document.getElementById('editRtUnit'),
-                    document.getElementById('editRtUnitHelp'),
-                    'financial'
-                );
-            } else {
-                document.getElementById('editRtCategoryPhysical').checked = true;
-                filterUnitsByCategory(
-                    document.getElementById('editRtUnit'),
-                    document.getElementById('editRtUnitHelp'),
-                    'physical'
-                );
-            }
 
             bootstrap.Modal.getOrCreateInstance(document.getElementById('editResourceTypeModal')).show();
         } catch (error) {
@@ -2827,7 +2539,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.getElementById('savePurposeBtn').addEventListener('click', async function() {
-        const btn = this;
         const form = document.getElementById('purposeForm');
         if (!form.checkValidity()) {
             form.reportValidity();
@@ -2839,8 +2550,6 @@ document.addEventListener('DOMContentLoaded', function() {
             category: document.getElementById('purposeCategory').value,
             type: document.getElementById('purposeType').value
         };
-
-        setButtonLoading(btn, true);
 
         try {
             const response = await fetch('/admin/settings/purposes', {
@@ -2860,7 +2569,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     : '';
 
                 alert('Error: ' + (details || error.message || 'Failed to save purpose'));
-                setButtonLoading(btn, false);
                 return;
             }
 
@@ -2869,7 +2577,6 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error saving purpose:', error);
             alert('Error saving purpose');
-            setButtonLoading(btn, false);
         }
     });
 
@@ -2887,7 +2594,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.getElementById('saveEditPurposeBtn').addEventListener('click', async function() {
-        const btn = this;
         const form = document.getElementById('editPurposeForm');
         if (!form.checkValidity()) {
             form.reportValidity();
@@ -2900,8 +2606,6 @@ document.addEventListener('DOMContentLoaded', function() {
             category: document.getElementById('editPurposeCategory').value,
             type: document.getElementById('editPurposeType').value
         };
-
-        setButtonLoading(btn, true);
 
         try {
             const response = await fetch(`/admin/settings/purposes/${purposeId}`, {
@@ -2921,7 +2625,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     : '';
 
                 alert('Error: ' + (details || error.message || 'Failed to update purpose'));
-                setButtonLoading(btn, false);
                 return;
             }
 
@@ -2930,7 +2633,6 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error updating purpose:', error);
             alert('Error updating purpose');
-            setButtonLoading(btn, false);
         }
     });
 

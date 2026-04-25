@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Agency;
-use App\Support\BeneficiaryCoreFields;
 use Illuminate\Http\Request;
 
 class AgencyFormFieldController extends Controller
@@ -61,14 +60,11 @@ class AgencyFormFieldController extends Controller
             return response()->json([]);
         }
 
-        $classificationCoreFieldNames = BeneficiaryCoreFields::classificationCoreFieldNames();
-
         $agencies = Agency::whereIn('id', $agencyIds)
             ->where('is_active', true)
             ->with([
                 'formFields' => fn ($q) => $q
                     ->where('is_active', true)
-                    ->whereNotIn('field_name', $classificationCoreFieldNames)
                     ->orderBy('sort_order'),
                 'formFields.options' => fn ($q) => $q
                     ->where('is_active', true)
