@@ -279,325 +279,541 @@
         <!-- ========== FORM FIELDS TAB ========== -->
         <div class="tab-pane fade" id="form-fields-content" role="tabpanel" aria-labelledby="form-fields-tab">
             @php
-                $placementLabels = \App\Models\FormFieldOption::placementLabels();
                 $optionBasedTypes = \App\Models\FormFieldOption::optionBasedFieldTypes();
                 $groupedByPlacement = ($formFields ?? collect())
-                    ->groupBy(fn ($options) => $options->first()?->placement_section ?? \App\Models\FormFieldOption::PLACEMENT_PERSONAL_INFORMATION);
-                $personalFormFields = $groupedByPlacement->get(\App\Models\FormFieldOption::PLACEMENT_PERSONAL_INFORMATION, collect());
+                    ->groupBy(fn ($options) => $options->first()?->placement_section ?? \App\Models\FormFieldOption::PLACEMENT_PERSONAL_INFORMATION, true);
+                $personalFormFields   = $groupedByPlacement->get(\App\Models\FormFieldOption::PLACEMENT_PERSONAL_INFORMATION, collect());
+                $farmerGlobalFields   = $groupedByPlacement->get(\App\Models\FormFieldOption::PLACEMENT_FARMER_INFORMATION, collect());
+                $fisherfolkGlobalFields = $groupedByPlacement->get(\App\Models\FormFieldOption::PLACEMENT_FISHERFOLK_INFORMATION, collect());
+                $farmerCoreFields     = ($classificationCoreFields ?? collect())->get('Farmer', collect());
+                $fisherfolkCoreFields = ($classificationCoreFields ?? collect())->get('Fisherfolk', collect());
             @endphp
+
+            <div class="alert alert-light border d-flex gap-2 align-items-start mb-3 py-2 px-3">
+                <i class="bi bi-info-circle text-primary mt-1 flex-shrink-0"></i>
+                <small class="text-muted">
+                    Fields are organized by the form section where they appear on the beneficiary intake form.
+                    <strong>Global fields</strong> are fully configurable and shared across all beneficiaries in that section.
+                    <strong>Core fields</strong> are system-managed — labels and required status are editable, but they cannot be added or removed.
+                    Agency-specific fields (e.g. DAR) are managed under <strong>Agencies &rsaquo; Agency Fields</strong>.
+                </small>
+            </div>
+
             <div class="card">
-                <div class="card-header bg-light">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="bi bi-file-form"></i> Global Form Fields
-                        </h5>
-                        <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addGlobalFieldModal">
-                            <i class="bi bi-plus-circle me-1"></i> Add Global Field
-                        </button>
-                    </div>
+                <div class="card-header bg-light p-0">
+                    <ul class="nav nav-tabs border-0 px-2 pt-2" id="formFieldsSectionTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="ff-personal-tab" data-bs-toggle="tab" data-bs-target="#ff-personal" type="button" role="tab">
+                                <i class="bi bi-person me-1"></i> Personal &amp; Agency
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="ff-farmer-tab" data-bs-toggle="tab" data-bs-target="#ff-farmer" type="button" role="tab">
+                                <i class="bi bi-tree me-1"></i> Farmer
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="ff-fisherfolk-tab" data-bs-toggle="tab" data-bs-target="#ff-fisherfolk" type="button" role="tab">
+                                <i class="bi bi-water me-1"></i> Fisherfolk
+                            </button>
+                        </li>
+                    </ul>
                 </div>
-                <div class="card-body p-0">
-                    <div class="px-3 py-2 border-bottom bg-white">
-                        <small class="text-muted">
-                            These fields are shared across agencies and appear in beneficiary forms by placement section.
-                            Agency-specific fields are managed under Agencies > Manage Fields.
-                        </small>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover table-sm mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Field Group</th>
-                                    <th>Type</th>
-                                    <th>Placement</th>
-                                    <th>Required</th>
-                                    <th>Status</th>
-                                    <th>Options</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse ($personalFormFields as $group => $options)
-                                    @php
-                                        $groupMeta = $options->first();
-                                        $groupType = $groupMeta->field_type ?? \App\Models\FormFieldOption::FIELD_TYPE_DROPDOWN;
-                                        $isOptionBasedGroup = in_array($groupType, $optionBasedTypes, true);
-                                        $groupPlacement = $groupMeta->placement_section ?? \App\Models\FormFieldOption::PLACEMENT_PERSONAL_INFORMATION;
-                                        $groupRequired = (bool) ($groupMeta->is_required ?? false);
-                                        $groupIsActive = (bool) $options->contains(fn ($option) => (bool) $option->is_active);
-                                        $groupOptionsCount = $options->count();
-                                        $collapseId = 'globalFieldOptionsGroup' . $loop->index;
-                                    @endphp
-                                    <tr class="global-field-group-row" data-collapse-target="#{{ $collapseId }}">
-                                        <td>
-                                            <strong>{{ Str::title(str_replace('_', ' ', $group)) }}</strong>
-                                            <div><small class="text-muted">{{ $group }}</small></div>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-info text-dark">
-                                                {{ \App\Models\FormFieldOption::fieldTypeLabel($groupType) }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <small class="text-muted">
-                                                {{ $placementLabels[$groupPlacement] ?? Str::title(str_replace('_', ' ', $groupPlacement)) }}
-                                            </small>
-                                        </td>
-                                        <td>
-                                            @if ($groupRequired)
-                                                <span class="badge bg-danger">Required</span>
-                                            @else
-                                                <span class="badge bg-secondary">Optional</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @if ($groupIsActive)
-                                                <span class="badge bg-success">Active</span>
-                                            @else
-                                                <span class="badge bg-secondary">Inactive</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            <div class="d-flex align-items-center justify-content-between gap-2">
-                                                <span class="badge bg-light text-dark border">
-                                                    {{ $groupOptionsCount }} {{ Str::plural('option', $groupOptionsCount) }}
-                                                </span>
-                                                <button class="btn btn-sm btn-outline-secondary global-options-toggle"
-                                                        type="button"
-                                                        data-bs-toggle="collapse"
-                                                        data-bs-target="#{{ $collapseId }}"
-                                                        aria-expanded="false"
-                                                        aria-controls="{{ $collapseId }}"
-                                                        title="Show options">
-                                                    <span class="toggle-label">View</span>
-                                                    <i class="bi bi-chevron-down ms-1"></i>
-                                                </button>
-                                            </div>
-                                        </td>
+
+                <div class="tab-content" id="formFieldsSectionTabContent">
+
+                    {{-- ────────────────── PERSONAL & AGENCY ────────────────── --}}
+                    <div class="tab-pane fade show active" id="ff-personal" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-white">
+                            <small class="text-muted">Shared fields in the <strong>Agency &amp; Personal Information</strong> section, shown for all beneficiaries.</small>
+                            <button class="btn btn-sm btn-success section-add-field-btn ms-3 flex-shrink-0"
+                                    data-placement="personal_information" data-section-label="Personal">
+                                <i class="bi bi-plus-circle me-1"></i> Add Field
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Field</th>
+                                        <th>Type</th>
+                                        <th>Required</th>
+                                        <th>Status</th>
+                                        <th class="text-end pe-3">Options</th>
                                     </tr>
-                                    <tr class="global-field-options-row">
-                                        <td colspan="6" class="p-0">
-                                            <div class="collapse" id="{{ $collapseId }}">
-                                                <div class="bg-light px-3 py-3 border-top">
-                                                    <div class="small text-muted mb-2">
-                                                        @if ($isOptionBasedGroup)
-                                                            Options under <strong>{{ Str::title(str_replace('_', ' ', $group)) }}</strong>
-                                                        @else
-                                                            Single-value field configuration for <strong>{{ Str::title(str_replace('_', ' ', $group)) }}</strong>
-                                                        @endif
-                                                    </div>
-                                                    <div class="list-group list-group-flush global-options-list">
-                                                        @foreach ($options as $option)
-                                                            <div class="list-group-item px-2 py-2 border rounded mb-2">
-                                                                <div class="d-flex justify-content-between align-items-start gap-2">
-                                                                    <div>
-                                                                        <div class="fw-semibold">{{ $option->label }}</div>
-                                                                        @if ($isOptionBasedGroup)
-                                                                            <small class="text-muted">Value: <code>{{ $option->value }}</code></small>
-                                                                        @else
-                                                                            <small class="text-muted">Stored key: <code>{{ $option->value }}</code></small>
-                                                                        @endif
-                                                                    </div>
-                                                                    <div class="btn-group btn-group-sm" role="group" aria-label="Global field actions">
-                                                                        <button class="btn btn-outline-primary edit-global-field-btn"
-                                                                                data-field-id="{{ $option->id }}"
-                                                                                data-field-group="{{ $option->field_group }}"
-                                                                                data-field-type="{{ $groupType }}"
-                                                                                data-label="{{ $option->label }}"
-                                                                                data-value="{{ $option->value }}"
-                                                                                data-placement="{{ $option->placement_section }}"
-                                                                                data-sort-order="{{ $option->sort_order }}"
-                                                                                data-required="{{ $option->is_required ? '1' : '0' }}"
-                                                                                data-active="{{ $option->is_active ? '1' : '0' }}"
-                                                                                title="{{ $isOptionBasedGroup ? 'Edit option' : 'Edit field' }}">
-                                                                            <i class="bi bi-pencil"></i>
-                                                                        </button>
-                                                                        <button class="btn btn-outline-danger delete-global-field-btn"
-                                                                                data-field-id="{{ $option->id }}"
-                                                                                data-field-label="{{ $option->label }}"
-                                                                                title="{{ $isOptionBasedGroup ? 'Delete option' : 'Delete field' }}">
-                                                                            <i class="bi bi-trash"></i>
-                                                                        </button>
+                                </thead>
+                                <tbody>
+                                    @forelse ($personalFormFields as $group => $options)
+                                        @php
+                                            $groupMeta = $options->first();
+                                            $groupType = $groupMeta->field_type ?? \App\Models\FormFieldOption::FIELD_TYPE_DROPDOWN;
+                                            $isOptionBasedGroup = in_array($groupType, $optionBasedTypes, true);
+                                            $groupRequired = (bool) ($groupMeta->is_required ?? false);
+                                            $groupIsActive = (bool) $options->contains(fn ($option) => (bool) $option->is_active);
+                                            $groupOptionsCount = $options->count();
+                                            $collapseId = 'globalFieldOptionsGroup' . $loop->index;
+                                        @endphp
+                                        <tr class="global-field-group-row" data-collapse-target="#{{ $collapseId }}">
+                                            <td>
+                                                <div class="fw-semibold">{{ Str::title(str_replace('_', ' ', $group)) }}</div>
+                                                <small class="text-muted font-monospace">{{ $group }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info text-dark">
+                                                    {{ \App\Models\FormFieldOption::fieldTypeLabel($groupType) }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if ($groupRequired)
+                                                    <span class="badge bg-danger">Required</span>
+                                                @else
+                                                    <span class="badge bg-secondary">Optional</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if ($groupIsActive)
+                                                    <span class="badge bg-success">Active</span>
+                                                @else
+                                                    <span class="badge bg-secondary">Inactive</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-end pe-3">
+                                                <div class="d-flex align-items-center justify-content-end gap-2">
+                                                    <span class="badge bg-light text-dark border">
+                                                        {{ $groupOptionsCount }} {{ Str::plural('option', $groupOptionsCount) }}
+                                                    </span>
+                                                    <button class="btn btn-sm btn-outline-secondary global-options-toggle"
+                                                            type="button"
+                                                            data-bs-toggle="collapse"
+                                                            data-bs-target="#{{ $collapseId }}"
+                                                            aria-expanded="false"
+                                                            title="View options">
+                                                        <span class="toggle-label">View</span>
+                                                        <i class="bi bi-chevron-down ms-1"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr class="global-field-options-row">
+                                            <td colspan="5" class="p-0">
+                                                <div class="collapse" id="{{ $collapseId }}">
+                                                    <div class="bg-light px-3 py-3 border-top">
+                                                        <div class="small text-muted mb-2">
+                                                            @if ($isOptionBasedGroup)
+                                                                Options under <strong>{{ Str::title(str_replace('_', ' ', $group)) }}</strong>
+                                                            @else
+                                                                Configuration for <strong>{{ Str::title(str_replace('_', ' ', $group)) }}</strong>
+                                                            @endif
+                                                        </div>
+                                                        <div class="list-group list-group-flush global-options-list">
+                                                            @foreach ($options as $option)
+                                                                <div class="list-group-item px-2 py-2 border rounded mb-1">
+                                                                    <div class="d-flex justify-content-between align-items-center gap-2">
+                                                                        <div>
+                                                                            <span class="fw-semibold">{{ $option->label }}</span>
+                                                                            <code class="small text-muted ms-2">{{ $option->value }}</code>
+                                                                        </div>
+                                                                        <div class="btn-group btn-group-sm">
+                                                                            <button class="btn btn-outline-primary edit-global-field-btn"
+                                                                                    data-field-id="{{ $option->id }}"
+                                                                                    data-field-group="{{ $option->field_group }}"
+                                                                                    data-field-type="{{ $groupType }}"
+                                                                                    data-label="{{ $option->label }}"
+                                                                                    data-value="{{ $option->value }}"
+                                                                                    data-placement="{{ $option->placement_section }}"
+                                                                                    data-sort-order="{{ $option->sort_order }}"
+                                                                                    data-required="{{ $option->is_required ? '1' : '0' }}"
+                                                                                    data-active="{{ $option->is_active ? '1' : '0' }}"
+                                                                                    title="Edit">
+                                                                                <i class="bi bi-pencil"></i>
+                                                                            </button>
+                                                                            <button class="btn btn-outline-danger delete-global-field-btn"
+                                                                                    data-field-id="{{ $option->id }}"
+                                                                                    data-field-label="{{ $option->label }}"
+                                                                                    title="Delete">
+                                                                                <i class="bi bi-trash"></i>
+                                                                            </button>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                        @endforeach
+                                                            @endforeach
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="6" class="text-center text-muted py-4">No form fields found</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card mt-4">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="bi bi-collection"></i> Section-Specific Global Fields
-                    </h5>
-                    <div class="btn-group btn-group-sm" role="group" aria-label="Add section field">
-                        <button type="button" class="btn btn-outline-primary section-add-field-btn" data-placement="farmer_information" data-section-label="Farmer">
-                            Add Farmer Field
-                        </button>
-                        <button type="button" class="btn btn-outline-info section-add-field-btn" data-placement="fisherfolk_information" data-section-label="Fisherfolk">
-                            Add Fisherfolk Field
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body p-0">
-                    <div class="row g-0">
-                        @php
-                            $sectionConfigs = [
-                                ['placement' => \App\Models\FormFieldOption::PLACEMENT_FARMER_INFORMATION, 'title' => 'Farmer Section', 'badgeClass' => 'bg-primary'],
-                                ['placement' => \App\Models\FormFieldOption::PLACEMENT_FISHERFOLK_INFORMATION, 'title' => 'Fisherfolk Section', 'badgeClass' => 'bg-info text-dark'],
-                            ];
-                        @endphp
-                        @foreach ($sectionConfigs as $section)
-                            @php
-                                $sectionFields = $groupedByPlacement->get($section['placement'], collect());
-                            @endphp
-                            <div class="col-12 col-xl-4 border-end">
-                                <div class="p-3 border-bottom bg-white d-flex justify-content-between align-items-center">
-                                    <span class="badge {{ $section['badgeClass'] }}">{{ $section['title'] }}</span>
-                                    <button
-                                        type="button"
-                                        class="btn btn-sm btn-outline-secondary section-add-field-btn"
-                                        data-placement="{{ $section['placement'] }}"
-                                        data-section-label="{{ $section['title'] }}"
-                                    >
-                                        Add
-                                    </button>
-                                </div>
-                                <div class="p-3">
-                                    @forelse ($sectionFields as $group => $options)
-                                        @php
-                                            $meta = $options->first();
-                                            $groupType = $meta->field_type ?? \App\Models\FormFieldOption::FIELD_TYPE_DROPDOWN;
-                                            $activeCount = $options->where('is_active', true)->count();
-                                        @endphp
-                                        <div class="border rounded p-2 mb-2 bg-light">
-                                            <div class="d-flex justify-content-between align-items-start gap-2">
-                                                <div>
-                                                    <div class="fw-semibold">{{ Str::title(str_replace('_', ' ', $group)) }}</div>
-                                                    <small class="text-muted">{{ $group }}</small>
-                                                    <div>
-                                                        <small class="badge bg-light text-dark border mt-1">
-                                                            {{ \App\Models\FormFieldOption::fieldTypeLabel($groupType) }}
-                                                            • {{ $activeCount }} {{ Str::plural('option', $activeCount) }}
-                                                        </small>
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    class="btn btn-sm btn-outline-primary edit-global-field-btn"
-                                                    data-field-id="{{ $meta->id }}"
-                                                    data-field-group="{{ $meta->field_group }}"
-                                                    data-field-type="{{ $groupType }}"
-                                                    data-label="{{ $meta->label }}"
-                                                    data-value="{{ $meta->value }}"
-                                                    data-placement="{{ $meta->placement_section }}"
-                                                    data-sort-order="{{ $meta->sort_order }}"
-                                                    data-required="{{ $meta->is_required ? '1' : '0' }}"
-                                                    data-active="{{ $meta->is_active ? '1' : '0' }}"
-                                                    title="Edit"
-                                                >
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                            </div>
-                                        </div>
+                                            </td>
+                                        </tr>
                                     @empty
-                                        <small class="text-muted">No fields configured.</small>
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-4">
+                                                No personal fields configured. Click <strong>Add Field</strong> to create one.
+                                            </td>
+                                        </tr>
                                     @endforelse
-                                </div>
-                            </div>
-                        @endforeach
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <div class="card mt-4">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">
-                        <i class="bi bi-diagram-3"></i> Classification Core Fields
-                    </h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="px-3 py-2 border-bottom bg-white">
-                        <small class="text-muted">
-                            Manage required/optional behavior of core fields by classification.
-                            Supported classifications are <strong>Farmer</strong> and <strong>Fisherfolk</strong> only.
-                            DAR fields are managed in agency-specific dynamic fields under Agencies > Agency Fields.
-                        </small>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover table-sm mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Classification</th>
-                                    <th>Field</th>
-                                    <th>Section</th>
-                                    <th>Required</th>
-                                    <th class="text-center" style="width: 120px;">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse(($classificationCoreFields ?? collect())->flatten(1) as $coreField)
-                                    <tr data-core-field-name="{{ $coreField['field_name'] }}">
-                                        <td>
-                                            <span class="badge {{ $coreField['classification'] === 'Farmer' ? 'bg-primary' : 'bg-info text-dark' }}">
-                                                {{ $coreField['classification'] }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <div class="fw-semibold classification-core-field-label">{{ $coreField['label'] }}</div>
-                                            <small class="text-muted">{{ $coreField['field_name'] }}</small>
-                                        </td>
-                                        <td><small class="text-muted">{{ Str::title(str_replace('_', ' ', $coreField['placement_section'])) }}</small></td>
-                                        <td>
-                                            <span class="badge {{ $coreField['is_required'] ? 'bg-danger' : 'bg-secondary' }} core-required-badge">
-                                                {{ $coreField['is_required'] ? 'Required' : 'Optional' }}
-                                            </span>
-                                        </td>
-                                        <td class="text-center">
-                                            <div class="btn-group btn-group-sm" role="group" aria-label="Classification core field actions">
-                                                <button
-                                                    type="button"
-                                                    class="btn btn-outline-secondary edit-classification-core-btn"
-                                                    data-field-name="{{ $coreField['field_name'] }}"
-                                                    data-label="{{ $coreField['label'] }}"
-                                                    data-required="{{ $coreField['is_required'] ? '1' : '0' }}"
-                                                    data-placement="{{ Str::title(str_replace('_', ' ', $coreField['placement_section'])) }}"
-                                                    title="Edit"
-                                                >
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    class="btn btn-outline-primary toggle-core-required-btn"
-                                                    data-field-name="{{ $coreField['field_name'] }}"
-                                                    data-next-required="{{ $coreField['is_required'] ? '0' : '1' }}"
-                                                >
-                                                    {{ $coreField['is_required'] ? 'Set Optional' : 'Set Required' }}
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @empty
+                    {{-- ────────────────── FARMER (DA) ────────────────── --}}
+                    <div class="tab-pane fade" id="ff-farmer" role="tabpanel">
+
+                        {{-- Global fields --}}
+                        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-white">
+                            <div>
+                                <span class="fw-semibold small">Global Fields</span>
+                                <small class="text-muted ms-2">Configurable fields for the <strong>DA/RSBSA Information</strong> section.</small>
+                            </div>
+                            <button class="btn btn-sm btn-success section-add-field-btn ms-3 flex-shrink-0"
+                                    data-placement="farmer_information" data-section-label="Farmer">
+                                <i class="bi bi-plus-circle me-1"></i> Add Field
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm mb-0">
+                                <thead class="table-light">
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted py-4">No classification core fields configured.</td>
+                                        <th>Field</th>
+                                        <th>Type</th>
+                                        <th>Required</th>
+                                        <th>Status</th>
+                                        <th class="text-end pe-3">Options</th>
                                     </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    @forelse ($farmerGlobalFields as $group => $options)
+                                        @php
+                                            $groupMeta    = $options->first();
+                                            $gType        = $groupMeta->field_type ?? \App\Models\FormFieldOption::FIELD_TYPE_DROPDOWN;
+                                            $gIsOptionBased = in_array($gType, $optionBasedTypes, true);
+                                            $gRequired    = (bool) ($groupMeta->is_required ?? false);
+                                            $gIsActive    = (bool) $options->contains(fn ($o) => (bool) $o->is_active);
+                                            $gCount       = $options->count();
+                                            $gCollapseId  = 'farmerGlobalGroup' . $loop->index;
+                                        @endphp
+                                        <tr class="global-field-group-row" data-collapse-target="#{{ $gCollapseId }}">
+                                            <td>
+                                                <div class="fw-semibold">{{ Str::title(str_replace('_', ' ', $group)) }}</div>
+                                                <small class="text-muted font-monospace">{{ $group }}</small>
+                                            </td>
+                                            <td><span class="badge bg-info text-dark">{{ \App\Models\FormFieldOption::fieldTypeLabel($gType) }}</span></td>
+                                            <td>
+                                                <span class="badge {{ $gRequired ? 'bg-danger' : 'bg-secondary' }}">{{ $gRequired ? 'Required' : 'Optional' }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge {{ $gIsActive ? 'bg-success' : 'bg-secondary' }}">{{ $gIsActive ? 'Active' : 'Inactive' }}</span>
+                                            </td>
+                                            <td class="text-end pe-3">
+                                                <div class="d-flex align-items-center justify-content-end gap-2">
+                                                    <span class="badge bg-light text-dark border">{{ $gCount }} {{ Str::plural('option', $gCount) }}</span>
+                                                    <button class="btn btn-sm btn-outline-secondary global-options-toggle"
+                                                            type="button"
+                                                            data-bs-toggle="collapse"
+                                                            data-bs-target="#{{ $gCollapseId }}"
+                                                            aria-expanded="false"
+                                                            title="View options">
+                                                        <span class="toggle-label">View</span>
+                                                        <i class="bi bi-chevron-down ms-1"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr class="global-field-options-row">
+                                            <td colspan="5" class="p-0">
+                                                <div class="collapse" id="{{ $gCollapseId }}">
+                                                    <div class="bg-light px-3 py-3 border-top">
+                                                        <div class="small text-muted mb-2">
+                                                            @if ($gIsOptionBased)
+                                                                Options under <strong>{{ Str::title(str_replace('_', ' ', $group)) }}</strong>
+                                                            @else
+                                                                Configuration for <strong>{{ Str::title(str_replace('_', ' ', $group)) }}</strong>
+                                                            @endif
+                                                        </div>
+                                                        <div class="list-group list-group-flush global-options-list">
+                                                            @foreach ($options as $option)
+                                                                <div class="list-group-item px-2 py-2 border rounded mb-1">
+                                                                    <div class="d-flex justify-content-between align-items-center gap-2">
+                                                                        <div>
+                                                                            <span class="fw-semibold">{{ $option->label }}</span>
+                                                                            <code class="small text-muted ms-2">{{ $option->value }}</code>
+                                                                        </div>
+                                                                        <div class="btn-group btn-group-sm">
+                                                                            <button class="btn btn-outline-primary edit-global-field-btn"
+                                                                                    data-field-id="{{ $option->id }}"
+                                                                                    data-field-group="{{ $option->field_group }}"
+                                                                                    data-field-type="{{ $gType }}"
+                                                                                    data-label="{{ $option->label }}"
+                                                                                    data-value="{{ $option->value }}"
+                                                                                    data-placement="{{ $option->placement_section }}"
+                                                                                    data-sort-order="{{ $option->sort_order }}"
+                                                                                    data-required="{{ $option->is_required ? '1' : '0' }}"
+                                                                                    data-active="{{ $option->is_active ? '1' : '0' }}"
+                                                                                    title="Edit">
+                                                                                <i class="bi bi-pencil"></i>
+                                                                            </button>
+                                                                            <button class="btn btn-outline-danger delete-global-field-btn"
+                                                                                    data-field-id="{{ $option->id }}"
+                                                                                    data-field-label="{{ $option->label }}"
+                                                                                    title="Delete">
+                                                                                <i class="bi bi-trash"></i>
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-4">
+                                                No global fields configured for Farmer. Click <strong>Add Field</strong> to create one.
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {{-- Core fields --}}
+                        <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom" style="background:#f8f9fa;">
+                            <span class="fw-semibold small">Core Fields</span>
+                            <span class="badge bg-secondary">System</span>
+                            <small class="text-muted">Built-in Farmer fields — rename labels or toggle required status only.</small>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Field</th>
+                                        <th style="width: 100px;">Required</th>
+                                        <th class="text-center" style="width: 210px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse ($farmerCoreFields as $coreField)
+                                        <tr data-core-field-name="{{ $coreField['field_name'] }}">
+                                            <td>
+                                                <div class="fw-semibold classification-core-field-label">{{ $coreField['label'] }}</div>
+                                                <small class="text-muted font-monospace">{{ $coreField['field_name'] }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge {{ $coreField['is_required'] ? 'bg-danger' : 'bg-secondary' }} core-required-badge">
+                                                    {{ $coreField['is_required'] ? 'Required' : 'Optional' }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm">
+                                                    <button type="button"
+                                                            class="btn btn-outline-secondary edit-classification-core-btn"
+                                                            data-field-name="{{ $coreField['field_name'] }}"
+                                                            data-label="{{ $coreField['label'] }}"
+                                                            data-required="{{ $coreField['is_required'] ? '1' : '0' }}"
+                                                            data-placement="{{ Str::title(str_replace('_', ' ', $coreField['placement_section'])) }}"
+                                                            title="Edit label">
+                                                        <i class="bi bi-pencil"></i> Edit Label
+                                                    </button>
+                                                    <button type="button"
+                                                            class="btn btn-outline-primary toggle-core-required-btn"
+                                                            data-field-name="{{ $coreField['field_name'] }}"
+                                                            data-next-required="{{ $coreField['is_required'] ? '0' : '1' }}">
+                                                        {{ $coreField['is_required'] ? 'Set Optional' : 'Set Required' }}
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted py-3">No core fields defined for Farmer.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
-            </div>
+
+                    {{-- ────────────────── FISHERFOLK (BFAR) ────────────────── --}}
+                    <div class="tab-pane fade" id="ff-fisherfolk" role="tabpanel">
+
+                        {{-- Global fields --}}
+                        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-white">
+                            <div>
+                                <span class="fw-semibold small">Global Fields</span>
+                                <small class="text-muted ms-2">Configurable fields for the <strong>BFAR/FishR Information</strong> section.</small>
+                            </div>
+                            <button class="btn btn-sm btn-success section-add-field-btn ms-3 flex-shrink-0"
+                                    data-placement="fisherfolk_information" data-section-label="Fisherfolk">
+                                <i class="bi bi-plus-circle me-1"></i> Add Field
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Field</th>
+                                        <th>Type</th>
+                                        <th>Required</th>
+                                        <th>Status</th>
+                                        <th class="text-end pe-3">Options</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse ($fisherfolkGlobalFields as $group => $options)
+                                        @php
+                                            $groupMeta    = $options->first();
+                                            $gType        = $groupMeta->field_type ?? \App\Models\FormFieldOption::FIELD_TYPE_DROPDOWN;
+                                            $gIsOptionBased = in_array($gType, $optionBasedTypes, true);
+                                            $gRequired    = (bool) ($groupMeta->is_required ?? false);
+                                            $gIsActive    = (bool) $options->contains(fn ($o) => (bool) $o->is_active);
+                                            $gCount       = $options->count();
+                                            $gCollapseId  = 'fisherfolkGlobalGroup' . $loop->index;
+                                        @endphp
+                                        <tr class="global-field-group-row" data-collapse-target="#{{ $gCollapseId }}">
+                                            <td>
+                                                <div class="fw-semibold">{{ Str::title(str_replace('_', ' ', $group)) }}</div>
+                                                <small class="text-muted font-monospace">{{ $group }}</small>
+                                            </td>
+                                            <td><span class="badge bg-info text-dark">{{ \App\Models\FormFieldOption::fieldTypeLabel($gType) }}</span></td>
+                                            <td>
+                                                <span class="badge {{ $gRequired ? 'bg-danger' : 'bg-secondary' }}">{{ $gRequired ? 'Required' : 'Optional' }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge {{ $gIsActive ? 'bg-success' : 'bg-secondary' }}">{{ $gIsActive ? 'Active' : 'Inactive' }}</span>
+                                            </td>
+                                            <td class="text-end pe-3">
+                                                <div class="d-flex align-items-center justify-content-end gap-2">
+                                                    <span class="badge bg-light text-dark border">{{ $gCount }} {{ Str::plural('option', $gCount) }}</span>
+                                                    <button class="btn btn-sm btn-outline-secondary global-options-toggle"
+                                                            type="button"
+                                                            data-bs-toggle="collapse"
+                                                            data-bs-target="#{{ $gCollapseId }}"
+                                                            aria-expanded="false"
+                                                            title="View options">
+                                                        <span class="toggle-label">View</span>
+                                                        <i class="bi bi-chevron-down ms-1"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr class="global-field-options-row">
+                                            <td colspan="5" class="p-0">
+                                                <div class="collapse" id="{{ $gCollapseId }}">
+                                                    <div class="bg-light px-3 py-3 border-top">
+                                                        <div class="small text-muted mb-2">
+                                                            @if ($gIsOptionBased)
+                                                                Options under <strong>{{ Str::title(str_replace('_', ' ', $group)) }}</strong>
+                                                            @else
+                                                                Configuration for <strong>{{ Str::title(str_replace('_', ' ', $group)) }}</strong>
+                                                            @endif
+                                                        </div>
+                                                        <div class="list-group list-group-flush global-options-list">
+                                                            @foreach ($options as $option)
+                                                                <div class="list-group-item px-2 py-2 border rounded mb-1">
+                                                                    <div class="d-flex justify-content-between align-items-center gap-2">
+                                                                        <div>
+                                                                            <span class="fw-semibold">{{ $option->label }}</span>
+                                                                            <code class="small text-muted ms-2">{{ $option->value }}</code>
+                                                                        </div>
+                                                                        <div class="btn-group btn-group-sm">
+                                                                            <button class="btn btn-outline-primary edit-global-field-btn"
+                                                                                    data-field-id="{{ $option->id }}"
+                                                                                    data-field-group="{{ $option->field_group }}"
+                                                                                    data-field-type="{{ $gType }}"
+                                                                                    data-label="{{ $option->label }}"
+                                                                                    data-value="{{ $option->value }}"
+                                                                                    data-placement="{{ $option->placement_section }}"
+                                                                                    data-sort-order="{{ $option->sort_order }}"
+                                                                                    data-required="{{ $option->is_required ? '1' : '0' }}"
+                                                                                    data-active="{{ $option->is_active ? '1' : '0' }}"
+                                                                                    title="Edit">
+                                                                                <i class="bi bi-pencil"></i>
+                                                                            </button>
+                                                                            <button class="btn btn-outline-danger delete-global-field-btn"
+                                                                                    data-field-id="{{ $option->id }}"
+                                                                                    data-field-label="{{ $option->label }}"
+                                                                                    title="Delete">
+                                                                                <i class="bi bi-trash"></i>
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-4">
+                                                No global fields configured for Fisherfolk. Click <strong>Add Field</strong> to create one.
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {{-- Core fields --}}
+                        <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom" style="background:#f8f9fa;">
+                            <span class="fw-semibold small">Core Fields</span>
+                            <span class="badge bg-secondary">System</span>
+                            <small class="text-muted">Built-in Fisherfolk fields — rename labels or toggle required status only.</small>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Field</th>
+                                        <th style="width: 100px;">Required</th>
+                                        <th class="text-center" style="width: 210px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse ($fisherfolkCoreFields as $coreField)
+                                        <tr data-core-field-name="{{ $coreField['field_name'] }}">
+                                            <td>
+                                                <div class="fw-semibold classification-core-field-label">{{ $coreField['label'] }}</div>
+                                                <small class="text-muted font-monospace">{{ $coreField['field_name'] }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge {{ $coreField['is_required'] ? 'bg-danger' : 'bg-secondary' }} core-required-badge">
+                                                    {{ $coreField['is_required'] ? 'Required' : 'Optional' }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm">
+                                                    <button type="button"
+                                                            class="btn btn-outline-secondary edit-classification-core-btn"
+                                                            data-field-name="{{ $coreField['field_name'] }}"
+                                                            data-label="{{ $coreField['label'] }}"
+                                                            data-required="{{ $coreField['is_required'] ? '1' : '0' }}"
+                                                            data-placement="{{ Str::title(str_replace('_', ' ', $coreField['placement_section'])) }}"
+                                                            title="Edit label">
+                                                        <i class="bi bi-pencil"></i> Edit Label
+                                                    </button>
+                                                    <button type="button"
+                                                            class="btn btn-outline-primary toggle-core-required-btn"
+                                                            data-field-name="{{ $coreField['field_name'] }}"
+                                                            data-next-required="{{ $coreField['is_required'] ? '0' : '1' }}">
+                                                        {{ $coreField['is_required'] ? 'Set Optional' : 'Set Required' }}
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted py-3">No core fields defined for Fisherfolk.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>{{-- /tab-content --}}
+            </div>{{-- /card --}}
         </div>
 
     </div>
@@ -802,7 +1018,6 @@
                         <select class="form-select" id="fieldType" name="field_type" required>
                             <option value="">Select a type...</option>
                             <option value="text">Text</option>
-                            <option value="textarea">Text Area</option>
                             <option value="number">Number</option>
                             <option value="decimal">Decimal</option>
                             <option value="date">Date</option>
@@ -896,19 +1111,11 @@
 
                     <div class="mb-3" id="globalFieldValueWrapper">
                         <label for="globalFieldValue" class="form-label" id="globalFieldValueLabel">Option Value <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="globalFieldValue" required placeholder="e.g., small_farmer">
+                        <input type="text" class="form-control" id="globalFieldValue" placeholder="e.g., small_farmer">
                         <small class="text-muted" id="globalFieldValueHelp">Stored key value for this option.</small>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="globalFieldPlacement" class="form-label">Display Section (Global Fields Only) <span class="text-danger">*</span></label>
-                        <select class="form-select" id="globalFieldPlacement" required>
-                            <option value="personal_information">Agency &amp; Personal Information</option>
-                            <option value="farmer_information">DA/RSBSA Information (Farmer)</option>
-                            <option value="fisherfolk_information">BFAR/FishR Information (Fisherfolk)</option>
-                        </select>
-                        <input type="text" class="form-control bg-light d-none mt-2" id="globalFieldPlacementDisplay" readonly>
-                    </div>
+                    <input type="hidden" id="globalFieldPlacement" value="personal_information">
 
                     <div class="mb-3">
                         <label for="globalFieldSortOrder" class="form-label">Sort Order</label>
@@ -2060,7 +2267,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const globalFieldValueInput = document.getElementById('globalFieldValue');
     const globalFieldValueHelp = document.getElementById('globalFieldValueHelp');
     const globalFieldPlacementInput = document.getElementById('globalFieldPlacement');
-    const globalFieldPlacementDisplay = document.getElementById('globalFieldPlacementDisplay');
     const globalFieldSortOrderInput = document.getElementById('globalFieldSortOrder');
     const globalFieldRequiredInput = document.getElementById('globalFieldRequired');
     const globalFieldActiveInput = document.getElementById('globalFieldActive');
@@ -2126,12 +2332,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         globalFieldValueWrapper.classList.toggle('d-none', !optionBased);
         globalFieldValueInput.disabled = !optionBased;
-        globalFieldValueInput.required = optionBased;
+        globalFieldValueInput.required = false;
         globalFieldValueLabel.innerHTML = optionBased
-            ? 'Option Value <span class="text-danger">*</span>'
+            ? 'Option Value'
             : 'Stored Value';
         globalFieldValueHelp.textContent = optionBased
-            ? 'Stored key value for this option.'
+            ? 'Auto-generated from label if left blank.'
             : 'Single-value field types automatically use the field group as the stored key.';
 
         if (!optionBased) {
@@ -2154,11 +2360,6 @@ document.addEventListener('DOMContentLoaded', function() {
             ? 'Field group can be updated while editing this option.'
             : 'Lowercase, alphanumeric, and underscores only.';
 
-        if (globalFieldPlacementInput && globalFieldPlacementDisplay) {
-            globalFieldPlacementInput.classList.remove('d-none');
-            globalFieldPlacementDisplay.classList.add('d-none');
-            globalFieldPlacementDisplay.value = '';
-        }
     }
 
     function resetGlobalFieldForm() {
@@ -2171,7 +2372,13 @@ document.addEventListener('DOMContentLoaded', function() {
         setGlobalFieldModalMode('create');
     }
 
+    let _skipGlobalFieldReset = false;
+
     globalFieldModal.addEventListener('show.bs.modal', function() {
+        if (_skipGlobalFieldReset) {
+            _skipGlobalFieldReset = false;
+            return;
+        }
         if ((globalFieldModal.dataset.mode || 'create') !== 'edit') {
             resetGlobalFieldForm();
         }
@@ -2183,17 +2390,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.openAddGlobalFieldModal = function(placement = 'personal_information', sectionLabel = 'Global') {
         resetGlobalFieldForm();
-        setGlobalFieldModalMode('create');
 
         globalFieldPlacementInput.value = placement || 'personal_information';
-
-        if (globalFieldPlacementInput && globalFieldPlacementDisplay) {
-            globalFieldPlacementInput.classList.add('d-none');
-            globalFieldPlacementDisplay.classList.remove('d-none');
-            globalFieldPlacementDisplay.value = `${sectionLabel} section`;
-        }
-
         globalFieldModalTitle.textContent = `Add ${sectionLabel} Field`;
+        _skipGlobalFieldReset = true;
         bootstrap.Modal.getOrCreateInstance(globalFieldModal).show();
     };
 
@@ -2238,18 +2438,6 @@ document.addEventListener('DOMContentLoaded', function() {
             globalFieldRequiredInput.checked = this.dataset.required === '1';
             globalFieldActiveInput.checked = this.dataset.active !== '0';
             clearGlobalFieldErrors();
-
-            if (globalFieldPlacementInput && globalFieldPlacementDisplay) {
-                const placementMap = {
-                    personal_information: 'Agency & Personal Information',
-                    farmer_information: 'DA/RSBSA Information (Farmer)',
-                    fisherfolk_information: 'BFAR/FishR Information (Fisherfolk)',
-                };
-
-                globalFieldPlacementInput.classList.add('d-none');
-                globalFieldPlacementDisplay.classList.remove('d-none');
-                globalFieldPlacementDisplay.value = placementMap[globalFieldPlacementInput.value] || globalFieldPlacementInput.value;
-            }
 
             bootstrap.Modal.getOrCreateInstance(globalFieldModal).show();
         });

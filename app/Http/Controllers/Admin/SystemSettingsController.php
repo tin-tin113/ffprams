@@ -70,18 +70,6 @@ class SystemSettingsController extends Controller
             ->get()
             ->groupBy('field_group');
 
-        $fieldGroupMeta = $formFields->map(function ($options) {
-            $group = $options->first();
-
-            return [
-                'group' => $group->field_group,
-                'field_type' => $group->field_type ?? FormFieldOption::FIELD_TYPE_DROPDOWN,
-                'placement' => $group->placement_section ?? FormFieldOption::PLACEMENT_PERSONAL_INFORMATION,
-                'required' => $group->is_required ?? false,
-                'active' => (bool) $options->contains(fn ($option) => (bool) $option->is_active),
-            ];
-        })->unique('group');
-
         $classificationCoreFields = collect($this->classificationCoreFieldDefinitions())
             ->map(function (array $definition): array {
                 return [
@@ -98,7 +86,7 @@ class SystemSettingsController extends Controller
             })
             ->groupBy('classification');
 
-        return view('admin.settings.index', compact('agencies', 'activeAgencies', 'resourceTypes', 'resourceUnitOptions', 'purposes', 'purposeCategoryOptions', 'formFields', 'fieldGroupMeta', 'classificationCoreFields'));
+        return view('admin.settings.index', compact('agencies', 'activeAgencies', 'resourceTypes', 'resourceUnitOptions', 'purposes', 'purposeCategoryOptions', 'formFields', 'classificationCoreFields'));
     }
 
     public function indexProgramNames(Request $request): View
@@ -2047,7 +2035,7 @@ class SystemSettingsController extends Controller
             $validated = $request->validate([
                 'field_name' => ['required', 'string', 'lowercase', 'regex:/^[a-z0-9_]+$/', 'max:255'],
                 'display_label' => ['required', 'string', 'max:255'],
-                'field_type' => ['required', 'in:text,textarea,number,decimal,date,datetime,dropdown,checkbox'],
+                'field_type' => ['required', 'in:text,number,decimal,date,datetime,dropdown,checkbox'],
                 'is_required' => ['nullable', 'boolean'],
                 'help_text' => ['nullable', 'string'],
                 'form_section' => ['nullable', 'string'],
@@ -2166,7 +2154,7 @@ class SystemSettingsController extends Controller
             $validated = $request->validate([
                 'field_name' => ['sometimes', 'string', 'lowercase', 'regex:/^[a-z0-9_]+$/', 'max:255'],
                 'display_label' => ['sometimes', 'string', 'max:255'],
-                'field_type' => ['sometimes', 'in:text,textarea,number,decimal,date,datetime,dropdown,checkbox'],
+                'field_type' => ['sometimes', 'in:text,number,decimal,date,datetime,dropdown,checkbox'],
                 'is_required' => ['nullable', 'boolean'],
                 'help_text' => ['nullable', 'string'],
                 'form_section' => ['nullable', 'string'],
@@ -2504,10 +2492,6 @@ class SystemSettingsController extends Controller
     private function normalizeAgencyFieldType(string $fieldType): string
     {
         $normalized = strtolower(trim($fieldType));
-
-        if ($normalized === 'textarea') {
-            return 'text';
-        }
 
         $allowed = ['text', 'number', 'decimal', 'date', 'datetime', 'dropdown', 'checkbox'];
 
