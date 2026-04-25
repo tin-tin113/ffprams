@@ -281,6 +281,27 @@ class SystemSettingsController extends Controller
         }
     }
 
+    /**
+     * Resolve derived classification for an agency.
+     * GET /admin/settings/agencies/{agency}/classification
+     */
+    public function resolveAgencyClassification(Agency $agency): JsonResponse
+    {
+        try {
+            $classification = $this->deriveProgramClassificationFromAgency($agency->id);
+
+            return response()->json([
+                'success' => true,
+                'classification' => $classification,
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => collect($e->errors())->flatten()->first() ?? 'Unable to derive classification.',
+            ], 422);
+        }
+    }
+
     // ── Agencies ─────────────────────────────────
 
     public function storeAgency(Request $request): JsonResponse
