@@ -55,8 +55,9 @@
             <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#batchModeModal">
                 <i class="bi bi-layers me-1"></i> Batch Mode
             </button>
-            <a href="{{ route('direct-assistance.create') }}" class="btn btn-primary">
-                <i class="bi bi-plus-circle me-1"></i> Add Direct Assistance
+            <a href="{{ route('direct-assistance.create') }}" class="btn btn-success btn-primary-action">
+                <i class="bi bi-plus-circle"></i>
+                <span>Add Direct Assistance</span>
             </a>
         </div>
     </div>

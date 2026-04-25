@@ -13,6 +13,12 @@
             <h1 class="h3 mb-0">Assistance Allocations</h1>
             <p class="text-muted mb-0">Record and monitor direct assistance allocations</p>
         </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-success btn-primary-action" data-bs-toggle="modal" data-bs-target="#addDirectAssistanceModal">
+                <i class="bi bi-plus-circle"></i>
+                <span>Add Direct Assistance</span>
+            </button>
+        </div>
     </div>
 
     <!-- Summary Dashboard -->
@@ -83,14 +89,6 @@
         </div>
     </div>
 
-    {{-- ============================================================ --}}
-    {{-- ADD DIRECT ASSISTANCE BUTTON                                 --}}
-    {{-- ============================================================ --}}
-    <div class="mb-4">
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDirectAssistanceModal">
-            <i class="bi bi-plus-circle me-2"></i> Add Direct Assistance
-        </button>
-    </div>
 
     {{-- ============================================================ --}}
     {{-- MODAL: ADD DIRECT ASSISTANCE                                 --}}

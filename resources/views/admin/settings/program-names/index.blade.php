@@ -13,7 +13,7 @@
                     <p class="text-muted mb-0 small">Manage assistance programs, legal requirements, and classifications by agency.</p>
                 </div>
                 @if(Auth::user()->isAdmin())
-                <button class="btn btn-primary shadow-sm px-4 rounded-pill d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#pnModal">
+                <button class="btn btn-success btn-primary-action" data-bs-toggle="modal" data-bs-target="#pnModal">
                     <i class="bi bi-plus-lg"></i>
                     <span>Add New Program</span>
                 </button>

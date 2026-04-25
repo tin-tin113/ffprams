@@ -16,8 +16,9 @@
             <p class="text-muted mb-0">Manage distribution schedules and release progress by barangay</p>
         </div>
         @if(in_array(Auth::user()->role, ['admin', 'staff']))
-            <a href="{{ route('distribution-events.create') }}" class="btn btn-success btn-sm">
-                <i class="bi bi-plus-lg me-1"></i> Create New Event
+            <a href="{{ route('distribution-events.create') }}" class="btn btn-success btn-primary-action">
+                <i class="bi bi-plus-lg"></i>
+                <span>Create New Event</span>
             </a>
         @endif
     </div>

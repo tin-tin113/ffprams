@@ -12,6 +12,20 @@
         padding-bottom: 1.5rem;
     }
 
+    .btn-action-uniform {
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .btn-refresh-icon {
+        width: 38px;
+        padding: 0;
+    }
+
     .reports-toolbar {
         border: 1px solid #e2e8f0;
         border-radius: 1rem;
@@ -79,9 +93,30 @@
         text-align: center;
     }
 
-    .reports-tabs .nav-link span {
+        .reports-tabs .nav-link span {
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    .btn-primary-action {
+        border-radius: 50rem !important;
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary-action:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-primary-action:active {
+        transform: translateY(0);
     }
 
     .reports-tabs .nav-link:hover {
@@ -545,17 +580,17 @@
                         </select>
                     </form>
 
-                    <a href="{{ route('reports.index', ['year' => $currentYear, 'tab' => $activeTab]) }}" class="btn btn-primary shadow-sm" title="Refresh Data">
+                    <a href="{{ route('reports.index', ['year' => $currentYear, 'tab' => $activeTab]) }}" class="btn btn-success bg-opacity-10 text-success border-success border-opacity-25 shadow-sm btn-action-uniform btn-refresh-icon rounded-circle" title="Refresh Data">
                         <i class="bi bi-arrow-clockwise"></i>
                     </a>
 
-                    <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+                    <button type="button" class="btn btn-outline-secondary btn-action-uniform" onclick="window.print()">
                         <i class="bi bi-printer me-1"></i> Print
                     </button>
-                    <button type="button" class="btn btn-danger" id="reportsPdfBtn">
+                    <button type="button" class="btn btn-danger btn-action-uniform" id="reportsPdfBtn">
                         <i class="bi bi-file-earmark-pdf me-1"></i> PDF
                     </button>
-                    <button type="button" class="btn btn-success" id="reportsExcelBtn">
+                    <button type="button" class="btn btn-success btn-action-uniform" id="reportsExcelBtn">
                         <i class="bi bi-file-earmark-spreadsheet me-1"></i> Excel
                     </button>
                     <div class="form-check form-switch ms-md-2 d-flex align-items-center">

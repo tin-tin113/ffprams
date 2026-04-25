@@ -14,8 +14,9 @@
             <p class="text-muted mb-0 fs-6">Manage and monitor community members with precision</p>
         </div>
         @if(in_array(Auth::user()->role, ['admin', 'staff']))
-            <a href="{{ route('beneficiaries.create') }}" class="btn btn-success btn-lg shadow-sm rounded-pill px-4 py-2 fs-6 fw-semibold">
-                <i class="bi bi-person-plus-fill me-2"></i> Register Beneficiary
+            <a href="{{ route('beneficiaries.create') }}" class="btn btn-success btn-primary-action">
+                <i class="bi bi-person-plus-fill"></i>
+                <span>Register Beneficiary</span>
             </a>
         @endif
     </div>
