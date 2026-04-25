@@ -6,6 +6,7 @@ use App\Http\Requests\AllocationRequest;
 use App\Models\Agency;
 use App\Models\Allocation;
 use App\Models\AssistancePurpose;
+use App\Models\Barangay;
 use App\Models\Beneficiary;
 use App\Models\DistributionEvent;
 use App\Models\ProgramName;
@@ -53,6 +54,7 @@ class AllocationController extends Controller
             ->orderBy('name')
             ->get();
         $agencies = Agency::active()->orderBy('name')->get(['id', 'name']);
+        $barangays = Barangay::orderBy('name')->get(['id', 'name']);
         $assistancePurposes = AssistancePurpose::active()->orderBy('name')->get();
 
         $status = (string) $request->input('status', '');
@@ -128,6 +130,7 @@ class AllocationController extends Controller
             'resourceTypes',
             'programNames',
             'agencies',
+            'barangays',
             'assistancePurposes',
             'directAllocations',
             'summary'

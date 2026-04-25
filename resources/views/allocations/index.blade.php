@@ -336,10 +336,18 @@
                                                     <option value="Fisherfolk">Fisherfolk</option>
                                                 </select>
                                             </div>
+                                            <div class="col-md-2">
+                                                <select id="batch_beneficiary_barangay" class="form-select form-select-sm">
+                                                    <option value="">All Barangays</option>
+                                                    @foreach($barangays as $barangay)
+                                                        <option value="{{ $barangay->id }}">{{ $barangay->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
                                             <div class="col-md-3">
                                                 <input type="text" id="batch_beneficiary_search" class="form-control form-control-sm" placeholder="Search name/contact...">
                                             </div>
-                                            <div class="col-md-2 d-grid">
+                                            <div class="col-md-1 d-grid">
                                                 <button type="button" id="batch_beneficiary_search_btn" class="btn btn-sm btn-outline-primary">
                                                     <i class="bi bi-search me-1"></i> Search
                                                 </button>
