@@ -1618,6 +1618,7 @@
     </script>
 
     @include('partials.confirm-modal')
+    @include('partials.alert-modal')
 
     @stack('scripts')
 </body>

@@ -705,15 +705,15 @@ document.addEventListener('DOMContentLoaded', function() {
     pnNextBtn.addEventListener('click', function() {
         // Validate step 1 fields
         if (!document.getElementById('pnAgencyId').value.trim()) {
-            alert('Please select an agency');
+            showAlert('Selection Required', 'Please select an agency to continue.', 'warning');
             return;
         }
         if (!document.getElementById('pnName').value.trim()) {
-            alert('Please enter a program name');
+            showAlert('Input Required', 'Please enter a program name.', 'warning');
             return;
         }
         if (!document.getElementById('pnClassification').value) {
-            alert('Classification could not be resolved. Please ensure the selected agency has valid classifications configured.');
+            showAlert('Resolution Error', 'Classification could not be resolved. Please ensure the selected agency has valid classifications configured.', 'error');
             return;
         }
 
@@ -828,12 +828,12 @@ document.addEventListener('DOMContentLoaded', function() {
         for (let file of files) {
             const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
             if (!allowedTypes.includes(file.type)) {
-                alert(`${file.name}: Invalid file type. Only PDF, JPG, PNG allowed.`);
+                showAlert('Invalid File Type', `${file.name} is not supported. Only PDF, JPG, and PNG are allowed.`, 'error');
                 continue;
             }
 
             if (file.size > 5120000) {
-                alert(`${file.name}: File exceeds 5MB limit.`);
+                showAlert('File Too Large', `${file.name} exceeds the 5MB size limit.`, 'warning');
                 continue;
             }
 
@@ -1089,7 +1089,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const hasFiles = uploadedFilesMap[programId] && uploadedFilesMap[programId].length > 0;
 
         if (!hasFiles) {
-            alert('You must upload at least one legal requirement document before saving.');
+            showAlert('Documents Required', 'You must upload at least one legal requirement document before saving.', 'warning');
             return;
         }
 
@@ -1136,12 +1136,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 location.reload();
             } else {
-                alert(Object.values(data.errors || {}).flat().join('\n') || data.message);
+                const errorMessage = Object.values(data.errors || {}).flat().join('\n') || data.message;
+                const isDuplicate = errorMessage.toLowerCase().includes('already exists');
+                
+                showAlert(
+                    isDuplicate ? 'Program Already Exists' : 'Validation Error', 
+                    errorMessage, 
+                    'error'
+                );
+                
                 pnSaveBtn.disabled = false;
                 pnSaveBtn.innerHTML = '<i class="bi bi-check-lg me-2"></i> Save Program';
             }
         } catch (error) {
-            alert('An error occurred while saving the program.');
+            showAlert('System Error', 'An unexpected error occurred while saving the program. Please try again.', 'error');
             pnSaveBtn.disabled = false;
             pnSaveBtn.innerHTML = '<i class="bi bi-check-lg me-2"></i> Save Program';
         }
@@ -1169,7 +1177,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.success) {
                         location.reload();
                     } else {
-                        alert(data.message || `Unable to ${isActive ? 'deactivate' : 'reactivate'} program.`);
+                        showAlert('Action Failed', data.message || `Unable to ${isActive ? 'deactivate' : 'reactivate'} program.`, 'error');
                     }
                 });
             }
