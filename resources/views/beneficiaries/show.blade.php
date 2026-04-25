@@ -264,7 +264,7 @@
                                 $classBadge = match($beneficiary->classification) {
                                     'Farmer'     => 'badge-soft-primary',
                                     'Fisherfolk' => 'badge-soft-info',
-                                    'Both'       => 'badge-soft-purple',
+                                    'Farmer & Fisherfolk' => 'badge-soft-purple',
                                     default      => 'bg-soft-secondary',
                                 };
                             @endphp
@@ -636,26 +636,16 @@
         <div class="tab-pane fade" id="distributions" role="tabpanel">
             <div class="card border-0 shadow-sm">
                 @php
-                    $allDistributions = collect();
-                    foreach($beneficiary->allocations as $allocation) {
-                        $allDistributions->push((object)[
+                    $allDistributions = $beneficiary->allocations->map(function($allocation) {
+                        $isDirect = $allocation->release_method === 'direct';
+                        return (object)[
                             'type' => 'allocation',
-                            'methodBadge' => $allocation->isDirect() ? 'Direct' : 'Event-Based',
-                            'badgeClass' => $allocation->isDirect() ? 'badge-soft-info' : 'badge-soft-primary',
+                            'methodBadge' => $isDirect ? 'Standalone' : 'Event-Based',
+                            'badgeClass' => $isDirect ? 'badge-soft-info' : 'badge-soft-primary',
                             'data' => $allocation,
-                            'sortDate' => $allocation->distributionEvent?->distribution_date ?? $allocation->created_at,
-                        ]);
-                    }
-                    foreach($beneficiary->directAssistance as $assistance) {
-                        $allDistributions->push((object)[
-                            'type' => 'directAssistance',
-                            'methodBadge' => 'Direct Assistance',
-                            'badgeClass' => 'badge-soft-warning',
-                            'data' => $assistance,
-                            'sortDate' => $assistance->distributed_at ?? $assistance->created_at,
-                        ]);
-                    }
-                    $allDistributions = $allDistributions->sortByDesc('sortDate')->values();
+                            'sortDate' => $allocation->distributed_at ?? $allocation->created_at,
+                        ];
+                    })->sortByDesc('sortDate')->values();
                 @endphp
 
                 <div class="card-header bg-transparent border-0 p-4 d-flex justify-content-between align-items-center">
@@ -679,68 +669,36 @@
                             </thead>
                             <tbody>
                                 @forelse($allDistributions as $distribution)
-                                    @if($distribution->type === 'allocation')
-                                        @php $allocation = $distribution->data; @endphp
-                                        <tr>
-                                            <td class="ps-4"><span class="badge {{ $distribution->badgeClass }} px-2 py-1 rounded-pill">{{ $distribution->methodBadge }}</span></td>
-                                            <td>
-                                                <div class="fw-bold text-dark">{{ $allocation->programName->name ?? $allocation->distributionEvent->programName->name ?? '—' }}</div>
-                                                <small class="text-muted">{{ $allocation->resourceType->name ?? $allocation->distributionEvent->resourceType->name ?? '—' }}</small>
-                                            </td>
-                                            <td><small class="text-muted">{{ $allocation->resourceType->agency->name ?? '—' }}</small></td>
-                                            <td class="text-end fw-bold text-primary">{{ $allocation->getDisplayValue() }}</td>
-                                            <td>
-                                                @php
-                                                    $displayStatus = $allocation->release_status_label;
-                                                        
-                                                    $sBadge = match($displayStatus) {
-                                                        'Completed', 'Released' => 'badge-soft-success',
-                                                        'Ongoing', 'Pending'   => 'badge-soft-warning',
-                                                        'Ready for Release'     => 'badge-soft-info',
-                                                        'Not Received'          => 'badge-soft-danger',
-                                                        default                 => 'badge-soft-secondary',
-                                                    };
-                                                @endphp
-                                                <span class="badge {{ $sBadge }} px-2 py-1 rounded-pill">{{ $displayStatus }}</span>
-                                            </td>
-                                            <td class="text-end pe-4">
-                                                <div class="small text-dark fw-semibold">{{ $allocation->distributed_at ? $allocation->distributed_at->format('M d, Y') : '—' }}</div>
-                                                @if($allocation->distributionEvent?->distribution_date)
-                                                    <small class="text-muted" style="font-size: 0.7rem;">Sched: {{ $allocation->distributionEvent->distribution_date->format('M d, Y') }}</small>
-                                                @endif
-                                            </td>
-                                        </tr>
-                                    @else
-                                        @php $assistance = $distribution->data; @endphp
-                                        <tr>
-                                            <td class="ps-4"><span class="badge {{ $distribution->badgeClass }} px-2 py-1 rounded-pill">{{ $distribution->methodBadge }}</span></td>
-                                            <td>
-                                                <div class="fw-bold text-dark">{{ $assistance->programName->name ?? '—' }}</div>
-                                                <small class="text-muted">{{ $assistance->resourceType->name ?? '—' }}</small>
-                                            </td>
-                                            <td><small class="text-muted">{{ $assistance->programName->agency->name ?? '—' }}</small></td>
-                                            <td class="text-end fw-bold text-primary">{{ $assistance->getDisplayValue() }}</td>
-                                            <td>
-                                                @php 
-                                                    $nStatus = $assistance->normalized_status;
-                                                    $daBadge = match($nStatus) {
-                                                        'released'          => 'badge-soft-success',
-                                                        'planned'           => 'badge-soft-warning',
-                                                        'ready_for_release' => 'badge-soft-info',
-                                                        'not_received'      => 'badge-soft-danger',
-                                                        default             => 'badge-soft-secondary',
-                                                    };
-                                                @endphp
-                                                <span class="badge {{ $daBadge }} px-2 py-1 rounded-pill">
-                                                    {{ $assistance->status_label }}
-                                                </span>
-                                            </td>
-                                            <td class="text-end pe-4">
-                                                <div class="small text-dark fw-semibold">{{ $assistance->distributed_at ? $assistance->distributed_at->format('M d, Y') : '—' }}</div>
-                                                <small class="text-muted" style="font-size: 0.7rem;">Recorded: {{ $assistance->created_at->format('M d, Y') }}</small>
-                                            </td>
-                                        </tr>
-                                    @endif
+                                    @php $allocation = $distribution->data; @endphp
+                                    <tr>
+                                        <td class="ps-4"><span class="badge {{ $distribution->badgeClass }} px-2 py-1 rounded-pill">{{ $distribution->methodBadge }}</span></td>
+                                        <td>
+                                            <div class="fw-bold text-dark">{{ $allocation->programName->name ?? $allocation->distributionEvent->programName->name ?? '—' }}</div>
+                                            <small class="text-muted">{{ $allocation->resourceType->name ?? $allocation->distributionEvent->resourceType->name ?? '—' }}</small>
+                                        </td>
+                                        <td><small class="text-muted">{{ $allocation->resourceType->agency->name ?? '—' }}</small></td>
+                                        <td class="text-end fw-bold text-primary">{{ $allocation->getDisplayValue() }}</td>
+                                        <td>
+                                            @php
+                                                $displayStatus = $allocation->release_status_label;
+                                                    
+                                                $sBadge = match($displayStatus) {
+                                                    'Completed', 'Released' => 'badge-soft-success',
+                                                    'Ongoing', 'Pending'   => 'badge-soft-warning',
+                                                    'Ready for Release'     => 'badge-soft-info',
+                                                    'Not Received'          => 'badge-soft-danger',
+                                                    default                 => 'badge-soft-secondary',
+                                                };
+                                            @endphp
+                                            <span class="badge {{ $sBadge }} px-2 py-1 rounded-pill">{{ $displayStatus }}</span>
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <div class="small text-dark fw-semibold">{{ $allocation->distributed_at ? $allocation->distributed_at->format('M d, Y') : '—' }}</div>
+                                            @if($allocation->distributionEvent?->distribution_date)
+                                                <small class="text-muted" style="font-size: 0.7rem;">Sched: {{ $allocation->distributionEvent->distribution_date->format('M d, Y') }}</small>
+                                            @endif
+                                        </td>
+                                    </tr>
                                 @empty
                                     <tr>
                                         <td colspan="6" class="text-center py-5 text-muted">No distribution history found for this beneficiary.</td>

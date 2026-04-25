@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\RecordAttachmentRequest;
 use App\Models\Allocation;
-use App\Models\DirectAssistance;
 use App\Models\DistributionEvent;
 use App\Models\RecordAttachment;
 use App\Services\AuditLogService;
@@ -78,33 +77,6 @@ class RecordAttachmentController extends Controller
         );
     }
 
-    public function storeForDirectAssistance(RecordAttachmentRequest $request, DirectAssistance $directAssistance): RedirectResponse
-    {
-        return $this->storeForTarget(
-            $request,
-            $directAssistance,
-            fn () => redirect()->route('direct-assistance.show', $directAssistance),
-        );
-    }
-
-    public function viewForDirectAssistance(DirectAssistance $directAssistance, RecordAttachment $recordAttachment): BinaryFileResponse
-    {
-        return $this->viewForTarget($directAssistance, $recordAttachment);
-    }
-
-    public function downloadForDirectAssistance(DirectAssistance $directAssistance, RecordAttachment $recordAttachment): BinaryFileResponse
-    {
-        return $this->downloadForTarget($directAssistance, $recordAttachment);
-    }
-
-    public function destroyForDirectAssistance(DirectAssistance $directAssistance, RecordAttachment $recordAttachment): RedirectResponse
-    {
-        return $this->destroyForTarget(
-            $directAssistance,
-            $recordAttachment,
-            fn () => redirect()->route('direct-assistance.show', $directAssistance),
-        );
-    }
 
     /**
      * @param  callable(): RedirectResponse  $redirectTo

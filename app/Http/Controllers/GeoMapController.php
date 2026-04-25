@@ -105,9 +105,9 @@ class GeoMapController extends Controller
                     ->selectRaw('COUNT(DISTINCT beneficiaries.id) as total_beneficiaries')
                     ->selectRaw("COUNT(DISTINCT CASE WHEN beneficiaries.classification = 'Farmer' THEN beneficiaries.id END) as total_farmers_only")
                     ->selectRaw("COUNT(DISTINCT CASE WHEN beneficiaries.classification = 'Fisherfolk' THEN beneficiaries.id END) as total_fisherfolk_only")
-                    ->selectRaw("COUNT(DISTINCT CASE WHEN beneficiaries.classification = 'Both' THEN beneficiaries.id END) as total_both")
-                    ->selectRaw("COUNT(DISTINCT CASE WHEN beneficiaries.classification IN ('Farmer', 'Both') THEN beneficiaries.id END) as total_farmers")
-                    ->selectRaw("COUNT(DISTINCT CASE WHEN beneficiaries.classification IN ('Fisherfolk', 'Both') THEN beneficiaries.id END) as total_fisherfolk")
+                    ->selectRaw("COUNT(DISTINCT CASE WHEN beneficiaries.classification = 'Farmer & Fisherfolk' THEN beneficiaries.id END) as total_both")
+                    ->selectRaw("COUNT(DISTINCT CASE WHEN beneficiaries.classification IN ('Farmer', 'Farmer & Fisherfolk') THEN beneficiaries.id END) as total_farmers")
+                    ->selectRaw("COUNT(DISTINCT CASE WHEN beneficiaries.classification IN ('Fisherfolk', 'Farmer & Fisherfolk') THEN beneficiaries.id END) as total_fisherfolk")
                     // Distribution events
                     ->selectRaw('COUNT(DISTINCT distribution_events.id) as total_events')
                     ->selectRaw("COUNT(DISTINCT CASE WHEN distribution_events.status = 'Completed' THEN distribution_events.id END) as events_completed")
@@ -149,11 +149,11 @@ class GeoMapController extends Controller
                     })
                     ->when($sectorFilter, function ($query) use ($sectorFilter) {
                         if ($sectorFilter === 'farmer') {
-                            $query->whereIn('beneficiaries.classification', ['Farmer', 'Both']);
+                            $query->whereIn('beneficiaries.classification', ['Farmer', 'Farmer & Fisherfolk']);
                         } elseif ($sectorFilter === 'fisherfolk') {
-                            $query->whereIn('beneficiaries.classification', ['Fisherfolk', 'Both']);
+                            $query->whereIn('beneficiaries.classification', ['Fisherfolk', 'Farmer & Fisherfolk']);
                         } elseif ($sectorFilter === 'both') {
-                            $query->where('beneficiaries.classification', 'Both');
+                            $query->where('beneficiaries.classification', 'Farmer & Fisherfolk');
                         }
                     })
                     ->selectRaw('beneficiaries.barangay_id as barangay_id')
@@ -181,11 +181,12 @@ class GeoMapController extends Controller
                     ->groupBy('distribution_events.barangay_id')
                     ->pluck('resource_names', 'barangay_id');
 
-                // Fetch direct assistance counts per barangay (D9)
-                $directAssistanceByBarangay = DB::table('direct_assistance')
-                    ->join('beneficiaries', 'direct_assistance.beneficiary_id', '=', 'beneficiaries.id')
-                    ->whereNull('direct_assistance.deleted_at')
+                // Fetch direct assistance counts per barangay (D9) - Refactored to use unified allocations table
+                $directAssistanceByBarangay = DB::table('allocations')
+                    ->join('beneficiaries', 'allocations.beneficiary_id', '=', 'beneficiaries.id')
+                    ->whereNull('allocations.deleted_at')
                     ->whereNull('beneficiaries.deleted_at')
+                    ->where('allocations.release_method', '=', 'direct')
                     ->when($lineAgencyFilter, function ($query) use ($lineAgencyFilter) {
                         $query->where(function ($q) use ($lineAgencyFilter) {
                             $q->where('beneficiaries.agency_id', '=', $lineAgencyFilter)
@@ -198,14 +199,14 @@ class GeoMapController extends Controller
                         });
                     })
                     ->when($programFilter, function ($query) use ($programFilter) {
-                        $query->where('direct_assistance.program_name_id', '=', $programFilter);
+                        $query->where('allocations.program_name_id', '=', $programFilter);
                     })
                     ->selectRaw('beneficiaries.barangay_id as barangay_id')
-                    ->selectRaw('COUNT(*) as total_direct_assistance')
-                    ->selectRaw("SUM(CASE WHEN direct_assistance.status IN ('planned', 'recorded') THEN 1 ELSE 0 END) as direct_assistance_planned")
-                    ->selectRaw("SUM(CASE WHEN direct_assistance.status IN ('ready_for_release', 'distributed') THEN 1 ELSE 0 END) as direct_assistance_ready_for_release")
-                    ->selectRaw("SUM(CASE WHEN direct_assistance.status IN ('released', 'completed') THEN 1 ELSE 0 END) as direct_assistance_released")
-                    ->selectRaw("SUM(CASE WHEN direct_assistance.status = 'not_received' THEN 1 ELSE 0 END) as direct_assistance_not_received")
+                    ->selectRaw('COUNT(*) as total_direct_allocations')
+                    ->selectRaw("SUM(CASE WHEN allocations.distributed_at IS NULL AND allocations.release_outcome IS NULL AND (allocations.is_ready_for_release IS NULL OR allocations.is_ready_for_release = 0) THEN 1 ELSE 0 END) as direct_allocations_planned")
+                    ->selectRaw("SUM(CASE WHEN allocations.is_ready_for_release = 1 AND allocations.distributed_at IS NULL AND allocations.release_outcome IS NULL THEN 1 ELSE 0 END) as direct_allocations_ready_for_release")
+                    ->selectRaw("SUM(CASE WHEN allocations.distributed_at IS NOT NULL OR allocations.release_outcome = 'received' THEN 1 ELSE 0 END) as direct_allocations_released")
+                    ->selectRaw("SUM(CASE WHEN allocations.release_outcome = 'not_received' THEN 1 ELSE 0 END) as direct_allocations_not_received")
                     ->groupBy('beneficiaries.barangay_id')
                     ->get()
                     ->keyBy('barangay_id');
@@ -334,11 +335,11 @@ class GeoMapController extends Controller
                         'total_pending_allocations' => $totalPendingAllocations,
                         'coverage_rate' => $coverageRate,
                         // Direct Assistance (D9)
-                        'total_direct_assistance' => (int) ($directAssistance->total_direct_assistance ?? 0),
-                        'direct_assistance_planned' => (int) ($directAssistance->direct_assistance_planned ?? 0),
-                        'direct_assistance_ready_for_release' => (int) ($directAssistance->direct_assistance_ready_for_release ?? 0),
-                        'direct_assistance_released' => (int) ($directAssistance->direct_assistance_released ?? 0),
-                        'direct_assistance_not_received' => (int) ($directAssistance->direct_assistance_not_received ?? 0),
+                        'total_direct_allocations' => (int) ($directAssistance->total_direct_allocations ?? 0),
+                        'direct_allocations_planned' => (int) ($directAssistance->direct_allocations_planned ?? 0),
+                        'direct_allocations_ready_for_release' => (int) ($directAssistance->direct_allocations_ready_for_release ?? 0),
+                        'direct_allocations_released' => (int) ($directAssistance->direct_allocations_released ?? 0),
+                        'direct_allocations_not_received' => (int) ($directAssistance->direct_allocations_not_received ?? 0),
                         // Dates
                         'first_distribution_date' => $barangay->first_distribution_date,
                         'last_distribution_date' => $barangay->last_distribution_date,
@@ -417,12 +418,13 @@ class GeoMapController extends Controller
                 ->selectRaw('SUM(CASE WHEN allocations.distributed_at IS NOT NULL AND YEAR(allocations.distributed_at) = ? THEN 1 ELSE 0 END) as allocations_this_year', [$currentYear])
                 ->groupBy('allocations.beneficiary_id');
 
-            $directAssistanceStatsByBeneficiary = DB::table('direct_assistance')
-                ->whereNull('direct_assistance.deleted_at')
-                ->selectRaw('direct_assistance.beneficiary_id')
-                ->selectRaw('MAX(direct_assistance.distributed_at) as latest_direct_assistance_date')
-                ->selectRaw('SUM(CASE WHEN direct_assistance.distributed_at IS NOT NULL AND YEAR(direct_assistance.distributed_at) = ? THEN 1 ELSE 0 END) as direct_assistance_this_year', [$currentYear])
-                ->groupBy('direct_assistance.beneficiary_id');
+            $directAssistanceStatsByBeneficiary = DB::table('allocations')
+                ->whereNull('allocations.deleted_at')
+                ->where('allocations.release_method', '=', 'direct')
+                ->selectRaw('allocations.beneficiary_id')
+                ->selectRaw('MAX(allocations.distributed_at) as latest_direct_allocation_date')
+                ->selectRaw('SUM(CASE WHEN allocations.distributed_at IS NOT NULL AND YEAR(allocations.distributed_at) = ? THEN 1 ELSE 0 END) as direct_allocations_this_year', [$currentYear])
+                ->groupBy('allocations.beneficiary_id');
 
             $beneficiaries = Beneficiary::query()
                 ->leftJoin('agencies', 'agencies.id', '=', 'beneficiaries.agency_id')
@@ -452,31 +454,31 @@ class GeoMapController extends Controller
                     'barangays.province as province_name',
                     'allocation_stats.latest_allocation_date',
                     'allocation_stats.allocations_this_year',
-                    'direct_assistance_stats.latest_direct_assistance_date',
-                    'direct_assistance_stats.direct_assistance_this_year',
+                    'direct_assistance_stats.latest_direct_allocation_date',
+                    'direct_assistance_stats.direct_allocations_this_year',
                 )
                 ->orderBy('beneficiaries.full_name')
                 ->get()
                 ->map(function ($benef) {
                     $latestAllocationDate = $benef->latest_allocation_date;
-                    $latestDirectDate = $benef->latest_direct_assistance_date;
+                    $latestDirectDate = $benef->latest_direct_allocation_date;
 
                     $hasAllocation = ! empty($latestAllocationDate);
-                    $hasDirectAssistance = ! empty($latestDirectDate);
+                    $hasDirectAllocation = ! empty($latestDirectDate);
 
                     $latestAssistanceType = null;
                     $latestAssistanceDate = null;
 
-                    if ($hasAllocation && $hasDirectAssistance) {
+                    if ($hasAllocation && $hasDirectAllocation) {
                         if (strtotime((string) $latestDirectDate) > strtotime((string) $latestAllocationDate)) {
-                            $latestAssistanceType = 'Direct Assistance';
+                            $latestAssistanceType = 'Standalone (Direct)';
                             $latestAssistanceDate = $latestDirectDate;
                         } else {
                             $latestAssistanceType = 'Event Allocation';
                             $latestAssistanceDate = $latestAllocationDate;
                         }
-                    } elseif ($hasDirectAssistance) {
-                        $latestAssistanceType = 'Direct Assistance';
+                    } elseif ($hasDirectAllocation) {
+                        $latestAssistanceType = 'Standalone (Direct)';
                         $latestAssistanceDate = $latestDirectDate;
                     } elseif ($hasAllocation) {
                         $latestAssistanceType = 'Event Allocation';
@@ -484,8 +486,8 @@ class GeoMapController extends Controller
                     }
 
                     $allocationCountThisYear = (int) ($benef->allocations_this_year ?? 0);
-                    $directAssistanceCountThisYear = (int) ($benef->direct_assistance_this_year ?? 0);
-                    $assistanceCountThisYear = $allocationCountThisYear + $directAssistanceCountThisYear;
+                    $directAllocationCountThisYear = (int) ($benef->direct_allocations_this_year ?? 0);
+                    $assistanceCountThisYear = $allocationCountThisYear + $directAllocationCountThisYear;
 
                     $missingCriticalFields = collect([
                         $benef->contact_number,
@@ -523,7 +525,7 @@ class GeoMapController extends Controller
                         'latest_assistance_type' => $latestAssistanceType,
                         'latest_assistance_date' => $latestAssistanceDate,
                         'allocations_this_year' => $allocationCountThisYear,
-                        'direct_assistance_this_year' => $directAssistanceCountThisYear,
+                        'direct_allocations_this_year' => $directAllocationCountThisYear,
                         'assistance_count_this_year' => $assistanceCountThisYear,
                         'is_unverified_profile' => $isUnverified,
                         'is_urgent' => $isUrgent,

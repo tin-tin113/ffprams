@@ -102,10 +102,6 @@ class Beneficiary extends Model
         return $this->hasMany(Allocation::class);
     }
 
-    public function directAssistance(): HasMany
-    {
-        return $this->hasMany(DirectAssistance::class);
-    }
 
     public function smsLogs(): HasMany
     {

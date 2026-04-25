@@ -107,25 +107,31 @@ class BeneficiaryPerBarangaySeeder extends Seeder
                     'length_of_residency_months' => $classification === 'Fisherfolk'
                         ? fake()->numberBetween(12, 360)
                         : null,
-                    'cloa_ep_number' => $agencyName === 'DAR'
-                        ? $this->buildRegistryCode('DAR', (int) $barangay->id, $i)
-                        : null,
-                    'arb_classification' => $agencyName === 'DAR'
-                        ? fake()->randomElement(['ARBs', 'Potential ARBs'])
-                        : null,
-                    'landholding_description' => $agencyName === 'DAR'
-                        ? fake()->randomElement(['Irrigated rice land', 'Upland mixed crop area', 'Coconut and vegetable area'])
-                        : null,
-                    'land_area_awarded_hectares' => $agencyName === 'DAR'
-                        ? fake()->randomFloat(2, 0.20, 5.00)
-                        : null,
-                    'ownership_scheme' => $agencyName === 'DAR'
-                        ? fake()->randomElement(['Individual', 'Collective'])
-                        : null,
-                    'barc_membership_status' => $agencyName === 'DAR'
-                        ? fake()->randomElement(['Member', 'Non-member'])
-                        : null,
+                    'custom_fields' => $agencyName === 'DAR' ? json_encode([
+                        'agency_dynamic' => [
+                            '3' => [
+                                'cloa_ep_number' => $this->buildRegistryCode('DAR', (int) $barangay->id, $i),
+                                'arb_classification' => fake()->randomElement(['ARBs', 'Potential ARBs']),
+                                'landholding_description' => fake()->randomElement(['Irrigated rice land', 'Upland mixed crop area', 'Coconut and vegetable area']),
+                                'land_area_awarded_hectares' => fake()->randomFloat(2, 0.20, 5.00),
+                                'ownership_scheme' => fake()->randomElement(['Individual', 'Collective']),
+                                'barc_membership_status' => fake()->randomElement(['Member', 'Non-member']),
+                            ]
+                        ]
+                    ]) : null,
                 ]);
+
+                if ($agencyName === 'DAR') {
+                    $cloa = $this->buildRegistryCode('DAR', (int) $barangay->id, $i);
+                    // Also seed the pivot table for searchability
+                    \DB::table('beneficiary_agencies')->insert([
+                        'beneficiary_id' => $beneficiary->id,
+                        'agency_id' => 3,
+                        'identifier' => $cloa,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
 
                 $created++;
             }

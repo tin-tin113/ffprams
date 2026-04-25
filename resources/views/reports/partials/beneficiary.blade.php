@@ -153,6 +153,7 @@
                             <th>Barangay</th>
                             <th class="text-center">Farmers</th>
                             <th class="text-center">Fisherfolk</th>
+                            <th class="text-center">Farmer & Fisherfolk</th>
                             <th class="text-center">Grand Total</th>
                         </tr>
                     </thead>
@@ -163,6 +164,7 @@
                                 <td>{{ $row->barangay->name }}</td>
                                 <td class="text-center">{{ number_format($row->total_farmers) }}</td>
                                 <td class="text-center">{{ number_format($row->total_fisherfolk) }}</td>
+                                <td class="text-center">{{ number_format($row->total_both) }}</td>
                                 <td class="text-center fw-bold">{{ number_format($row->grand_total) }}</td>
                             </tr>
                         @empty
@@ -180,6 +182,7 @@
                                 <td colspan="2">Total</td>
                                 <td class="text-center">{{ number_format($beneficiariesPerBarangay->sum('total_farmers')) }}</td>
                                 <td class="text-center">{{ number_format($beneficiariesPerBarangay->sum('total_fisherfolk')) }}</td>
+                                <td class="text-center">{{ number_format($beneficiariesPerBarangay->sum('total_both')) }}</td>
                                 <td class="text-center">{{ number_format($beneficiariesPerBarangay->sum('grand_total')) }}</td>
                             </tr>
                         </tfoot>

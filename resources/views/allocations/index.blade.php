@@ -11,12 +11,12 @@
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
         <div>
             <h1 class="h3 mb-0">Assistance Allocations</h1>
-            <p class="text-muted mb-0">Record and monitor direct assistance allocations</p>
+            <p class="text-muted mb-0">Record and monitor direct assistance allocations (Standalone Distributions)</p>
         </div>
         <div class="d-flex gap-2">
-            <button type="button" class="btn btn-success btn-primary-action" data-bs-toggle="modal" data-bs-target="#addDirectAssistanceModal">
+            <button type="button" class="btn btn-success btn-primary-action" data-bs-toggle="modal" data-bs-target="#addDirectAllocationModal">
                 <i class="bi bi-plus-circle"></i>
-                <span>Add Direct Assistance</span>
+                <span>Add Direct Allocation</span>
             </button>
         </div>
     </div>
@@ -93,12 +93,12 @@
     {{-- ============================================================ --}}
     {{-- MODAL: ADD DIRECT ASSISTANCE                                 --}}
     {{-- ============================================================ --}}
-    <div class="modal fade" id="addDirectAssistanceModal" tabindex="-1" aria-labelledby="addDirectAssistanceModalLabel" aria-hidden="true">
+    <div class="modal fade" id="addDirectAllocationModal" tabindex="-1" aria-labelledby="addDirectAllocationModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-light border-bottom">
-                    <h5 class="modal-title" id="addDirectAssistanceModalLabel">
-                        <i class="bi bi-plus-circle me-2"></i> Add Direct Assistance
+                    <h5 class="modal-title" id="addDirectAllocationModalLabel">
+                        <i class="bi bi-plus-circle me-2"></i> Add Direct Allocation
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>

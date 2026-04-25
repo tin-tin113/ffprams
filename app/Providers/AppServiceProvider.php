@@ -6,7 +6,6 @@ use App\Models\Agency;
 use App\Models\Allocation;
 use App\Models\Barangay;
 use App\Models\Beneficiary;
-use App\Models\DirectAssistance;
 use App\Models\DistributionEvent;
 use App\Models\ProgramName;
 use App\Models\ResourceType;
@@ -39,7 +38,6 @@ class AppServiceProvider extends ServiceProvider
         ProgramName::observe(GeoMapCacheObserver::class);
         DistributionEvent::observe(GeoMapCacheObserver::class);
         Allocation::observe(GeoMapCacheObserver::class);
-        DirectAssistance::observe(GeoMapCacheObserver::class);
         Barangay::observe(GeoMapCacheObserver::class);
         ResourceType::observe(GeoMapCacheObserver::class);
 

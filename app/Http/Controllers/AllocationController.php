@@ -297,9 +297,10 @@ class AllocationController extends Controller
     {
         $thirtyDaysAgo = Carbon::now()->subDays(30);
 
-        $eventAllocations = Allocation::with(['programName', 'resourceType', 'distributionEvent'])
+        $allRecent = Allocation::with(['programName', 'resourceType', 'distributionEvent'])
             ->where('beneficiary_id', $beneficiary->id)
             ->where('created_at', '>=', $thirtyDaysAgo)
+            ->orderByDesc('created_at')
             ->get()
             ->map(fn (Allocation $a) => [
                 'id'        => $a->id,
@@ -311,23 +312,6 @@ class AllocationController extends Controller
                 'event'     => $a->distributionEvent?->resourceType?->name ?? null,
                 'date'      => $a->created_at->format('M d, Y'),
             ]);
-
-        $directAssistance = \App\Models\DirectAssistance::with(['programName', 'resourceType'])
-            ->where('beneficiary_id', $beneficiary->id)
-            ->where('created_at', '>=', $thirtyDaysAgo)
-            ->get()
-            ->map(fn (\App\Models\DirectAssistance $da) => [
-                'id'        => $da->id,
-                'type'      => 'Direct Assistance',
-                'program'   => $da->programName?->name ?? 'N/A',
-                'resource'  => $da->resourceType?->name ?? 'N/A',
-                'value'     => $da->getDisplayValue(),
-                'status'    => $da->status_label,
-                'event'     => null,
-                'date'      => $da->created_at->format('M d, Y'),
-            ]);
-
-        $allRecent = $eventAllocations->merge($directAssistance)->sortByDesc('date')->values();
 
         return response()->json([
             'success'     => true,

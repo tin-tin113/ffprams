@@ -6,7 +6,6 @@ use App\Models\Agency;
 use App\Models\Allocation;
 use App\Models\Barangay;
 use App\Models\Beneficiary;
-use App\Models\DirectAssistance;
 use App\Models\DistributionEvent;
 use App\Models\ProgramName;
 use App\Models\ResourceType;
@@ -293,7 +292,8 @@ class SmsBroadcastTargetingTest extends TestCase
             'remarks' => 'Other allocation',
         ]);
 
-        DirectAssistance::create([
+        Allocation::create([
+            'release_method' => 'direct',
             'beneficiary_id' => $beneficiaryDirect->id,
             'program_name_id' => $programTarget->id,
             'resource_type_id' => $resourceType->id,

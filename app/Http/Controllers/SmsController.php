@@ -292,39 +292,24 @@ class SmsController extends Controller
 
         switch ($request->recipient_type) {
             case 'by_program':
-                $query->where(function ($q) use ($request) {
-                    $q->whereHas('allocations', fn ($a) => $a->where('program_name_id', $request->program_name_id))
-                        ->orWhereHas('directAssistance', fn ($d) => $d->where('program_name_id', $request->program_name_id));
-                });
+                $query->whereHas('allocations', fn ($a) => $a->where('program_name_id', $request->program_name_id));
                 break;
             case 'by_event':
-                $query->where(function ($q) use ($request) {
-                    $q->whereHas('allocations', fn ($a) => $a->where('distribution_event_id', $request->distribution_event_id))
-                        ->orWhereHas('directAssistance', fn ($d) => $d->where('distribution_event_id', $request->distribution_event_id));
-                });
+                $query->whereHas('allocations', fn ($a) => $a->where('distribution_event_id', $request->distribution_event_id));
                 break;
             case 'by_barangay':
                 $query->where('barangay_id', $request->barangay_id);
                 break;
             case 'by_resource_type':
-                $query->where(function ($q) use ($request) {
-                    $q->whereHas('allocations', fn ($a) => $a->where('resource_type_id', $request->resource_type_id))
-                        ->orWhereHas('directAssistance', fn ($d) => $d->where('resource_type_id', $request->resource_type_id));
-                });
+                $query->whereHas('allocations', fn ($a) => $a->where('resource_type_id', $request->resource_type_id));
                 break;
             case 'by_direct_allocation':
                 $status = $request->direct_allocation_status;
-                $query->where(function ($q) use ($status) {
-                    $q->whereHas('allocations', function ($a) use ($status) {
-                        $a->where('release_method', 'direct');
-                        if ($status && $status !== 'all') {
-                            $a->whereReleaseStatus($status);
-                        }
-                    })->orWhereHas('directAssistance', function ($d) use ($status) {
-                        if ($status && $status !== 'all') {
-                            $d->whereStatusNormalized($status);
-                        }
-                    });
+                $query->whereHas('allocations', function ($a) use ($status) {
+                    $a->where('release_method', 'direct');
+                    if ($status && $status !== 'all') {
+                        $a->whereReleaseStatus($status);
+                    }
                 });
                 break;
             case 'selected':

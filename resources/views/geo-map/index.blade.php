@@ -450,7 +450,7 @@
                                 <option value="">Sectors</option>
                                 <option value="farmer">Farmers</option>
                                 <option value="fisherfolk">Fisherfolk</option>
-                                <option value="both">Both</option>
+                                <option value="both">Farmer & Fisherfolk</option>
                             </select>
                         </div>
                         <button class="btn btn-dark px-3 rounded-3" id="clearFilters" title="Reset Filters">
@@ -679,7 +679,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const benefLabel = document.querySelector('#stat-beneficiaries').nextElementSibling;
             if (sector === 'farmer') benefLabel.textContent = 'Total Farmers';
             else if (sector === 'fisherfolk') benefLabel.textContent = 'Total Fisherfolk';
-            else if (sector === 'both') benefLabel.textContent = 'Total Classified Both';
+            else if (sector === 'both') benefLabel.textContent = 'Total Farmer & Fisherfolk';
             else benefLabel.textContent = 'Total Beneficiaries';
 
             // Tracking coordinates to handle overlaps

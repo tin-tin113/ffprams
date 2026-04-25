@@ -310,12 +310,8 @@ class BeneficiaryController extends Controller
             'allocations.programName.agency',
             'allocations.resourceType.agency',
             'allocations.assistancePurpose',
-            'directAssistance.programName.agency',
-            'directAssistance.resourceType.agency',
-            'directAssistance.assistancePurpose',
-            'directAssistance.distributionEvent.barangay',
-            'directAssistance.createdBy',
-            'directAssistance.distributedBy',
+            'allocations.createdBy',
+            'allocations.distributedBy',
             'smsLogs' => fn ($q) => $q->latest('sent_at')->limit(5),
         ]);
 

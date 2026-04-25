@@ -22,8 +22,7 @@ class DatabaseSeeder extends Seeder
             BeneficiaryPerBarangaySeeder::class,
             DistributionEventSeeder::class,
             EventAllocationSeeder::class,
-            DirectAssistanceSeeder::class,
-            DirectAssistanceEventBackfillSeeder::class,
+            DirectAllocationSeeder::class,
         ]);
     }
 }

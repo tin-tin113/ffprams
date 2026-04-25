@@ -538,6 +538,8 @@
         padding: 0.85rem 1rem;
         font-size: 0.9rem;
     }
+
+    .bg-purple { background-color: #8b5cf6 !important; color: white !important; }
 </style>
 @endpush
 
@@ -682,6 +684,7 @@
                                                 $classBadge = match($beneficiary->classification) {
                                                     'Farmer' => 'bg-success',
                                                     'Fisherfolk' => 'bg-primary',
+                                                    'Farmer & Fisherfolk' => 'bg-purple',
                                                     default => 'bg-secondary',
                                                 };
                                             @endphp

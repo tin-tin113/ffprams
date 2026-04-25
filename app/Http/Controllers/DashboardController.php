@@ -26,7 +26,7 @@ class DashboardController extends Controller
 
         $totalBoth = DB::table('beneficiaries')
             ->whereNull('deleted_at')
-            ->where('classification', 'Both')
+            ->where('classification', 'Farmer & Fisherfolk')
             ->count();
 
         // Distribution event counts
@@ -249,10 +249,10 @@ class DashboardController extends Controller
         $total = DB::table('beneficiaries')->whereNull('deleted_at')->count();
         $farmers = DB::table('beneficiaries')->whereNull('deleted_at')->where('classification', 'Farmer')->count();
         $fisherfolk = DB::table('beneficiaries')->whereNull('deleted_at')->where('classification', 'Fisherfolk')->count();
-        $both = DB::table('beneficiaries')->whereNull('deleted_at')->where('classification', 'Both')->count();
+        $both = DB::table('beneficiaries')->whereNull('deleted_at')->where('classification', 'Farmer & Fisherfolk')->count();
 
         return [
-            'labels' => ['Farmers', 'Fisherfolk', 'Both'],
+            'labels' => ['Farmers', 'Fisherfolk', 'Farmer & Fisherfolk'],
             'data' => [$farmers, $fisherfolk, $both],
             'colors' => ['#198754', '#0dcaf0', '#6f42c1'],
             'total' => $total,

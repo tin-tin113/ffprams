@@ -33,7 +33,6 @@ return new class extends Migration
                        CASE 
                            WHEN agency_id = 1 THEN rsbsa_number 
                            WHEN agency_id = 2 THEN fishr_number 
-                              WHEN agency_id = 3 THEN cloa_ep_number 
                            ELSE NULL 
                        END,
                        registered_at, NOW(), NOW()
@@ -51,7 +50,6 @@ return new class extends Migration
                        CASE 
                            WHEN agency_id = 1 THEN rsbsa_number 
                            WHEN agency_id = 2 THEN fishr_number 
-                              WHEN agency_id = 3 THEN cloa_ep_number 
                            ELSE NULL 
                        END,
                        registered_at, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP

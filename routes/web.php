@@ -11,7 +11,6 @@ use App\Http\Controllers\ResourceTypeController;
 use App\Http\Controllers\DistributionEventController;
 use App\Http\Controllers\AllocationController;
 use App\Http\Controllers\Api\AgencyFormFieldController;
-use App\Http\Controllers\DirectAssistanceController;
 use App\Http\Controllers\GeoMapController;
 use App\Http\Controllers\RecordAttachmentController;
 use App\Http\Controllers\ReportsController;
@@ -121,32 +120,8 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
     Route::delete('allocations/{allocation}/attachments/{recordAttachment}', [RecordAttachmentController::class, 'destroyForAllocation'])
         ->name('allocations.attachments.destroy');
 
-    // Direct Assistance
-    Route::post('direct-assistance/bulk', [DirectAssistanceController::class, 'storeBulk'])
-        ->name('direct-assistance.storeBulk');
-    Route::resource('direct-assistance', DirectAssistanceController::class);
-    Route::post('direct-assistance/{direct_assistance}/mark-ready-for-release', [DirectAssistanceController::class, 'markReadyForRelease'])
-        ->name('direct-assistance.mark-ready-for-release');
-    Route::post('direct-assistance/{direct_assistance}/mark-released', [DirectAssistanceController::class, 'markReleased'])
-        ->name('direct-assistance.mark-released');
-    // Legacy alias for older UI/tests calling mark-distributed.
-    Route::post('direct-assistance/{direct_assistance}/mark-distributed', [DirectAssistanceController::class, 'markDistributed'])
-        ->name('direct-assistance.mark-distributed');
-    Route::post('direct-assistance/{direct_assistance}/mark-not-received', [DirectAssistanceController::class, 'markNotReceived'])
-        ->name('direct-assistance.mark-not-received');
-    Route::get('direct-assistance-barangay-analytics', [DirectAssistanceController::class, 'barangayAnalytics'])
-        ->name('direct-assistance.barangay-analytics');
-    Route::post('direct-assistance/{direct_assistance}/attachments', [RecordAttachmentController::class, 'storeForDirectAssistance'])
-        ->name('direct-assistance.attachments.store');
-    Route::get('direct-assistance/{direct_assistance}/attachments/{recordAttachment}/view', [RecordAttachmentController::class, 'viewForDirectAssistance'])
-        ->name('direct-assistance.attachments.view');
-    Route::get('direct-assistance/{direct_assistance}/attachments/{recordAttachment}/download', [RecordAttachmentController::class, 'downloadForDirectAssistance'])
-        ->name('direct-assistance.attachments.download');
-    Route::delete('direct-assistance/{direct_assistance}/attachments/{recordAttachment}', [RecordAttachmentController::class, 'destroyForDirectAssistance'])
-        ->name('direct-assistance.attachments.destroy');
-
     // API endpoints for eligible programs (used by allocation forms)
-    Route::get('api/eligible-programs/{beneficiary}', [DirectAssistanceController::class, 'getEligiblePrograms'])
+    Route::get('api/eligible-programs/{beneficiary}', [AllocationController::class, 'getEligiblePrograms'])
         ->name('api.eligible-programs');
     Route::get('api/allocations/eligible-programs/{beneficiary}', [AllocationController::class, 'getEligiblePrograms'])
         ->name('api.allocations.eligible-programs');

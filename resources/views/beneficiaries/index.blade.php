@@ -172,7 +172,7 @@
                                     <option value="">All Types</option>
                                     <option value="Farmer" {{ request('classification') === 'Farmer' ? 'selected' : '' }}>Farmer</option>
                                     <option value="Fisherfolk" {{ request('classification') === 'Fisherfolk' ? 'selected' : '' }}>Fisherfolk</option>
-                                    <option value="Both" {{ request('classification') === 'Both' ? 'selected' : '' }}>Both</option>
+                                    <option value="Farmer & Fisherfolk" {{ request('classification') === 'Farmer & Fisherfolk' ? 'selected' : '' }}>Farmer & Fisherfolk</option>
                                 </select>
                             </div>
                             <div class="col-xl-2 col-lg-4 col-md-6">
@@ -320,7 +320,7 @@
                                         $classificationBadge = match($beneficiary->classification) {
                                             'Farmer' => 'badge-soft-primary',
                                             'Fisherfolk' => 'badge-soft-info',
-                                            'Both' => 'badge-soft-purple',
+                                            'Farmer & Fisherfolk' => 'badge-soft-purple',
                                             default => 'badge-soft-secondary',
                                         };
                                     @endphp

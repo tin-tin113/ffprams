@@ -26,6 +26,10 @@ class Allocation extends Model
         'release_outcome',
         'remarks',
         'assistance_purpose_id',
+        'legacy_id',
+        'legacy_source',
+        'created_by',
+        'distributed_by',
     ];
 
     protected function casts(): array

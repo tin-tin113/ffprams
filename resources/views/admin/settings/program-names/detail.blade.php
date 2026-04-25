@@ -140,20 +140,20 @@
         <!-- Insights Tab -->
         <div class="tab-pane fade show active" id="insights" role="tabpanel">
             <div class="row g-4 mb-4">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="stat-card shadow-sm border-0 h-100 bg-white p-4">
                         <div class="d-flex align-items-center gap-3">
                             <div class="stat-card-icon bg-soft-primary text-primary p-3 rounded-circle" style="background: rgba(13, 110, 253, 0.1);">
-                                <i class="bi bi-calendar-event fs-4"></i>
+                                <i class="bi bi-calendar-check fs-4"></i>
                             </div>
                             <div>
-                                <div class="stat-card-value text-primary fs-3 fw-bold">{{ number_format($totalEvents) }}</div>
-                                <div class="stat-card-label fw-bold text-uppercase small text-muted">Total Events</div>
+                                <div class="stat-card-value text-primary fs-3 fw-bold">{{ number_format($activeDistributionsCount) }}</div>
+                                <div class="stat-card-label fw-bold text-uppercase small text-muted">Active Distributions</div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="stat-card shadow-sm border-0 h-100 bg-white p-4">
                         <div class="d-flex align-items-center gap-3">
                             <div class="stat-card-icon bg-soft-success text-success p-3 rounded-circle" style="background: rgba(25, 135, 84, 0.1);">
@@ -166,7 +166,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="stat-card shadow-sm border-0 h-100 bg-white p-4">
                         <div class="d-flex align-items-center gap-3">
                             <div class="stat-card-icon bg-soft-info text-info p-3 rounded-circle" style="background: rgba(13, 202, 240, 0.1);">
@@ -179,10 +179,23 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-md-3">
+                    <div class="stat-card shadow-sm border-0 h-100 bg-white p-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="stat-card-icon bg-soft-purple text-purple p-3 rounded-circle" style="background: rgba(139, 92, 246, 0.1);">
+                                <i class="bi bi-file-earmark-check fs-4"></i>
+                            </div>
+                            <div>
+                                <div class="stat-card-value text-purple fs-3 fw-bold">{{ number_format($complianceDocumentsCount) }}</div>
+                                <div class="stat-card-label fw-bold text-uppercase small text-muted">Compliance Files</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="row g-4">
-                <div class="col-lg-12">
+                <div class="col-lg-8">
                     <div class="card border-0 shadow-sm">
                         <div class="card-header bg-transparent border-0 pt-4 px-4">
                             <h5 class="card-title fw-bold mb-0">Assistance Over Time (Monthly Trend)</h5>
@@ -190,6 +203,18 @@
                         <div class="card-body p-4">
                             <div style="height: 300px;">
                                 <canvas id="trendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4">
+                            <h5 class="card-title fw-bold mb-0">Assistance Purpose</h5>
+                        </div>
+                        <div class="card-body p-4 d-flex align-items-center justify-content-center">
+                            <div style="height: 300px; width: 100%;">
+                                <canvas id="purposeChart"></canvas>
                             </div>
                         </div>
                     </div>
@@ -292,7 +317,7 @@
                                 <button class="nav-link active rounded-pill px-3 py-1 small" id="event-dist-tab" data-bs-toggle="pill" data-bs-target="#event-dist" type="button" role="tab">Event-based</button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link rounded-pill px-3 py-1 small" id="direct-dist-tab" data-bs-toggle="pill" data-bs-target="#direct-dist" type="button" role="tab">Direct Assistance</button>
+                                <button class="nav-link rounded-pill px-3 py-1 small" id="direct-dist-tab" data-bs-toggle="pill" data-bs-target="#direct-dist" type="button" role="tab">Standalone Distributions</button>
                             </li>
                         </ul>
                     </div>
@@ -330,15 +355,21 @@
                                                 @if($allocation->quantity) <small class="text-muted">{{ number_format($allocation->quantity, 1) }} units</small> @endif
                                             </td>
                                             <td>
-                                                @if($allocation->release_method === 'cash')
-                                                    <span class="badge bg-soft-success px-2 py-1"><i class="bi bi-cash me-1"></i> Cash</span>
+                                                @if($allocation->release_method === 'direct')
+                                                    <span class="badge bg-soft-info text-info px-2 py-1"><i class="bi bi-box-arrow-in-right me-1"></i> Standalone (Direct)</span>
                                                 @else
-                                                    <span class="badge bg-soft-primary px-2 py-1"><i class="bi bi-ticket-detailed me-1"></i> Voucher</span>
+                                                    @if($allocation->distribution_event_id)
+                                                        <a href="{{ route('distribution-events.show', $allocation->distribution_event_id) }}" class="badge bg-soft-primary text-primary px-2 py-1 text-decoration-none">
+                                                            <i class="bi bi-calendar-event me-1"></i> Event
+                                                        </a>
+                                                    @else
+                                                        <span class="badge bg-soft-primary text-primary px-2 py-1"><i class="bi bi-calendar-event me-1"></i> Event</span>
+                                                    @endif
                                                 @endif
                                             </td>
                                             <td class="pe-4">
-                                                <span class="badge {{ ($allocation->release_status_label ?? 'Planned') === 'Released' ? 'bg-success' : 'bg-secondary' }} px-3 py-2 rounded-pill">
-                                                    {{ $allocation->release_status_label ?? 'Planned' }}
+                                                <span class="badge {{ $allocation->release_status === 'released' ? 'bg-soft-success text-success' : 'bg-soft-warning text-warning' }} px-3 py-2 rounded-pill">
+                                                    {{ $allocation->release_status_label }}
                                                 </span>
                                             </td>
                                         </tr>
@@ -383,8 +414,8 @@
                                                 @if($record->quantity) <small class="text-muted">{{ number_format($record->quantity, 1) }} units</small> @endif
                                             </td>
                                             <td>
-                                                <span class="badge {{ ($record->status_label ?? 'Planned') === 'Released' ? 'bg-soft-success text-success' : 'bg-soft-warning text-warning' }} px-3 py-2 rounded-pill">
-                                                    {{ $record->status_label ?? 'Planned' }}
+                                                <span class="badge {{ $record->release_status === 'released' ? 'bg-soft-success text-success' : 'bg-soft-warning text-warning' }} px-3 py-2 rounded-pill">
+                                                    {{ $record->release_status_label }}
                                                 </span>
                                             </td>
                                             <td class="pe-4"><small class="text-muted">{{ $record->distributed_at?->format('M d, Y') ?? 'N/A' }}</small></td>
@@ -412,12 +443,17 @@
                 <div class="card-header bg-transparent border-0 px-4 pt-4">
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                         <h5 class="card-title fw-bold mb-0">People Helped</h5>
-                        <div class="search-box">
+                        <form action="{{ url()->current() }}" method="GET" class="search-box">
+                            <input type="hidden" name="tab" value="reach">
                             <div class="input-group input-group-sm bg-light rounded-pill px-2" style="max-width: 300px;">
                                 <span class="input-group-text bg-transparent border-0"><i class="bi bi-search"></i></span>
-                                <input type="text" id="reachSearch" class="form-control bg-transparent border-0" placeholder="Search for a name...">
+                                <input type="text" name="search" id="reachSearch" class="form-control bg-transparent border-0" 
+                                       placeholder="Search for a name..." value="{{ request('search') }}">
+                                @if(request('search'))
+                                    <a href="{{ url()->current() }}?tab=reach" class="btn btn-transparent border-0 text-muted"><i class="bi bi-x-circle"></i></a>
+                                @endif
                             </div>
-                        </div>
+                        </form>
                     </div>
                 </div>
                 <div class="card-body p-0">
@@ -679,16 +715,66 @@ document.addEventListener('DOMContentLoaded', function() {
                     fill: true,
                     tension: 0.4,
                     pointRadius: 4,
-                    pointBackgroundColor: '#0d6efd'
+                    pointBackgroundColor: '#0d6efd',
+                    yAxisID: 'y'
+                }, {
+                    label: 'Amount (₱)',
+                    data: {!! json_encode($monthlyTrend->pluck('total_amount')) !!},
+                    borderColor: '#22c55e',
+                    backgroundColor: 'transparent',
+                    borderDash: [5, 5],
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#22c55e',
+                    yAxisID: 'y1'
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: { 
+                    legend: { display: true, position: 'top', labels: { boxWidth: 12 } } 
+                },
                 scales: {
-                    y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
+                    y: { 
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        beginAtZero: true, 
+                        grid: { borderDash: [5, 5] },
+                        title: { display: true, text: 'Items' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        beginAtZero: true,
+                        grid: { drawOnChartArea: false },
+                        title: { display: true, text: 'Amount (₱)' }
+                    },
                     x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    const purposeCtx = document.getElementById('purposeChart');
+    if (purposeCtx) {
+        new Chart(purposeCtx, {
+            type: 'pie',
+            data: {
+                labels: {!! json_encode($purposeBreakdown->pluck('name')) !!},
+                datasets: [{
+                    data: {!! json_encode($purposeBreakdown->pluck('total')) !!},
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#14b8a6', '#6366f1'],
+                    borderWidth: 0,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, padding: 15 } }
                 }
             }
         });
