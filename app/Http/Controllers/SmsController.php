@@ -66,6 +66,10 @@ class SmsController extends Controller
             ->paginate(15)
             ->withQueryString();
 
+        if ($request->ajax()) {
+            return view('sms._history_table', compact('smsLogs'));
+        }
+
         return view('sms.index', compact(
             'barangays',
             'programs',

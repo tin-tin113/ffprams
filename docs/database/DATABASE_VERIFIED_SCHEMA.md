@@ -1,23 +1,61 @@
-# Database Tables and Columns
+# 🛡️ Verified Database Schema & Foreign Key Connections
 
 **Database:** ffprams
+**Last Verified:** 2026-04-25 12:23:33
 
-**Generated:** 2026-04-21 08:09:25
+## 🔗 Actual Database Connections (Foreign Keys)
+| Source Table | Source Column | Target Table | Target Column |
+|---|---|---|---|
+| `agency_classifications` | `agency_id` | `agencies` | `id` |
+| `agency_classifications` | `classification_id` | `classifications` | `id` |
+| `agency_form_field_options` | `agency_form_field_id` | `agency_form_fields` | `id` |
+| `agency_form_fields` | `agency_id` | `agencies` | `id` |
+| `allocations` | `assistance_purpose_id` | `assistance_purposes` | `id` |
+| `allocations` | `distribution_event_id` | `distribution_events` | `id` |
+| `allocations` | `program_name_id` | `program_names` | `id` |
+| `allocations` | `resource_type_id` | `resource_types` | `id` |
+| `audit_logs` | `user_id` | `users` | `id` |
+| `beneficiaries` | `agency_id` | `agencies` | `id` |
+| `beneficiaries` | `barangay_id` | `barangays` | `id` |
+| `beneficiary_agencies` | `agency_id` | `agencies` | `id` |
+| `beneficiary_agencies` | `beneficiary_id` | `beneficiaries` | `id` |
+| `beneficiary_attachments` | `beneficiary_id` | `beneficiaries` | `id` |
+| `beneficiary_attachments` | `uploaded_by` | `users` | `id` |
+| `direct_assistance` | `assistance_purpose_id` | `assistance_purposes` | `id` |
+| `direct_assistance` | `beneficiary_id` | `beneficiaries` | `id` |
+| `direct_assistance` | `created_by` | `users` | `id` |
+| `direct_assistance` | `distributed_by` | `users` | `id` |
+| `direct_assistance` | `distribution_event_id` | `distribution_events` | `id` |
+| `direct_assistance` | `program_name_id` | `program_names` | `id` |
+| `direct_assistance` | `resource_type_id` | `resource_types` | `id` |
+| `distribution_events` | `barangay_id` | `barangays` | `id` |
+| `distribution_events` | `beneficiary_list_approved_by` | `users` | `id` |
+| `distribution_events` | `created_by` | `users` | `id` |
+| `distribution_events` | `program_name_id` | `program_names` | `id` |
+| `distribution_events` | `resource_type_id` | `resource_types` | `id` |
+| `program_legal_requirements` | `program_name_id` | `program_names` | `id` |
+| `program_legal_requirements` | `uploaded_by` | `users` | `id` |
+| `program_names` | `agency_id` | `agencies` | `id` |
+| `record_attachments` | `uploaded_by` | `users` | `id` |
+| `resource_types` | `agency_id` | `agencies` | `id` |
+| `sms_logs` | `beneficiary_id` | `beneficiaries` | `id` |
+| `users` | `agency_id` | `agencies` | `id` |
 
-## agencies
+---
 
+## 📑 Comprehensive Table Definitions (Zero Omissions)
+### agencies
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | bigint unsigned | NO | PRI |  | auto_increment |
-| name | varchar(255) | NO |  |  |  |
+| name | varchar(255) | NO | UNI |  |  |
 | full_name | varchar(255) | NO |  |  |  |
 | description | text | YES |  |  |  |
 | is_active | tinyint(1) | NO |  | 1 |  |
 | created_at | timestamp | YES |  |  |  |
 | updated_at | timestamp | YES |  |  |  |
 
-## agency_classifications
-
+### agency_classifications
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | bigint unsigned | NO | PRI |  | auto_increment |
@@ -26,8 +64,7 @@
 | created_at | timestamp | YES |  |  |  |
 | updated_at | timestamp | YES |  |  |  |
 
-## agency_form_field_options
-
+### agency_form_field_options
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | bigint unsigned | NO | PRI |  | auto_increment |
@@ -39,8 +76,7 @@
 | created_at | timestamp | YES |  |  |  |
 | updated_at | timestamp | YES |  |  |  |
 
-## agency_form_fields
-
+### agency_form_fields
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | bigint unsigned | NO | PRI |  | auto_increment |
@@ -57,8 +93,7 @@
 | created_at | timestamp | YES |  |  |  |
 | updated_at | timestamp | YES |  |  |  |
 
-## allocations
-
+### allocations
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | bigint unsigned | NO | PRI |  | auto_increment |
@@ -68,19 +103,18 @@
 | quantity | decimal(8,2) | YES |  |  |  |
 | amount | decimal(12,2) | YES |  |  |  |
 | is_ready_for_release | tinyint(1) | NO | MUL | 0 |  |
-| distributed_at | datetime | YES |  |  |  |
-| release_outcome | enum('received','not_received') | YES | MUL |  |  |
-| remarks | text | YES |  |  |  |
 | assistance_purpose_id | bigint unsigned | YES | MUL |  |  |
 | program_name_id | bigint unsigned | YES | MUL |  |  |
 | resource_type_id | bigint unsigned | YES | MUL |  |  |
+| distributed_at | datetime | YES |  |  |  |
+| release_outcome | enum('received','not_received') | YES | MUL |  |  |
+| remarks | text | YES |  |  |  |
 | deleted_at | timestamp | YES |  |  |  |
 | created_at | timestamp | YES |  |  |  |
 | updated_at | timestamp | YES |  |  |  |
 | active_beneficiary_id | bigint | YES |  |  | STORED GENERATED |
 
-## assistance_purposes
-
+### assistance_purposes
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | bigint unsigned | NO | PRI |  | auto_increment |
@@ -91,8 +125,7 @@
 | created_at | timestamp | YES |  |  |  |
 | updated_at | timestamp | YES |  |  |  |
 
-## audit_logs
-
+### audit_logs
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | bigint unsigned | NO | PRI |  | auto_increment |
@@ -105,12 +138,12 @@
 | created_at | timestamp | YES |  |  |  |
 | updated_at | timestamp | YES |  |  |  |
 
-## barangays
-
+### barangays
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | bigint unsigned | NO | PRI |  | auto_increment |
 | name | varchar(255) | NO |  |  |  |
+| quadrant | varchar(255) | YES | MUL |  |  |
 | municipality | varchar(255) | NO | MUL | E.B. Magalona |  |
 | province | varchar(255) | NO |  | Negros Occidental |  |
 | latitude | decimal(10,8) | NO |  |  |  |
@@ -118,8 +151,7 @@
 | created_at | timestamp | YES |  |  |  |
 | updated_at | timestamp | YES |  |  |  |
 
-## beneficiaries
-
+### beneficiaries
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | bigint unsigned | NO | PRI |  | auto_increment |
@@ -129,38 +161,32 @@
 | last_name | varchar(255) | YES |  |  |  |
 | name_suffix | varchar(255) | YES |  |  |  |
 | full_name | varchar(255) | NO |  |  |  |
-| sex | enum('Male','Female') | YES |  |  |  |
+| sex | varchar(255) | YES |  |  |  |
 | date_of_birth | date | YES |  |  |  |
 | photo_path | varchar(255) | YES |  |  |  |
 | barangay_id | bigint unsigned | NO | MUL |  |  |
 | home_address | varchar(255) | YES |  |  |  |
-| classification | enum('Farmer','Fisherfolk') | NO | MUL | Farmer |  |
+| classification | varchar(255) | NO | MUL | Farmer |  |
 | contact_number | varchar(255) | NO |  |  |  |
-| status | enum('Active','Inactive') | NO | MUL | Active |  |
+| status | varchar(255) | NO | MUL | Active |  |
 | registered_at | date | NO |  |  |  |
 | rsbsa_number | varchar(255) | YES | UNI |  |  |
-| farm_ownership | enum('Registered Owner','Tenant','Lessee','Owner','Share Tenant') | YES |  |  |  |
+| farm_ownership | varchar(255) | YES |  |  |  |
 | farm_size_hectares | decimal(8,2) | YES |  |  |  |
 | primary_commodity | varchar(255) | YES |  |  |  |
-| farm_type | enum('Irrigated','Rainfed Upland','Rainfed Lowland','Upland') | YES |  |  |  |
+| farm_type | varchar(255) | YES |  |  |  |
 | fishr_number | varchar(255) | YES | UNI |  |  |
-| fisherfolk_type | enum('Capture Fishing','Aquaculture','Post-Harvest','Fish Farming','Fish Vendor','Fish Worker') | YES |  |  |  |
+| fisherfolk_type | varchar(255) | YES |  |  |  |
 | main_fishing_gear | varchar(255) | YES |  |  |  |
 | has_fishing_vessel | tinyint(1) | YES |  | 0 |  |
 | fishing_vessel_type | varchar(255) | YES |  |  |  |
 | fishing_vessel_tonnage | decimal(8,2) | YES |  |  |  |
 | length_of_residency_months | int | YES |  |  |  |
-| cloa_ep_number | varchar(255) | YES | UNI |  |  |
-| arb_classification | varchar(255) | YES |  |  |  |
-| landholding_description | text | YES |  |  |  |
-| land_area_awarded_hectares | decimal(10,2) | YES |  |  |  |
-| ownership_scheme | varchar(255) | YES |  |  |  |
-| barc_membership_status | varchar(255) | YES |  |  |  |
-| cloa_ep_unavailability_reason | text | YES |  |  |  |
 | custom_field_unavailability_reasons | json | YES |  |  |  |
 | custom_fields | json | YES |  |  |  |
-| civil_status | enum('Single','Married','Widowed','Separated') | YES |  |  |  |
+| civil_status | varchar(255) | YES |  |  |  |
 | id_type | varchar(255) | YES |  |  |  |
+| id_number | varchar(255) | YES |  |  |  |
 | highest_education | varchar(255) | YES |  |  |  |
 | association_member | tinyint(1) | NO |  | 0 |  |
 | association_name | varchar(255) | YES |  |  |  |
@@ -171,8 +197,7 @@
 | created_at | timestamp | YES | MUL |  |  |
 | updated_at | timestamp | YES |  |  |  |
 
-## beneficiary_agencies
-
+### beneficiary_agencies
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | bigint unsigned | NO | PRI |  | auto_increment |
@@ -183,8 +208,7 @@
 | created_at | timestamp | YES |  |  |  |
 | updated_at | timestamp | YES |  |  |  |
 
-## beneficiary_attachments
-
+### beneficiary_attachments
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | bigint unsigned | NO | PRI |  | auto_increment |
@@ -202,24 +226,21 @@
 | created_at | timestamp | YES |  |  |  |
 | updated_at | timestamp | YES |  |  |  |
 
-## cache
-
+### cache
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | key | varchar(255) | NO | PRI |  |  |
 | value | mediumtext | NO |  |  |  |
 | expiration | int | NO | MUL |  |  |
 
-## cache_locks
-
+### cache_locks
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | key | varchar(255) | NO | PRI |  |  |
 | owner | varchar(255) | NO |  |  |  |
 | expiration | int | NO | MUL |  |  |
 
-## classifications
-
+### classifications
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | bigint unsigned | NO | PRI |  | auto_increment |
@@ -228,8 +249,7 @@
 | created_at | timestamp | YES |  |  |  |
 | updated_at | timestamp | YES |  |  |  |
 
-## direct_assistance
-
+### direct_assistance
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | bigint unsigned | NO | PRI |  | auto_increment |
@@ -250,11 +270,11 @@
 | updated_at | timestamp | YES |  |  |  |
 | deleted_at | timestamp | YES |  |  |  |
 
-## distribution_events
-
+### distribution_events
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | bigint unsigned | NO | PRI |  | auto_increment |
+| name | varchar(255) | YES |  |  |  |
 | barangay_id | bigint unsigned | NO | MUL |  |  |
 | resource_type_id | bigint unsigned | NO | MUL |  |  |
 | program_name_id | bigint unsigned | NO | MUL |  |  |
@@ -280,12 +300,13 @@
 | farmc_endorsed_at | timestamp | YES |  |  |  |
 | farmc_reference_no | varchar(150) | YES |  |  |  |
 | compliance_field_states | json | YES |  |  |  |
+| compliance_overall_status | varchar(50) | YES |  | not_available_yet |  |
+| compliance_overall_reason | text | YES |  |  |  |
 | created_at | timestamp | YES |  |  |  |
 | updated_at | timestamp | YES |  |  |  |
 | deleted_at | timestamp | YES |  |  |  |
 
-## form_field_options
-
+### form_field_options
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | bigint unsigned | NO | PRI |  | auto_increment |
@@ -300,24 +321,21 @@
 | created_at | timestamp | YES |  |  |  |
 | updated_at | timestamp | YES |  |  |  |
 
-## migrations
-
+### migrations
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | int unsigned | NO | PRI |  | auto_increment |
 | migration | varchar(255) | NO |  |  |  |
 | batch | int | NO |  |  |  |
 
-## password_reset_tokens
-
+### password_reset_tokens
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | email | varchar(255) | NO | PRI |  |  |
 | token | varchar(255) | NO |  |  |  |
 | created_at | timestamp | YES |  |  |  |
 
-## program_legal_requirements
-
+### program_legal_requirements
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | bigint unsigned | NO | PRI |  | auto_increment |
@@ -336,8 +354,7 @@
 | created_at | timestamp | YES |  |  |  |
 | updated_at | timestamp | YES |  |  |  |
 
-## program_names
-
+### program_names
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | bigint unsigned | NO | PRI |  | auto_increment |
@@ -349,8 +366,7 @@
 | created_at | timestamp | YES |  |  |  |
 | updated_at | timestamp | YES |  |  |  |
 
-## record_attachments
-
+### record_attachments
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | bigint unsigned | NO | PRI |  | auto_increment |
@@ -369,8 +385,7 @@
 | created_at | timestamp | YES |  |  |  |
 | updated_at | timestamp | YES |  |  |  |
 
-## resource_types
-
+### resource_types
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | bigint unsigned | NO | PRI |  | auto_increment |
@@ -382,8 +397,7 @@
 | created_at | timestamp | YES |  |  |  |
 | updated_at | timestamp | YES |  |  |  |
 
-## sessions
-
+### sessions
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | varchar(255) | NO | PRI |  |  |
@@ -393,8 +407,7 @@
 | payload | longtext | NO |  |  |  |
 | last_activity | int | NO | MUL |  |  |
 
-## sms_logs
-
+### sms_logs
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | bigint unsigned | NO | PRI |  | auto_increment |
@@ -404,14 +417,24 @@
 | delivery_status | enum('pending','delivered','failed','undeliverable') | NO |  | pending |  |
 | response | text | YES |  |  |  |
 | gateway_message_id | varchar(255) | YES |  |  |  |
+| segments | int | NO |  | 1 |  |
 | sent_at | datetime | NO |  |  |  |
 | callback_received_at | timestamp | YES |  |  |  |
 | retry_count | int | NO |  | 0 |  |
 | created_at | timestamp | YES |  |  |  |
 | updated_at | timestamp | YES |  |  |  |
 
-## users
+### sms_templates
+| Column | Type | Null | Key | Default | Extra |
+|---|---|---|---|---|---|
+| id | bigint unsigned | NO | PRI |  | auto_increment |
+| name | varchar(255) | NO | UNI |  |  |
+| content | text | NO |  |  |  |
+| is_active | tinyint(1) | NO |  | 1 |  |
+| created_at | timestamp | YES |  |  |  |
+| updated_at | timestamp | YES |  |  |  |
 
+### users
 | Column | Type | Null | Key | Default | Extra |
 |---|---|---|---|---|---|
 | id | bigint unsigned | NO | PRI |  | auto_increment |

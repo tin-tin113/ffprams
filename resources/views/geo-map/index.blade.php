@@ -391,6 +391,14 @@
         .barangay-info-modal .modal-dialog { max-width: calc(100vw - 1rem); } 
         .modal-stat-grid { grid-template-columns: 1fr; }
     }
+    .btn-copy-success {
+        border-color: #10b981 !important;
+        background-color: #f0fdf4 !important;
+        transform: scale(1.05);
+    }
+    .js-copy-contact {
+        transition: all 0.2s ease;
+    }
 </style>
 @endpush
 
@@ -883,42 +891,65 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    const escapeHtml = (value) => {
+        return String(value ?? '').replace(/[&<>"']/g, function (char) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char];
+        });
+    };
+
+    const formatDate = (value) => {
+        if (!value) return 'N/A';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return 'N/A';
+        return date.toLocaleDateString('en-PH', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    };
+
+    const copyToClipboard = async (text) => {
+        if (!text || text === 'N/A') return false;
+        
+        // Try modern API first
+        if (navigator.clipboard && window.isSecureContext) {
+            try {
+                await navigator.clipboard.writeText(text);
+                return true;
+            } catch (err) {
+                console.error('Modern copy failed, trying fallback', err);
+            }
+        }
+
+        // Fallback for non-secure contexts or failed modern API
+        try {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            textArea.style.top = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            const successful = document.execCommand('copy');
+            document.body.removeChild(textArea);
+            return successful;
+        } catch (err) {
+            console.error('Fallback copy failed', err);
+            return false;
+        }
+    };
+
     function loadBeneficiaries(barangayId) {
         const container = document.getElementById('panel-beneficiary-list');
         const countBadge = document.getElementById('panel-beneficiary-count');
 
-        const escapeHtml = (value) => {
-            return String(value ?? '').replace(/[&<>"']/g, function (char) {
-                return {
-                    '&': '&amp;',
-                    '<': '&lt;',
-                    '>': '&gt;',
-                    '"': '&quot;',
-                    "'": '&#39;'
-                }[char];
-            });
-        };
-
-        const formatDate = (value) => {
-            if (!value) return 'N/A';
-            const date = new Date(value);
-            if (Number.isNaN(date.getTime())) return 'N/A';
-            return date.toLocaleDateString('en-PH', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-        };
-
-        const copyToClipboard = async (text) => {
-            if (!text) return false;
-            try {
-                await navigator.clipboard.writeText(text);
-                return true;
-            } catch (_) {
-                return false;
-            }
-        };
 
         container.innerHTML = '<div class="text-center py-4"><div class="spinner-border spinner-border-sm text-success"></div><div class="small text-muted mt-2">Fetching records...</div></div>';
 
@@ -972,17 +1003,25 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             container.innerHTML = html;
 
-            container.querySelectorAll('.js-copy-contact').forEach((button) => {
-                button.addEventListener('click', async () => {
-                    const contact = button.getAttribute('data-contact');
-                    const copied = await copyToClipboard(contact);
-                    const originalIcon = button.innerHTML;
-                    button.innerHTML = copied ? '<i class="bi bi-check text-success"></i>' : '<i class="bi bi-x text-danger"></i>';
-                    setTimeout(() => { button.innerHTML = originalIcon; }, 1500);
-                });
-            });
         });
     }
+    // Delegated Copy Event
+    document.addEventListener('click', async function(e) {
+        const btn = e.target.closest('.js-copy-contact');
+        if (btn) {
+            const contact = btn.getAttribute('data-contact');
+            const copied = await copyToClipboard(contact);
+            const originalIcon = btn.innerHTML;
+            
+            btn.innerHTML = copied ? '<i class="bi bi-check-lg text-success"></i>' : '<i class="bi bi-x-lg text-danger"></i>';
+            btn.classList.add('btn-copy-success');
+            
+            setTimeout(() => { 
+                btn.innerHTML = originalIcon;
+                btn.classList.remove('btn-copy-success');
+            }, 2000);
+        }
+    });
 
     document.getElementById('agencyFilter').addEventListener('change', loadMapData);
     document.getElementById('quadrantFilter').addEventListener('change', loadMapData);

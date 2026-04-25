@@ -433,69 +433,8 @@
                         </div>
                     </div>
 
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="ps-4">Recipient</th>
-                                    <th>Contact</th>
-                                    <th>Message Preview</th>
-                                    <th>Status</th>
-                                    <th>Sent At</th>
-                                    <th class="text-end pe-4">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($smsLogs as $log)
-                                    <tr>
-                                        <td class="ps-4">
-                                            <div class="fw-semibold text-dark">{{ $log->beneficiary->full_name ?? 'N/A' }}</div>
-                                            <div class="x-small text-muted">{{ $log->beneficiary->barangay->name ?? '—' }}</div>
-                                        </td>
-                                        <td>{{ $log->beneficiary->contact_number ?? '—' }}</td>
-                                        <td>
-                                            <div class="text-truncate" style="max-width: 250px;">
-                                                {{ $log->message }}
-                                            </div>
-                                        </td>
-                                        <td>
-                                            @if($log->status === 'sent')
-                                                <span class="badge badge-soft-success">Sent</span>
-                                            @elseif($log->status === 'failed')
-                                                <span class="badge badge-soft-danger">Failed</span>
-                                            @else
-                                                <span class="badge badge-soft-warning">Pending</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            <div class="small text-dark">{{ $log->sent_at?->format('M d, Y') }}</div>
-                                            <div class="x-small text-muted">{{ $log->sent_at?->format('h:i A') }}</div>
-                                        </td>
-                                        <td class="text-end pe-4">
-                                            <button class="btn btn-sm btn-icon-only rounded-circle border hover-bg-light view-log-btn" 
-                                                data-id="{{ $log->id }}"
-                                                data-name="{{ $log->beneficiary->full_name }}"
-                                                data-message="{{ $log->message }}"
-                                                data-status="{{ $log->status }}"
-                                                data-sent="{{ $log->sent_at?->format('M d, Y h:i A') }}">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="6" class="text-center py-5 text-muted">
-                                            <i class="bi bi-chat-left-dots fs-1 d-block mb-3 opacity-25"></i>
-                                            No broadcast history found
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="mt-4">
-                        {{ $smsLogs->links() }}
+                    <div id="historyTableWrapper">
+                        @include('sms._history_table')
                     </div>
                 </div>
 
@@ -1104,35 +1043,80 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // 6. HISTORY ACTIONS
-    document.querySelectorAll('.view-log-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.getElementById('logRecipient').textContent = this.dataset.name;
-            document.getElementById('logSentAt').textContent = this.dataset.sent;
-            document.getElementById('logStatus').innerHTML = this.dataset.status === 'sent' ? 
-                '<span class="badge badge-soft-success">Sent</span>' : 
-                '<span class="badge badge-soft-danger">Failed</span>';
-            document.getElementById('logMessage').textContent = this.dataset.message;
-            elements.logDetailModal.show();
-        });
-    });
-
-    // History Filters
-    document.getElementById('historyStatus').addEventListener('change', applyHistoryFilters);
-    document.getElementById('historySearch').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') applyHistoryFilters();
-    });
-
-    function applyHistoryFilters() {
+    function applyHistoryFilters(page = 1) {
         const search = document.getElementById('historySearch').value;
         const status = document.getElementById('historyStatus').value;
+        const wrapper = document.getElementById('historyTableWrapper');
         
-        const params = new URLSearchParams(window.location.search);
-        if (search) params.set('search', search); else params.delete('search');
-        if (status) params.set('status', status); else params.delete('status');
+        // Build URL
+        const params = new URLSearchParams();
+        if (search) params.set('search', search);
+        if (status) params.set('status', status);
+        if (page > 1) params.set('page', page);
         
-        window.location.href = `{{ route('sms.index') }}?${params.toString()}#history-pane`;
+        const url = `{{ route('sms.index') }}?${params.toString()}`;
+        
+        // Visual indicator
+        wrapper.style.opacity = '0.5';
+        wrapper.style.pointerEvents = 'none';
+
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            wrapper.innerHTML = html;
+            wrapper.style.opacity = '1';
+            wrapper.style.pointerEvents = 'all';
+            
+            // Re-bind actions
+            bindHistoryActions();
+            
+            // Update URL without refresh
+            history.replaceState(null, null, url + '#history-pane');
+        })
+        .catch(err => {
+            console.error('Failed to load history:', err);
+            wrapper.style.opacity = '1';
+            wrapper.style.pointerEvents = 'all';
+        });
     }
+
+    function bindHistoryActions() {
+        // Log Details
+        document.querySelectorAll('.view-log-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.getElementById('logRecipient').textContent = this.dataset.name;
+                document.getElementById('logSentAt').textContent = this.dataset.sent;
+                document.getElementById('logStatus').innerHTML = this.dataset.status === 'sent' ? 
+                    '<span class="badge badge-soft-success">Sent</span>' : 
+                    '<span class="badge badge-soft-danger">Failed</span>';
+                document.getElementById('logMessage').textContent = this.dataset.message;
+                elements.logDetailModal.show();
+            });
+        });
+
+        // Pagination Clicks
+        document.querySelectorAll('#historyTableWrapper .pagination a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const url = new URL(this.href);
+                const page = url.searchParams.get('page');
+                applyHistoryFilters(page);
+            });
+        });
+    }
+
+    // Initial binding
+    bindHistoryActions();
+
+    // Attach Filter Listeners
+    document.getElementById('historyStatus').addEventListener('change', () => applyHistoryFilters(1));
+    document.getElementById('historySearch').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') applyHistoryFilters(1);
+    });
 
     // Persist active tab on reload
     const hash = window.location.hash;
@@ -1140,6 +1124,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const tabBtn = document.querySelector(`button[data-bs-target="${hash}"]`);
         if (tabBtn) bootstrap.Tab.getOrCreateInstance(tabBtn).show();
     }
+
+    // Update hash on tab change to preserve state on pagination/reload
+    document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function (e) {
+            const target = e.target.getAttribute('data-bs-target');
+            if (target && target.startsWith('#')) {
+                history.replaceState(null, null, target);
+            }
+        });
+    });
 });
 </script>
 @endpush
