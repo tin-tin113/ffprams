@@ -20,9 +20,11 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -99,7 +101,7 @@ class SystemSettingsController extends Controller
         return view('admin.settings.index', compact('agencies', 'activeAgencies', 'resourceTypes', 'resourceUnitOptions', 'purposes', 'purposeCategoryOptions', 'formFields', 'fieldGroupMeta', 'classificationCoreFields'));
     }
 
-    public function indexProgramNames(): View
+    public function indexProgramNames(Request $request): View
     {
         $agencies = Agency::with('classifications:id,name')
             ->where('is_active', true)
@@ -112,7 +114,27 @@ class SystemSettingsController extends Controller
                 ];
             })
             ->all();
-        $programNames = ProgramName::with(['agency', 'legalRequirements'])->orderBy('name')->get();
+        $programQuery = ProgramName::with(['agency', 'legalRequirements'])
+            ->orderBy('name');
+
+        $agencyId = $request->input('agency', $request->input('agency_id'));
+        if ($agencyId !== null && $agencyId !== '') {
+            $programQuery->where('agency_id', (int) $agencyId);
+        }
+
+        if ($request->filled('classification')) {
+            $programQuery->where('classification', $request->input('classification'));
+        }
+
+        if ($request->filled('status')) {
+            $programQuery->where('is_active', $request->input('status') === 'active');
+        }
+
+        if ($request->filled('search')) {
+            $programQuery->where('name', 'like', '%' . $request->input('search') . '%');
+        }
+
+        $programNames = $programQuery->paginate(25)->withQueryString();
 
         $summary = [
             'total' => ProgramName::count(),
@@ -890,12 +912,17 @@ class SystemSettingsController extends Controller
 
     // ── Program Detail View ─────────────────────────
 
-    public function showProgramDetail(ProgramName $programName): View
+    public function showProgramDetail(Request $request, ProgramName $programName): View
     {
         $programName->load([
             'agency',
             'legalRequirements.uploader',
         ]);
+
+        $eventsPerPage = 10;
+        $allocationsPerPage = 10;
+        $directPerPage = 10;
+        $beneficiariesPerPage = 15;
 
         $events = DistributionEvent::query()
             ->where('program_name_id', $programName->id)
@@ -906,8 +933,10 @@ class SystemSettingsController extends Controller
                 'resourceType',
                 'barangay',
             ])
+            ->withCount('allocations')
             ->orderByDesc('distribution_date')
-            ->get();
+            ->paginate($eventsPerPage, ['*'], 'events_page')
+            ->withQueryString();
 
         // Include both event-based and direct allocations under this specific program.
         $allocations = Allocation::query()
@@ -919,35 +948,183 @@ class SystemSettingsController extends Controller
                 'distributionEvent.barangay',
             ])
             ->orderByDesc('created_at')
-            ->get();
+            ->paginate($allocationsPerPage, ['*'], 'allocations_page')
+            ->withQueryString();
 
-        $directAssistanceRecords = DirectAssistance::query()
+        $directAssistanceRecords = new LengthAwarePaginator(
+            [],
+            0,
+            $directPerPage,
+            (int) $request->input('direct_page', 1),
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+                'pageName' => 'direct_page',
+            ]
+        );
+        if (Schema::hasTable('direct_assistance')) {
+            $directAssistanceRecords = DirectAssistance::query()
+                ->where('program_name_id', $programName->id)
+                ->with([
+                    'beneficiary',
+                    'resourceType',
+                    'assistancePurpose',
+                    'distributionEvent.barangay',
+                ])
+                ->orderByDesc('created_at')
+                ->paginate($directPerPage, ['*'], 'direct_page')
+                ->withQueryString();
+        }
+
+        $allocationBeneficiaryIds = Allocation::query()
             ->where('program_name_id', $programName->id)
-            ->with([
-                'beneficiary',
-                'resourceType',
-                'assistancePurpose',
-                'distributionEvent.barangay',
-            ])
-            ->orderByDesc('created_at')
-            ->get();
+            ->pluck('beneficiary_id');
+
+        $directBeneficiaryIds = collect();
+        if (Schema::hasTable('direct_assistance')) {
+            $directBeneficiaryIds = DirectAssistance::query()
+                ->where('program_name_id', $programName->id)
+                ->pluck('beneficiary_id');
+        }
 
         $beneficiaryIds = collect()
-            ->merge($allocations->pluck('beneficiary_id'))
-            ->merge($directAssistanceRecords->pluck('beneficiary_id'))
+            ->merge($allocationBeneficiaryIds)
+            ->merge($directBeneficiaryIds)
             ->unique()
             ->values();
 
         $beneficiaries = Beneficiary::query()
             ->whereIn('id', $beneficiaryIds)
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $query->where('full_name', 'like', '%' . $request->input('search') . '%');
+            })
             ->orderBy('full_name')
-            ->get();
+            ->paginate($beneficiariesPerPage, ['*'], 'beneficiaries_page')
+            ->withQueryString();
 
-        $totalEvents = $events->count();
-        $totalAllocatedAmount = (float) $allocations->sum(function ($allocation) {
-            return (float) ($allocation->amount ?? 0);
-        });
-        $totalBeneficiaries = $beneficiaries->count();
+        $beneficiaryAllocationCounts = Allocation::query()
+            ->where('program_name_id', $programName->id)
+            ->selectRaw('beneficiary_id, COUNT(*) as total')
+            ->groupBy('beneficiary_id')
+            ->pluck('total', 'beneficiary_id')
+            ->map(fn ($count) => (int) $count)
+            ->toArray();
+
+        if (Schema::hasTable('direct_assistance')) {
+            $directCounts = DirectAssistance::query()
+                ->where('program_name_id', $programName->id)
+                ->selectRaw('beneficiary_id, COUNT(*) as total')
+                ->groupBy('beneficiary_id')
+                ->pluck('total', 'beneficiary_id')
+                ->map(fn ($count) => (int) $count)
+                ->toArray();
+
+            foreach ($directCounts as $beneficiaryId => $count) {
+                $beneficiaryAllocationCounts[$beneficiaryId] = ($beneficiaryAllocationCounts[$beneficiaryId] ?? 0) + $count;
+            }
+        }
+
+        // Analytics datasets used by the detail charts.
+        $allRecords = Allocation::query()
+            ->where('program_name_id', $programName->id)
+            ->get(['beneficiary_id', 'resource_type_id', 'assistance_purpose_id', 'amount', 'created_at'])
+            ->map(function (Allocation $allocation) {
+                return [
+                    'beneficiary_id' => $allocation->beneficiary_id,
+                    'resource_type_id' => $allocation->resource_type_id,
+                    'assistance_purpose_id' => $allocation->assistance_purpose_id,
+                    'amount' => (float) ($allocation->amount ?? 0),
+                    'occurred_at' => $allocation->created_at,
+                ];
+            });
+
+        if (Schema::hasTable('direct_assistance')) {
+            $directRows = DB::table('direct_assistance')
+                ->where('program_name_id', $programName->id)
+                ->whereNull('deleted_at')
+                ->get(['beneficiary_id', 'resource_type_id', 'assistance_purpose_id', 'amount', 'created_at'])
+                ->map(function ($row) {
+                    return [
+                        'beneficiary_id' => $row->beneficiary_id,
+                        'resource_type_id' => $row->resource_type_id,
+                        'assistance_purpose_id' => $row->assistance_purpose_id,
+                        'amount' => (float) ($row->amount ?? 0),
+                        'occurred_at' => $row->created_at,
+                    ];
+                });
+
+            $allRecords = $allRecords->concat($directRows);
+        }
+
+        $resourceTypeNames = ResourceType::query()->pluck('name', 'id');
+        $purposeNames = AssistancePurpose::query()->pluck('name', 'id');
+
+        $uniqueBeneficiaryRows = Beneficiary::query()
+            ->whereIn('id', $allRecords->pluck('beneficiary_id')->filter()->unique()->values())
+            ->with('barangay:id,name')
+            ->get(['id', 'barangay_id']);
+
+        $barangayReach = $uniqueBeneficiaryRows
+            ->groupBy(function (Beneficiary $beneficiary): string {
+                return (string) ($beneficiary->barangay?->name ?? 'Unknown');
+            })
+            ->map(function ($rows, $name) {
+                return [
+                    'name' => $name,
+                    'total' => $rows->count(),
+                ];
+            })
+            ->sortByDesc('total')
+            ->values();
+
+        $resourceMix = $allRecords
+            ->groupBy('resource_type_id')
+            ->map(function ($rows, $resourceTypeId) use ($resourceTypeNames) {
+                $resourceTypeId = (int) $resourceTypeId;
+
+                return [
+                    'name' => $resourceTypeNames[$resourceTypeId] ?? 'Unknown',
+                    'total' => $rows->count(),
+                ];
+            })
+            ->sortByDesc('total')
+            ->values();
+
+        $monthlyTrend = $allRecords
+            ->groupBy(function (array $row): string {
+                return \Carbon\Carbon::parse($row['occurred_at'])->format('Y-m');
+            })
+            ->sortKeys()
+            ->map(function ($rows, $monthKey) {
+                return [
+                    'month' => \Carbon\Carbon::createFromFormat('Y-m', $monthKey)->format('M Y'),
+                    'total' => $rows->count(),
+                    'total_amount' => (float) $rows->sum('amount'),
+                ];
+            })
+            ->values();
+
+        $purposeBreakdown = $allRecords
+            ->groupBy('assistance_purpose_id')
+            ->map(function ($rows, $purposeId) use ($purposeNames) {
+                $purposeId = (int) $purposeId;
+
+                return [
+                    'name' => $purposeNames[$purposeId] ?? 'Unspecified',
+                    'total' => $rows->count(),
+                ];
+            })
+            ->sortByDesc('total')
+            ->values();
+
+        $totalEvents = $events->total();
+        $activeDistributionsCount = DistributionEvent::query()
+            ->where('program_name_id', $programName->id)
+            ->whereIn('status', ['Ongoing', 'Pending', 'ongoing', 'pending'])
+            ->count();
+        $complianceDocumentsCount = $programName->legalRequirements->count();
+        $totalAllocatedAmount = (float) $allRecords->sum('amount');
+        $totalBeneficiaries = $beneficiaryIds->count();
 
         return view('admin.settings.program-names.detail', compact(
             'programName',
@@ -955,7 +1132,14 @@ class SystemSettingsController extends Controller
             'allocations',
             'directAssistanceRecords',
             'beneficiaries',
+            'beneficiaryAllocationCounts',
             'totalEvents',
+            'activeDistributionsCount',
+            'complianceDocumentsCount',
+            'barangayReach',
+            'resourceMix',
+            'monthlyTrend',
+            'purposeBreakdown',
             'totalAllocatedAmount',
             'totalBeneficiaries',
         ));
@@ -1006,9 +1190,12 @@ class SystemSettingsController extends Controller
             ->where('program_name_id', $programName->id)
             ->get();
 
-        $directAssistanceRecords = DirectAssistance::query()
-            ->where('program_name_id', $programName->id)
-            ->get();
+        $directAssistanceRecords = collect();
+        if (Schema::hasTable('direct_assistance')) {
+            $directAssistanceRecords = DirectAssistance::query()
+                ->where('program_name_id', $programName->id)
+                ->get();
+        }
 
         // Get unique beneficiary IDs
         $beneficiaryIds = collect()
