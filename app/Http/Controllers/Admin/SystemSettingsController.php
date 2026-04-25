@@ -124,7 +124,7 @@ class SystemSettingsController extends Controller
         ));
     }
 
-    public function indexProgramNames(): View
+    public function indexProgramNames(Request $request): View
     {
         $agencies = Agency::with('classifications:id,name')
             ->where('is_active', true)
@@ -137,7 +137,24 @@ class SystemSettingsController extends Controller
                 ];
             })
             ->all();
-        $programNames = ProgramName::with(['agency', 'legalRequirements'])->orderBy('name')->paginate(25)->withQueryString();
+
+        $programNames = ProgramName::with(['agency', 'legalRequirements'])
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $query->where('name', 'like', '%' . $request->search . '%')
+                      ->orWhere('description', 'like', '%' . $request->search . '%');
+            })
+            ->when($request->filled('agency_id'), fn ($query) => $query->where('agency_id', $request->agency_id))
+            ->when($request->filled('classification'), function ($query) use ($request) {
+                if ($request->classification !== 'Both') {
+                    $query->whereIn('classification', [$request->classification, 'Both']);
+                }
+            })
+            ->when($request->filled('status'), function ($query) use ($request) {
+                $query->where('is_active', $request->status === 'active');
+            })
+            ->orderBy('name')
+            ->paginate(25)
+            ->withQueryString();
 
         $summary = [
             'total' => ProgramName::count(),

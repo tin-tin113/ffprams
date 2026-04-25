@@ -105,24 +105,26 @@
     </div>
 
     {{-- Filter Bar --}}
-    <div class="card border-0 shadow-sm mb-4 modern-filter-card">
-        <div class="card-body">
-            <form method="GET" action="{{ route('distribution-events.index') }}">
-                <div class="row g-2 align-items-end modern-filter-grid">
-                    <div class="col-xl-3 col-lg-3 col-md-6">
-                        <label class="form-label">Program</label>
-                        <select class="form-select" name="program_name_id">
-                            <option value="">All Programs</option>
-                            @foreach($programNames as $program)
-                                <option value="{{ $program->id }}" {{ request('program_name_id') == $program->id ? 'selected' : '' }}>
-                                    {{ $program->name }}
-                                </option>
-                            @endforeach
-                        </select>
+    {{-- Enhanced Filter Section --}}
+    <form id="filterForm" method="GET" action="{{ route('distribution-events.index') }}" class="mb-4 animate-fade-in" style="animation-delay: 0.2s;">
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden filter-bar-card">
+            <div class="card-body p-3">
+                <div class="row g-3 align-items-end">
+                    <!-- Search -->
+                    <div class="col-12 col-lg-2">
+                        <label class="form-label small fw-bold text-muted mb-1 text-uppercase tracking-wider">Search</label>
+                        <div class="input-group input-group-merge">
+                            <span class="input-group-text bg-light border-end-0 px-2">
+                                <i class="bi bi-search text-muted"></i>
+                            </span>
+                            <input type="text" name="search" class="form-control bg-light border-start-0 ajax-filter ps-0" 
+                                   placeholder="Event/Brgy..." value="{{ request('search') }}">
+                        </div>
                     </div>
-                    <div class="col-xl-2 col-lg-2 col-md-6">
-                        <label class="form-label">Agency</label>
-                        <select class="form-select" name="agency_id">
+                    <!-- Agency -->
+                    <div class="col-12 col-sm-6 col-md-2">
+                        <label class="form-label small fw-bold text-muted mb-1 text-uppercase tracking-wider">Agency</label>
+                        <select name="agency_id" class="form-select bg-light border-0 ajax-filter">
                             <option value="">All Agencies</option>
                             @foreach($agencies as $agency)
                                 <option value="{{ $agency->id }}" {{ (string) request('agency_id') === (string) $agency->id ? 'selected' : '' }}>
@@ -131,9 +133,22 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-xl-2 col-lg-2 col-md-6">
-                        <label class="form-label">Status</label>
-                        <select class="form-select" name="status">
+                    <!-- Program -->
+                    <div class="col-12 col-sm-6 col-md-3">
+                        <label class="form-label small fw-bold text-muted mb-1 text-uppercase tracking-wider">Program</label>
+                        <select name="program_name_id" class="form-select bg-light border-0 ajax-filter">
+                            <option value="">All Programs</option>
+                            @foreach($programNames as $program)
+                                <option value="{{ $program->id }}" {{ request('program_name_id') == $program->id ? 'selected' : '' }}>
+                                    {{ $program->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <!-- Status -->
+                    <div class="col-12 col-sm-6 col-md-2">
+                        <label class="form-label small fw-bold text-muted mb-1 text-uppercase tracking-wider">Status</label>
+                        <select name="status" class="form-select bg-light border-0 ajax-filter">
                             <option value="">All Statuses</option>
                             @foreach(['Pending', 'Ongoing', 'Completed'] as $status)
                                 <option value="{{ $status }}" {{ request('status') === $status ? 'selected' : '' }}>
@@ -142,40 +157,28 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-xl-2 col-lg-2 col-md-6">
-                        <label class="form-label">Sort</label>
-                        <select class="form-select" name="sort">
-                            <option value="created_desc" {{ request('sort', 'created_desc') === 'created_desc' ? 'selected' : '' }}>Created: Newest</option>
-                            <option value="created_asc" {{ request('sort') === 'created_asc' ? 'selected' : '' }}>Created: Oldest</option>
-                            <option value="date_desc" {{ request('sort') === 'date_desc' ? 'selected' : '' }}>Distribution Date: Newest</option>
-                            <option value="date_asc" {{ request('sort') === 'date_asc' ? 'selected' : '' }}>Date: Oldest</option>
-                            <option value="program_asc" {{ request('sort') === 'program_asc' ? 'selected' : '' }}>Program: A-Z</option>
-                            <option value="program_desc" {{ request('sort') === 'program_desc' ? 'selected' : '' }}>Program: Z-A</option>
-                            <option value="status_asc" {{ request('sort') === 'status_asc' ? 'selected' : '' }}>Status: A-Z</option>
-                            <option value="status_desc" {{ request('sort') === 'status_desc' ? 'selected' : '' }}>Status: Z-A</option>
+                    <!-- Sort -->
+                    <div class="col-12 col-sm-6 col-md-2">
+                        <label class="form-label small fw-bold text-muted mb-1 text-uppercase tracking-wider">Sort</label>
+                        <select name="sort" class="form-select bg-light border-0 ajax-filter">
+                            <option value="created_desc" {{ request('sort', 'created_desc') === 'created_desc' ? 'selected' : '' }}>Newest</option>
+                            <option value="date_desc" {{ request('sort') === 'date_desc' ? 'selected' : '' }}>Date</option>
                         </select>
                     </div>
-                    <div class="col-xl-1 col-lg-1 col-md-6">
-                        <label class="form-label">Rows</label>
-                        <select class="form-select" name="per_page">
-                            <option value="25" {{ request('per_page') == '25' ? 'selected' : '' }}>25</option>
-                            <option value="50" {{ request('per_page') == '50' ? 'selected' : '' }}>50</option>
-                            <option value="100" {{ request('per_page') == '100' ? 'selected' : '' }}>100</option>
-                        </select>
-                    </div>
-                    <div class="col-xl-2 col-lg-2 col-md-12 modern-filter-actions">
-                        <button type="submit" class="btn btn-success">
-                            <i class="bi bi-funnel me-1"></i> Apply
-                        </button>
-                        <a href="{{ route('distribution-events.index') }}" class="btn btn-outline-secondary">Clear</a>
+                    <!-- Reset -->
+                    <div class="col-auto ms-auto">
+                        <a href="{{ route('distribution-events.index') }}" class="btn btn-light btn-icon-only rounded-circle" title="Reset Filters">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </a>
                     </div>
                 </div>
-            </form>
+            </div>
         </div>
-    </div>
+    </form>
 
     {{-- Results Table --}}
-    <div class="card border-0 shadow-sm">
+    <div id="events-table-container">
+        <div class="card border-0 shadow-sm">
         <div class="card-body pb-0">
             <p class="text-muted mb-2">{{ $events->total() }} {{ Str::plural('event', $events->total()) }} found</p>
         </div>
@@ -289,6 +292,95 @@
     </div>
 </div>
 
+@push('scripts')
+<script>
+    // AJAX Filtering Logic
+    const filterContainer = document.getElementById('events-table-container');
+    const filterForm = document.getElementById('filterForm');
+
+    const updateEventsTable = async () => {
+        if (!filterContainer || !filterForm) return;
+
+        const formData = new FormData(filterForm);
+        const params = new URLSearchParams(formData).toString();
+        const url = `${window.location.pathname}?${params}`;
+
+        filterContainer.style.opacity = '0.5';
+        filterContainer.style.pointerEvents = 'none';
+
+        try {
+            const response = await fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newContent = doc.getElementById('events-table-container');
+
+            if (newContent) {
+                filterContainer.innerHTML = newContent.innerHTML;
+                history.pushState({}, '', url);
+            }
+        } catch (error) {
+            console.error('Error filtering events:', error);
+        } finally {
+            filterContainer.style.opacity = '1';
+            filterContainer.style.pointerEvents = 'auto';
+        }
+    };
+
+    // Auto-trigger filters
+    document.addEventListener('change', (e) => {
+        if (e.target.classList.contains('ajax-filter') && e.target.tagName !== 'INPUT') {
+            updateEventsTable();
+        }
+    });
+
+    let filterTimeout;
+    document.addEventListener('input', (e) => {
+        if (e.target.classList.contains('ajax-filter') && e.target.tagName === 'INPUT') {
+            clearTimeout(filterTimeout);
+            filterTimeout = setTimeout(updateEventsTable, 300);
+        }
+    });
+
+    if (filterForm) {
+        filterForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            updateEventsTable();
+        });
+    }
+
+    // Delegate pagination link clicks to AJAX
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('#events-table-container .pagination a');
+        if (link) {
+            e.preventDefault();
+            const url = link.href;
+            
+            filterContainer.style.opacity = '0.5';
+            filterContainer.style.pointerEvents = 'none';
+
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(r => r.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newContent = doc.getElementById('events-table-container');
+                    if (newContent) {
+                        filterContainer.innerHTML = newContent.innerHTML;
+                        history.pushState({}, '', url);
+                    }
+                })
+                .finally(() => {
+                    filterContainer.style.opacity = '1';
+                    filterContainer.style.pointerEvents = 'auto';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+        }
+    });
+</script>
+@endpush
 @endsection
 
 @push('styles')

@@ -479,70 +479,73 @@
         </div>
     </div>
 
-    <!-- Filters -->
-    <div class="card border-0 shadow-sm mb-4 modern-filter-card overflow-hidden">
-        <div class="card-header bg-white py-3">
-            <div class="d-flex align-items-center">
-                <div class="bg-success-subtle text-success rounded p-2 me-2">
-                    <i class="bi bi-funnel-fill fs-5"></i>
+    <!-- Enhanced Filter Section -->
+    <form id="filterForm" method="GET" action="{{ route('allocations.index') }}" class="mb-4 animate-fade-in" style="animation-delay: 0.2s;">
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden filter-bar-card">
+            <div class="card-body p-3">
+                <div class="row g-3 align-items-end">
+                    <!-- Search -->
+                    <div class="col-12 col-lg-3">
+                        <label class="form-label small fw-bold text-muted mb-1 text-uppercase tracking-wider">Search</label>
+                        <div class="input-group input-group-merge">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="bi bi-search text-muted"></i>
+                            </span>
+                            <input type="text" name="search" class="form-control bg-light border-start-0 ajax-filter" 
+                                   placeholder="Beneficiary name or remarks..." value="{{ request('search') }}">
+                        </div>
+                    </div>
+                    <!-- Program -->
+                    <div class="col-12 col-sm-6 col-md-3">
+                        <label class="form-label small fw-bold text-muted mb-1 text-uppercase tracking-wider">Program</label>
+                        <select name="program_name_id" class="form-select bg-light border-0 ajax-filter">
+                            <option value="">All Programs</option>
+                            @foreach($programNames as $program)
+                                <option value="{{ $program->id }}" {{ (string) request('program_name_id') === (string) $program->id ? 'selected' : '' }}>
+                                    {{ $program->name }} ({{ $program->agency->name ?? 'N/A' }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <!-- Status -->
+                    <div class="col-12 col-sm-6 col-md-2">
+                        <label class="form-label small fw-bold text-muted mb-1 text-uppercase tracking-wider">Status</label>
+                        <select name="status" class="form-select bg-light border-0 ajax-filter">
+                            <option value="">All Statuses</option>
+                            <option value="planned" {{ request('status') === 'planned' ? 'selected' : '' }}>Planned</option>
+                            <option value="ready_for_release" {{ request('status') === 'ready_for_release' ? 'selected' : '' }}>Ready</option>
+                            <option value="released" {{ request('status') === 'released' ? 'selected' : '' }}>Released</option>
+                            <option value="not_received" {{ request('status') === 'not_received' ? 'selected' : '' }}>Not Received</option>
+                        </select>
+                    </div>
+                    <!-- Sorting -->
+                    <div class="col-12 col-sm-6 col-md-2">
+                        <label class="form-label small fw-bold text-muted mb-1 text-uppercase tracking-wider">Sort</label>
+                        <select name="sort" class="form-select bg-light border-0 ajax-filter">
+                            <option value="date_desc" {{ request('sort', 'date_desc') === 'date_desc' ? 'selected' : '' }}>Newest First</option>
+                            <option value="date_asc" {{ request('sort') === 'date_asc' ? 'selected' : '' }}>Oldest First</option>
+                            <option value="program_asc" {{ request('sort') === 'program_asc' ? 'selected' : '' }}>Program A-Z</option>
+                        </select>
+                    </div>
+                    <!-- Rows -->
+                    <div class="col-12 col-sm-6 col-md-1">
+                        <label class="form-label small fw-bold text-muted mb-1 text-uppercase tracking-wider">Rows</label>
+                        <select name="per_page" class="form-select bg-light border-0 ajax-filter">
+                            <option value="25" {{ request('per_page', '25') == '25' ? 'selected' : '' }}>25</option>
+                            <option value="50" {{ request('per_page', '25') == '50' ? 'selected' : '' }}>50</option>
+                            <option value="100" {{ request('per_page', '25') == '100' ? 'selected' : '' }}>100</option>
+                        </select>
+                    </div>
+                    <!-- Reset -->
+                    <div class="col-auto ms-auto">
+                        <a href="{{ route('allocations.index') }}" class="btn btn-light btn-icon-only rounded-circle" title="Reset Filters">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </a>
+                    </div>
                 </div>
-                <h5 class="mb-0 fw-bold">Filter Allocations</h5>
             </div>
         </div>
-        <div class="card-body bg-light-subtle">
-            <form method="GET" action="{{ route('allocations.index') }}" class="row g-3 align-items-end">
-                <div class="col-xl-3 col-lg-4 col-md-6">
-                    <label class="form-label text-muted small fw-bold text-uppercase">Program</label>
-                    <select class="form-select border-0 shadow-sm ajax-filter" name="program_name_id">
-                        <option value="">All Programs</option>
-                        @foreach($programNames as $program)
-                            <option value="{{ $program->id }}" {{ (string) request('program_name_id') === (string) $program->id ? 'selected' : '' }}>
-                                {{ $program->name }} ({{ $program->agency->name ?? 'N/A' }})
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-xl-2 col-lg-4 col-md-6">
-                    <label class="form-label text-muted small fw-bold text-uppercase">Status</label>
-                    <select class="form-select border-0 shadow-sm ajax-filter" name="status">
-                        <option value="">All Statuses</option>
-                        <option value="planned" {{ request('status') === 'planned' ? 'selected' : '' }}>Planned</option>
-                        <option value="ready_for_release" {{ request('status') === 'ready_for_release' ? 'selected' : '' }}>Ready for Release</option>
-                        <option value="released" {{ request('status') === 'released' ? 'selected' : '' }}>Released</option>
-                        <option value="not_received" {{ request('status') === 'not_received' ? 'selected' : '' }}>Not Received</option>
-                    </select>
-                </div>
-                <div class="col-xl-2 col-lg-4 col-md-6">
-                    <label class="form-label text-muted small fw-bold text-uppercase">Sorting</label>
-                    <select class="form-select border-0 shadow-sm ajax-filter" name="sort">
-                        <option value="date_desc" {{ request('sort', 'date_desc') === 'date_desc' ? 'selected' : '' }}>Date: Newest</option>
-                        <option value="date_asc" {{ request('sort') === 'date_asc' ? 'selected' : '' }}>Date: Oldest</option>
-                        <option value="program_asc" {{ request('sort') === 'program_asc' ? 'selected' : '' }}>Program: A-Z</option>
-                        <option value="program_desc" {{ request('sort') === 'program_desc' ? 'selected' : '' }}>Program: Z-A</option>
-                        <option value="status_asc" {{ request('sort') === 'status_asc' ? 'selected' : '' }}>Status: A-Z</option>
-                        <option value="status_desc" {{ request('sort') === 'status_desc' ? 'selected' : '' }}>Status: Z-A</option>
-                    </select>
-                </div>
-                <div class="col-xl-1 col-lg-2 col-md-6">
-                    <label class="form-label text-muted small fw-bold text-uppercase">Rows</label>
-                    <select class="form-select border-0 shadow-sm ajax-filter" name="per_page">
-                        <option value="10"  {{ request('per_page', '25') == '10'  ? 'selected' : '' }}>10</option>
-                        <option value="25"  {{ request('per_page', '25') == '25'  ? 'selected' : '' }}>25</option>
-                        <option value="50"  {{ request('per_page', '25') == '50'  ? 'selected' : '' }}>50</option>
-                        <option value="100" {{ request('per_page', '25') == '100' ? 'selected' : '' }}>100</option>
-                    </select>
-                </div>
-                <div class="col-xl-4 col-lg-10 col-md-12 d-flex gap-2 justify-content-xl-end">
-                    <button type="submit" class="btn btn-success px-4 shadow-sm d-none d-xl-inline-block">
-                        <i class="bi bi-filter me-1"></i> Apply Filters
-                    </button>
-                    <a href="{{ route('allocations.index') }}" class="btn btn-outline-secondary px-4 shadow-sm bg-white" id="reset-filters">
-                        <i class="bi bi-x-lg me-1"></i> Reset
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
+    </form>
 
     <div id="allocation-table-container">
     <div class="card border-0 shadow-sm">
@@ -728,8 +731,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // AJAX Filtering Logic
     const filterContainer = document.getElementById('allocation-table-container');
-    const ajaxFilters = document.querySelectorAll('.ajax-filter');
-    const filterForm = document.querySelector('.modern-filter-card form');
+    const filterForm = document.getElementById('filterForm');
 
     const updateAllocationTable = async () => {
         if (!filterContainer || !filterForm) return;
@@ -738,7 +740,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const params = new URLSearchParams(formData).toString();
         const url = `${window.location.pathname}?${params}`;
 
-        // Add loading state
         filterContainer.style.opacity = '0.5';
         filterContainer.style.pointerEvents = 'none';
 
@@ -763,24 +764,24 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    ajaxFilters.forEach(filter => {
-        filter.addEventListener('change', updateAllocationTable);
+    // Auto-trigger filters
+    document.addEventListener('change', (e) => {
+        if (e.target.classList.contains('ajax-filter') && e.target.tagName !== 'INPUT') {
+            updateAllocationTable();
+        }
+    });
+
+    let filterTimeout;
+    document.addEventListener('input', (e) => {
+        if (e.target.classList.contains('ajax-filter') && e.target.tagName === 'INPUT') {
+            clearTimeout(filterTimeout);
+            filterTimeout = setTimeout(updateAllocationTable, 300);
+        }
     });
 
     if (filterForm) {
         filterForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            updateAllocationTable();
-        });
-    }
-
-    // Handle Reset Button
-    const resetBtn = document.getElementById('reset-filters');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            filterForm.reset();
-            ajaxFilters.forEach(f => f.value = '');
             updateAllocationTable();
         });
     }

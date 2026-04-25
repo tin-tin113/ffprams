@@ -88,6 +88,13 @@ class AllocationController extends Controller
             'assistancePurpose',
         ])
             ->where('release_method', 'direct')
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->whereHas('beneficiary', fn ($bq) => $bq->where('full_name', 'like', "%{$search}%"))
+                      ->orWhere('remarks', 'like', "%{$search}%");
+                });
+            })
             ->when($request->filled('program_name_id'), fn ($query) => $query->where('program_name_id', $request->program_name_id))
             ->when($request->filled('agency_id'), function ($query) use ($request) {
                 $agencyId = (int) $request->agency_id;

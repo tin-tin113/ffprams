@@ -47,6 +47,13 @@ class DistributionEventController extends Controller
 
         $events = DistributionEvent::with(['barangay', 'resourceType.agency', 'programName', 'createdBy'])
             ->withCount('allocations')
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $search = $request->search;
+                $q->where(function ($query) use ($search) {
+                    $query->where('name', 'like', "%{$search}%")
+                          ->orWhereHas('barangay', fn ($bq) => $bq->where('name', 'like', "%{$search}%"));
+                });
+            })
             ->when($request->filled('program_name_id'), fn ($q) => $q->where('program_name_id', $request->program_name_id))
             ->when($request->filled('agency_id'), function ($q) use ($request) {
                 $agencyId = (int) $request->agency_id;

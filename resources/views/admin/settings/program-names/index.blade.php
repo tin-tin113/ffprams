@@ -66,7 +66,7 @@
     </div>
 
     {{-- Enhanced Filter Section --}}
-    <div class="row mb-4 animate-fade-in" style="animation-delay: 0.2s;">
+    <form id="filterForm" method="GET" action="{{ route('admin.settings.program-names.index') }}" class="row mb-4 animate-fade-in" style="animation-delay: 0.2s;">
         <div class="col-12">
             <div class="card shadow-sm border-0 rounded-4 overflow-hidden filter-bar-card">
                 <div class="card-body p-3">
@@ -77,49 +77,49 @@
                                 <span class="input-group-text bg-light border-end-0">
                                     <i class="bi bi-search text-muted"></i>
                                 </span>
-                                <input type="text" id="pnSearch" class="form-control bg-light border-start-0" 
-                                       placeholder="Find program by name...">
+                                <input type="text" name="search" id="pnSearch" class="form-control bg-light border-start-0 ajax-filter" 
+                                       placeholder="Find program by name..." value="{{ request('search') }}">
                             </div>
                         </div>
                         <div class="col-12 col-sm-6 col-md-3">
                             <label class="form-label small fw-bold text-muted mb-1 text-uppercase tracking-wider">Agency</label>
-                            <select id="agencyFilter" class="form-select bg-light border-0">
+                            <select name="agency_id" id="agencyFilter" class="form-select bg-light border-0 ajax-filter">
                                 <option value="">All Agencies</option>
                                 @foreach($agencies as $agency)
-                                <option value="{{ $agency->id }}">{{ $agency->name }}</option>
+                                <option value="{{ $agency->id }}" {{ (string) request('agency_id') === (string) $agency->id ? 'selected' : '' }}>{{ $agency->name }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div class="col-12 col-sm-6 col-md-3">
                             <label class="form-label small fw-bold text-muted mb-1 text-uppercase tracking-wider">Classification</label>
-                            <select id="classificationFilter" class="form-select bg-light border-0">
+                            <select name="classification" id="classificationFilter" class="form-select bg-light border-0 ajax-filter">
                                 <option value="">All Classifications</option>
-                                <option value="Farmer">Farmer</option>
-                                <option value="Fisherfolk">Fisherfolk</option>
-                                <option value="Both">Both</option>
+                                <option value="Farmer" {{ request('classification') === 'Farmer' ? 'selected' : '' }}>Farmer</option>
+                                <option value="Fisherfolk" {{ request('classification') === 'Fisherfolk' ? 'selected' : '' }}>Fisherfolk</option>
+                                <option value="Both" {{ request('classification') === 'Both' ? 'selected' : '' }}>Both</option>
                             </select>
                         </div>
                         <div class="col-12 col-sm-6 col-md-2">
                             <label class="form-label small fw-bold text-muted mb-1 text-uppercase tracking-wider">Status</label>
-                            <select id="statusFilter" class="form-select bg-light border-0">
+                            <select name="status" id="statusFilter" class="form-select bg-light border-0 ajax-filter">
                                 <option value="">All Status</option>
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
+                                <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
+                                <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
                             </select>
                         </div>
                         <div class="col-12 col-md-1 text-md-end">
-                            <button id="resetFilters" class="btn btn-light btn-icon-only rounded-circle" title="Reset Filters" style="display: none;">
+                            <a href="{{ route('admin.settings.program-names.index') }}" id="resetFilters" class="btn btn-light btn-icon-only rounded-circle" title="Reset Filters">
                                 <i class="bi bi-arrow-counterclockwise"></i>
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </form>
 
     {{-- Refined Program List --}}
-    <div class="row animate-fade-in" style="animation-delay: 0.3s;">
+    <div id="program-table-container" class="row animate-fade-in" style="animation-delay: 0.3s;">
         <div class="col-12">
             <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
                 <div class="table-responsive">
@@ -912,62 +912,63 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ==================== COMBINED FILTER FUNCTION ====================
-    function applyFilters() {
-        const agencyFilter = document.getElementById('agencyFilter').value;
-        const classificationFilter = document.getElementById('classificationFilter').value;
-        const statusFilter = document.getElementById('statusFilter').value;
-        const searchQuery = document.getElementById('pnSearch').value.toLowerCase();
-        const resetBtn = document.getElementById('resetFilters');
+    function updateTable() {
+        const form = document.getElementById('filterForm');
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData).toString();
+        const url = `${form.action}?${params}`;
 
-        let rowsFound = 0;
-        document.querySelectorAll('#pnTableBody tr:not(.empty-state-row)').forEach(row => {
-            if (row.classList.contains('empty-state-row')) return;
+        const container = document.getElementById('program-table-container');
+        if (container) {
+            container.style.opacity = '0.5';
+            container.style.pointerEvents = 'none';
+        }
 
-            let show = true;
-            if (agencyFilter && show) show = String(row.dataset.agencyId || '') === String(agencyFilter);
-            if (classificationFilter && show) show = String(row.dataset.classification || '') === String(classificationFilter);
-            if (statusFilter && show) {
-                const statusBadge = row.querySelector('[data-label="Status"] .badge');
-                const isActive = statusBadge.textContent.trim().toLowerCase().includes('active');
-                show = show && ((statusFilter === 'active' && isActive) || (statusFilter === 'inactive' && !isActive));
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
             }
-            if (searchQuery && show) {
-                const text = row.querySelector('[data-label="Program"]').textContent.toLowerCase();
-                show = show && text.includes(searchQuery);
+        })
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newTable = doc.getElementById('program-table-container');
+            
+            if (newTable && container) {
+                container.innerHTML = newTable.innerHTML;
+            }
+            
+            if (container) {
+                container.style.opacity = '1';
+                container.style.pointerEvents = 'auto';
             }
 
-            row.style.display = show ? '' : 'none';
-            if (show) rowsFound++;
+            // Update URL without reload
+            window.history.pushState({}, '', url);
+        })
+        .catch(error => {
+            console.error('Filtering error:', error);
+            if (container) {
+                container.style.opacity = '1';
+                container.style.pointerEvents = 'auto';
+            }
         });
-
-        // Show/hide reset button
-        if (agencyFilter || classificationFilter || statusFilter || searchQuery) {
-            resetBtn.style.display = 'inline-block';
-        } else {
-            resetBtn.style.display = 'none';
-        }
-
-        // Handle empty search results (not perfect with pagination but helps)
-        const emptyRow = document.querySelector('.empty-state-container');
-        if (rowsFound === 0 && (agencyFilter || classificationFilter || statusFilter || searchQuery)) {
-            // Logic for temporary "No results" message could go here
-        }
     }
 
-    // Reset Filters
-    document.getElementById('resetFilters').addEventListener('click', function() {
-        document.getElementById('agencyFilter').value = '';
-        document.getElementById('classificationFilter').value = '';
-        document.getElementById('statusFilter').value = '';
-        document.getElementById('pnSearch').value = '';
-        applyFilters();
-    });
-
     // Filter change events
-    document.getElementById('agencyFilter').addEventListener('change', applyFilters);
-    document.getElementById('classificationFilter').addEventListener('change', applyFilters);
-    document.getElementById('statusFilter').addEventListener('change', applyFilters);
-    document.getElementById('pnSearch').addEventListener('input', applyFilters);
+    document.querySelectorAll('.ajax-filter').forEach(filter => {
+        const eventType = filter.tagName === 'INPUT' ? 'input' : 'change';
+        filter.addEventListener(eventType, function() {
+            // Use a small debounce for search input
+            if (eventType === 'input') {
+                clearTimeout(window.filterTimeout);
+                window.filterTimeout = setTimeout(updateTable, 300);
+            } else {
+                updateTable();
+            }
+        });
+    });
 
     // ==================== PREVIEW MODAL ====================
     document.querySelectorAll('.preview-pn').forEach(btn => {
