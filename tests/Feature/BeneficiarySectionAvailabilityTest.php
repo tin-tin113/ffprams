@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Agency;
+use App\Models\AgencyFormField;
 use App\Models\Barangay;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -90,6 +91,17 @@ class BeneficiarySectionAvailabilityTest extends TestCase
             'name' => 'DA',
             'full_name' => 'Department of Agriculture',
             'is_active' => true,
+        ]);
+
+        AgencyFormField::create([
+            'agency_id' => $agency->id,
+            'field_name' => 'rsbsa_number',
+            'display_label' => 'RSBSA Number',
+            'field_type' => 'text',
+            'is_required' => false,
+            'is_active' => true,
+            'form_section' => 'farmer_information',
+            'sort_order' => 1,
         ]);
 
         $barangay = Barangay::create([

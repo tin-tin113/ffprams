@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\AssistancePurpose;
 use App\Models\Allocation;
 use App\Models\Beneficiary;
-use App\Models\DirectAssistance;
 use App\Models\DistributionEvent;
 use App\Models\ResourceType;
 use App\Models\User;

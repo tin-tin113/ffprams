@@ -37,7 +37,7 @@ return [
 
     'sms' => [
         'api_url'     => env('SMS_API_URL', 'https://smsapiph.onrender.com/api/v1/send/sms'),
-        'api_key'     => env('SMS_API_KEY'),
+        'api_key'     => env('SMS_API_KEY', ''),
         'sender_name' => env('SMS_SENDER_NAME', 'FFPRAMS'),
     ],
 

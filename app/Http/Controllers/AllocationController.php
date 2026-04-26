@@ -137,6 +137,19 @@ class AllocationController extends Controller
         ));
     }
 
+    public function create(Request $request): View
+    {
+        $agencies = Agency::active()->orderBy('name')->get(['id', 'name']);
+        $barangays = Barangay::orderBy('name')->get(['id', 'name']);
+        $assistancePurposes = AssistancePurpose::active()->orderBy('name')->get();
+
+        return view('allocations.create', compact(
+            'agencies',
+            'barangays',
+            'assistancePurposes'
+        ));
+    }
+
     public function show(Allocation $allocation): View
     {
         $allocation->load([
@@ -186,52 +199,55 @@ class AllocationController extends Controller
 
     public function searchBeneficiaries(Request $request)
     {
-        $query = $request->input('q', '');
+        $query = trim($request->input('q', ''));
         $barangayId = $request->input('barangay_id');
         $agencyId = $request->input('agency_id');
         $classification = $request->input('classification');
 
-        $beneficiaries = Beneficiary::with('barangay')
+        $beneficiaries = Beneficiary::with(['barangay', 'agency'])
             ->where('status', 'Active');
 
-        // Text search on full_name or contact_number
-        if ($query) {
+        if ($query !== '') {
             $beneficiaries->where(function ($q) use ($query) {
                 $q->where('full_name', 'like', "%{$query}%")
-                  ->orWhere('contact_number', 'like', "%{$query}%");
+                  ->orWhere('first_name', 'like', "%{$query}%")
+                  ->orWhere('last_name', 'like', "%{$query}%")
+                  ->orWhere('contact_number', 'like', "%{$query}%")
+                  ->orWhere('id_number', 'like', "%{$query}%");
             });
         }
 
-        // Filter by barangay
-        if ($barangayId) {
+        if (!empty($barangayId)) {
             $beneficiaries->where('barangay_id', $barangayId);
         }
 
-        // Filter by classification
-        if ($classification && in_array($classification, ['Farmer', 'Fisherfolk'])) {
+        if (!empty($classification)) {
             $beneficiaries->where('classification', $classification);
         }
 
-        // Filter by agency
-        if ($agencyId) {
+        if (!empty($agencyId)) {
             $beneficiaries->where('agency_id', $agencyId);
         }
 
         $results = $beneficiaries
             ->orderBy('full_name')
-            ->limit(20)
-            ->get(['id', 'full_name', 'classification', 'barangay_id', 'contact_number'])
-            ->map(fn ($b) => [
-                'id' => $b->id,
-                'name' => $b->full_name,
-                'classification' => $b->classification,
-                'barangay' => $b->barangay?->name ?? 'N/A',
-                'contact' => $b->contact_number ?? '',
-                'display' => "{$b->full_name} ({$b->classification}) - {$b->barangay?->name}",
-            ]);
+            ->limit(50)
+            ->get()
+            ->map(function ($b) {
+                return [
+                    'id' => $b->id,
+                    'name' => $b->full_name ?: ($b->first_name . ' ' . $b->last_name),
+                    'classification' => $b->classification ?? 'N/A',
+                    'barangay' => $b->barangay?->name ?? 'N/A',
+                    'agency' => $b->agency?->name ?? '',
+                    'contact' => $b->contact_number ?? '',
+                    'display' => ($b->full_name ?: ($b->first_name . ' ' . $b->last_name)) . " ({$b->classification})",
+                ];
+            });
 
         return response()->json([
             'success' => true,
+            'count' => $results->count(),
             'results' => $results,
         ]);
     }

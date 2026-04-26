@@ -90,6 +90,9 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
         ->name('distribution-events.attachments.destroy');
 
     // Allocations
+    Route::get('allocations', [AllocationController::class, 'index'])->name('allocations.index');
+    Route::get('allocations/create', [AllocationController::class, 'create'])->name('allocations.create');
+    Route::get('allocations/{allocation}', [AllocationController::class, 'show'])->name('allocations.show');
     Route::post('allocations', [AllocationController::class, 'store'])
         ->name('allocations.store');
     Route::post('allocations/bulk', [AllocationController::class, 'storeBulk'])
@@ -119,6 +122,23 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
         ->name('allocations.attachments.download');
     Route::delete('allocations/{allocation}/attachments/{recordAttachment}', [RecordAttachmentController::class, 'destroyForAllocation'])
         ->name('allocations.attachments.destroy');
+    Route::get('beneficiaries', [BeneficiaryController::class, 'index'])->name('beneficiaries.index');
+    Route::get('beneficiaries/{beneficiary}', [BeneficiaryController::class, 'show'])->name('beneficiaries.show');
+    Route::get('api/beneficiaries/{beneficiary}/summary', [BeneficiaryController::class, 'summary'])
+        ->name('beneficiaries.summary');
+    Route::get('distribution-events', [DistributionEventController::class, 'index'])->name('distribution-events.index');
+    Route::get('distribution-events/{event}', [DistributionEventController::class, 'show'])->name('distribution-events.show');
+    Route::get('distribution-events/{event}/distribution-list', [DistributionEventController::class, 'distributionList'])
+        ->name('distribution-events.distributionList');
+    Route::get('distribution-events/{event}/distribution-list/pdf', [DistributionEventController::class, 'distributionListPdf'])
+        ->name('distribution-events.distributionListPdf');
+    Route::get('distribution-events/{event}/distribution-list/csv', [DistributionEventController::class, 'distributionListCsv'])
+        ->name('distribution-events.distributionListCsv');
+    Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
+    Route::get('geo-map', [GeoMapController::class, 'index'])->name('geo-map.index');
+    Route::get('geo-map/data', [GeoMapController::class, 'mapData'])->name('geo-map.data');
+    Route::get('api/barangay/{barangay}/beneficiaries', [GeoMapController::class, 'getBeneficiariesByBarangay'])
+        ->name('api.barangay.beneficiaries');
 
     // API endpoints for eligible programs (used by allocation forms)
     Route::get('api/eligible-programs/{beneficiary}', [AllocationController::class, 'getEligiblePrograms'])
@@ -146,27 +166,6 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
     Route::post('sms/templates', [SmsController::class, 'storeTemplate'])->name('sms.templates.store');
     Route::put('sms/templates/{template}', [SmsController::class, 'updateTemplate'])->name('sms.templates.update');
     Route::delete('sms/templates/{template}', [SmsController::class, 'destroyTemplate'])->name('sms.templates.destroy');
-
-    // Operational read pages
-    Route::get('allocations', [AllocationController::class, 'index'])->name('allocations.index');
-    Route::get('allocations/{allocation}', [AllocationController::class, 'show'])->name('allocations.show');
-    Route::get('beneficiaries', [BeneficiaryController::class, 'index'])->name('beneficiaries.index');
-    Route::get('beneficiaries/{beneficiary}', [BeneficiaryController::class, 'show'])->name('beneficiaries.show');
-    Route::get('api/beneficiaries/{beneficiary}/summary', [BeneficiaryController::class, 'summary'])
-        ->name('beneficiaries.summary');
-    Route::get('distribution-events', [DistributionEventController::class, 'index'])->name('distribution-events.index');
-    Route::get('distribution-events/{event}', [DistributionEventController::class, 'show'])->name('distribution-events.show');
-    Route::get('distribution-events/{event}/distribution-list', [DistributionEventController::class, 'distributionList'])
-        ->name('distribution-events.distributionList');
-    Route::get('distribution-events/{event}/distribution-list/pdf', [DistributionEventController::class, 'distributionListPdf'])
-        ->name('distribution-events.distributionListPdf');
-    Route::get('distribution-events/{event}/distribution-list/csv', [DistributionEventController::class, 'distributionListCsv'])
-        ->name('distribution-events.distributionListCsv');
-    Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
-    Route::get('geo-map', [GeoMapController::class, 'index'])->name('geo-map.index');
-    Route::get('geo-map/data', [GeoMapController::class, 'mapData'])->name('geo-map.data');
-    Route::get('api/barangay/{barangay}/beneficiaries', [GeoMapController::class, 'getBeneficiariesByBarangay'])
-        ->name('api.barangay.beneficiaries');
 });
 
 /*
