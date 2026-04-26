@@ -164,6 +164,30 @@ class DirectAllocationAndReleaseFlowTest extends TestCase
         );
     }
 
+    public function test_event_allocation_detail_can_use_event_scoped_url(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        [$event, $beneficiary] = $this->makeCsvImportFixtures($admin, 'kg');
+
+        $allocation = Allocation::create([
+            'release_method' => 'event',
+            'distribution_event_id' => $event->id,
+            'beneficiary_id' => $beneficiary->id,
+            'program_name_id' => $event->program_name_id,
+            'resource_type_id' => $event->resource_type_id,
+            'quantity' => 5,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('distribution-events.allocations.show', [$event, $allocation]));
+
+        $response
+            ->assertOk()
+            ->assertSee('Event Allocation')
+            ->assertSee('Back to Event Beneficiaries');
+    }
+
     /**
      * @return array{Beneficiary, ProgramName, ResourceType}
      */

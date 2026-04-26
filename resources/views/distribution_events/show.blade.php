@@ -891,7 +891,7 @@
                                 <td class="text-end text-nowrap">
                                     @php($isReleased = (bool)$allocation->distributed_at)
 
-                                    <a href="{{ route('allocations.show', $allocation) }}"
+                                    <a href="{{ route('distribution-events.allocations.show', [$event, $allocation]) }}"
                                        class="btn btn-sm btn-outline-secondary me-1"
                                        title="View allocation details">
                                         <i class="bi bi-eye"></i> View

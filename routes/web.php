@@ -88,6 +88,8 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
         ->name('distribution-events.attachments.download');
     Route::delete('distribution-events/{event}/attachments/{recordAttachment}', [RecordAttachmentController::class, 'destroyForEvent'])
         ->name('distribution-events.attachments.destroy');
+    Route::get('distribution-events/{event}/allocations/{allocation}', [AllocationController::class, 'showForEvent'])
+        ->name('distribution-events.allocations.show');
 
     // Allocations
     Route::get('allocations', [AllocationController::class, 'index'])->name('allocations.index');

@@ -152,6 +152,22 @@ class AllocationController extends Controller
 
     public function show(Allocation $allocation): View
     {
+        $this->loadAllocationDetailRelations($allocation);
+
+        return view('allocations.show', compact('allocation'));
+    }
+
+    public function showForEvent(DistributionEvent $event, Allocation $allocation): View
+    {
+        abort_unless((int) $allocation->distribution_event_id === (int) $event->id, 404);
+
+        $this->loadAllocationDetailRelations($allocation);
+
+        return view('allocations.show', compact('allocation'));
+    }
+
+    private function loadAllocationDetailRelations(Allocation $allocation): void
+    {
         $allocation->load([
             'beneficiary.barangay',
             'distributionEvent.barangay',
@@ -160,8 +176,6 @@ class AllocationController extends Controller
             'assistancePurpose',
             'attachments' => fn ($q) => $q->latest('id')->with('uploader:id,name'),
         ]);
-
-        return view('allocations.show', compact('allocation'));
     }
 
     /**

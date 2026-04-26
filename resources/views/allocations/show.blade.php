@@ -3,7 +3,16 @@
 @section('title', 'Allocation Details')
 
 @section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('allocations.index') }}">Assistance Allocations</a></li>
+    @if($allocation->distributionEvent)
+        <li class="breadcrumb-item"><a href="{{ route('distribution-events.index') }}">Distribution Events</a></li>
+        <li class="breadcrumb-item">
+            <a href="{{ route('distribution-events.show', $allocation->distributionEvent) }}">
+                {{ $allocation->distributionEvent->name ?? 'Event #'.$allocation->distributionEvent->id }}
+            </a>
+        </li>
+    @else
+        <li class="breadcrumb-item"><a href="{{ route('allocations.index') }}">Direct Assistance</a></li>
+    @endif
     <li class="breadcrumb-item active">#{{ $allocation->id }}</li>
 @endsection
 
@@ -96,13 +105,14 @@
         </div>
         <div class="d-flex gap-2 flex-wrap">
             @if($event && ! $isDirect)
-                <a href="{{ route('distribution-events.show', $event) }}" class="btn btn-outline-secondary shadow-sm bg-white">
-                    <i class="bi bi-calendar-event me-1"></i> View Event
+                <a href="{{ route('distribution-events.show', $event) }}#tab-beneficiaries" class="btn btn-outline-secondary shadow-sm bg-white">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Event Beneficiaries
+                </a>
+            @else
+                <a href="{{ route('allocations.index') }}" class="btn btn-outline-secondary shadow-sm bg-white">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Direct Assistance
                 </a>
             @endif
-            <a href="{{ route('allocations.index') }}" class="btn btn-outline-secondary shadow-sm bg-white">
-                <i class="bi bi-arrow-left me-1"></i> Back
-            </a>
         </div>
     </div>
 
