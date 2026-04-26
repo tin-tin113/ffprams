@@ -105,6 +105,6 @@ class FormFieldOptionSeeder extends Seeder
             }
         }
 
-        $this->command->info('Form field options seeded successfully (8 required groups).');
+        $this->command->info('Form field options seeded successfully ('.count($groups).' groups).');
     }
 }

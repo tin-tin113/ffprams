@@ -6,6 +6,7 @@ use App\Models\Allocation;
 use App\Models\Beneficiary;
 use App\Models\DistributionEvent;
 use App\Models\ResourceType;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 
@@ -13,6 +14,8 @@ class EventAllocationSeeder extends Seeder
 {
     public function run(): void
     {
+        $adminUser = User::query()->orderBy('id')->first();
+
         $events = DistributionEvent::query()
             ->with(['programName:id,agency_id,classification', 'resourceType:id,unit'])
             ->orderBy('id')
@@ -89,6 +92,8 @@ class EventAllocationSeeder extends Seeder
                 'release_outcome' => $isReleased ? fake()->randomElement(['received', 'not_received']) : null,
                 'remarks' => fake()->optional(0.35)->sentence(),
                 'assistance_purpose_id' => null,
+                'created_by' => $adminUser?->id,
+                'distributed_by' => $isReleased ? $adminUser?->id : null,
             ]);
 
             $created++;

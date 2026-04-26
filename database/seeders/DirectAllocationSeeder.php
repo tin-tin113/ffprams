@@ -53,7 +53,7 @@ class DirectAllocationSeeder extends Seeder
                 'quantity' => $isFinancial ? null : fake()->randomFloat(2, 1, 100),
                 'amount' => $isFinancial ? fake()->randomFloat(2, 500, 5000) : null,
                 'is_ready_for_release' => in_array($status, ['ready_for_release', 'released', 'not_received']),
-                'distributed_at' => $status === 'released' ? now() : null,
+                'distributed_at' => in_array($status, ['released', 'not_received']) ? now() : null,
                 'release_outcome' => match ($status) {
                     'released' => 'received',
                     'not_received' => 'not_received',
