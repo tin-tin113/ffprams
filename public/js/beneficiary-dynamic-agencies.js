@@ -370,7 +370,7 @@ class DynamicAgencyForm {
                 let options = '<option value="">Select...</option>';
                 if (field.options && field.options.length > 0) {
                     options += field.options.map(opt =>
-                        `<option value="${this.escapeHtml(opt.value)}" ${opt.value === value ? 'selected' : ''}>${this.escapeHtml(opt.label)}</option>`
+                        `<option value="${this.escapeHtml(opt.value)}" ${this.optionMatchesValue(opt, value) ? 'selected' : ''}>${this.escapeHtml(opt.label)}</option>`
                     ).join('');
                 }
                 return `<select class="form-select" id="${id}" name="${fieldName}">${options}</select>`;
@@ -385,7 +385,7 @@ class DynamicAgencyForm {
                     <div class="form-check-group mt-2">
                         ${field.options.map((opt, idx) => `
                             <div class="form-check">
-                                <input type="checkbox" class="form-check-input" id="${checkboxId}${idx}" name="${fieldName}[]" value="${this.escapeHtml(opt.value)}" ${values.includes(opt.value) ? 'checked' : ''}>
+                                <input type="checkbox" class="form-check-input" id="${checkboxId}${idx}" name="${fieldName}[]" value="${this.escapeHtml(opt.value)}" ${values.some(storedValue => this.optionMatchesValue(opt, storedValue)) ? 'checked' : ''}>
                                 <label class="form-check-label" for="${checkboxId}${idx}">${this.escapeHtml(opt.label)}</label>
                             </div>
                         `).join('')}
@@ -565,6 +565,11 @@ class DynamicAgencyForm {
             "'": '&#039;'
         };
         return String(text).replace(/[&<>"']/g, m => map[m]);
+    }
+
+    optionMatchesValue(option, value) {
+        const storedValue = String(value ?? '');
+        return String(option.value ?? '') === storedValue || String(option.label ?? '') === storedValue;
     }
 }
 

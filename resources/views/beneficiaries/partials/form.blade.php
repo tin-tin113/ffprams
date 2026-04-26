@@ -97,10 +97,12 @@
             $fieldType = strtolower((string) $getGroupSetting($group, 'field_type', \App\Models\FormFieldOption::FIELD_TYPE_DROPDOWN));
             $isOptionBased = in_array($fieldType, \App\Models\FormFieldOption::optionBasedFieldTypes(), true);
             $options = $normalizeFieldOptions($items, []);
+            $firstItem = collect($items)->first();
+            $configuredLabel = trim((string) (is_object($firstItem) ? ($firstItem->label ?? '') : ($firstItem['label'] ?? '')));
 
             return [
                 'field_group' => $group,
-                'label' => Str::title(str_replace('_', ' ', $group)),
+                'label' => ! $isOptionBased && $configuredLabel !== '' ? $configuredLabel : Str::title(str_replace('_', ' ', $group)),
                 'field_type' => $fieldType,
                 'is_option_based' => $isOptionBased,
                 'placement_section' => $placement,

@@ -66,7 +66,63 @@ class AgencySeeder extends Seeder
                         'is_required' => true,
                         'form_section' => 'dar_information',
                         'sort_order' => 1,
-                    ]
+                    ],
+                    [
+                        'field_name' => 'arb_classification',
+                        'display_label' => 'ARB Classification',
+                        'field_type' => 'dropdown',
+                        'is_required' => false,
+                        'form_section' => 'dar_information',
+                        'sort_order' => 2,
+                        'options' => [
+                            'ARBs',
+                            'Potential ARBs',
+                            'Agricultural Lessee',
+                            'Regular Farmworker',
+                            'Seasonal Farmworker',
+                            'Other Farmworker',
+                            'Actual Tiller',
+                            'Collective/Cooperative',
+                            'Others',
+                        ],
+                    ],
+                    [
+                        'field_name' => 'landholding_description',
+                        'display_label' => 'Landholding Description',
+                        'field_type' => 'text',
+                        'is_required' => false,
+                        'form_section' => 'dar_information',
+                        'sort_order' => 3,
+                    ],
+                    [
+                        'field_name' => 'land_area_awarded_hectares',
+                        'display_label' => 'Land Area Awarded (Hectares)',
+                        'field_type' => 'decimal',
+                        'is_required' => false,
+                        'form_section' => 'dar_information',
+                        'sort_order' => 4,
+                    ],
+                    [
+                        'field_name' => 'ownership_scheme',
+                        'display_label' => 'Ownership Scheme',
+                        'field_type' => 'dropdown',
+                        'is_required' => false,
+                        'form_section' => 'dar_information',
+                        'sort_order' => 5,
+                        'options' => [
+                            'Individual',
+                            'Collective',
+                            'Cooperative',
+                        ],
+                    ],
+                    [
+                        'field_name' => 'barc_membership_status',
+                        'display_label' => 'BARC Membership Status',
+                        'field_type' => 'text',
+                        'is_required' => false,
+                        'form_section' => 'dar_information',
+                        'sort_order' => 6,
+                    ],
                 ]
             ],
         ];
@@ -98,7 +154,7 @@ class AgencySeeder extends Seeder
 
             // Create form fields if they don't exist
             foreach ($agencyData['form_fields'] as $fieldData) {
-                AgencyFormField::updateOrCreate(
+                $field = AgencyFormField::updateOrCreate(
                     [
                         'agency_id' => $agency->id,
                         'field_name' => $fieldData['field_name'],
@@ -112,6 +168,26 @@ class AgencySeeder extends Seeder
                         'sort_order' => $fieldData['sort_order'],
                     ]
                 );
+
+                if (in_array($fieldData['field_type'], ['dropdown', 'checkbox'], true)) {
+                    foreach (($fieldData['options'] ?? []) as $index => $label) {
+                        $value = strtolower(preg_replace('/[^a-z0-9]+/', '_', trim((string) $label)));
+                        $value = trim($value, '_');
+
+                        if ($value === '') {
+                            continue;
+                        }
+
+                        $field->options()->updateOrCreate(
+                            ['value' => $value],
+                            [
+                                'label' => $label,
+                                'sort_order' => ($index + 1) * 10,
+                                'is_active' => true,
+                            ],
+                        );
+                    }
+                }
             }
         }
     }

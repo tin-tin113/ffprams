@@ -2295,60 +2295,39 @@ class SystemSettingsController extends Controller
             return 0;
         }
 
-        $existingFieldNames = $agency->formFields()
-            ->pluck('field_name')
-            ->map(fn ($name) => strtolower(trim((string) $name)))
-            ->all();
-
-        $existingLookup = array_fill_keys($existingFieldNames, true);
+        $existingFields = $agency->formFields()
+            ->get()
+            ->keyBy(fn (AgencyFormField $field): string => strtolower(trim((string) $field->field_name)));
 
         $createdCount = 0;
 
-        DB::transaction(function () use ($agency, $templates, $existingLookup, &$createdCount): void {
+        DB::transaction(function () use ($agency, $templates, $existingFields, &$createdCount): void {
             foreach ($templates as $template) {
                 $fieldName = strtolower(trim((string) ($template['field_name'] ?? '')));
-                if ($fieldName === '' || isset($existingLookup[$fieldName])) {
+                if ($fieldName === '') {
                     continue;
                 }
 
-                $field = $agency->formFields()->create([
-                    'field_name' => $fieldName,
-                    'display_label' => (string) ($template['display_label'] ?? Str::title(str_replace('_', ' ', $fieldName))),
-                    'field_type' => $this->normalizeAgencyFieldType((string) ($template['field_type'] ?? 'text')),
-                    'is_required' => (bool) ($template['is_required'] ?? false),
-                    'is_active' => true,
-                    'help_text' => $template['help_text'] ?? null,
-                    'form_section' => (string) ($template['form_section'] ?? 'general_information'),
-                    'sort_order' => (int) ($template['sort_order'] ?? 0),
-                ]);
+                $field = $existingFields->get($fieldName);
 
-                $createdCount++;
+                if (! $field) {
+                    $field = $agency->formFields()->create([
+                        'field_name' => $fieldName,
+                        'display_label' => (string) ($template['display_label'] ?? Str::title(str_replace('_', ' ', $fieldName))),
+                        'field_type' => $this->normalizeAgencyFieldType((string) ($template['field_type'] ?? 'text')),
+                        'is_required' => (bool) ($template['is_required'] ?? false),
+                        'is_active' => true,
+                        'help_text' => $template['help_text'] ?? null,
+                        'form_section' => (string) ($template['form_section'] ?? 'general_information'),
+                        'sort_order' => (int) ($template['sort_order'] ?? 0),
+                    ]);
+
+                    $createdCount++;
+                }
 
                 $optionGroup = (string) ($template['option_group'] ?? '');
                 if ($optionGroup !== '' && in_array($field->field_type, ['dropdown', 'checkbox'], true)) {
-                    $globalOptions = FormFieldOption::query()
-                        ->where('field_group', $optionGroup)
-                        ->where('is_active', true)
-                        ->orderBy('sort_order')
-                        ->orderBy('label')
-                        ->get(['label', 'value']);
-
-                    $sortOrder = 10;
-                    foreach ($globalOptions as $option) {
-                        $label = trim((string) $option->label);
-                        $value = trim((string) $option->value);
-                        if ($label === '' && $value === '') {
-                            continue;
-                        }
-
-                        $field->options()->create([
-                            'label' => $label !== '' ? $label : $value,
-                            'value' => $value !== '' ? $value : $label,
-                            'sort_order' => $sortOrder,
-                        ]);
-
-                        $sortOrder += 10;
-                    }
+                    $this->seedAgencyCoreFieldOptions($field, $optionGroup);
                 }
             }
         });
@@ -2387,6 +2366,88 @@ class SystemSettingsController extends Controller
         }
 
         return [];
+    }
+
+    private function seedAgencyCoreFieldOptions(AgencyFormField $field, string $optionGroup): void
+    {
+        $globalOptions = FormFieldOption::query()
+            ->where('field_group', $optionGroup)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('label')
+            ->get(['label', 'value'])
+            ->map(fn (FormFieldOption $option): array => [
+                'label' => trim((string) $option->label),
+                'value' => trim((string) $option->value),
+            ])
+            ->filter(fn (array $option): bool => $option['label'] !== '' || $option['value'] !== '')
+            ->values()
+            ->all();
+
+        $options = ! empty($globalOptions)
+            ? $globalOptions
+            : $this->agencyCoreFieldOptionDefaults($optionGroup);
+
+        $sortOrder = 10;
+        foreach ($options as $option) {
+            $label = trim((string) ($option['label'] ?? ''));
+            $value = trim((string) ($option['value'] ?? ''));
+
+            if ($label === '' && $value === '') {
+                continue;
+            }
+
+            if ($label === '') {
+                $label = $value;
+            }
+
+            if ($value === '') {
+                $value = $this->normalizeKey($label);
+            }
+
+            $field->options()->updateOrCreate(
+                ['value' => $value],
+                [
+                    'label' => $label,
+                    'sort_order' => $sortOrder,
+                    'is_active' => true,
+                ],
+            );
+
+            $sortOrder += 10;
+        }
+    }
+
+    /**
+     * @return array<int, array{label: string, value?: string}>
+     */
+    private function agencyCoreFieldOptionDefaults(string $optionGroup): array
+    {
+        return match ($optionGroup) {
+            'arb_classification' => collect([
+                'ARBs',
+                'Potential ARBs',
+                'Agricultural Lessee',
+                'Regular Farmworker',
+                'Seasonal Farmworker',
+                'Other Farmworker',
+                'Actual Tiller',
+                'Collective/Cooperative',
+                'Others',
+            ])->map(fn (string $label): array => [
+                'label' => $label,
+                'value' => $this->normalizeKey($label),
+            ])->all(),
+            'ownership_scheme' => collect([
+                'Individual',
+                'Collective',
+                'Cooperative',
+            ])->map(fn (string $label): array => [
+                'label' => $label,
+                'value' => $this->normalizeKey($label),
+            ])->all(),
+            default => [],
+        };
     }
 
     /**

@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class BeneficiaryController extends Controller
@@ -315,20 +316,66 @@ class BeneficiaryController extends Controller
             'smsLogs' => fn ($q) => $q->latest('sent_at')->limit(5),
         ]);
 
-        $agencyFieldLabels = AgencyFormField::query()
+        $agencyFieldDefinitions = AgencyFormField::query()
             ->whereIn('agency_id', $beneficiary->agencies->pluck('id')->all())
-            ->get(['agency_id', 'field_name', 'display_label'])
+            ->with(['options' => fn ($query) => $query->where('is_active', true)->orderBy('sort_order')])
+            ->get(['agency_id', 'field_name', 'display_label', 'form_section'])
             ->groupBy('agency_id')
             ->map(function ($fields): array {
                 return $fields
                     ->mapWithKeys(fn (AgencyFormField $field): array => [
-                        (string) $field->field_name => (string) $field->display_label,
+                        (string) $field->field_name => [
+                            'label' => (string) $field->display_label,
+                            'form_section' => (string) ($field->form_section ?: 'additional_information'),
+                            'options' => $field->options
+                                ->mapWithKeys(fn ($option): array => [
+                                    (string) $option->value => (string) $option->label,
+                                ])
+                                ->toArray(),
+                        ],
                     ])
                     ->toArray();
             })
             ->toArray();
 
-        return view('beneficiaries.show', compact('beneficiary', 'agencyFieldLabels'));
+        $agencyFieldLabels = collect($agencyFieldDefinitions)
+            ->map(fn (array $fields): array => collect($fields)
+                ->mapWithKeys(fn (array $definition, string $fieldName): array => [
+                    $fieldName => (string) ($definition['label'] ?? Str::title(str_replace('_', ' ', $fieldName))),
+                ])
+                ->toArray())
+            ->toArray();
+
+        $globalCustomFieldDefinitions = FormFieldOption::query()
+            ->active()
+            ->get(['field_group', 'field_type', 'placement_section', 'label'])
+            ->groupBy('field_group')
+            ->map(function ($options, string $fieldGroup): array {
+                $first = $options->first();
+                $fieldType = strtolower((string) ($first?->field_type ?? FormFieldOption::FIELD_TYPE_DROPDOWN));
+                $fallbackLabel = Str::title(str_replace('_', ' ', $fieldGroup));
+                $configuredLabel = trim((string) ($first?->label ?? ''));
+                $isOptionBased = in_array($fieldType, FormFieldOption::optionBasedFieldTypes(), true);
+
+                return [
+                    'label' => ! $isOptionBased && $configuredLabel !== '' ? $configuredLabel : $fallbackLabel,
+                    'field_type' => $fieldType,
+                    'placement_section' => (string) ($first?->placement_section ?? FormFieldOption::PLACEMENT_PERSONAL_INFORMATION),
+                    'options' => $options
+                        ->mapWithKeys(fn (FormFieldOption $option): array => [
+                            (string) $option->value => (string) $option->label,
+                        ])
+                        ->toArray(),
+                ];
+            })
+            ->toArray();
+
+        return view('beneficiaries.show', compact(
+            'beneficiary',
+            'agencyFieldLabels',
+            'agencyFieldDefinitions',
+            'globalCustomFieldDefinitions',
+        ));
     }
 
     /**

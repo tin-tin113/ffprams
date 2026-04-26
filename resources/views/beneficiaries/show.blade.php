@@ -24,7 +24,34 @@
         || filled(data_get($darDynamicData, 'ownership_scheme'))
         || filled(data_get($darDynamicData, 'barc_membership_status'));
 
+    $profileSectionLabels = [
+        'personal_information' => 'Personal & Contact Information',
+        'farmer_information' => 'Farmer Details',
+        'fisherfolk_information' => 'Fisherfolk Details',
+        'dar_information' => 'DAR / ARB Details',
+        'additional_information' => 'Additional Attributes',
+    ];
+    $profileSectionOrder = ['personal_information', 'farmer_information', 'fisherfolk_information', 'dar_information'];
+    $formatProfileFieldValue = function ($value, array $optionLabels = []): string {
+        if (is_array($value)) {
+            return collect($value)
+                ->filter(fn ($item) => filled($item))
+                ->map(fn ($item) => $optionLabels[(string) $item] ?? (string) $item)
+                ->implode(', ');
+        }
+
+        if (is_bool($value)) {
+            return $value ? 'Yes' : 'No';
+        }
+
+        $stringValue = (string) $value;
+
+        return $optionLabels[$stringValue] ?? $stringValue;
+    };
+
     $agencyFieldLabels = $agencyFieldLabels ?? [];
+    $agencyFieldDefinitions = $agencyFieldDefinitions ?? [];
+    $globalCustomFieldDefinitions = $globalCustomFieldDefinitions ?? [];
     $agencyNameById = $beneficiary->agencies
         ->mapWithKeys(fn ($agency) => [(string) $agency->id => (string) $agency->name])
         ->toArray();
@@ -34,50 +61,106 @@
         ->except('agency_dynamic')
         ->filter(fn ($value) => filled($value));
 
+    $globalCustomFieldEntries = $customFieldValues
+        ->map(function ($fieldValue, $fieldGroup) use ($globalCustomFieldDefinitions, $profileSectionLabels, $formatProfileFieldValue) {
+            $fieldGroupString = (string) $fieldGroup;
+            $definition = $globalCustomFieldDefinitions[$fieldGroupString] ?? [];
+            $placementSection = (string) ($definition['placement_section'] ?? 'additional_information');
+            $optionLabels = (array) ($definition['options'] ?? []);
+
+            return [
+                'agency_name' => null,
+                'field_name' => $fieldGroupString,
+                'field_label' => (string) ($definition['label'] ?? Str::title(str_replace('_', ' ', $fieldGroupString))),
+                'label' => (string) ($definition['label'] ?? Str::title(str_replace('_', ' ', $fieldGroupString))),
+                'placement_section' => $placementSection,
+                'section_label' => $profileSectionLabels[$placementSection] ?? Str::title(str_replace('_', ' ', $placementSection)),
+                'value' => $formatProfileFieldValue($fieldValue, $optionLabels),
+            ];
+        })
+        ->values();
+
     $agencyDynamicCustomFieldValues = collect((array) ($rawCustomFieldValues->get('agency_dynamic', [])))
         ->filter(fn ($fields) => is_array($fields))
-        ->flatMap(function ($fields, $agencyId) use ($agencyFieldLabels, $agencyNameById) {
+        ->flatMap(function ($fields, $agencyId) use ($agencyFieldDefinitions, $agencyFieldLabels, $agencyNameById, $profileSectionLabels, $formatProfileFieldValue) {
             if (! is_array($fields)) {
                 return collect();
             }
 
             return collect($fields)
                 ->filter(fn ($value) => filled($value))
-                ->map(function ($value, $fieldName) use ($agencyFieldLabels, $agencyNameById, $agencyId) {
+                ->map(function ($value, $fieldName) use ($agencyFieldDefinitions, $agencyFieldLabels, $agencyNameById, $agencyId, $profileSectionLabels, $formatProfileFieldValue) {
                     $agencyIdString = (string) $agencyId;
-                    $displayValue = is_array($value)
-                        ? implode(', ', array_map('strval', array_values($value)))
-                        : (string) $value;
+                    $fieldNameString = (string) $fieldName;
+                    $definition = $agencyFieldDefinitions[$agencyIdString][$fieldNameString] ?? [];
+                    $placementSection = (string) ($definition['form_section'] ?? 'additional_information');
+                    $optionLabels = (array) ($definition['options'] ?? []);
+                    $agencyName = $agencyNameById[$agencyIdString] ?? ('Agency #' . $agencyIdString);
+                    $fieldLabel = (string) ($definition['label'] ?? ($agencyFieldLabels[$agencyIdString][$fieldNameString] ?? Str::title(str_replace('_', ' ', $fieldNameString))));
 
                     return [
-                        'agency_name' => $agencyNameById[$agencyIdString] ?? ('Agency #' . $agencyIdString),
-                        'field_label' => $agencyFieldLabels[$agencyIdString][$fieldName] ?? Str::title(str_replace('_', ' ', (string) $fieldName)),
-                        'value' => $displayValue,
+                        'agency_name' => $agencyName,
+                        'field_name' => $fieldNameString,
+                        'field_label' => $fieldLabel,
+                        'label' => $agencyName . ' - ' . $fieldLabel,
+                        'placement_section' => $placementSection,
+                        'section_label' => $profileSectionLabels[$placementSection] ?? Str::title(str_replace('_', ' ', $placementSection)),
+                        'value' => $formatProfileFieldValue($value, $optionLabels),
                     ];
                 });
         })
         ->values();
 
+    $profileCustomFieldEntries = $globalCustomFieldEntries
+        ->concat($agencyDynamicCustomFieldValues)
+        ->filter(fn ($entry) => filled($entry['value'] ?? null))
+        ->values();
+    $profileCustomFieldsBySection = $profileCustomFieldEntries->groupBy('placement_section');
+    $personalProfileFields = $profileCustomFieldsBySection->get('personal_information', collect());
+    $farmerProfileFields = $profileCustomFieldsBySection->get('farmer_information', collect());
+    $fisherfolkProfileFields = $profileCustomFieldsBySection->get('fisherfolk_information', collect());
+    $darProfileFields = $profileCustomFieldsBySection->get('dar_information', collect());
+    $darSupplementalProfileFields = $darProfileFields
+        ->reject(fn ($entry) => in_array((string) ($entry['field_name'] ?? ''), ['cloa_ep_number', 'arb_classification', 'ownership_scheme'], true))
+        ->values();
+    $darProfileFieldsByName = $darProfileFields->keyBy(fn ($entry) => (string) ($entry['field_name'] ?? ''));
+    $darArbClassificationValue = ($darProfileFieldsByName->get('arb_classification')['value'] ?? null)
+        ?: data_get($darDynamicData, 'arb_classification', '—');
+    $darOwnershipSchemeValue = ($darProfileFieldsByName->get('ownership_scheme')['value'] ?? null)
+        ?: data_get($darDynamicData, 'ownership_scheme', '—');
+    $otherProfileFields = $profileCustomFieldEntries
+        ->reject(fn ($entry) => in_array((string) ($entry['placement_section'] ?? ''), $profileSectionOrder, true))
+        ->values();
+
     $rawCustomFieldUnavailabilityReasons = collect((array) ($beneficiary->custom_field_unavailability_reasons ?? []));
     $customFieldUnavailabilityReasons = $rawCustomFieldUnavailabilityReasons
         ->except('agency_dynamic')
-        ->filter(fn ($value) => filled($value));
+        ->filter(fn ($value) => filled($value))
+        ->mapWithKeys(function ($value, $fieldGroup) use ($globalCustomFieldDefinitions) {
+            $fieldGroupString = (string) $fieldGroup;
+            $definition = $globalCustomFieldDefinitions[$fieldGroupString] ?? [];
+            $label = (string) ($definition['label'] ?? Str::title(str_replace('_', ' ', $fieldGroupString)));
+
+            return [$label => $value];
+        });
 
     $agencyDynamicUnavailabilityReasons = collect((array) ($rawCustomFieldUnavailabilityReasons->get('agency_dynamic', [])))
         ->filter(fn ($fields) => is_array($fields))
-        ->flatMap(function ($fields, $agencyId) use ($agencyFieldLabels, $agencyNameById) {
+        ->flatMap(function ($fields, $agencyId) use ($agencyFieldDefinitions, $agencyFieldLabels, $agencyNameById) {
             if (! is_array($fields)) {
                 return collect();
             }
 
             return collect($fields)
                 ->filter(fn ($reason) => filled($reason))
-                ->map(function ($reason, $fieldName) use ($agencyFieldLabels, $agencyNameById, $agencyId) {
+                ->map(function ($reason, $fieldName) use ($agencyFieldDefinitions, $agencyFieldLabels, $agencyNameById, $agencyId) {
                     $agencyIdString = (string) $agencyId;
+                    $fieldNameString = (string) $fieldName;
+                    $definition = $agencyFieldDefinitions[$agencyIdString][$fieldNameString] ?? [];
 
                     return [
                         'agency_name' => $agencyNameById[$agencyIdString] ?? ('Agency #' . $agencyIdString),
-                        'field_label' => $agencyFieldLabels[$agencyIdString][$fieldName] ?? Str::title(str_replace('_', ' ', (string) $fieldName)),
+                        'field_label' => (string) ($definition['label'] ?? ($agencyFieldLabels[$agencyIdString][$fieldNameString] ?? Str::title(str_replace('_', ' ', $fieldNameString)))),
                         'reason' => (string) $reason,
                     ];
                 });
@@ -392,6 +475,27 @@
                         </div>
                     </div>
 
+                    @if($personalProfileFields->isNotEmpty())
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center gap-2">
+                                <div class="bg-primary bg-opacity-10 p-2 rounded text-primary">
+                                    <i class="bi bi-person-vcard"></i>
+                                </div>
+                                <h5 class="card-title fw-bold mb-0">Additional Personal Details</h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="row g-4">
+                                    @foreach($personalProfileFields as $entry)
+                                        <div class="col-md-4">
+                                            <div class="info-label">{{ $entry['label'] }}</div>
+                                            <div class="info-value">{{ $entry['value'] }}</div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
                     {{-- Agency Registrations Card --}}
                     <div class="card border-0 shadow-sm mb-4">
                         <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center gap-2">
@@ -444,7 +548,7 @@
                     </div>
 
                     {{-- Classification Details Card --}}
-                    @if($beneficiary->isFarmer() || $beneficiary->isFisherfolk() || $hasDarDetails)
+                    @if($beneficiary->isFarmer() || $beneficiary->isFisherfolk() || $hasDarDetails || $farmerProfileFields->isNotEmpty() || $fisherfolkProfileFields->isNotEmpty() || $darProfileFields->isNotEmpty())
                         <div class="card border-0 shadow-sm mb-4">
                             <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center gap-2">
                                 <div class="bg-info bg-opacity-10 p-2 rounded text-info">
@@ -454,7 +558,7 @@
                             </div>
                             <div class="card-body p-4">
                                 {{-- Farmer Section --}}
-                                @if($beneficiary->isFarmer())
+                                @if($beneficiary->isFarmer() || $farmerProfileFields->isNotEmpty())
                                     <div class="mb-4">
                                         <h6 class="text-primary fw-bold mb-3 small text-uppercase"><i class="bi bi-tree me-2"></i>Farmer Details</h6>
                                         <div class="row g-3">
@@ -470,12 +574,18 @@
                                                 <div class="info-label">Commodity</div>
                                                 <div class="info-value">{{ $beneficiary->primary_commodity ?: '—' }}</div>
                                             </div>
+                                            @foreach($farmerProfileFields as $entry)
+                                                <div class="col-md-4">
+                                                    <div class="info-label">{{ $entry['label'] }}</div>
+                                                    <div class="info-value">{{ $entry['value'] }}</div>
+                                                </div>
+                                            @endforeach
                                         </div>
                                     </div>
                                 @endif
 
                                 {{-- Fisherfolk Section --}}
-                                @if($beneficiary->isFisherfolk())
+                                @if($beneficiary->isFisherfolk() || $fisherfolkProfileFields->isNotEmpty())
                                     <div class="mb-4 @if($beneficiary->isFarmer()) border-top pt-4 @endif">
                                         <h6 class="text-info fw-bold mb-3 small text-uppercase"><i class="bi bi-water me-2"></i>Fisherfolk Details</h6>
                                         <div class="row g-3">
@@ -497,12 +607,18 @@
                                                     @endif
                                                 </div>
                                             </div>
+                                            @foreach($fisherfolkProfileFields as $entry)
+                                                <div class="col-md-4">
+                                                    <div class="info-label">{{ $entry['label'] }}</div>
+                                                    <div class="info-value">{{ $entry['value'] }}</div>
+                                                </div>
+                                            @endforeach
                                         </div>
                                     </div>
                                 @endif
 
                                 {{-- DAR Details --}}
-                                @if($hasDarDetails)
+                                @if($hasDarDetails || $darProfileFields->isNotEmpty())
                                     <div class="mb-0 @if($beneficiary->isFarmer() || $beneficiary->isFisherfolk()) border-top pt-4 @endif">
                                         <h6 class="text-success fw-bold mb-3 small text-uppercase"><i class="bi bi-journal-check me-2"></i>DAR / ARB Details</h6>
                                         <div class="row g-3">
@@ -512,12 +628,18 @@
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="info-label">Classification</div>
-                                                <div class="info-value">{{ data_get($darDynamicData, 'arb_classification', '—') }}</div>
+                                                <div class="info-value">{{ $darArbClassificationValue ?: '—' }}</div>
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="info-label">Ownership Scheme</div>
-                                                <div class="info-value">{{ data_get($darDynamicData, 'ownership_scheme', '—') }}</div>
+                                                <div class="info-value">{{ $darOwnershipSchemeValue ?: '—' }}</div>
                                             </div>
+                                            @foreach($darSupplementalProfileFields as $entry)
+                                                <div class="col-md-4">
+                                                    <div class="info-label">{{ $entry['field_label'] }}</div>
+                                                    <div class="info-value">{{ $entry['value'] }}</div>
+                                                </div>
+                                            @endforeach
                                         </div>
                                     </div>
                                 @endif
@@ -526,7 +648,7 @@
                     @endif
 
                     {{-- Custom Fields Card --}}
-                    @if($customFieldValues->isNotEmpty() || $agencyDynamicCustomFieldValues->isNotEmpty())
+                    @if($otherProfileFields->isNotEmpty())
                         <div class="card border-0 shadow-sm">
                             <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center gap-2">
                                 <div class="bg-warning bg-opacity-10 p-2 rounded text-warning">
@@ -536,18 +658,9 @@
                             </div>
                             <div class="card-body p-4">
                                 <div class="row g-4">
-                                    @foreach($customFieldValues as $fieldGroup => $fieldValue)
+                                    @foreach($otherProfileFields as $entry)
                                         <div class="col-md-4">
-                                            <div class="info-label">{{ Str::title(str_replace('_', ' ', $fieldGroup)) }}</div>
-                                            <div class="info-value">
-                                                {{ is_array($fieldValue) ? collect($fieldValue)->filter(fn ($item) => filled($item))->implode(', ') : $fieldValue }}
-                                            </div>
-                                        </div>
-                                    @endforeach
-
-                                    @foreach($agencyDynamicCustomFieldValues as $entry)
-                                        <div class="col-md-4">
-                                            <div class="info-label">{{ $entry['agency_name'] }} &middot; {{ $entry['field_label'] }}</div>
+                                            <div class="info-label">{{ $entry['label'] }}</div>
                                             <div class="info-value">{{ $entry['value'] }}</div>
                                         </div>
                                     @endforeach
@@ -613,6 +726,12 @@
                             <div class="card-body p-4 pt-2">
                                 <div class="d-flex flex-column gap-3">
                                     @foreach($coreUnavailabilityReasons as $label => $reason)
+                                        <div>
+                                            <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.6rem;">{{ $label }}</div>
+                                            <div class="small fw-semibold">{{ $reason }}</div>
+                                        </div>
+                                    @endforeach
+                                    @foreach($customFieldUnavailabilityReasons as $label => $reason)
                                         <div>
                                             <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.6rem;">{{ $label }}</div>
                                             <div class="small fw-semibold">{{ $reason }}</div>
