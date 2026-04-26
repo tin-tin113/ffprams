@@ -40,11 +40,11 @@ class BarangaySeeder extends Seeder
 
         $now = now();
 
-        foreach ($barangays as &$barangay) {
-            $barangay['created_at'] = $now;
-            $barangay['updated_at'] = $now;
+        foreach ($barangays as $barangay) {
+            DB::table('barangays')->updateOrInsert(
+                ['name' => $barangay['name']],
+                array_merge($barangay, ['created_at' => $now, 'updated_at' => $now])
+            );
         }
-
-        DB::table('barangays')->insert($barangays);
     }
 }

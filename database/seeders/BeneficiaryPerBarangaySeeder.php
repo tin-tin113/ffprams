@@ -49,12 +49,19 @@ class BeneficiaryPerBarangaySeeder extends Seeder
                 $sex = fake()->randomElement(['Male', 'Female']);
                 $associationMember = fake()->boolean(35);
 
-                Beneficiary::create([
+                $firstName  = fake()->firstName($sex === 'Male' ? 'male' : 'female');
+                $middleName = fake()->optional(0.55)->lastName();
+                $lastName   = fake()->lastName();
+                $nameSuffix = fake()->optional(0.08)->randomElement(['Jr.', 'Sr.', 'II', 'III']);
+                $fullName   = trim(implode(' ', array_filter([$firstName, $middleName, $lastName, $nameSuffix])));
+
+                $beneficiary = Beneficiary::create([
                     'agency_id' => $agency?->id,
-                    'first_name' => fake()->firstName($sex === 'Male' ? 'male' : 'female'),
-                    'middle_name' => fake()->optional(0.55)->lastName(),
-                    'last_name' => fake()->lastName(),
-                    'name_suffix' => fake()->optional(0.08)->randomElement(['Jr.', 'Sr.', 'II', 'III']),
+                    'first_name' => $firstName,
+                    'middle_name' => $middleName,
+                    'last_name' => $lastName,
+                    'name_suffix' => $nameSuffix,
+                    'full_name' => $fullName,
                     'sex' => $sex,
                     'date_of_birth' => fake()->dateTimeBetween('-68 years', '-18 years')->format('Y-m-d'),
                     'home_address' => 'Sitio '.fake()->streetName().', Brgy. '.$barangay->name.', E.B. Magalona',
@@ -121,12 +128,11 @@ class BeneficiaryPerBarangaySeeder extends Seeder
                     ]) : null,
                 ]);
 
-                if ($agencyName === 'DAR') {
+                if ($agencyName === 'DAR' && $agency) {
                     $cloa = $this->buildRegistryCode('DAR', (int) $barangay->id, $i);
-                    // Also seed the pivot table for searchability
                     \DB::table('beneficiary_agencies')->insert([
                         'beneficiary_id' => $beneficiary->id,
-                        'agency_id' => 3,
+                        'agency_id' => $agency->id,
                         'identifier' => $cloa,
                         'created_at' => now(),
                         'updated_at' => now(),
