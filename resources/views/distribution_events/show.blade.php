@@ -889,11 +889,18 @@
                                 </td>
                                 <td>{{ $allocation->remarks ?? '—' }}</td>
                                 <td class="text-end text-nowrap">
-                                    @if($event->status !== 'Completed' && in_array(Auth::user()->role, ['admin', 'staff'], true))
-                                        @php($isReleased = (bool)$allocation->distributed_at)
+                                    @php($isReleased = (bool)$allocation->distributed_at)
+
+                                    <a href="{{ route('allocations.show', $allocation) }}"
+                                       class="btn btn-sm btn-outline-secondary me-1"
+                                       title="View allocation details">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+
+                                    @if($event->status !== 'Completed' && in_array(Auth::user()->role, ['admin', 'staff'], true) && !$isReleased)
                                         <button type="button"
                                                 class="btn btn-sm btn-outline-primary me-1"
-                                                @if($isReleased) disabled title="Released items cannot be edited" @else title="Edit allocation" @endif
+                                                title="Edit allocation"
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#editAllocationModal"
                                                 data-update-url="{{ route('allocations.update', $allocation) }}"

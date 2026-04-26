@@ -9,6 +9,19 @@
 
 @section('content')
 <div class="container-fluid module-page pb-5">
+    @if($errors->any())
+        <div class="alert alert-danger rounded-4 shadow-sm mb-4">
+            <h6 class="fw-bold mb-2"><i class="bi bi-exclamation-triangle-fill me-1"></i> Please fix the following:</h6>
+            <ul class="mb-0 small">
+                @foreach($errors->all() as $err)
+                    <li>{{ $err }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-danger rounded-4 shadow-sm mb-4">{{ session('error') }}</div>
+    @endif
     <div class="d-flex justify-content-between align-items-center mb-4 animate-fade-in">
         <div>
             <h1 class="h3 mb-1 fw-bold">Add Direct Assistance</h1>
@@ -38,7 +51,7 @@
                         </li>
                     </ul>
                 </div>
-                <div class="card-body p-4 p-lg-5">
+                <div class="card-body p-4">
                     <div class="tab-content" id="allocationTabsContent">
                         
                         {{-- SINGLE ALLOCATION TAB --}}
@@ -119,7 +132,6 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -171,12 +183,8 @@
                                 </div>
 
                                 <!-- Step 2: Allocation Details -->
-                                <div class="col-12 mt-4" id="allocation_details_section" style="opacity: 0.5; pointer-events: none;">
-                                    <div class="d-flex align-items-center gap-2 mb-4">
-                                        <div class="step-badge bg-primary text-white">2</div>
-                                        <h5 class="mb-0 fw-bold">Allocation Details</h5>
-                                        <hr class="flex-grow-1 ms-2 border-primary-subtle">
-                                    </div>
+                                <div class="col-12" id="allocation_details_section" style="opacity: 0.5; pointer-events: none;">
+                                    <h6 class="fw-bold text-uppercase tracking-wider text-muted small mb-3">Allocation Details</h6>
                                     
                                     <div class="row g-4">
                                         <div class="col-md-6">
@@ -249,20 +257,12 @@
                         </div>
 
                         {{-- BATCH ALLOCATION TAB --}}
-                        <div class="tab-pane fade" id="batch" role="tabpanel">
+                        <div class="tab-pane fade" id="batch" role="tabpanel" style="display: none;">
                             <form id="batch_form" method="POST" action="{{ route('allocations.storeBulk') }}" data-submit-spinner
                                   data-confirm-title="Confirm Batch Allocation"
                                   data-confirm-message="Save all allocations in batch?">
                                 @csrf
                                 <input type="hidden" name="release_method" value="direct">
-
-                                <div class="alert alert-primary border-0 rounded-4 p-3 mb-4 d-flex align-items-center gap-3 animate-fade-in">
-                                    <div class="fs-4"><i class="bi bi-lightning-charge-fill"></i></div>
-                                    <div>
-                                        <h6 class="alert-heading fw-bold mb-0">Batch Mode Active</h6>
-                                        <p class="mb-0 small">Add multiple recipients and apply values in one go.</p>
-                                    </div>
-                                </div>
 
                                 {{-- Batch Beneficiary Finder --}}
                                 <div class="card border-0 bg-light rounded-4 mb-4 shadow-sm">
@@ -333,7 +333,6 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        </div>
                                     </div>
                                 </div>
 
@@ -345,40 +344,40 @@
                                             <h6 class="mb-0 fw-bold text-primary">Bulk Tool: Apply to all selected rows</h6>
                                         </div>
                                         <div class="row g-3 align-items-end">
-                                            <div class="col-md-3">
+                                            <div class="col-md-6 col-lg-3">
                                                 <label class="form-label small fw-bold mb-1">Set Program</label>
                                                 @php
                                                     $allPrograms = \App\Models\ProgramName::active()->orderBy('name')->get();
                                                 @endphp
-                                                <select id="quickSetProgram" class="form-select form-select-sm rounded-3">
+                                                <select id="quickSetProgram" class="form-select rounded-3">
                                                     <option value="">Select Program</option>
                                                     @foreach($allPrograms as $prog)
                                                         <option value="{{ $prog->id }}">{{ $prog->name }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
-                                            <div class="col-md-3">
+                                            <div class="col-md-6 col-lg-3">
                                                 <label class="form-label small fw-bold mb-1">Set Resource</label>
-                                                <select id="quickSetResource" class="form-select form-select-sm rounded-3" disabled>
+                                                <select id="quickSetResource" class="form-select rounded-3" disabled>
                                                     <option value="">Select Program First</option>
                                                 </select>
                                             </div>
-                                            <div class="col-md-2">
-                                                <label id="quickSetValueLabel" class="form-label small fw-bold mb-1">Qty/Amt</label>
-                                                <input type="number" id="quickSetValue" class="form-control form-control-sm rounded-3" step="0.01" placeholder="Value">
+                                            <div class="col-md-4 col-lg-2">
+                                                <label id="quickSetValueLabel" class="form-label small fw-bold mb-1">Qty / Amount</label>
+                                                <input type="number" id="quickSetValue" class="form-control rounded-3" step="0.01" min="0" placeholder="0.00" style="min-width: 120px;">
                                             </div>
-                                            <div class="col-md-2">
+                                            <div class="col-md-5 col-lg-3">
                                                 <label class="form-label small fw-bold mb-1">Set Purpose</label>
-                                                <select id="quickSetPurpose" class="form-select form-select-sm rounded-3">
+                                                <select id="quickSetPurpose" class="form-select rounded-3">
                                                     <option value="">Select Purpose</option>
                                                     @foreach($assistancePurposes as $purpose)
                                                         <option value="{{ $purpose->id }}">{{ $purpose->name }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
-                                            <div class="col-md-2">
-                                                <button type="button" id="btnQuickSetApply" class="btn btn-primary btn-sm w-100 rounded-pill fw-bold">
-                                                    <i class="bi bi-check-all me-1"></i> Apply
+                                            <div class="col-md-3 col-lg-1">
+                                                <button type="button" id="btnQuickSetApply" class="btn btn-primary w-100 rounded-pill fw-bold" title="Apply to selected rows">
+                                                    <i class="bi bi-check-all"></i>
                                                 </button>
                                             </div>
                                         </div>
@@ -411,7 +410,7 @@
                                                 <th style="min-width: 250px;">Beneficiary</th>
                                                 <th style="min-width: 200px;">Program</th>
                                                 <th style="min-width: 200px;">Resource Type</th>
-                                                <th style="width: 150px;">Value</th>
+                                                <th style="min-width: 180px;">Value</th>
                                                 <th style="min-width: 150px;">Purpose</th>
                                                 <th style="min-width: 200px;">Remarks</th>
                                                 <th class="text-center" style="width: 4rem;">Action</th>
@@ -500,6 +499,9 @@
     @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
     .tracking-wider { letter-spacing: 0.05em; }
     .tracking-tighter { letter-spacing: -0.02em; }
+    /* Defensive: only the active tab pane is visible */
+    #allocationTabsContent > .tab-pane { display: none !important; }
+    #allocationTabsContent > .tab-pane.active { display: block !important; }
 </style>
 @endsection
 
@@ -507,6 +509,31 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     let searchTimeout;
+
+    // Explicit tab toggle — guaranteed independent of Bootstrap JS state
+    (function setupTabs() {
+        const tabs = document.querySelectorAll('#allocationTabs button[data-bs-target]');
+        const panes = {
+            '#single': document.getElementById('single'),
+            '#batch': document.getElementById('batch'),
+        };
+        const activate = (target) => {
+            Object.entries(panes).forEach(([sel, el]) => {
+                if (!el) return;
+                const isActive = sel === target;
+                el.classList.toggle('show', isActive);
+                el.classList.toggle('active', isActive);
+                el.style.display = isActive ? 'block' : 'none';
+            });
+            tabs.forEach((t) => t.classList.toggle('active', t.dataset.bsTarget === target));
+        };
+        tabs.forEach((t) => t.addEventListener('click', (e) => {
+            e.preventDefault();
+            activate(t.dataset.bsTarget);
+        }));
+        // Initial state
+        activate('#single');
+    })();
 
     const performBeneficiarySearch = async (query, filters) => {
         const params = new URLSearchParams({ q: query, ...filters });
@@ -534,7 +561,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    const renderResults = (results, container, onSelect, countId, wrapperId) => {
+    const renderResults = (results, container, onSelect, countId, wrapperId, options = {}) => {
         container.innerHTML = '';
         const wrapper = document.getElementById(wrapperId);
         const countSpan = document.getElementById(countId);
@@ -548,8 +575,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (countSpan) countSpan.textContent = `${results.length} found`;
 
         results.forEach(b => {
+            const isSelected = options.isSelected ? options.isSelected(b) : false;
             const item = document.createElement('div');
             item.className = 'list-group-item list-group-item-action border-0 border-bottom py-2 px-3';
+            item.dataset.beneficiaryId = b.id;
+            item.classList.toggle(options.selectedItemClass || 'list-group-item-success', isSelected);
             item.innerHTML = `
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="flex-grow-1">
@@ -561,14 +591,22 @@ document.addEventListener('DOMContentLoaded', function () {
                             ${b.barangay} ${b.agency ? ' â€¢ ' + b.agency : ''} ${b.contact ? ' â€¢ ' + b.contact : ''}
                         </div>
                     </div>
-                    <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 py-1 select-btn" style="font-size: 0.75rem;">
-                        Select
+                    <button type="button" class="btn ${isSelected ? (options.selectedButtonClass || 'btn-success') : 'btn-primary'} btn-sm rounded-pill px-3 py-1 select-btn" style="font-size: 0.75rem;" ${isSelected ? 'disabled' : ''}>
+                        ${isSelected ? (options.selectedLabel || 'Selected') : (options.selectLabel || 'Select')}
                     </button>
                 </div>
             `;
             item.querySelector('.select-btn').onclick = (e) => {
                 e.preventDefault();
-                onSelect(b);
+                const selected = onSelect(b, item, e);
+                if (options.keepResultsOpenOnSelect && selected !== false) {
+                    const btn = item.querySelector('.select-btn');
+                    item.classList.add(options.selectedItemClass || 'list-group-item-success');
+                    btn.disabled = true;
+                    btn.classList.remove('btn-primary');
+                    btn.classList.add(options.selectedButtonClass || 'btn-success');
+                    btn.textContent = options.selectedLabel || 'Selected';
+                }
             };
             container.appendChild(item);
         });
@@ -613,8 +651,9 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('beneficiary_agency').onchange = () => this.search();
             document.getElementById('single_classification').onchange = () => this.search();
 
-            // Close results on outside click
+            // Close results on outside click — but don't close when clicking the filter dropdowns
             document.addEventListener('click', (e) => {
+                if (e.target.closest('#single_search_card')) return;
                 if (!this.searchInput.contains(e.target) && !this.resultsContainer.contains(e.target) && !e.target.closest('.beneficiary-result-card')) {
                     document.getElementById('beneficiary_results_wrapper').classList.add('d-none');
                 }
@@ -816,13 +855,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 const hasResults = renderResults(
                     results,
                     this.resultsContainer,
-                    (b) => {
-                        this.addRow(b);
-                        document.getElementById('batch_beneficiary_results_wrapper').classList.add('d-none');
-                        this.searchInput.value = '';
-                    },
+                    (b) => this.addRow(b),
                     'batch_results_count',
-                    'batch_beneficiary_results_wrapper'
+                    'batch_beneficiary_results_wrapper',
+                    {
+                        keepResultsOpenOnSelect: true,
+                        isSelected: (b) => this.hasBeneficiary(b.id),
+                        selectedLabel: 'Added',
+                    }
                 );
                 document.getElementById('batch_no_results').classList.toggle('d-none', hasResults || !hasActiveFilters());
             } finally {
@@ -832,7 +872,54 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         },
 
+        hasBeneficiary(id) {
+            if (!id) return false;
+
+            return Array.from(this.tbody.querySelectorAll('.batch-beneficiary-id'))
+                .some(input => input.value === String(id));
+        },
+
+        syncResultButtonStates() {
+            const selectedIds = new Set(
+                Array.from(this.tbody.querySelectorAll('.batch-beneficiary-id'))
+                    .map(input => input.value)
+                    .filter(Boolean)
+            );
+
+            this.resultsContainer.querySelectorAll('[data-beneficiary-id]').forEach(item => {
+                const isSelected = selectedIds.has(item.dataset.beneficiaryId);
+                const btn = item.querySelector('.select-btn');
+
+                item.classList.toggle('list-group-item-success', isSelected);
+
+                if (!btn) return;
+
+                btn.disabled = isSelected;
+                btn.classList.toggle('btn-success', isSelected);
+                btn.classList.toggle('btn-primary', !isSelected);
+                btn.textContent = isSelected ? 'Added' : 'Select';
+            });
+        },
+
+        flashExistingRow(id) {
+            const input = Array.from(this.tbody.querySelectorAll('.batch-beneficiary-id'))
+                .find(field => field.value === String(id));
+            const row = input ? input.closest('tr') : null;
+
+            if (!row) return;
+
+            row.classList.add('table-warning');
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => row.classList.remove('table-warning'), 700);
+        },
+
         addRow(b = null) {
+            if (b && this.hasBeneficiary(b.id)) {
+                this.flashExistingRow(b.id);
+
+                return false;
+            }
+
             const idx = batchRowIndex++;
             const row = document.createElement('tr');
             row.className = 'animate-slide-up';
@@ -846,7 +933,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 </td>
                 <td><select name="allocations[${idx}][program_name_id]" class="form-select form-select-sm batch-program" required></select></td>
                 <td><select name="allocations[${idx}][resource_type_id]" class="form-select form-select-sm batch-resource" required disabled></select></td>
-                <td><input type="number" step="0.01" name="allocations[${idx}][quantity]" class="form-control form-control-sm batch-quantity" placeholder="Qty" required></td>
+                <td><div class="input-group input-group-sm"><input type="number" step="0.01" min="0" name="allocations[${idx}][quantity]" class="form-control batch-quantity text-end fw-semibold" placeholder="0.00" style="min-width: 110px; font-size: 0.95rem;" required><span class="input-group-text batch-unit-addon px-2">—</span></div></td>
                 <td><select name="allocations[${idx}][assistance_purpose_id]" class="form-select form-select-sm batch-purpose">
                     <option value="">-</option>
                     @foreach($assistancePurposes as $p)<option value="{{ $p->id }}">{{ $p->name }}</option>@endforeach
@@ -870,18 +957,30 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             };
 
+            const unitAddon = row.querySelector('.batch-unit-addon');
             resSel.onchange = () => {
-                const unit = resSel.options[resSel.selectedIndex].dataset.unit;
-                qtyInp.placeholder = unit === 'PHP' ? 'Amount' : `Qty (${unit})`;
-                qtyInp.name = unit === 'PHP' ? `allocations[${idx}][amount]` : `allocations[${idx}][quantity]`;
+                const unit = resSel.options[resSel.selectedIndex].dataset.unit || '';
+                const isFin = unit === 'PHP';
+                qtyInp.placeholder = isFin ? '0.00' : '0.00';
+                qtyInp.name = isFin ? `allocations[${idx}][amount]` : `allocations[${idx}][quantity]`;
+                if (unitAddon) unitAddon.textContent = isFin ? '₱' : (unit || '—');
+                this.validate();
             };
+            qtyInp.addEventListener('input', () => this.validate());
 
-            row.querySelector('.btn-link').onclick = () => { row.remove(); this.updateSummary(); };
+            row.querySelector('.btn-link').onclick = () => {
+                row.remove();
+                this.updateSummary();
+                this.syncResultButtonStates();
+            };
             row.querySelector('.batch-row-checkbox').onchange = () => this.toggleRemoveBtn();
 
             this.tbody.appendChild(row);
             if (b) this.loadProgsForRow(b.id, progSel);
             this.updateSummary();
+            this.syncResultButtonStates();
+
+            return true;
         },
 
         async loadProgsForRow(bid, progSel) {
@@ -902,6 +1001,7 @@ document.addEventListener('DOMContentLoaded', function () {
         removeSelected() {
             this.tbody.querySelectorAll('.batch-row-checkbox:checked').forEach(cb => cb.closest('tr').remove());
             this.updateSummary();
+            this.syncResultButtonStates();
         },
 
         updateSummary() {
@@ -910,6 +1010,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('summary_count').textContent = rows;
             document.getElementById('batch_empty_state').style.display = rows === 0 ? 'block' : 'none';
             document.getElementById('batch_summary').style.display = rows === 0 ? 'none' : 'block';
+            this.toggleRemoveBtn();
             this.validate();
         },
 
