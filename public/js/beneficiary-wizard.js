@@ -1,4 +1,7 @@
-(function () {
+// Wrapped in DOMContentLoaded so the wizard's classification `change` listener is
+// added AFTER form.blade.php's updateSections listener. Listeners fire in registration
+// order, so the wizard runs last and its inline style.display reliably wins.
+function initBeneficiaryWizard() {
     'use strict';
 
     if (!document.getElementById('beneficiaryWizard')) return;
@@ -228,9 +231,25 @@
         });
     }
 
+    // Also re-apply on agency-checkboxes change. DynamicAgencyForm dispatches a synthetic
+    // `change` event after rendering checkboxes, which re-triggers updateSections() and
+    // would otherwise leak farmer/fisherfolk visibility into Step 1.
+    const agencyBox = document.getElementById('agency-checkboxes');
+    if (agencyBox) {
+        agencyBox.addEventListener('change', function () {
+            applyStep4Visibility(currentStep);
+        });
+    }
+
     // Expose for cross-script use (error recovery + form reset)
     window.wizardGoToStep = showStep;
 
     // Initialise
     showStep(1);
-})();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBeneficiaryWizard);
+} else {
+    initBeneficiaryWizard();
+}
