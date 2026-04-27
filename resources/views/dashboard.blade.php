@@ -246,8 +246,6 @@
         <span class="dashboard-date">{{ now()->format('F d, Y • l') }}</span>
     </div>
 
-    
-
     {{-- SECTION 1: CRITICAL METRICS --}}
     <div class="section-header">
         <i class="bi bi-speedometer2"></i>

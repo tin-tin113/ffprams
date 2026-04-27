@@ -245,16 +245,14 @@ class DashboardController extends Controller
 
     private function getBeneficiaryBreakdownChart(): array
     {
-        $total = DB::table('beneficiaries')->whereNull('deleted_at')->count();
         $farmers = DB::table('beneficiaries')->whereNull('deleted_at')->where('classification', 'Farmer')->count();
         $fisherfolk = DB::table('beneficiaries')->whereNull('deleted_at')->where('classification', 'Fisherfolk')->count();
-        $both = DB::table('beneficiaries')->whereNull('deleted_at')->where('classification', 'Both')->count();
 
         return [
-            'labels' => ['Farmers', 'Fisherfolk', 'Both'],
-            'data' => [$farmers, $fisherfolk, $both],
-            'colors' => ['#198754', '#0dcaf0', '#6f42c1'],
-            'total' => $total,
+            'labels' => ['Farmers', 'Fisherfolk'],
+            'data' => [$farmers, $fisherfolk],
+            'colors' => ['#198754', '#0dcaf0'],
+            'total' => $farmers + $fisherfolk,
         ];
     }
 

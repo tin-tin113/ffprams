@@ -130,7 +130,6 @@ class ReportsController extends Controller
         $beneficiariesPerBarangay = Beneficiary::select('barangay_id')
             ->selectRaw("SUM(CASE WHEN classification = 'Farmer' THEN 1 ELSE 0 END) as total_farmers")
             ->selectRaw("SUM(CASE WHEN classification = 'Fisherfolk' THEN 1 ELSE 0 END) as total_fisherfolk")
-            ->selectRaw("SUM(CASE WHEN classification = 'Both' THEN 1 ELSE 0 END) as total_both")
             ->selectRaw('COUNT(*) as grand_total')
             ->with('barangay')
             ->groupBy('barangay_id')
@@ -471,11 +470,10 @@ class ReportsController extends Controller
             ->orderByDesc('total_amount')
             ->get();
 
-        // BENEFICIARY MIX DATA — Classification breakdown
+        // BENEFICIARY MIX DATA — Classification breakdown (Farmer / Fisherfolk only)
         $beneficiaryMixRows = collect([
             (object) ['label' => 'Farmers', 'value' => (int) Beneficiary::where('classification', 'Farmer')->whereNull('deleted_at')->count(), 'color' => '#10b981'],
             (object) ['label' => 'Fisherfolk', 'value' => (int) Beneficiary::where('classification', 'Fisherfolk')->whereNull('deleted_at')->count(), 'color' => '#3b82f6'],
-            (object) ['label' => 'Both', 'value' => (int) Beneficiary::where('classification', 'Both')->whereNull('deleted_at')->count(), 'color' => '#f59e0b'],
         ])->filter(fn ($row) => $row->value > 0);
 
         // UNREACHED BY BARANGAY — Top barangays with beneficiaries never reached by any method
@@ -686,6 +684,118 @@ class ReportsController extends Controller
                 ];
             });
 
+        // NEW: Registration Trend — monthly new beneficiary registrations by classification
+        $registrationTrend = collect(range(1, 12))->map(function (int $month) use ($selectedYear) {
+            $base = Beneficiary::whereNull('deleted_at')
+                ->whereYear('registered_at', $selectedYear)
+                ->whereMonth('registered_at', $month);
+            return (object) [
+                'month'      => $month,
+                'farmers'    => (int) (clone $base)->where('classification', 'Farmer')->count(),
+                'fisherfolk' => (int) (clone $base)->where('classification', 'Fisherfolk')->count(),
+            ];
+        });
+
+        // NEW: Year-over-Year beneficiary reach — previous year monthly summary
+        $prevYear = $selectedYear - 1;
+        $prevEventMonthly = DistributionEvent::select(DB::raw('MONTH(distribution_date) as month_number'))
+            ->selectRaw('COUNT(DISTINCT allocations.beneficiary_id) as event_beneficiaries')
+            ->leftJoin('allocations', function ($join) {
+                $join->on('distribution_events.id', '=', 'allocations.distribution_event_id')
+                    ->whereNull('allocations.deleted_at')
+                    ->where('allocations.release_method', 'event')
+                    ->whereNotNull('allocations.distributed_at');
+            })
+            ->where('distribution_events.status', 'Completed')
+            ->whereYear('distribution_date', $prevYear)
+            ->groupBy(DB::raw('MONTH(distribution_date)'))
+            ->get()->keyBy('month_number');
+
+        $prevDirectMonthly = Allocation::query()
+            ->select(DB::raw('MONTH(distributed_at) as month_number'))
+            ->selectRaw('COUNT(DISTINCT beneficiary_id) as direct_beneficiaries')
+            ->whereNull('deleted_at')
+            ->where('release_method', 'direct')
+            ->whereNotNull('distributed_at')
+            ->whereYear('distributed_at', $prevYear)
+            ->groupBy(DB::raw('MONTH(distributed_at)'))
+            ->get()->keyBy('month_number');
+
+        $prevYearMonthly = collect(range(1, 12))->map(function (int $month) use ($prevEventMonthly, $prevDirectMonthly) {
+            $ev = $prevEventMonthly->get($month);
+            $di = $prevDirectMonthly->get($month);
+            return (object) [
+                'month_number'        => $month,
+                'total_beneficiaries' => (int) ($ev->event_beneficiaries ?? 0) + (int) ($di->direct_beneficiaries ?? 0),
+            ];
+        });
+
+        // NEW: Liquidation Health — breakdown of financial events by liquidation status (all-time)
+        $liquidationHealthStatus = DistributionEvent::query()
+            ->where('type', 'financial')
+            ->whereNull('deleted_at')
+            ->selectRaw("COALESCE(liquidation_status, 'pending') as status, COUNT(*) as count")
+            ->groupBy('liquidation_status')
+            ->pluck('count', 'status')
+            ->toArray();
+
+        // NEW: Agency Reach Rate — registered vs reached beneficiaries per agency
+        $agencyReachRate = Agency::query()
+            ->select('agencies.id', 'agencies.name as agency_name')
+            ->selectRaw('COUNT(DISTINCT b.id) as total_registered')
+            ->selectRaw('COUNT(DISTINCT CASE WHEN (a.distributed_at IS NOT NULL OR a.release_outcome = \'received\') THEN b.id END) as total_reached')
+            ->leftJoin('beneficiaries as b', function ($join) {
+                $join->on('b.agency_id', '=', 'agencies.id')->whereNull('b.deleted_at');
+            })
+            ->leftJoin('allocations as a', function ($join) {
+                $join->on('a.beneficiary_id', '=', 'b.id')->whereNull('a.deleted_at');
+            })
+            ->groupBy('agencies.id', 'agencies.name')
+            ->having(DB::raw('COUNT(DISTINCT b.id)'), '>', 0)
+            ->orderByDesc('total_registered')
+            ->get();
+
+        // NEW: Profile Completeness — % of beneficiaries with key fields populated
+        $totalBeneficiaryCount = Beneficiary::whereNull('deleted_at')->count() ?: 1;
+        $profileCompleteness = [
+            ['label' => 'Photo Uploaded',    'pct' => round(100 * Beneficiary::whereNull('deleted_at')->whereNotNull('photo_path')->count() / $totalBeneficiaryCount, 1)],
+            ['label' => 'Contact Number',    'pct' => round(100 * Beneficiary::whereNull('deleted_at')->whereNotNull('contact_number')->where('contact_number', '!=', '')->count() / $totalBeneficiaryCount, 1)],
+            ['label' => 'ID on File',        'pct' => round(100 * Beneficiary::whereNull('deleted_at')->whereNotNull('id_number')->where('id_number', '!=', '')->count() / $totalBeneficiaryCount, 1)],
+            ['label' => 'RSBSA / FishR No.', 'pct' => round(100 * Beneficiary::whereNull('deleted_at')->where(function ($q) {
+                $q->whereNotNull('rsbsa_number')->orWhereNotNull('fishr_number');
+            })->count() / $totalBeneficiaryCount, 1)],
+        ];
+
+        // NEW: Resource by Agency — top 6 resource types distributed per agency
+        $topResourceIds = Allocation::query()
+            ->whereNull('deleted_at')
+            ->whereNotNull('resource_type_id')
+            ->whereNotNull('distributed_at')
+            ->select('resource_type_id')
+            ->selectRaw('COUNT(*) as cnt')
+            ->groupBy('resource_type_id')
+            ->orderByDesc('cnt')
+            ->limit(6)
+            ->pluck('resource_type_id');
+
+        $resourceByAgency = Agency::query()
+            ->select('agencies.id', 'agencies.name as agency_name')
+            ->leftJoin('beneficiaries as b', function ($join) {
+                $join->on('b.agency_id', '=', 'agencies.id')->whereNull('b.deleted_at');
+            })
+            ->leftJoin('allocations as a', function ($join) use ($selectedYear, $topResourceIds) {
+                $join->on('a.beneficiary_id', '=', 'b.id')
+                    ->whereNull('a.deleted_at')
+                    ->whereNotNull('a.distributed_at')
+                    ->whereIn('a.resource_type_id', $topResourceIds->toArray());
+            })
+            ->leftJoin('resource_types as rt', 'rt.id', '=', 'a.resource_type_id')
+            ->selectRaw('rt.name as resource_name, COUNT(DISTINCT a.id) as allocation_count')
+            ->groupBy('agencies.id', 'agencies.name', 'rt.name')
+            ->orderBy('agencies.name')
+            ->get()
+            ->groupBy('agency_name');
+
         return view('reports.index', compact(
             'complianceOverview',
             'beneficiariesPerBarangay',
@@ -708,6 +818,13 @@ class ReportsController extends Controller
             'barangayEfficiency',
             'allocationMonthlyTrend',
             'liquidationAging',
+            'registrationTrend',
+            'prevYearMonthly',
+            'prevYear',
+            'liquidationHealthStatus',
+            'agencyReachRate',
+            'profileCompleteness',
+            'resourceByAgency',
         ));
     }
 }
