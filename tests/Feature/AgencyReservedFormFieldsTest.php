@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Agency;
 use App\Models\AgencyFormField;
 use App\Models\AgencyFormFieldOption;
+use App\Models\Barangay;
+use App\Models\Beneficiary;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -150,6 +152,74 @@ class AgencyReservedFormFieldsTest extends TestCase
         $this->assertDatabaseHas('agency_form_field_options', [
             'agency_form_field_id' => $custom->id,
             'value' => 'p1',
+        ]);
+    }
+
+    public function test_delete_archives_agency_field_when_beneficiary_data_exists(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $agency = $this->makeAgency();
+        $barangay = Barangay::create([
+            'name' => 'Barangay Test',
+            'latitude' => 10.20000000,
+            'longitude' => 123.20000000,
+        ]);
+        $field = $this->makeFormField($agency, 'custom_registry_note', 'Registry Note');
+
+        Beneficiary::create([
+            'agency_id' => $agency->id,
+            'first_name' => 'Lina',
+            'last_name' => 'Reyes',
+            'barangay_id' => $barangay->id,
+            'classification' => 'Farmer',
+            'contact_number' => '09181234567',
+            'status' => 'Active',
+            'registered_at' => now()->toDateString(),
+            'custom_fields' => [
+                'agency_dynamic' => [
+                    (string) $agency->id => [
+                        'custom_registry_note' => 'Keep this registry detail',
+                    ],
+                ],
+            ],
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->delete(route('admin.settings.agencies.form-fields.destroy', [$agency, 'fieldId' => $field->id]));
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('archived', true)
+            ->assertJsonPath('affected_records', 1);
+
+        $this->assertDatabaseHas('agency_form_fields', [
+            'id' => $field->id,
+            'is_active' => false,
+        ]);
+
+        $this->assertSame(
+            'Keep this registry detail',
+            Beneficiary::firstOrFail()->custom_fields['agency_dynamic'][(string) $agency->id]['custom_registry_note']
+        );
+    }
+
+    public function test_delete_removes_unused_agency_field(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $agency = $this->makeAgency();
+        $field = $this->makeFormField($agency, 'unused_registry_note', 'Unused Registry Note');
+
+        $response = $this->actingAs($admin)
+            ->delete(route('admin.settings.agencies.form-fields.destroy', [$agency, 'fieldId' => $field->id]));
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonMissingPath('archived');
+
+        $this->assertDatabaseMissing('agency_form_fields', [
+            'id' => $field->id,
         ]);
     }
 

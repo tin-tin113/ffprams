@@ -2095,8 +2095,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         const fieldId = this.dataset.fieldId;
                         const agencyId = this.dataset.agencyId;
                         confirmThenRun(
-                            'Confirm Deletion',
-                            'Delete this form field? This action cannot be undone.',
+                            'Remove Field',
+                            'Remove this field from active forms? If beneficiary records already use it, the field will be archived and existing profile data will be kept.',
                             function () {
                                 deleteField(fieldId, agencyId);
                             }
@@ -2159,11 +2159,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            if (!response.ok) throw new Error('Failed to delete field');
+            const result = await response.json();
+
+            if (!response.ok) throw new Error(result.message || result.error || 'Failed to delete field');
+            if (result.archived && result.message) {
+                alert(result.message);
+            }
             loadFormFields(agencyId);
         } catch (error) {
             console.error('Error deleting field:', error);
-            alert('Error deleting field');
+            alert(error.message || 'Error deleting field');
         }
     }
 
@@ -2448,7 +2453,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const fieldId = this.dataset.fieldId;
             const fieldLabel = this.dataset.fieldLabel || 'this option';
 
-            if (!confirm(`Delete "${fieldLabel}"?\n\nThis action cannot be undone.`)) {
+            if (!confirm(`Remove "${fieldLabel}" from active forms?\n\nIf beneficiary records already use it, the field will be archived and existing profile data will be kept.`)) {
                 return;
             }
 
@@ -2466,6 +2471,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (!response.ok) {
                     throw new Error(result.message || 'Failed to delete field');
+                }
+
+                if (result.archived && result.message) {
+                    alert(result.message);
                 }
 
                 reloadWithCurrentSettingsTab();

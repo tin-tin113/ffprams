@@ -1666,6 +1666,61 @@ class SystemSettingsController extends Controller
             ->toString();
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    private function jsonCastValueToArray(mixed $value): array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && trim($value) !== '') {
+            $decoded = json_decode($value, true);
+
+            return is_array($decoded) ? $decoded : [];
+        }
+
+        return [];
+    }
+
+    private function storedFieldValueIsFilled(mixed $value): bool
+    {
+        if (is_array($value)) {
+            foreach ($value as $item) {
+                if ($this->storedFieldValueIsFilled($item)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        return $value !== null && trim((string) $value) !== '';
+    }
+
+    private function storedFieldValueMatchesOption(mixed $value, string $optionValue, string $optionLabel): bool
+    {
+        if (is_array($value)) {
+            foreach ($value as $item) {
+                if ($this->storedFieldValueMatchesOption($item, $optionValue, $optionLabel)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        $storedValue = trim((string) $value);
+
+        return $storedValue !== ''
+            && ($storedValue === $optionValue || $storedValue === $optionLabel);
+    }
+
     private function resolveOrderMode(?string $requestedMode, ?int $sortOrder, bool $isUpdate): string
     {
         if ($requestedMode && in_array($requestedMode, self::ORDER_MODES, true)) {
@@ -1751,6 +1806,33 @@ class SystemSettingsController extends Controller
             ], 422);
         }
 
+        $usageCount = $this->globalFormFieldOptionUsageCount($formFieldOption);
+        $groupUsageCount = $this->globalFormFieldGroupUsageCount((string) $formFieldOption->field_group);
+        $remainingGroupRows = FormFieldOption::query()
+            ->where('field_group', $formFieldOption->field_group)
+            ->whereKeyNot($formFieldOption->id)
+            ->count();
+
+        if ($usageCount > 0 || ($remainingGroupRows === 0 && $groupUsageCount > 0)) {
+            DB::transaction(function () use ($formFieldOption): void {
+                $oldValues = $formFieldOption->toArray();
+
+                $formFieldOption->update(['is_active' => false]);
+
+                $this->audit->log(
+                    auth()->id(), 'updated', 'form_field_options', $formFieldOption->id,
+                    $oldValues, $formFieldOption->fresh()->toArray(),
+                );
+            });
+
+            return response()->json([
+                'success' => true,
+                'archived' => true,
+                'affected_records' => max($usageCount, $groupUsageCount),
+                'message' => 'Field archived because beneficiary records already contain values for it. Existing profile data was kept.',
+            ]);
+        }
+
         DB::transaction(function () use ($formFieldOption) {
             $this->audit->log(
                 auth()->id(), 'deleted', 'form_field_options', $formFieldOption->id,
@@ -1761,6 +1843,55 @@ class SystemSettingsController extends Controller
         });
 
         return response()->json(['success' => true, 'message' => 'Option deleted successfully.']);
+    }
+
+    private function globalFormFieldGroupUsageCount(string $fieldGroup): int
+    {
+        $count = 0;
+
+        Beneficiary::query()
+            ->select(['id', 'custom_fields', 'custom_field_unavailability_reasons'])
+            ->chunkById(500, function ($beneficiaries) use ($fieldGroup, &$count): void {
+                foreach ($beneficiaries as $beneficiary) {
+                    $customFields = $this->jsonCastValueToArray($beneficiary->custom_fields);
+                    $reasons = $this->jsonCastValueToArray($beneficiary->custom_field_unavailability_reasons);
+
+                    if (
+                        $this->storedFieldValueIsFilled($customFields[$fieldGroup] ?? null)
+                        || $this->storedFieldValueIsFilled($reasons[$fieldGroup] ?? null)
+                    ) {
+                        $count++;
+                    }
+                }
+            });
+
+        return $count;
+    }
+
+    private function globalFormFieldOptionUsageCount(FormFieldOption $formFieldOption): int
+    {
+        $fieldType = strtolower((string) ($formFieldOption->field_type ?? FormFieldOption::FIELD_TYPE_DROPDOWN));
+        if (! in_array($fieldType, FormFieldOption::optionBasedFieldTypes(), true)) {
+            return $this->globalFormFieldGroupUsageCount((string) $formFieldOption->field_group);
+        }
+
+        $fieldGroup = (string) $formFieldOption->field_group;
+        $optionValue = (string) $formFieldOption->value;
+        $optionLabel = (string) $formFieldOption->label;
+        $count = 0;
+
+        Beneficiary::query()
+            ->select(['id', 'custom_fields'])
+            ->chunkById(500, function ($beneficiaries) use ($fieldGroup, $optionValue, $optionLabel, &$count): void {
+                foreach ($beneficiaries as $beneficiary) {
+                    $customFields = $this->jsonCastValueToArray($beneficiary->custom_fields);
+                    if ($this->storedFieldValueMatchesOption($customFields[$fieldGroup] ?? null, $optionValue, $optionLabel)) {
+                        $count++;
+                    }
+                }
+            });
+
+        return $count;
     }
 
     public function reorderFormFields(Request $request): JsonResponse
@@ -2208,6 +2339,27 @@ class SystemSettingsController extends Controller
     {
         try {
             $field = $agency->formFields()->findOrFail($fieldId);
+            $usageCount = $this->agencyFormFieldUsageCount((int) $agency->id, (string) $field->field_name);
+
+            if ($usageCount > 0) {
+                DB::transaction(function () use ($field): void {
+                    $oldValues = $field->toArray();
+
+                    $field->update(['is_active' => false]);
+
+                    $this->audit->log(
+                        auth()->id(), 'updated', 'agency_form_fields', $field->id,
+                        $oldValues, $field->fresh()->toArray(),
+                    );
+                });
+
+                return response()->json([
+                    'success' => true,
+                    'archived' => true,
+                    'affected_records' => $usageCount,
+                    'message' => 'Field archived because beneficiary records already contain values for it. Existing profile data was kept.',
+                ]);
+            }
 
             DB::transaction(function () use ($field) {
                 // Delete associated options first
@@ -2223,6 +2375,33 @@ class SystemSettingsController extends Controller
             \Log::error('Error deleting form field', ['error' => $e->getMessage()]);
             return response()->json(['error' => 'Failed to delete form field'], 500);
         }
+    }
+
+    private function agencyFormFieldUsageCount(int $agencyId, string $fieldName): int
+    {
+        $count = 0;
+        $agencyKey = (string) $agencyId;
+
+        Beneficiary::query()
+            ->select(['id', 'custom_fields', 'custom_field_unavailability_reasons'])
+            ->chunkById(500, function ($beneficiaries) use ($agencyKey, $fieldName, &$count): void {
+                foreach ($beneficiaries as $beneficiary) {
+                    $customFields = $this->jsonCastValueToArray($beneficiary->custom_fields);
+                    $reasons = $this->jsonCastValueToArray($beneficiary->custom_field_unavailability_reasons);
+
+                    $agencyValues = $this->jsonCastValueToArray(data_get($customFields, "agency_dynamic.{$agencyKey}", []));
+                    $agencyReasons = $this->jsonCastValueToArray(data_get($reasons, "agency_dynamic.{$agencyKey}", []));
+
+                    if (
+                        $this->storedFieldValueIsFilled($agencyValues[$fieldName] ?? null)
+                        || $this->storedFieldValueIsFilled($agencyReasons[$fieldName] ?? null)
+                    ) {
+                        $count++;
+                    }
+                }
+            });
+
+        return $count;
     }
 
     /**

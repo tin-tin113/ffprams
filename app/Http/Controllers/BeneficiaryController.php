@@ -318,7 +318,7 @@ class BeneficiaryController extends Controller
 
         $agencyFieldDefinitions = AgencyFormField::query()
             ->whereIn('agency_id', $beneficiary->agencies->pluck('id')->all())
-            ->with(['options' => fn ($query) => $query->where('is_active', true)->orderBy('sort_order')])
+            ->with(['options' => fn ($query) => $query->orderBy('sort_order')])
             ->get(['agency_id', 'field_name', 'display_label', 'form_section'])
             ->groupBy('agency_id')
             ->map(function ($fields): array {
@@ -346,9 +346,17 @@ class BeneficiaryController extends Controller
                 ->toArray())
             ->toArray();
 
+        $customFieldGroupsOnRecord = collect((array) ($beneficiary->custom_fields ?? []))
+            ->except('agency_dynamic')
+            ->keys()
+            ->map(fn ($fieldGroup) => (string) $fieldGroup)
+            ->filter()
+            ->values()
+            ->all();
+
         $globalCustomFieldDefinitions = FormFieldOption::query()
-            ->active()
-            ->get(['field_group', 'field_type', 'placement_section', 'label'])
+            ->whereIn('field_group', $customFieldGroupsOnRecord)
+            ->get(['field_group', 'field_type', 'placement_section', 'label', 'value'])
             ->groupBy('field_group')
             ->map(function ($options, string $fieldGroup): array {
                 $first = $options->first();

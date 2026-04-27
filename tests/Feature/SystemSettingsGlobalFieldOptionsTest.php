@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Barangay;
+use App\Models\Beneficiary;
 use App\Models\FormFieldOption;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -96,5 +98,80 @@ class SystemSettingsGlobalFieldOptionsTest extends TestCase
             ->assertStatus(422)
             ->assertJsonPath('errors.placement_section.0', 'DAR placement is not supported for global fields. Configure DAR fields under Agencies > Agency Fields.');
     }
-}
 
+    public function test_delete_archives_global_field_when_beneficiary_data_exists(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $barangay = Barangay::create([
+            'name' => 'Barangay Test',
+            'latitude' => 10.20000000,
+            'longitude' => 123.20000000,
+        ]);
+
+        $option = FormFieldOption::create([
+            'field_group' => 'farm_note',
+            'field_type' => FormFieldOption::FIELD_TYPE_TEXT,
+            'placement_section' => FormFieldOption::PLACEMENT_FARMER_INFORMATION,
+            'label' => 'Farm Note',
+            'value' => 'farm_note',
+            'sort_order' => 10,
+            'is_required' => false,
+            'is_active' => true,
+        ]);
+
+        $beneficiary = Beneficiary::create([
+            'first_name' => 'Mara',
+            'last_name' => 'Santos',
+            'barangay_id' => $barangay->id,
+            'classification' => 'Farmer',
+            'contact_number' => '09171234567',
+            'status' => 'Active',
+            'registered_at' => now()->toDateString(),
+            'custom_fields' => ['farm_note' => 'Keep this note'],
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->delete(route('admin.settings.form-fields.destroy', $option));
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('archived', true)
+            ->assertJsonPath('affected_records', 1);
+
+        $this->assertDatabaseHas('form_field_options', [
+            'id' => $option->id,
+            'is_active' => false,
+        ]);
+
+        $this->assertSame('Keep this note', $beneficiary->fresh()->custom_fields['farm_note']);
+    }
+
+    public function test_delete_removes_unused_global_field(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $option = FormFieldOption::create([
+            'field_group' => 'unused_note',
+            'field_type' => FormFieldOption::FIELD_TYPE_TEXT,
+            'placement_section' => FormFieldOption::PLACEMENT_PERSONAL_INFORMATION,
+            'label' => 'Unused Note',
+            'value' => 'unused_note',
+            'sort_order' => 10,
+            'is_required' => false,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->delete(route('admin.settings.form-fields.destroy', $option));
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonMissingPath('archived');
+
+        $this->assertDatabaseMissing('form_field_options', [
+            'id' => $option->id,
+        ]);
+    }
+}
