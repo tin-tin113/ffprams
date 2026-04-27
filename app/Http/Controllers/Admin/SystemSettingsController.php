@@ -17,6 +17,7 @@ use App\Services\AuditLogService;
 use App\Support\BeneficiaryCoreFields;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -768,24 +769,27 @@ class SystemSettingsController extends Controller
 
     // ── Program Legal Requirements ─────────────────
 
-    public function uploadProgramLegalRequirement(Request $request, ProgramName $programName): JsonResponse
+    public function uploadProgramLegalRequirement(Request $request, ProgramName $programName)
     {
         $request->validate([
-            'file' => ['required', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:10240'],
             'document_type' => ['nullable', 'string', 'max:100'],
             'remarks' => ['nullable', 'string', 'max:500'],
         ]);
 
         if (! $request->hasFile('file')) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No file provided.',
-            ], 422);
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No file provided.',
+                ], 422);
+            }
+            return redirect()->back()->with('error', 'No file provided.');
         }
 
         $file = $request->file('file');
         $originalName = $file->getClientOriginalName();
-        $extension = $file->extension();
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: '');
         $mimeType = $file->getMimeType();
 
         // Generate unique filename with timestamp
@@ -828,21 +832,29 @@ class SystemSettingsController extends Controller
                 return $requirement;
             });
 
-            return response()->json([
-                'success' => true,
-                'requirement' => $requirement->load('uploader'),
-                'message' => 'Legal requirement document uploaded successfully.',
-            ]);
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'requirement' => $requirement->load('uploader'),
+                    'message' => 'Legal requirement document uploaded successfully.',
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Legal requirement document uploaded successfully.');
         } catch (\Exception $e) {
             Log::error('Failed to upload program legal requirement', [
                 'program_id' => $programName->id,
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to upload document. Please try again.',
-            ], 500);
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to upload document. Please try again.',
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Failed to upload document. Please try again.');
         }
     }
 
@@ -859,7 +871,7 @@ class SystemSettingsController extends Controller
         ]);
     }
 
-    public function downloadProgramLegalRequirement(ProgramLegalRequirement $requirement): Response
+    public function downloadProgramLegalRequirement(ProgramName $programName, ProgramLegalRequirement $requirement)
     {
         if (! Storage::disk('program_documents')->exists($requirement->path)) {
             abort(404, 'File not found');
@@ -879,7 +891,27 @@ class SystemSettingsController extends Controller
         );
     }
 
-    public function deleteProgramLegalRequirement(ProgramLegalRequirement $requirement): JsonResponse
+    public function viewProgramLegalRequirement(ProgramName $programName, ProgramLegalRequirement $requirement)
+    {
+        if (! Storage::disk('program_documents')->exists($requirement->path)) {
+            abort(404, 'File not found');
+        }
+
+        $this->audit->log(
+            auth()->id(), 'viewed', 'program_legal_requirements', $requirement->id,
+            [], $requirement->toArray(),
+        );
+
+        return response()->file(
+            Storage::disk('program_documents')->path($requirement->path),
+            [
+                'Content-Type' => $requirement->mime_type ?: 'application/octet-stream',
+                'X-Content-Type-Options' => 'nosniff',
+            ]
+        );
+    }
+
+    public function deleteProgramLegalRequirement(ProgramName $programName, ProgramLegalRequirement $requirement)
     {
         try {
             DB::transaction(function () use ($requirement) {
@@ -900,20 +932,28 @@ class SystemSettingsController extends Controller
                 $requirement->delete();
             });
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Legal requirement document deleted successfully.',
-            ]);
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Legal requirement document deleted successfully.',
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Legal requirement document deleted successfully.');
         } catch (\Exception $e) {
             Log::error('Failed to delete program legal requirement', [
                 'requirement_id' => $requirement->id,
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to delete document. Please try again.',
-            ], 500);
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to delete document. Please try again.',
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Failed to delete document. Please try again.');
         }
     }
 

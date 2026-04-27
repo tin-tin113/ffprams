@@ -583,7 +583,7 @@
 <!-- Upload Modal -->
 <div class="modal fade" id="uploadRequirementModal" tabindex="-1">
     <div class="modal-dialog">
-        <form action="{{ route('admin.settings.program-names.legal-requirements.upload', $programName) }}"
+        <form id="uploadRequirementForm" action="{{ route('admin.settings.program-names.legal-requirements.upload', $programName) }}"
               method="POST" enctype="multipart/form-data" class="modal-content border-0 shadow">
             @csrf
             <div class="modal-header border-0 pb-0">
@@ -591,6 +591,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
+                <div id="uploadAlert" class="alert d-none"></div>
+
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Document Type</label>
                     <select name="document_type" class="form-select border-0 bg-light" required>
@@ -604,8 +606,8 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Select File</label>
-                    <input type="file" name="requirement_file" class="form-control border-0 bg-light" required>
-                    <small class="text-muted">PDF, DOCX, JPG, PNG allowed (max 10MB)</small>
+                    <input type="file" name="file" class="form-control border-0 bg-light" required>
+                    <small class="text-muted">PDF, DOC, DOCX, JPG, PNG allowed (max 10MB)</small>
                 </div>
                 <div class="mb-0">
                     <label class="form-label fw-semibold">Remarks</label>
@@ -614,7 +616,7 @@
             </div>
             <div class="modal-footer border-0 pt-0">
                 <button type="button" class="btn btn-light px-4 rounded-pill" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" class="btn btn-primary px-4 rounded-pill shadow-sm">Start Upload</button>
+                <button type="submit" id="submitUploadBtn" class="btn btn-primary px-4 rounded-pill shadow-sm">Start Upload</button>
             </div>
         </form>
     </div>
@@ -791,20 +793,73 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // --- Upload Implementation ---
+    const uploadForm = document.getElementById('uploadRequirementForm');
+    const uploadBtn = document.getElementById('submitUploadBtn');
+    const uploadAlert = document.getElementById('uploadAlert');
+
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading...';
+            
+            uploadAlert.classList.add('d-none');
+            uploadAlert.classList.remove('alert-danger', 'alert-success');
+
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrftoken
+                }
+            })
+            .then(async response => {
+                const isJson = response.headers.get('content-type')?.includes('application/json');
+                const data = isJson ? await response.json() : null;
+
+                if (response.ok && data && data.success) {
+                    uploadAlert.textContent = data.message || 'File uploaded successfully!';
+                    uploadAlert.classList.remove('d-none');
+                    uploadAlert.classList.add('alert-success');
+                    
+                    setTimeout(() => {
+                        const currentUrl = new URL(window.location.href);
+                        currentUrl.searchParams.set('tab', 'legal');
+                        window.location.href = currentUrl.toString();
+                    }, 1000);
+                } else {
+                    const errorMsg = data?.message || (response.status === 413 ? 'File too large for server.' : 'Upload failed (' + response.status + ')');
+                    throw new Error(errorMsg);
+                }
+            })
+            .catch(error => {
+                console.error('Upload error:', error);
+                uploadAlert.textContent = error.message || 'An error occurred during upload.';
+                uploadAlert.classList.remove('d-none');
+                uploadAlert.classList.add('alert-danger');
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = 'Start Upload';
+            });
+        });
+    }
+
     // Delete legal requirement
     document.querySelectorAll('.delete-req').forEach(btn => {
         btn.addEventListener('click', function() {
             const reqId = this.dataset.id;
             const programId = this.dataset.programId;
+            const actionUrl = `/admin/settings/program-names/${programId}/legal-requirements/${reqId}`;
 
-            if (confirm('Delete this legal requirement document? This action cannot be undone.')) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = `/admin/settings/program-names/${programId}/legal-requirements/${reqId}`;
-                form.innerHTML = `<input type="hidden" name="_token" value="${csrftoken}"><input type="hidden" name="_method" value="DELETE">`;
-                document.body.appendChild(form);
-                form.submit();
-            }
+            confirmAction(
+                'Delete Document',
+                'Are you sure you want to delete this legal requirement document? This action cannot be undone.',
+                actionUrl,
+                'DELETE'
+            );
         });
     });
 });
