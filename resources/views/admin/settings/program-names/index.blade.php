@@ -147,7 +147,7 @@
                                         <div>
                                             <div class="fw-bold text-dark mb-0 fs-6">{{ $program->name }}</div>
                                             <div class="text-muted extra-small">
-                                                <span class="badge {{ $program->classification === 'Farmer' ? 'bg-success-subtle text-success' : ($program->classification === 'Fisherfolk' ? 'bg-info-subtle text-info' : 'bg-warning-subtle text-warning text-dark') }} border-0 px-2 py-1">
+                                                <span class="badge {{ $program->classification === 'Farmer' ? 'badge-soft-success' : ($program->classification === 'Fisherfolk' ? 'badge-soft-info' : 'badge-soft-warning') }} border-0 px-2 py-1">
                                                     {{ $program->classification ?? '-' }}
                                                 </span>
                                             </div>
@@ -654,12 +654,6 @@
     }
 
     /* Soft Badge Overrides */
-    .bg-success-subtle { background-color: #dcfce7 !important; color: #166534 !important; }
-    .bg-info-subtle { background-color: #e0f2fe !important; color: #0369a1 !important; }
-    .bg-warning-subtle { background-color: #fef9c3 !important; color: #854d0e !important; }
-    .bg-primary-subtle { background-color: #dbeafe !important; color: #1e40af !important; }
-    .bg-secondary-subtle { background-color: #f1f5f9 !important; color: #475569 !important; }
-
     .input-group-merge .input-group-text {
         border-right: none;
     }
@@ -757,9 +751,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 let badgeClass = 'bg-secondary-subtle text-secondary';
                 let icon = 'bi-info-circle';
                 
-                if (data.classification === 'Farmer') { badgeClass = 'bg-success-subtle text-success'; icon = 'bi-flower1'; }
-                else if (data.classification === 'Fisherfolk') { badgeClass = 'bg-info-subtle text-info'; icon = 'bi-water'; }
-                else if (data.classification === 'Both') { badgeClass = 'bg-warning-subtle text-warning'; icon = 'bi-people'; }
+                if (data.classification === 'Farmer') { badgeClass = 'badge-soft-success'; icon = 'bi-flower1'; }
+                else if (data.classification === 'Fisherfolk') { badgeClass = 'badge-soft-info'; icon = 'bi-water'; }
+                else if (data.classification === 'Both') { badgeClass = 'badge-soft-warning'; icon = 'bi-people'; }
                 
                 displayEl.innerHTML = `<span class="badge ${badgeClass} px-3 py-2 rounded-pill"><i class="bi ${icon} me-1"></i> ${data.classification}</span>`;
             } else {
@@ -997,10 +991,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     fullDetailsBtn.href = `/admin/programs/${programId}`;
                 }
 
-                let classBadge = 'bg-secondary-subtle text-secondary';
-                if (program.classification === 'Farmer') classBadge = 'bg-success-subtle text-success';
-                else if (program.classification === 'Fisherfolk') classBadge = 'bg-info-subtle text-info';
-                else if (program.classification === 'Both') classBadge = 'bg-warning-subtle text-warning';
+                let classBadge = 'badge-soft-secondary';
+                if (program.classification === 'Farmer') classBadge = 'badge-soft-success';
+                else if (program.classification === 'Fisherfolk') classBadge = 'badge-soft-info';
+                else if (program.classification === 'Both') classBadge = 'badge-soft-warning';
                 
                 const classEl = document.getElementById('previewClassification');
                 classEl.textContent = program.classification || 'N/A';
@@ -1008,7 +1002,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 const statusEl = document.getElementById('previewStatus');
                 statusEl.textContent = program.is_active ? 'Active' : 'Inactive';
-                statusEl.className = `badge px-3 py-2 rounded-pill ${program.is_active ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}`;
+                statusEl.className = `badge px-3 py-2 rounded-pill ${program.is_active ? 'badge-soft-success' : 'badge-soft-secondary'}`;
 
                 // Icon update based on classification
                 const iconContainer = document.getElementById('previewIcon');

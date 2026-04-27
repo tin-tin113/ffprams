@@ -60,12 +60,6 @@
         color: #64748b;
         border-top: none;
     }
-    .badge-soft-primary { background: #e0e7ff; color: #4338ca; }
-    .badge-soft-success { background: #dcfce7; color: #15803d; }
-    .badge-soft-info { background: #e0f2fe; color: #0369a1; }
-    .badge-soft-warning { background: #fef3c7; color: #92400e; }
-    .badge-soft-danger { background: #fee2e2; color: #b91c1c; }
-    .badge-soft-purple { background: #f3e8ff; color: #7e22ce; }
     .form-control, .form-select {
         color: #1e293b !important;
     }
@@ -267,12 +261,12 @@
                                 <tr>
                                     <td class="ps-4"><span class="fw-semibold text-dark">{{ $event->distribution_date?->format('M d, Y') ?? 'N/A' }}</span></td>
                                     <td>{{ $event->barangay?->name ?? 'N/A' }}</td>
-                                    <td><span class="badge bg-soft-primary text-primary border-0">{{ $event->resourceType?->name ?? 'N/A' }}</span></td>
+                                    <td><span class="badge badge-soft-primary text-primary border-0">{{ $event->resourceType?->name ?? 'N/A' }}</span></td>
                                     <td>
                                         @if($event->status === 'Completed')
-                                            <span class="badge bg-soft-success px-3 py-2 rounded-pill">Completed</span>
+                                            <span class="badge badge-soft-success px-3 py-2 rounded-pill">Completed</span>
                                         @elseif($event->status === 'Planned')
-                                            <span class="badge bg-soft-warning px-3 py-2 rounded-pill">Planned</span>
+                                            <span class="badge badge-soft-warning px-3 py-2 rounded-pill">Planned</span>
                                         @else
                                             <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">{{ $event->status ?? '-' }}</span>
                                         @endif
@@ -356,19 +350,19 @@
                                             </td>
                                             <td>
                                                 @if($allocation->release_method === 'direct')
-                                                    <span class="badge bg-soft-info text-info px-2 py-1"><i class="bi bi-box-arrow-in-right me-1"></i> Standalone (Direct)</span>
+                                                    <span class="badge badge-soft-info text-info px-2 py-1"><i class="bi bi-box-arrow-in-right me-1"></i> Standalone (Direct)</span>
                                                 @else
                                                     @if($allocation->distribution_event_id)
-                                                        <a href="{{ route('distribution-events.show', $allocation->distribution_event_id) }}" class="badge bg-soft-primary text-primary px-2 py-1 text-decoration-none">
+                                                        <a href="{{ route('distribution-events.show', $allocation->distribution_event_id) }}" class="badge badge-soft-primary text-primary px-2 py-1 text-decoration-none">
                                                             <i class="bi bi-calendar-event me-1"></i> Event
                                                         </a>
                                                     @else
-                                                        <span class="badge bg-soft-primary text-primary px-2 py-1"><i class="bi bi-calendar-event me-1"></i> Event</span>
+                                                        <span class="badge badge-soft-primary text-primary px-2 py-1"><i class="bi bi-calendar-event me-1"></i> Event</span>
                                                     @endif
                                                 @endif
                                             </td>
                                             <td class="pe-4">
-                                                <span class="badge {{ $allocation->release_status === 'released' ? 'bg-soft-success text-success' : 'bg-soft-warning text-warning' }} px-3 py-2 rounded-pill">
+                                                <span class="badge {{ $allocation->release_status === 'released' ? 'badge-soft-success text-success' : 'badge-soft-warning text-warning' }} px-3 py-2 rounded-pill">
                                                     {{ $allocation->release_status_label }}
                                                 </span>
                                             </td>
@@ -414,7 +408,7 @@
                                                 @if($record->quantity) <small class="text-muted">{{ number_format($record->quantity, 1) }} units</small> @endif
                                             </td>
                                             <td>
-                                                <span class="badge {{ $record->release_status === 'released' ? 'bg-soft-success text-success' : 'bg-soft-warning text-warning' }} px-3 py-2 rounded-pill">
+                                                <span class="badge {{ $record->release_status === 'released' ? 'badge-soft-success text-success' : 'badge-soft-warning text-warning' }} px-3 py-2 rounded-pill">
                                                     {{ $record->release_status_label }}
                                                 </span>
                                             </td>

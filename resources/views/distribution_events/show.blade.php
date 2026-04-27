@@ -50,13 +50,7 @@
         border-color: #cbd5e1;
         color: #0f172a;
     }
-    .badge-soft-success { background-color: #dcfce7; color: #15803d; }
-    .badge-soft-warning { background-color: #fef3c7; color: #92400e; }
-    .badge-soft-info { background-color: #e0f2fe; color: #075985; }
-    .badge-soft-danger { background-color: #fee2e2; color: #991b1b; }
-    .badge-soft-primary { background-color: #e0e7ff; color: #3730a3; }
-    .badge-soft-purple { background-color: #f3e8ff; color: #6b21a8; }
-    
+
     .card-dashboard {
         border: none;
         border-radius: 1rem;

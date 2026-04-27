@@ -583,6 +583,15 @@
         /* --- Badge Styles --- */
         .badge-admin { background-color: #dc2626; }
         .badge-staff { background-color: #2563eb; }
+
+        /* Badge Soft Styles */
+        .badge-soft-success { background-color: #dcfce7 !important; color: #15803d !important; }
+        .badge-soft-warning { background-color: #fef3c7 !important; color: #92400e !important; }
+        .badge-soft-info { background-color: #e0f2fe !important; color: #075985 !important; }
+        .badge-soft-danger { background-color: #fee2e2 !important; color: #991b1b !important; }
+        .badge-soft-primary { background-color: #e0e7ff !important; color: #3730a3 !important; }
+        .badge-soft-purple { background-color: #f3e8ff !important; color: #6b21a8 !important; }
+        .badge-soft-secondary { background-color: #f3f4f6 !important; color: #4b5563 !important; }
         /* --- Breadcrumb --- */
         .breadcrumb {
             background: transparent;

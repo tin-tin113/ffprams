@@ -317,11 +317,6 @@
     .table-hover tbody tr:hover {
         background-color: rgba(25, 135, 84, 0.02) !important;
     }
-    .badge-soft-primary { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
-    .badge-soft-success { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
-    .badge-soft-warning { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
-    .badge-soft-danger { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
-    .badge-soft-secondary { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
 </style>
 @endpush
 

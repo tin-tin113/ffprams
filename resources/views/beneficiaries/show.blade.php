@@ -244,12 +244,6 @@
         color: #1e293b;
         font-size: 0.95rem;
     }
-    .badge-soft-primary { background: #e0e7ff; color: #4338ca; }
-    .badge-soft-success { background: #dcfce7; color: #15803d; }
-    .badge-soft-info { background: #e0f2fe; color: #0369a1; }
-    .badge-soft-warning { background: #fef3c7; color: #92400e; }
-    .badge-soft-danger { background: #fee2e2; color: #b91c1c; }
-    .badge-soft-purple { background: #f3e8ff; color: #7e22ce; }
 
     /* SMS Thread Styles */
     .sms-thread {
@@ -348,7 +342,7 @@
                                     'Farmer'     => 'badge-soft-primary',
                                     'Fisherfolk' => 'badge-soft-info',
                                     'Farmer & Fisherfolk' => 'badge-soft-purple',
-                                    default      => 'bg-soft-secondary',
+                                    default      => 'badge-soft-secondary',
                                 };
                             @endphp
                             <span class="badge {{ $classBadge }} px-3 py-2 rounded-pill shadow-sm">
