@@ -19,10 +19,50 @@
 
             <div id="beneficiaryAjaxNotice" class="alert d-none" role="alert"></div>
 
+            {{-- Wizard progress bar --}}
+            <div id="beneficiaryWizard" class="mb-4 bg-white rounded-3 p-3 border">
+                <ol class="d-flex list-unstyled mb-0 align-items-center" id="wizardStepNav">
+                    @foreach([1 => 'Registration', 2 => 'Personal Info', 3 => 'Address', 4 => 'Classification', 5 => 'Membership'] as $n => $label)
+                    <li class="wizard-step-item d-flex align-items-center {{ $n < 5 ? 'flex-fill' : '' }}" data-step-nav="{{ $n }}">
+                        <button type="button"
+                                class="wizard-step-btn border-0 bg-transparent p-0 d-flex align-items-center gap-2"
+                                data-goto-step="{{ $n }}">
+                            <div class="wizard-step-indicator">
+                                <span class="wizard-step-number">{{ $n }}</span>
+                                <i class="bi bi-check-lg wizard-step-check d-none"></i>
+                            </div>
+                            <div class="wizard-step-label d-none d-md-flex flex-column text-start">
+                                <span class="wizard-step-title small fw-semibold">{{ $label }}</span>
+                            </div>
+                        </button>
+                        @if($n < 5)
+                        <div class="wizard-connector flex-fill mx-2"></div>
+                        @endif
+                    </li>
+                    @endforeach
+                </ol>
+            </div>
+
             <form id="beneficiaryCreateForm" action="{{ route('beneficiaries.store') }}" method="POST">
                 @csrf
                 @include('beneficiaries.partials.form')
             </form>
+
+            {{-- Wizard navigation buttons (outside form) --}}
+            <div id="wizardNavigation" class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                <button type="button" id="wizardPrevBtn" class="btn btn-outline-secondary px-4" style="display:none">
+                    <i class="bi bi-arrow-left me-1"></i> Back
+                </button>
+                <div class="d-flex gap-2 ms-auto">
+                    <a href="{{ route('beneficiaries.index') }}" id="wizardCancelBtn" class="btn btn-outline-secondary px-4" style="display:none">Cancel</a>
+                    <button type="button" id="wizardNextBtn" class="btn btn-success px-4 fw-semibold">
+                        Next <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                    <button type="submit" form="beneficiaryCreateForm" id="wizardSubmitBtn" class="btn btn-success px-4 fw-bold shadow-sm" style="display:none">
+                        <i class="bi bi-check-lg me-1"></i> Register Beneficiary
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -64,6 +104,28 @@
     </div>
 @endsection
 
+@push('styles')
+<style>
+.wizard-step-btn { cursor: pointer; }
+.wizard-step-indicator {
+    width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #e2e8f0; color: #64748b; font-weight: 700; font-size: 0.85rem;
+    transition: background 0.2s, color 0.2s;
+}
+.wizard-step-indicator.active    { background: #198754; color: #fff; }
+.wizard-step-indicator.completed { background: #20c997; color: #fff; }
+.wizard-step-indicator.completed .wizard-step-number { display: none; }
+.wizard-step-indicator.completed .wizard-step-check  { display: inline !important; }
+.wizard-connector { height: 2px; background: #e2e8f0; transition: background 0.3s; }
+.wizard-connector.completed { background: #20c997; }
+[data-wizard-step] { display: none; }
+[data-wizard-step].wizard-active { display: block; }
+/* Form's native submit row is replaced by #wizardNavigation on the create page */
+#submit-section { display: none !important; }
+</style>
+@endpush
+
 @push('scripts')
 <script src="{{ asset('js/beneficiary-dynamic-agencies.js') }}"></script>
 <script>
@@ -71,7 +133,8 @@ document.addEventListener('DOMContentLoaded', function () {
     var form = document.getElementById('beneficiaryCreateForm');
     if (!form) return;
 
-    var submitButton = form.querySelector('button[type="submit"]');
+    // #wizardSubmitBtn lives outside the form (uses form= attribute) — find it by ID first.
+    var submitButton = document.getElementById('wizardSubmitBtn') || form.querySelector('button[type="submit"]');
     var ajaxNotice = document.getElementById('beneficiaryAjaxNotice');
     var toastEl = document.getElementById('beneficiaryToast');
     var toastMessageEl = document.getElementById('beneficiaryToastMessage');
@@ -233,6 +296,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 element.dispatchEvent(new Event('change', { bubbles: true }));
             }
         });
+
+        if (typeof window.wizardGoToStep === 'function') window.wizardGoToStep(1);
     }
 
     var confirmationModalEl = document.getElementById('confirmationModal');
@@ -422,7 +487,10 @@ document.addEventListener('DOMContentLoaded', function () {
         clearFieldErrors();
 
         if (!form.checkValidity()) {
-            form.reportValidity();
+            // Skip reportValidity() — native browser popups point at whichever field
+            // the browser finds first, which may be on a hidden wizard step. The wizard
+            // validates each step before Next, so if we reach here the issue is in Step 5.
+            // The AJAX 422 handler will show proper inline errors and navigate if needed.
             return;
         }
 
@@ -478,6 +546,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 showToast('error', 'Please fix the highlighted fields and try again.');
                 showNotice('error', firstErrorMessage || 'Some required fields are missing or invalid. Please review the highlighted fields.');
+
+                var firstErrField = form.querySelector('.is-invalid');
+                if (firstErrField && typeof window.wizardGoToStep === 'function') {
+                    var errPanel = firstErrField.closest('[data-wizard-step]');
+                    if (!errPanel) {
+                        // farmer/fisherfolk sections have no data-wizard-step (inline style conflict)
+                        if (firstErrField.closest('#farmer-info-section') || firstErrField.closest('#fisherfolk-info-section')) {
+                            window.wizardGoToStep(4);
+                        }
+                    } else {
+                        window.wizardGoToStep(parseInt(errPanel.dataset.wizardStep, 10));
+                    }
+                }
                 return;
             }
 
@@ -500,4 +581,5 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
+<script src="{{ asset('js/beneficiary-wizard.js') }}"></script>
 @endpush

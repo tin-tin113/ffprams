@@ -460,8 +460,8 @@
                         {{-- Global fields --}}
                         <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-white">
                             <div>
-                                <span class="fw-semibold small">Global Fields</span>
-                                <small class="text-muted ms-2">Configurable fields for the <strong>DA/RSBSA Information</strong> section.</small>
+                                <span class="fw-semibold small">Additional Farmer Fields</span>
+                                <small class="text-muted ms-2">Configurable fields shown only in the <strong>Farmer Information</strong> section.</small>
                             </div>
                             <button class="btn btn-sm btn-success section-add-field-btn ms-3 flex-shrink-0"
                                     data-placement="farmer_information" data-section-label="Farmer">
@@ -568,7 +568,7 @@
                                     @empty
                                         <tr>
                                             <td colspan="5" class="text-center text-muted py-4">
-                                                No global fields configured for Farmer. Click <strong>Add Field</strong> to create one.
+                                                No additional fields configured for Farmer. Click <strong>Add Field</strong> to create one.
                                             </td>
                                         </tr>
                                     @endforelse
@@ -639,8 +639,8 @@
                         {{-- Global fields --}}
                         <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-white">
                             <div>
-                                <span class="fw-semibold small">Global Fields</span>
-                                <small class="text-muted ms-2">Configurable fields for the <strong>BFAR/FishR Information</strong> section.</small>
+                                <span class="fw-semibold small">Additional Fisherfolk Fields</span>
+                                <small class="text-muted ms-2">Configurable fields shown only in the <strong>Fisherfolk Information</strong> section.</small>
                             </div>
                             <button class="btn btn-sm btn-success section-add-field-btn ms-3 flex-shrink-0"
                                     data-placement="fisherfolk_information" data-section-label="Fisherfolk">
@@ -747,7 +747,7 @@
                                     @empty
                                         <tr>
                                             <td colspan="5" class="text-center text-muted py-4">
-                                                No global fields configured for Fisherfolk. Click <strong>Add Field</strong> to create one.
+                                                No additional fields configured for Fisherfolk. Click <strong>Add Field</strong> to create one.
                                             </td>
                                         </tr>
                                     @endforelse
@@ -1327,6 +1327,27 @@
     </div>
 </div>
 
+<!-- Settings Notification Modal -->
+<div class="modal fade" id="settingsNotificationModal" tabindex="-1" aria-labelledby="settingsNotificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" id="settingsNotificationHeader">
+                <h5 class="modal-title" id="settingsNotificationModalLabel">Notice</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex gap-3 align-items-start">
+                    <i class="bi bi-info-circle fs-3 flex-shrink-0" id="settingsNotificationIcon"></i>
+                    <p class="mb-0 settings-notification-message" id="settingsNotificationMessage"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="settingsNotificationOkBtn" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="purposeCategoryOptionsData" data-options='@json($purposeCategoryOptions ?? [])' class="d-none"></div>
 
 <style>
@@ -1393,6 +1414,18 @@
     .global-options-toggle.is-open .bi {
         transform: rotate(180deg);
     }
+
+    .settings-notification-message {
+        white-space: pre-line;
+    }
+
+    #settingsNotificationModal.settings-notification-top-layer {
+        z-index: 1090;
+    }
+
+    .modal-backdrop.settings-notification-backdrop {
+        z-index: 1085;
+    }
 </style>
 
 @push('scripts')
@@ -1402,6 +1435,108 @@ document.addEventListener('DOMContentLoaded', function() {
     const purposeCategoryOptions = purposeCategoryOptionsElement
         ? JSON.parse(purposeCategoryOptionsElement.dataset.options || '{}')
         : {};
+    const settingsNotificationModalElement = document.getElementById('settingsNotificationModal');
+    const settingsNotificationModal = settingsNotificationModalElement
+        ? bootstrap.Modal.getOrCreateInstance(settingsNotificationModalElement)
+        : null;
+    const settingsNotificationHeader = document.getElementById('settingsNotificationHeader');
+    const settingsNotificationTitle = document.getElementById('settingsNotificationModalLabel');
+    const settingsNotificationIcon = document.getElementById('settingsNotificationIcon');
+    const settingsNotificationMessage = document.getElementById('settingsNotificationMessage');
+    const settingsNotificationToneClasses = {
+        info: {
+            header: ['bg-info-subtle', 'text-info-emphasis'],
+            icon: ['bi-info-circle', 'text-info'],
+        },
+        success: {
+            header: ['bg-success-subtle', 'text-success-emphasis'],
+            icon: ['bi-check-circle', 'text-success'],
+        },
+        warning: {
+            header: ['bg-warning-subtle', 'text-warning-emphasis'],
+            icon: ['bi-exclamation-triangle', 'text-warning'],
+        },
+        danger: {
+            header: ['bg-danger-subtle', 'text-danger-emphasis'],
+            icon: ['bi-exclamation-octagon', 'text-danger'],
+        },
+    };
+    const settingsNotificationHeaderClasses = [...new Set(
+        Object.values(settingsNotificationToneClasses).flatMap((config) => config.header)
+    )];
+    const settingsNotificationIconClasses = [...new Set(
+        Object.values(settingsNotificationToneClasses).flatMap((config) => config.icon)
+    )];
+    let settingsNotificationResolve = null;
+
+    function getLatestModalBackdrop() {
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        return backdrops.length ? backdrops[backdrops.length - 1] : null;
+    }
+
+    function showSettingsNotification(message, { title = 'Notice', tone = 'info' } = {}) {
+        if (!settingsNotificationModalElement || !settingsNotificationModal || !settingsNotificationTitle || !settingsNotificationMessage) {
+            window.alert(String(message || ''));
+            return Promise.resolve();
+        }
+
+        if (typeof ensureModalInBody === 'function') {
+            ensureModalInBody(settingsNotificationModalElement);
+        }
+
+        const style = settingsNotificationToneClasses[tone] || settingsNotificationToneClasses.info;
+
+        settingsNotificationTitle.textContent = title;
+        settingsNotificationMessage.textContent = String(message || '');
+
+        if (settingsNotificationHeader) {
+            settingsNotificationHeader.classList.remove(...settingsNotificationHeaderClasses);
+            settingsNotificationHeader.classList.add(...style.header);
+        }
+
+        if (settingsNotificationIcon) {
+            settingsNotificationIcon.classList.remove(...settingsNotificationIconClasses);
+            settingsNotificationIcon.classList.add(...style.icon);
+        }
+
+        if (settingsNotificationResolve) {
+            const resolvePrevious = settingsNotificationResolve;
+            settingsNotificationResolve = null;
+            resolvePrevious();
+        }
+
+        return new Promise((resolve) => {
+            settingsNotificationResolve = resolve;
+            settingsNotificationModal.show();
+        });
+    }
+
+    if (settingsNotificationModalElement) {
+        settingsNotificationModalElement.addEventListener('shown.bs.modal', function () {
+            settingsNotificationModalElement.classList.add('settings-notification-top-layer');
+
+            const latestBackdrop = typeof getLatestBackdrop === 'function'
+                ? getLatestBackdrop()
+                : getLatestModalBackdrop();
+
+            if (latestBackdrop) {
+                latestBackdrop.classList.add('settings-notification-backdrop');
+            }
+        });
+
+        settingsNotificationModalElement.addEventListener('hidden.bs.modal', function () {
+            settingsNotificationModalElement.classList.remove('settings-notification-top-layer');
+            document.querySelectorAll('.modal-backdrop.settings-notification-backdrop').forEach((backdrop) => {
+                backdrop.classList.remove('settings-notification-backdrop');
+            });
+
+            if (settingsNotificationResolve) {
+                const resolve = settingsNotificationResolve;
+                settingsNotificationResolve = null;
+                resolve();
+            }
+        });
+    }
 
     const settingsTabByKey = {
         agencies: 'agencies-tab',
@@ -1567,7 +1702,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.dataset.nextRequired = isRequired ? '0' : '1';
                 this.textContent = isRequired ? 'Set Optional' : 'Set Required';
             } catch (error) {
-                alert(error.message || 'Error updating classification core field.');
+                showSettingsNotification(error.message || 'Error updating classification core field.', {
+                    title: 'Update Failed',
+                    tone: 'danger',
+                });
             } finally {
                 this.disabled = false;
             }
@@ -1770,7 +1908,10 @@ document.addEventListener('DOMContentLoaded', function() {
             .map(cb => cb.value);
 
         if (classifications.length === 0) {
-            alert('Please select at least one classification');
+            await showSettingsNotification('Please select at least one classification.', {
+                title: 'Classification Required',
+                tone: 'warning',
+            });
             return;
         }
 
@@ -1795,7 +1936,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (!response.ok) {
                 const error = await response.json();
-                alert('Error: ' + (error.message || 'Failed to save agency'));
+                await showSettingsNotification(error.message || 'Failed to save agency', {
+                    title: 'Save Failed',
+                    tone: 'danger',
+                });
                 return;
             }
 
@@ -1803,7 +1947,10 @@ document.addEventListener('DOMContentLoaded', function() {
             reloadWithCurrentSettingsTab();
         } catch (error) {
             console.error('Error saving agency:', error);
-            alert('Error saving agency');
+            showSettingsNotification('Error saving agency.', {
+                title: 'Save Failed',
+                tone: 'danger',
+            });
         }
     });
 
@@ -1834,7 +1981,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         } catch (error) {
             console.error('Error loading agency:', error);
-            alert('Error loading agency data');
+            showSettingsNotification('Error loading agency data.', {
+                title: 'Load Failed',
+                tone: 'danger',
+            });
         }
     }
 
@@ -1850,7 +2000,10 @@ document.addEventListener('DOMContentLoaded', function() {
             .map(cb => cb.value);
 
         if (classifications.length === 0) {
-            alert('Please select at least one classification');
+            await showSettingsNotification('Please select at least one classification.', {
+                title: 'Classification Required',
+                tone: 'warning',
+            });
             return;
         }
 
@@ -1875,7 +2028,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (!response.ok) {
                 const error = await response.json();
-                alert('Error: ' + (error.message || 'Failed to update agency'));
+                await showSettingsNotification(error.message || 'Failed to update agency', {
+                    title: 'Update Failed',
+                    tone: 'danger',
+                });
                 return;
             }
 
@@ -1883,7 +2039,10 @@ document.addEventListener('DOMContentLoaded', function() {
             reloadWithCurrentSettingsTab();
         } catch (error) {
             console.error('Error updating agency:', error);
-            alert('Error updating agency');
+            showSettingsNotification('Error updating agency.', {
+                title: 'Update Failed',
+                tone: 'danger',
+            });
         }
     });
 
@@ -1933,7 +2092,10 @@ document.addEventListener('DOMContentLoaded', function() {
             reloadWithCurrentSettingsTab();
         } catch (error) {
             console.error('Error deactivating agency:', error);
-            alert('Error deactivating agency');
+            showSettingsNotification('Error deactivating agency.', {
+                title: 'Action Failed',
+                tone: 'danger',
+            });
         }
     }
 
@@ -1953,7 +2115,10 @@ document.addEventListener('DOMContentLoaded', function() {
             reloadWithCurrentSettingsTab();
         } catch (error) {
             console.error('Error activating agency:', error);
-            alert('Error activating agency');
+            showSettingsNotification('Error activating agency.', {
+                title: 'Action Failed',
+                tone: 'danger',
+            });
         }
     }
 
@@ -2145,7 +2310,10 @@ document.addEventListener('DOMContentLoaded', function() {
             bootstrap.Modal.getOrCreateInstance(document.getElementById('addFieldModal')).show();
         } catch (error) {
             console.error('Error loading field:', error);
-            alert('Error loading field');
+            showSettingsNotification('Error loading field.', {
+                title: 'Load Failed',
+                tone: 'danger',
+            });
         }
     }
 
@@ -2163,12 +2331,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (!response.ok) throw new Error(result.message || result.error || 'Failed to delete field');
             if (result.archived && result.message) {
-                alert(result.message);
+                await showSettingsNotification(result.message, {
+                    title: 'Field Archived',
+                    tone: 'info',
+                });
             }
             loadFormFields(agencyId);
         } catch (error) {
             console.error('Error deleting field:', error);
-            alert(error.message || 'Error deleting field');
+            showSettingsNotification(error.message || 'Error deleting field.', {
+                title: 'Delete Failed',
+                tone: 'danger',
+            });
         }
     }
 
@@ -2223,9 +2397,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 const errorMessage = error.message || 'Failed to save field';
                 if (error.errors) {
                     const errorDetails = Object.values(error.errors).flat().join('\n');
-                    alert(errorMessage + '\n\n' + errorDetails);
+                    await showSettingsNotification(`${errorMessage}\n\n${errorDetails}`, {
+                        title: 'Save Failed',
+                        tone: 'danger',
+                    });
                 } else {
-                    alert('Error: ' + errorMessage);
+                    await showSettingsNotification(errorMessage, {
+                        title: 'Save Failed',
+                        tone: 'danger',
+                    });
                 }
                 return;
             }
@@ -2236,7 +2416,10 @@ document.addEventListener('DOMContentLoaded', function() {
             loadFormFields(agencyId);
         } catch (error) {
             console.error('Error saving field:', error);
-            alert('Error saving field: ' + error.message);
+            showSettingsNotification(error.message || 'Error saving field.', {
+                title: 'Save Failed',
+                tone: 'danger',
+            });
         }
     });
 
@@ -2448,39 +2631,51 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    async function deleteGlobalField(fieldId) {
+        try {
+            const response = await fetch(`/admin/settings/form-fields/${fieldId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || 'Failed to delete field');
+            }
+
+            if (result.archived && result.message) {
+                await showSettingsNotification(result.message, {
+                    title: 'Field Archived',
+                    tone: 'info',
+                });
+            }
+
+            reloadWithCurrentSettingsTab();
+        } catch (error) {
+            showSettingsNotification(error.message || 'Error deleting form field.', {
+                title: 'Delete Failed',
+                tone: 'danger',
+            });
+        }
+    }
+
     document.querySelectorAll('.delete-global-field-btn').forEach((btn) => {
-        btn.addEventListener('click', async function() {
+        btn.addEventListener('click', function() {
             const fieldId = this.dataset.fieldId;
             const fieldLabel = this.dataset.fieldLabel || 'this option';
 
-            if (!confirm(`Remove "${fieldLabel}" from active forms?\n\nIf beneficiary records already use it, the field will be archived and existing profile data will be kept.`)) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`/admin/settings/form-fields/${fieldId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    }
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(result.message || 'Failed to delete field');
+            confirmThenRun(
+                'Remove Field',
+                `Remove "${fieldLabel}" from active forms?\n\nIf beneficiary records already use it, the field will be archived and existing profile data will be kept.`,
+                function () {
+                    deleteGlobalField(fieldId);
                 }
-
-                if (result.archived && result.message) {
-                    alert(result.message);
-                }
-
-                reloadWithCurrentSettingsTab();
-            } catch (error) {
-                alert(error.message || 'Error deleting form field.');
-            }
+            );
         });
     });
 
@@ -2612,7 +2807,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (!response.ok) {
                 const error = await response.json();
-                alert('Error: ' + (error.message || 'Failed to save resource type'));
+                await showSettingsNotification(error.message || 'Failed to save resource type', {
+                    title: 'Save Failed',
+                    tone: 'danger',
+                });
                 return;
             }
 
@@ -2620,7 +2818,10 @@ document.addEventListener('DOMContentLoaded', function() {
             reloadWithCurrentSettingsTab();
         } catch (error) {
             console.error('Error saving resource type:', error);
-            alert('Error saving resource type');
+            showSettingsNotification('Error saving resource type.', {
+                title: 'Save Failed',
+                tone: 'danger',
+            });
         }
     });
 
@@ -2648,7 +2849,10 @@ document.addEventListener('DOMContentLoaded', function() {
             bootstrap.Modal.getOrCreateInstance(document.getElementById('editResourceTypeModal')).show();
         } catch (error) {
             console.error('Error loading resource type:', error);
-            alert('Error loading resource type data');
+            showSettingsNotification('Error loading resource type data.', {
+                title: 'Load Failed',
+                tone: 'danger',
+            });
         }
     }
 
@@ -2679,7 +2883,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (!response.ok) {
                 const error = await response.json();
-                alert('Error: ' + (error.message || 'Failed to update resource type'));
+                await showSettingsNotification(error.message || 'Failed to update resource type', {
+                    title: 'Update Failed',
+                    tone: 'danger',
+                });
                 return;
             }
 
@@ -2687,7 +2894,10 @@ document.addEventListener('DOMContentLoaded', function() {
             reloadWithCurrentSettingsTab();
         } catch (error) {
             console.error('Error updating resource type:', error);
-            alert('Error updating resource type');
+            showSettingsNotification('Error updating resource type.', {
+                title: 'Update Failed',
+                tone: 'danger',
+            });
         }
     });
 
@@ -2696,9 +2906,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const resourceTypeId = this.dataset.resourceTypeId;
             const resourceTypeName = this.dataset.resourceTypeName;
 
-            if (confirm(`Delete resource type "${resourceTypeName}"?\n\nThis action cannot be undone.`)) {
-                deleteResourceType(resourceTypeId);
-            }
+            confirmThenRun(
+                'Delete Resource Type',
+                `Delete resource type "${resourceTypeName}"?\n\nThis action cannot be undone.`,
+                function () {
+                    deleteResourceType(resourceTypeId);
+                }
+            );
         });
     });
 
@@ -2716,7 +2930,10 @@ document.addEventListener('DOMContentLoaded', function() {
             reloadWithCurrentSettingsTab();
         } catch (error) {
             console.error('Error deleting resource type:', error);
-            alert('Error deleting resource type');
+            showSettingsNotification('Error deleting resource type.', {
+                title: 'Delete Failed',
+                tone: 'danger',
+            });
         }
     }
 
@@ -2765,7 +2982,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     ? Object.values(error.errors).flat().join('\n')
                     : '';
 
-                alert('Error: ' + (details || error.message || 'Failed to save purpose'));
+                await showSettingsNotification(details || error.message || 'Failed to save purpose', {
+                    title: 'Save Failed',
+                    tone: 'danger',
+                });
                 return;
             }
 
@@ -2773,7 +2993,10 @@ document.addEventListener('DOMContentLoaded', function() {
             reloadWithCurrentSettingsTab();
         } catch (error) {
             console.error('Error saving purpose:', error);
-            alert('Error saving purpose');
+            showSettingsNotification('Error saving purpose.', {
+                title: 'Save Failed',
+                tone: 'danger',
+            });
         }
     });
 
@@ -2821,7 +3044,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     ? Object.values(error.errors).flat().join('\n')
                     : '';
 
-                alert('Error: ' + (details || error.message || 'Failed to update purpose'));
+                await showSettingsNotification(details || error.message || 'Failed to update purpose', {
+                    title: 'Update Failed',
+                    tone: 'danger',
+                });
                 return;
             }
 
@@ -2829,7 +3055,10 @@ document.addEventListener('DOMContentLoaded', function() {
             reloadWithCurrentSettingsTab();
         } catch (error) {
             console.error('Error updating purpose:', error);
-            alert('Error updating purpose');
+            showSettingsNotification('Error updating purpose.', {
+                title: 'Update Failed',
+                tone: 'danger',
+            });
         }
     });
 
@@ -2839,9 +3068,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const purposeId = this.dataset.purposeId;
             const purposeName = this.dataset.purposeName;
 
-            if (confirm(`Delete purpose "${purposeName}"?\n\nThis action cannot be undone.`)) {
-                deletePurpose(purposeId);
-            }
+            confirmThenRun(
+                'Delete Purpose',
+                `Delete purpose "${purposeName}"?\n\nThis action cannot be undone.`,
+                function () {
+                    deletePurpose(purposeId);
+                }
+            );
         });
     });
 
@@ -2859,7 +3092,10 @@ document.addEventListener('DOMContentLoaded', function() {
             reloadWithCurrentSettingsTab();
         } catch (error) {
             console.error('Error deleting purpose:', error);
-            alert('Error deleting purpose');
+            showSettingsNotification('Error deleting purpose.', {
+                title: 'Delete Failed',
+                tone: 'danger',
+            });
         }
     }
 });

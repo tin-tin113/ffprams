@@ -181,7 +181,7 @@
 @endphp
 
 {{-- SECTION 0 — Registration Context --}}
-<div class="mb-5 bg-white rounded-3 p-4 border">
+<div class="mb-5 bg-white rounded-3 p-4 border" id="registration-context-section">
     <div class="row g-4">
         {{-- Sector/Classification --}}
         <div class="col-12 col-md-3">
@@ -235,7 +235,7 @@
     </div>
 </div>
 
-<div class="mb-5 bg-white rounded-3 p-4 border">
+<div class="mb-5 bg-white rounded-3 p-4 border" id="personal-info-section">
     <div class="border-bottom pb-2 mb-4">
         <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-person me-2 text-muted"></i>Personal Information</h5>
     </div>
@@ -389,7 +389,7 @@
 </div>
 
 {{-- SECTION 2 — Address Information --}}
-<div class="mb-5 bg-white rounded-3 p-4 border">
+<div class="mb-5 bg-white rounded-3 p-4 border" id="address-section">
     <div class="border-bottom pb-2 mb-4">
         <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-geo-alt me-2 text-muted"></i>Address Information</h5>
     </div>
@@ -530,6 +530,10 @@
             </div>
 
             @foreach($customFieldGroups->get('farmer_information', collect()) as $customField)
+                @include('beneficiaries.partials.custom-field-input', ['customField' => $customField, 'beneficiaryCustomFields' => $beneficiaryCustomFields])
+            @endforeach
+
+            @foreach($customFieldGroups->get('dar_information', collect()) as $customField)
                 @include('beneficiaries.partials.custom-field-input', ['customField' => $customField, 'beneficiaryCustomFields' => $beneficiaryCustomFields])
             @endforeach
         </div>
@@ -673,7 +677,7 @@
 ></div>
 
 {{-- SECTION 8 — Association Membership --}}
-<div class="mb-5 bg-white rounded-3 p-4 border">
+<div class="mb-5 bg-white rounded-3 p-4 border" id="association-section">
     <div class="border-bottom pb-2 mb-4">
         <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-people me-2 text-muted"></i>Association Membership</h5>
     </div>
@@ -698,7 +702,7 @@
 
 
 {{-- Submit / Cancel --}}
-<div class="d-flex justify-content-center gap-3 mt-5 border-top pt-4">
+<div class="d-flex justify-content-center gap-3 mt-5 border-top pt-4" id="submit-section">
     <button type="submit" class="btn {{ $editing ? 'btn-primary' : 'btn-success' }}">
         <i class="bi bi-check-lg me-1"></i> {{ $editing ? 'Update Beneficiary' : 'Register Beneficiary' }}
     </button>

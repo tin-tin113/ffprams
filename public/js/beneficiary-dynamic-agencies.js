@@ -109,6 +109,7 @@ class DynamicAgencyForm {
 
         if (this.selectedAgencies.size === 0) {
             this.dynamicAgenciesContainer.innerHTML = '';
+            this.toggleAgencySectionVisibility();
             return;
         }
 
@@ -152,6 +153,7 @@ class DynamicAgencyForm {
         if (!agencies || agencies.length === 0) {
             console.log('No agencies to render');
             this.dynamicAgenciesContainer.innerHTML = '';
+            this.toggleAgencySectionVisibility();
             return;
         }
 
@@ -246,6 +248,14 @@ class DynamicAgencyForm {
         console.log('Final HTML to render:', html);
         this.dynamicAgenciesContainer.innerHTML = html;
         this.attachEventListeners();
+        this.toggleAgencySectionVisibility();
+    }
+
+    toggleAgencySectionVisibility() {
+        const section = document.getElementById('agency-dynamic-fields-section');
+        if (!section) return;
+        const hasContent = this.dynamicAgenciesContainer && this.dynamicAgenciesContainer.children.length > 0;
+        section.style.display = hasContent ? '' : 'none';
     }
 
     renderField(agencyId, field) {
