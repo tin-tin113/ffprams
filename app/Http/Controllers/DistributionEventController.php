@@ -225,6 +225,12 @@ class DistributionEventController extends Controller
         $unmarkedBeneficiariesCount = $event->unmarkedAllocationsCount();
         $allBeneficiariesMarked = $unmarkedBeneficiariesCount === 0;
 
+        $totalAllocated = $event->allocations->count();
+        $totalQuantity = $event->isFinancial()
+            ? $event->allocations->sum('amount')
+            : $event->allocations->sum('quantity');
+        $totalDistributed = $event->allocations->whereNotNull('distributed_at')->count();
+
         return view('distribution_events.show', compact(
             'event',
             'allocatedBeneficiaryIds',
@@ -234,6 +240,9 @@ class DistributionEventController extends Controller
             'completionComplianceReady',
             'unmarkedBeneficiariesCount',
             'allBeneficiariesMarked',
+            'totalAllocated',
+            'totalQuantity',
+            'totalDistributed',
         ));
     }
 
