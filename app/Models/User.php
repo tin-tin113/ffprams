@@ -71,6 +71,11 @@ class User extends Authenticatable implements CanResetPassword
         return $this->role === 'staff';
     }
 
+    public function isPartner(): bool
+    {
+        return $this->role === 'partner';
+    }
+
     // ── Password Reset ────────────────────────────
 
     public function sendPasswordResetNotification($token): void

@@ -6,20 +6,28 @@ use App\Models\Agency;
 use App\Models\Barangay;
 use App\Models\Beneficiary;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class BeneficiaryPerBarangaySeeder extends Seeder
 {
     public function run(): void
     {
+        // Skip if we already reached target (for idempotency)
+        if (Beneficiary::count() >= 1000) {
+            $this->command?->info('1,000+ beneficiaries already seeded. Skipping.');
+            return;
+        }
+
         $barangays = Barangay::query()->orderBy('id')->get();
 
         if ($barangays->isEmpty()) {
             $this->command?->warn('No barangays found. Run BarangaySeeder first.');
-
             return;
         }
 
         $agencies = Agency::query()->whereIn('name', ['DA', 'BFAR', 'DAR'])->get()->keyBy('name');
+        $darAgencyId = $agencies->get('DAR')?->id;
+
         $associationNames = [
             'Farmers Association',
             'Fisherfolk Cooperative',
@@ -32,17 +40,21 @@ class BeneficiaryPerBarangaySeeder extends Seeder
         $created = 0;
 
         foreach ($barangays as $barangay) {
-            for ($i = 1; $i <= 20; $i++) {
-                $profileType = ($i - 1) % 3;
+            // Seed 44 per barangay to reach ~1,000 total (23 * 44 = 1,012)
+            for ($i = 1; $i <= 44; $i++) {
+                $profileType = ($i - 1) % 4; 
                 $agencyName = match ($profileType) {
                     0 => 'DA',
                     1 => 'BFAR',
-                    default => 'DAR',
+                    2 => 'DAR',
+                    3 => 'DA',
                 };
 
                 $agency = $agencies->get($agencyName);
-                $classification = match ($agencyName) {
-                    'BFAR' => 'Fisherfolk',
+                
+                $classification = match ($profileType) {
+                    1 => 'Fisherfolk',
+                    3 => 'Farmer & Fisherfolk',
                     default => 'Farmer',
                 };
 
@@ -54,6 +66,16 @@ class BeneficiaryPerBarangaySeeder extends Seeder
                 $lastName   = fake()->lastName();
                 $nameSuffix = fake()->optional(0.08)->randomElement(['Jr.', 'Sr.', 'II', 'III']);
                 $fullName   = trim(implode(' ', array_filter([$firstName, $middleName, $lastName, $nameSuffix])));
+
+                $rsbsa = (str_contains($classification, 'Farmer')) 
+                    ? $this->buildRegistryCode('RSBSA', (int) $barangay->id, $i) 
+                    : null;
+                $fishr = (str_contains($classification, 'Fisherfolk')) 
+                    ? $this->buildRegistryCode('FISHR', (int) $barangay->id, $i) 
+                    : null;
+                $cloa = ($agencyName === 'DAR') 
+                    ? $this->buildRegistryCode('DAR', (int) $barangay->id, $i) 
+                    : null;
 
                 $beneficiary = Beneficiary::create([
                     'agency_id' => $agency?->id,
@@ -75,51 +97,22 @@ class BeneficiaryPerBarangaySeeder extends Seeder
                     'highest_education' => fake()->randomElement($educationLevels),
                     'association_member' => $associationMember,
                     'association_name' => $associationMember ? fake()->randomElement($associationNames) : null,
-                    'rsbsa_number' => $classification === 'Farmer'
-                        ? $this->buildRegistryCode('RSBSA', (int) $barangay->id, $i)
-                        : null,
-                    'farm_ownership' => $classification === 'Farmer'
-                        ? fake()->randomElement(['Owner', 'Lessee', 'Share Tenant'])
-                        : null,
-                    'farm_size_hectares' => $classification === 'Farmer'
-                        ? fake()->randomFloat(2, 0.25, 6.50)
-                        : null,
-                    'primary_commodity' => $classification === 'Farmer'
-                        ? fake()->randomElement(['Rice', 'Corn', 'Vegetables', 'Sugarcane'])
-                        : null,
-                    'farm_type' => $classification === 'Farmer'
-                        ? fake()->randomElement(['Irrigated', 'Rainfed Lowland', 'Upland'])
-                        : null,
-                    'organization_membership' => $classification === 'Farmer'
-                        ? fake()->randomElement($associationNames)
-                        : null,
-                    'fishr_number' => $classification === 'Fisherfolk'
-                        ? $this->buildRegistryCode('FISHR', (int) $barangay->id, $i)
-                        : null,
-                    'fisherfolk_type' => $classification === 'Fisherfolk'
-                        ? fake()->randomElement(['Capture Fishing', 'Fish Farming', 'Fish Vendor', 'Fish Worker'])
-                        : null,
-                    'main_fishing_gear' => $classification === 'Fisherfolk'
-                        ? fake()->randomElement(['Gill Net', 'Hook and Line', 'Fish Trap', 'Cast Net'])
-                        : null,
-                    'has_fishing_vessel' => $classification === 'Fisherfolk'
-                        ? fake()->boolean(40)
-                        : false,
-                    'fishing_vessel_type' => $classification === 'Fisherfolk'
-                        ? fake()->randomElement(['Motorized', 'Non-Motorized'])
-                        : null,
-                    'fishing_vessel_tonnage' => $classification === 'Fisherfolk'
-                        ? fake()->randomFloat(2, 0.50, 4.50)
-                        : null,
-                    'length_of_residency_months' => $classification === 'Fisherfolk'
-                        ? fake()->numberBetween(12, 360)
-                        : null,
-                    'custom_fields' => $agencyName === 'DAR' ? json_encode([
+                    'rsbsa_number' => $rsbsa,
+                    'fishr_number' => $fishr,
+                    'farm_ownership' => (str_contains($classification, 'Farmer')) ? fake()->randomElement(['Owner', 'Lessee', 'Share Tenant']) : null,
+                    'farm_size_hectares' => (str_contains($classification, 'Farmer')) ? fake()->randomFloat(2, 0.25, 6.50) : null,
+                    'primary_commodity' => (str_contains($classification, 'Farmer')) ? fake()->randomElement(['Rice', 'Corn', 'Vegetables', 'Sugarcane']) : null,
+                    'farm_type' => (str_contains($classification, 'Farmer')) ? fake()->randomElement(['Irrigated', 'Rainfed Lowland', 'Upland']) : null,
+                    'fisherfolk_type' => (str_contains($classification, 'Fisherfolk')) ? fake()->randomElement(['Capture Fishing', 'Fish Farming', 'Fish Vendor', 'Fish Worker']) : null,
+                    'main_fishing_gear' => (str_contains($classification, 'Fisherfolk')) ? fake()->randomElement(['Gill Net', 'Hook and Line', 'Fish Trap', 'Cast Net']) : null,
+                    'has_fishing_vessel' => (str_contains($classification, 'Fisherfolk')) ? fake()->boolean(40) : false,
+                    'fishing_vessel_type' => (str_contains($classification, 'Fisherfolk')) ? fake()->randomElement(['Motorized', 'Non-Motorized']) : null,
+                    'custom_fields' => ($agencyName === 'DAR' && $darAgencyId) ? json_encode([
                         'agency_dynamic' => [
-                            '3' => [
-                                'cloa_ep_number' => $this->buildRegistryCode('DAR', (int) $barangay->id, $i),
+                            (string)$darAgencyId => [
+                                'cloa_ep_number' => $cloa,
                                 'arb_classification' => fake()->randomElement(['ARBs', 'Potential ARBs']),
-                                'landholding_description' => fake()->randomElement(['Irrigated rice land', 'Upland mixed crop area', 'Coconut and vegetable area']),
+                                'landholding_description' => fake()->randomElement(['Irrigated rice land', 'Upland mixed crop area']),
                                 'land_area_awarded_hectares' => fake()->randomFloat(2, 0.20, 5.00),
                                 'ownership_scheme' => fake()->randomElement(['Individual', 'Collective']),
                                 'barc_membership_status' => fake()->randomElement(['Member', 'Non-member']),
@@ -128,12 +121,18 @@ class BeneficiaryPerBarangaySeeder extends Seeder
                     ]) : null,
                 ]);
 
-                if ($agencyName === 'DAR' && $agency) {
-                    $cloa = $this->buildRegistryCode('DAR', (int) $barangay->id, $i);
-                    \DB::table('beneficiary_agencies')->insert([
+                if ($agency) {
+                    $identifier = match ($agencyName) {
+                        'DA' => $rsbsa,
+                        'BFAR' => $fishr,
+                        'DAR' => $cloa,
+                        default => null
+                    };
+
+                    DB::table('beneficiary_agencies')->insert([
                         'beneficiary_id' => $beneficiary->id,
                         'agency_id' => $agency->id,
-                        'identifier' => $cloa,
+                        'identifier' => $identifier,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
@@ -143,7 +142,7 @@ class BeneficiaryPerBarangaySeeder extends Seeder
             }
         }
 
-        $this->command?->info("Created {$created} beneficiaries ({$barangays->count()} barangays x 20).");
+        $this->command?->info("Created {$created} beneficiaries.");
     }
 
     private function buildContactNumber(int $barangayId, int $index): string

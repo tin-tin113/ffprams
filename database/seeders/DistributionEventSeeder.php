@@ -6,19 +6,25 @@ use App\Models\DistributionEvent;
 use App\Models\ProgramName;
 use App\Models\ResourceType;
 use App\Models\User;
+use App\Models\Barangay;
 use Illuminate\Database\Seeder;
 
 class DistributionEventSeeder extends Seeder
 {
     public function run(): void
     {
-        $targetCount = 20;
+        // Skip if we already have target (idempotency)
+        if (DistributionEvent::count() >= 50) {
+            $this->command?->info('50+ distribution events already seeded. Skipping.');
+            return;
+        }
+
+        $targetCount = 50;
 
         $createdBy = User::query()->orderBy('id')->first();
 
         if (! $createdBy) {
             $this->command?->warn('No users found. Run UserSeeder first.');
-
             return;
         }
 
@@ -39,15 +45,13 @@ class DistributionEventSeeder extends Seeder
 
         if ($agencyIds->isEmpty()) {
             $this->command?->warn('No compatible program/resource setup found. Run ProgramNameSeeder and ResourceTypeSeeder first.');
-
             return;
         }
 
-        $barangayIds = \App\Models\Barangay::query()->pluck('id');
+        $barangayIds = Barangay::query()->pluck('id');
 
         if ($barangayIds->isEmpty()) {
             $this->command?->warn('No barangays found. Run BarangaySeeder first.');
-
             return;
         }
 
@@ -74,7 +78,10 @@ class DistributionEventSeeder extends Seeder
             $status = fake()->randomElement(['Pending', 'Ongoing', 'Completed']);
             $distributionDate = fake()->dateTimeBetween('-9 months', '+1 month');
 
+            $eventName = $program->name . ' - ' . $resource->name . ' (' . $distributionDate->format('M Y') . ')';
+
             DistributionEvent::create([
+                'name' => $eventName,
                 'barangay_id' => (int) $barangayIds->random(),
                 'resource_type_id' => $resource->id,
                 'program_name_id' => $program->id,

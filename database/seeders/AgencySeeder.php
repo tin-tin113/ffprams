@@ -12,12 +12,12 @@ class AgencySeeder extends Seeder
     public function run(): void
     {
         // Seed classifications first
-        $farmerClass = Classification::firstOrCreate(
+        Classification::updateOrCreate(
             ['name' => 'Farmer'],
             ['description' => 'Agricultural farmers and crop producers']
         );
 
-        $fisherfoldClass = Classification::firstOrCreate(
+        Classification::updateOrCreate(
             ['name' => 'Fisherfolk'],
             ['description' => 'Fisherfolk and aquaculture practitioners']
         );
@@ -136,23 +136,11 @@ class AgencySeeder extends Seeder
                 ]
             );
 
-            // Sync classifications
-            $classificationIds = [];
-            foreach ($agencyData['classifications'] as $classificationName) {
-                $classification = $agencyData['name'] === 'DA' && $classificationName === 'Farmer'
-                    ? $farmerClass
-                    : ($agencyData['name'] === 'DA' && $classificationName === 'Fisherfolk'
-                        ? $fisherfoldClass
-                        : ($agencyData['name'] === 'BFAR'
-                            ? $fisherfoldClass
-                            : $farmerClass));
-
-                $classificationIds[] = $classification->id;
-            }
-
+            // Sync classifications dynamically
+            $classificationIds = Classification::whereIn('name', $agencyData['classifications'])->pluck('id');
             $agency->classifications()->sync($classificationIds);
 
-            // Create form fields if they don't exist
+            // Create form fields
             foreach ($agencyData['form_fields'] as $fieldData) {
                 $field = AgencyFormField::updateOrCreate(
                     [
@@ -174,9 +162,7 @@ class AgencySeeder extends Seeder
                         $value = strtolower(preg_replace('/[^a-z0-9]+/', '_', trim((string) $label)));
                         $value = trim($value, '_');
 
-                        if ($value === '') {
-                            continue;
-                        }
+                        if ($value === '') continue;
 
                         $field->options()->updateOrCreate(
                             ['value' => $value],

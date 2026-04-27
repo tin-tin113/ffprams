@@ -14,7 +14,13 @@ class DirectAllocationSeeder extends Seeder
 {
     public function run(): void
     {
-        $targetCount = 20;
+        // Skip if we already have target (idempotency)
+        if (Allocation::where('release_method', 'direct')->count() >= 100) {
+            $this->command?->info('100+ direct allocations already seeded. Skipping.');
+            return;
+        }
+
+        $targetCount = 100;
 
         $users = User::all();
         $events = DistributionEvent::with(['programName', 'resourceType'])->get();
@@ -25,6 +31,7 @@ class DirectAllocationSeeder extends Seeder
 
         $purposes = AssistancePurpose::where('is_active', true)->pluck('id');
 
+        $created = 0;
         for ($i = 0; $i < $targetCount; $i++) {
             $event = $events->random();
 
@@ -63,6 +70,10 @@ class DirectAllocationSeeder extends Seeder
                 'created_by' => $users->random()->id,
                 'distributed_by' => $status === 'released' ? $users->random()->id : null,
             ]);
+
+            $created++;
         }
+
+        $this->command?->info("Created {$created} direct allocations.");
     }
 }

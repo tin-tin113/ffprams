@@ -44,6 +44,7 @@ class ResourceTypeSeeder extends Seeder
                 [
                     'unit'       => $type['unit'],
                     'agency_id'  => $agencies[$type['agency']] ?? null,
+                    'is_active'  => true,
                     'updated_at' => now(),
                     'created_at' => now(),
                 ],
