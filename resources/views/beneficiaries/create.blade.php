@@ -434,7 +434,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // 5. Dynamic Agency Fields
-        var dynamicSections = form.querySelectorAll('#dynamic-agencies-container > div.col-12.mb-4');
+        var dynamicSections = form.querySelectorAll('.agency-field-group');
         dynamicSections.forEach(function(section) {
             var agencyTitle = section.querySelector('.fw-bold')?.textContent?.trim() || 'Agency Field';
             var fields = [];

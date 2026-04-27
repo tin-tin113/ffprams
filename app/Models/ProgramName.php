@@ -56,12 +56,19 @@ class ProgramName extends Model
 
     public function scopeForClassification(Builder $query, string $classification): Builder
     {
-        return $query->whereIn('classification', [$classification, 'Both']);
+        return $query->whereIn(
+            'classification',
+            \App\Services\ProgramEligibilityService::eligibleProgramClassifications($classification)
+        );
     }
 
     public function scopeForBeneficiary(Builder $query, $beneficiary): Builder
     {
-        return $query->where('agency_id', $beneficiary->agency_id)
-            ->whereIn('classification', [$beneficiary->classification, 'Both']);
+        return $query->whereIn(
+            'classification',
+            \App\Services\ProgramEligibilityService::eligibleProgramClassifications(
+                (string) $beneficiary->classification
+            )
+        );
     }
 }

@@ -14,12 +14,7 @@ function initBeneficiaryWizard() {
         1: ['registration-context-section'],
         2: ['personal-info-section'],
         3: ['address-section'],
-        // Step 4 (farmer-info-section / fisherfolk-info-section) is NOT managed by the
-        // wizard CSS class system because the existing updateSections() in form.blade.php
-        // uses inline style.display which would override our CSS. Step 4 visibility is
-        // managed manually inside showStep() via inline style.display, coordinating with
-        // the classification dropdown.
-        4: [],
+        4: ['farmer-info-section', 'fisherfolk-info-section'],
         5: ['agency-dynamic-fields-section', 'association-section']
     };
 
@@ -27,7 +22,11 @@ function initBeneficiaryWizard() {
     Object.entries(stepMap).forEach(([step, ids]) => {
         ids.forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.dataset.wizardStep = step;
+            if (el) {
+                el.dataset.wizardStep = step;
+                // Remove any inline display:none that might conflict with our CSS
+                if (el.style.display === 'none') el.style.display = '';
+            }
         });
     });
 
@@ -146,20 +145,22 @@ function initBeneficiaryWizard() {
     }
 
     function applyStep4Visibility(step) {
-        // Step 4 sections (farmer/fisherfolk) use inline style.display from updateSections()
-        // in form.blade.php. We must override that inline style directly when leaving Step 4,
-        // and restore the correct one (based on classification) when entering Step 4.
+        // Step 4 sections are now in stepMap, so they are shown by the [data-wizard-step] CSS.
+        // We only need to toggle them based on classification IF we are on Step 4.
+        if (step !== 4) return;
+
         const farmerSection = document.getElementById('farmer-info-section');
         const fisherfolkSection = document.getElementById('fisherfolk-info-section');
         const classEl = document.getElementById('classification');
         const cls = classEl ? classEl.value : '';
 
-        if (step === 4) {
-            if (farmerSection) farmerSection.style.display = (cls === 'Farmer') ? 'block' : 'none';
-            if (fisherfolkSection) fisherfolkSection.style.display = (cls === 'Fisherfolk') ? 'block' : 'none';
-        } else {
-            if (farmerSection) farmerSection.style.display = 'none';
-            if (fisherfolkSection) fisherfolkSection.style.display = 'none';
+        console.log('Wizard applyStep4Visibility - Step:', step, 'Classification:', cls);
+
+        if (farmerSection) {
+            farmerSection.style.display = (cls === 'Farmer' || cls === 'Farmer & Fisherfolk') ? '' : 'none';
+        }
+        if (fisherfolkSection) {
+            fisherfolkSection.style.display = (cls === 'Fisherfolk' || cls === 'Farmer & Fisherfolk') ? '' : 'none';
         }
     }
 
@@ -183,9 +184,7 @@ function initBeneficiaryWizard() {
         if (nextBtn) {
             nextBtn.style.display = onLastStep ? 'none' : '';
             if (!onLastStep) {
-                nextBtn.innerHTML = step === TOTAL_STEPS - 1
-                    ? 'Review & Submit <i class="bi bi-check-circle ms-1"></i>'
-                    : 'Next <i class="bi bi-arrow-right ms-1"></i>';
+                nextBtn.innerHTML = 'Next <i class="bi bi-arrow-right ms-1"></i>';
             }
         }
         if (submitBtn) submitBtn.style.display = onLastStep ? '' : 'none';
@@ -243,6 +242,7 @@ function initBeneficiaryWizard() {
 
     // Expose for cross-script use (error recovery + form reset)
     window.wizardGoToStep = showStep;
+    window.wizardApplyStep4Visibility = () => applyStep4Visibility(currentStep);
 
     // Initialise
     showStep(1);

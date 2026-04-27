@@ -26,7 +26,7 @@ class DashboardController extends Controller
 
         $totalBoth = DB::table('beneficiaries')
             ->whereNull('deleted_at')
-            ->where('classification', 'Farmer & Fisherfolk')
+            ->where('classification', 'Both')
             ->count();
 
         // Distribution event counts
@@ -120,7 +120,6 @@ class DashboardController extends Controller
         $monthlyTrendData = $this->getMonthlyTrendData();
         $programDisbursementChart = $this->getProgramDisbursementChartData();
         $monthlyReleaseMethodTrend = $this->getMonthlyReleaseMethodTrendData();
-
 
         return view('dashboard', [
             'totalBeneficiaries' => $totalBeneficiaries,
@@ -249,10 +248,10 @@ class DashboardController extends Controller
         $total = DB::table('beneficiaries')->whereNull('deleted_at')->count();
         $farmers = DB::table('beneficiaries')->whereNull('deleted_at')->where('classification', 'Farmer')->count();
         $fisherfolk = DB::table('beneficiaries')->whereNull('deleted_at')->where('classification', 'Fisherfolk')->count();
-        $both = DB::table('beneficiaries')->whereNull('deleted_at')->where('classification', 'Farmer & Fisherfolk')->count();
+        $both = DB::table('beneficiaries')->whereNull('deleted_at')->where('classification', 'Both')->count();
 
         return [
-            'labels' => ['Farmers', 'Fisherfolk', 'Farmer & Fisherfolk'],
+            'labels' => ['Farmers', 'Fisherfolk', 'Both'],
             'data' => [$farmers, $fisherfolk, $both],
             'colors' => ['#198754', '#0dcaf0', '#6f42c1'],
             'total' => $total,

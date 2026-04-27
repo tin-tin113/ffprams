@@ -150,15 +150,25 @@ class DynamicAgencyForm {
     renderFormFields(agencies) {
         console.log('renderFormFields called with:', agencies);
 
+        // Get all containers
+        const containers = {
+            general: this.dynamicAgenciesContainer,
+            farmer_information: document.getElementById('agency-farmer-fields'),
+            fisherfolk_information: document.getElementById('agency-fisherfolk-fields'),
+            dar_information: document.getElementById('agency-farmer-fields') // DAR also goes to Farmer section
+        };
+
+        // Clear all containers
+        Object.values(containers).forEach(container => {
+            if (container) container.innerHTML = '';
+        });
+
         if (!agencies || agencies.length === 0) {
             console.log('No agencies to render');
-            this.dynamicAgenciesContainer.innerHTML = '';
             this.toggleAgencySectionVisibility();
             return;
         }
 
-        let html = '';
-        const classification = String(this.classificationSelect?.value || '').trim();
         const sectionLabelMap = {
             general_information: 'General Information',
             additional_information: 'Additional Information',
@@ -169,92 +179,149 @@ class DynamicAgencyForm {
 
         const normalizeSection = (value) => String(value || 'general_information').trim().toLowerCase();
 
-        agencies.forEach(agency => {
-            console.log(`Processing agency: ${agency.name}`);
+        // We'll collect HTML for each container per agency
+        const agencyHtml = agencies.map(agency => {
+            const result = {
+                agency: agency,
+                sections: {
+                    general: '',
+                    farmer_information: '',
+                    fisherfolk_information: '',
+                    dar_information: ''
+                }
+            };
 
-            // Add hidden input for each selected agency to ensure it's in the form submission
-            html += `<input type="hidden" name="agencies[${agency.id}]" value="1">`;
+            // Mark agency as selected via an array-safe key so it doesn't overwrite
+            // nested field values (agencies[id] = 1 would conflict with agencies[id][field] = val in PHP)
+            result.sections.general += `<input type="hidden" name="agencies[${agency.id}][_selected]" value="1">`;
 
             const formFields = Array.isArray(agency.form_fields) ? agency.form_fields : [];
-
-            if (!formFields || formFields.length === 0) {
-                console.log(`Agency ${agency.name} has no form fields`);
-                return;
-            }
-
-            const visibleFields = formFields;
-
-            if (visibleFields.length === 0) {
-                console.log(`Agency ${agency.name} has no form fields for classification ${classification}`);
-                return;
-            }
-
-            console.log(`Agency ${agency.name} has ${visibleFields.length} visible form fields`);
-
-            html += `
-                <div class="col-12 mb-4">
-                    <div class="fw-bold text-secondary border-bottom pb-2 mb-3">
-                        <i class="bi bi-file-earmark-text me-1"></i> ${agency.name} <span class="fw-normal">- ${agency.full_name}</span>
-                    </div>
-                    <div class="row g-4">
-            `;
+            if (!formFields || formFields.length === 0) return result;
 
             const groupedFields = {};
-            visibleFields.forEach((field) => {
+            formFields.forEach((field) => {
                 const section = normalizeSection(field.form_section);
-
-                if (!groupedFields[section]) {
-                    groupedFields[section] = [];
-                }
-
+                if (!groupedFields[section]) groupedFields[section] = [];
                 groupedFields[section].push(field);
             });
 
             const sectionOrder = ['general_information', 'additional_information', 'farmer_information', 'fisherfolk_information', 'dar_information'];
-            const activeSectionsCount = sectionOrder.filter(key => groupedFields[key] && groupedFields[key].length > 0).length;
-
+            
             sectionOrder.forEach((sectionKey) => {
                 const sectionFields = groupedFields[sectionKey] || [];
-                if (sectionFields.length === 0) {
-                    return;
-                }
+                if (sectionFields.length === 0) return;
 
+                const targetContainerKey = (sectionKey === 'farmer_information' || sectionKey === 'dar_information') 
+                    ? 'farmer_information' 
+                    : (sectionKey === 'fisherfolk_information' ? 'fisherfolk_information' : 'general');
+
+                let sectionHtml = '';
+                
+                // Add Section Header if it's not the primary classification's main section
                 const sectionLabel = sectionLabelMap[sectionKey] || sectionKey;
-                const currentClassLabel = classification + " Information";
-
-                if (sectionLabel !== currentClassLabel) {
-                    // Hide "General Information" header if it's the only section for this agency, to avoid redundant "classification descriptions"
-                    if (!(sectionKey === 'general_information' && activeSectionsCount === 1)) {
-                        html += `
-                            <div class="col-12 mt-2">
-                                <div class="fw-semibold text-uppercase text-muted small border-bottom pb-1 mb-2">${sectionLabel}</div>
-                            </div>
-                        `;
-                    }
+                
+                // Only show section sub-header if it's NOT the primary section for that step
+                // (e.g. In Farmer step, we don't need "Farmer Information" header, but we might need "DAR Information")
+                if (sectionKey !== 'farmer_information' && sectionKey !== 'fisherfolk_information') {
+                     sectionHtml += `
+                        <div class="col-12 mt-2">
+                            <div class="fw-semibold text-uppercase text-muted small border-bottom pb-1 mb-2">${sectionLabel}</div>
+                        </div>
+                    `;
                 }
 
                 sectionFields.forEach((field) => {
-                    console.log(`Rendering field: ${field.field_name} (type: ${field.field_type}, required: ${field.is_required})`);
-                    html += this.renderField(agency.id, field);
+                    sectionHtml += this.renderField(agency.id, field);
                 });
+
+                result.sections[targetContainerKey] += sectionHtml;
             });
 
-            html += `
-                        </div>
-                </div>
-            `;
+            return result;
         });
 
-        console.log('Final HTML to render:', html);
-        this.dynamicAgenciesContainer.innerHTML = html;
-        this.attachEventListeners();
+        // Now wrap each agency's fields in an agency-header container and inject into the target containers
+        agencyHtml.forEach(data => {
+            const agency = data.agency;
+
+            // Collect hidden inputs from the general section to inject separately
+            const hiddenInputMatch = data.sections.general.match(/<input[^>]*type="hidden"[^>]*>/gi) || [];
+            const hiddenInputsHtml = hiddenInputMatch.join('');
+
+            // Strip hidden inputs to determine if there are visible fields in general section
+            const generalVisibleHtml = data.sections.general.replace(/<input[^>]*type="hidden"[^>]*>/gi, '').trim();
+
+            // Always inject hidden inputs into the general container (no wrapper needed)
+            if (hiddenInputsHtml && containers.general) {
+                const hiddenHolder = document.createElement('div');
+                hiddenHolder.style.display = 'none';
+                hiddenHolder.innerHTML = hiddenInputsHtml;
+                containers.general.appendChild(hiddenHolder);
+            }
+
+            Object.entries(data.sections).forEach(([containerKey, html]) => {
+                // For general: use only the visible portion (hidden inputs already injected above)
+                const visibleHtml = containerKey === 'general' ? generalVisibleHtml : html;
+                if (!visibleHtml) return;
+
+                const target = containers[containerKey];
+                if (!target) {
+                    console.warn(`Container for ${containerKey} not found in DOM`);
+                    return;
+                }
+
+                const agencyContainer = document.createElement('div');
+                agencyContainer.className = 'col-12 agency-field-group';
+                agencyContainer.dataset.agencyId = agency.id;
+                agencyContainer.dataset.agencyName = agency.name;
+
+                // Sub-heading for farmer/fisherfolk/dar sections (shared containers)
+                if (containerKey !== 'general') {
+                    agencyContainer.innerHTML = `
+                        <div class="d-flex align-items-center gap-2 mb-3 mt-2">
+                            <div class="px-2 py-1 bg-primary bg-opacity-10 text-primary rounded-pill small fw-bold">${agency.name}</div>
+                            <div class="flex-grow-1 border-bottom"></div>
+                        </div>
+                        <div class="row g-4">
+                            ${visibleHtml}
+                        </div>
+                    `;
+                } else {
+                    agencyContainer.innerHTML = `
+                        <div class="agency-header mb-3">
+                            <h6 class="fw-bold mb-1 text-primary d-flex align-items-center">
+                                <i class="bi bi-building me-2"></i>${agency.full_name || agency.name}
+                            </h6>
+                        </div>
+                        <div class="row g-4 mb-4">
+                            ${visibleHtml}
+                        </div>
+                    `;
+                }
+
+                target.appendChild(agencyContainer);
+            });
+        });
+
         this.toggleAgencySectionVisibility();
+        this.attachEventListeners();
+        
+        // Re-run wizard visibility if it exists to make sure the newly added fields
+        // are correctly shown/hidden if they were added while on Step 4.
+        if (typeof window.wizardApplyStep4Visibility === 'function') {
+            window.wizardApplyStep4Visibility();
+        }
     }
 
     toggleAgencySectionVisibility() {
         const section = document.getElementById('agency-dynamic-fields-section');
         if (!section) return;
-        const hasContent = this.dynamicAgenciesContainer && this.dynamicAgenciesContainer.children.length > 0;
+        const farmerFields = document.getElementById('agency-farmer-fields');
+        const fisherfolkFields = document.getElementById('agency-fisherfolk-fields');
+        const hasContent =
+            (this.dynamicAgenciesContainer && this.dynamicAgenciesContainer.children.length > 0) ||
+            (farmerFields && farmerFields.children.length > 0) ||
+            (fisherfolkFields && fisherfolkFields.children.length > 0);
         section.style.display = hasContent ? '' : 'none';
     }
 
@@ -408,34 +475,40 @@ class DynamicAgencyForm {
     }
 
     attachEventListeners() {
-        this.dynamicAgenciesContainer.querySelectorAll('.availability-status-select').forEach((selectEl) => {
-            const updateState = () => {
-                const fieldTargetId = selectEl.dataset.fieldTarget;
-                const reasonTargetId = selectEl.dataset.reasonTarget;
-                const fieldSection = fieldTargetId ? document.getElementById(fieldTargetId) : null;
-                const reasonSection = reasonTargetId ? document.getElementById(reasonTargetId) : null;
+        const allContainers = ['dynamic-agencies-container', 'agency-farmer-fields', 'agency-fisherfolk-fields'];
+        allContainers.forEach(id => {
+            const container = document.getElementById(id);
+            if (!container) return;
+            
+            container.querySelectorAll('.availability-status-select').forEach((selectEl) => {
+                const updateState = () => {
+                    const fieldTargetId = selectEl.dataset.fieldTarget;
+                    const reasonTargetId = selectEl.dataset.reasonTarget;
+                    const fieldSection = fieldTargetId ? document.getElementById(fieldTargetId) : null;
+                    const reasonSection = reasonTargetId ? document.getElementById(reasonTargetId) : null;
 
-                const showFieldValue = selectEl.value === 'provided';
+                    const showFieldValue = selectEl.value === 'provided';
 
-                if (fieldSection) {
-                    fieldSection.style.display = showFieldValue ? 'block' : 'none';
-                    const valueInput = fieldSection.querySelector('input, select, textarea');
-                    if (valueInput) {
-                        valueInput.required = showFieldValue;
+                    if (fieldSection) {
+                        fieldSection.style.display = showFieldValue ? 'block' : 'none';
+                        const valueInput = fieldSection.querySelector('input, select, textarea');
+                        if (valueInput) {
+                            valueInput.required = showFieldValue;
+                        }
                     }
-                }
 
-                if (reasonSection) {
-                    reasonSection.style.display = showFieldValue ? 'none' : 'block';
-                    const reasonInput = reasonSection.querySelector('input, textarea');
-                    if (reasonInput) {
-                        reasonInput.required = !showFieldValue;
+                    if (reasonSection) {
+                        reasonSection.style.display = showFieldValue ? 'none' : 'block';
+                        const reasonInput = reasonSection.querySelector('input, textarea');
+                        if (reasonInput) {
+                            reasonInput.required = !showFieldValue;
+                        }
                     }
-                }
-            };
+                };
 
-            selectEl.addEventListener('change', updateState);
-            updateState();
+                selectEl.addEventListener('change', updateState);
+                updateState();
+            });
         });
     }
 

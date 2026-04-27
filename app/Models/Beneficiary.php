@@ -124,12 +124,12 @@ class Beneficiary extends Model
 
     public function isFarmer(): bool
     {
-        return $this->classification === 'Farmer';
+        return $this->classification === 'Farmer' || $this->classification === 'Farmer & Fisherfolk';
     }
 
     public function isFisherfolk(): bool
     {
-        return $this->classification === 'Fisherfolk';
+        return $this->classification === 'Fisherfolk' || $this->classification === 'Farmer & Fisherfolk';
     }
 
     public function isDar(): bool

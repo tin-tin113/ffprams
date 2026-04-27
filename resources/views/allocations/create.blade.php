@@ -105,7 +105,7 @@
                                                             <option value="">All Types</option>
                                                             <option value="Farmer">Farmer</option>
                                                             <option value="Fisherfolk">Fisherfolk</option>
-                                                            <option value="Both">Both</option>
+                                                            <option value="Farmer & Fisherfolk">Both</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -306,7 +306,7 @@
                                                             <option value="">All Types</option>
                                                             <option value="Farmer">Farmer</option>
                                                             <option value="Fisherfolk">Fisherfolk</option>
-                                                            <option value="Both">Both</option>
+                                                            <option value="Farmer & Fisherfolk">Both</option>
                                                         </select>
                                                     </div>
                                                 </div>

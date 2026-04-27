@@ -189,7 +189,7 @@
             <select class="form-select border-secondary border-opacity-25 @error('classification') is-invalid @enderror"
                     id="classification" name="classification" required>
                 <option value="" disabled {{ old('classification', $beneficiary->classification ?? '') === '' ? 'selected' : '' }}>Select classification...</option>
-                @foreach(['Farmer', 'Fisherfolk'] as $type)
+                @foreach(['Farmer', 'Fisherfolk', 'Farmer & Fisherfolk'] as $type)
                     <option value="{{ $type }}" {{ old('classification', $beneficiary->classification ?? '') === $type ? 'selected' : '' }}>{{ $type }}</option>
                 @endforeach
             </select>
@@ -415,7 +415,7 @@
 </div>
 
 {{-- SECTION 3 — Farmer Information --}}
-<div class="mb-5 bg-white rounded-3 p-4 border" id="farmer-info-section" style="display: none;">
+<div class="mb-5 bg-white rounded-3 p-4 border" id="farmer-info-section" data-wizard-step="4">
     <div class="border-bottom pb-2 mb-4">
         <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-leaf me-2 text-muted"></i>Farmer Information</h5>
     </div>
@@ -536,12 +536,13 @@
             @foreach($customFieldGroups->get('dar_information', collect()) as $customField)
                 @include('beneficiaries.partials.custom-field-input', ['customField' => $customField, 'beneficiaryCustomFields' => $beneficiaryCustomFields])
             @endforeach
+
         </div>
     </div>
 </div>
 
 {{-- SECTION 4 — Fisherfolk Information --}}
-<div class="mb-5 bg-white rounded-3 p-4 border" id="fisherfolk-info-section" style="display: none;">
+<div class="mb-5 bg-white rounded-3 p-4 border" id="fisherfolk-info-section" data-wizard-step="4">
     <div class="border-bottom pb-2 mb-4">
         <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-water me-2 text-muted"></i>Fisherfolk Information</h5>
     </div>
@@ -651,21 +652,22 @@
             @foreach($customFieldGroups->get('fisherfolk_information', collect()) as $customField)
                 @include('beneficiaries.partials.custom-field-input', ['customField' => $customField, 'beneficiaryCustomFields' => $beneficiaryCustomFields])
             @endforeach
+
         </div>
     </div>
 </div>
-
-
-
 
 {{-- SECTION 6 — Dynamic Agency Form Fields --}}
 <div class="mb-5 bg-white rounded-3 p-4 border" id="agency-dynamic-fields-section">
     <div class="border-bottom pb-2 mb-4">
         <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-sliders me-2 text-muted"></i>Agency-Specific Dynamic Fields</h5>
     </div>
-        <div id="dynamic-agencies-container">
-            {{-- Will be populated by JavaScript based on selected agencies --}}
-        </div>
+    {{-- Sub-containers: farmer/fisherfolk-section fields go here so they stay in Step 5 --}}
+    <div id="agency-farmer-fields" class="row g-4 px-0 mx-0"></div>
+    <div id="agency-fisherfolk-fields" class="row g-4 px-0 mx-0"></div>
+    <div id="dynamic-agencies-container">
+        {{-- General agency fields populated by JavaScript --}}
+    </div>
 </div>
 
 <div
@@ -744,24 +746,23 @@ document.addEventListener('DOMContentLoaded', function () {
     function updateSections() {
         const classification = classificationSelect.value;
         const selectedAgencies = getSelectedAgencyNames();
+        const isWizard = !!document.getElementById('beneficiaryWizard');
 
-        // Hide all sections first
-        farmerSection.style.display = 'none';
-        fisherfolkSection.style.display = 'none';
-
-        // Show sections based on classification and selected agencies
-        if (classification === 'Farmer') {
-            farmerSection.style.display = 'block';
-        } else if (classification === 'Fisherfolk') {
-            fisherfolkSection.style.display = 'block';
+        // If not wizard (e.g. Edit page), we must handle top-level section visibility here.
+        // If wizard, the wizard script handles it to avoid conflicts with step navigation.
+        if (!isWizard) {
+            if (farmerSection) {
+                farmerSection.style.display = (classification === 'Farmer' || classification === 'Farmer & Fisherfolk') ? 'block' : 'none';
+            }
+            if (fisherfolkSection) {
+                fisherfolkSection.style.display = (classification === 'Fisherfolk' || classification === 'Farmer & Fisherfolk') ? 'block' : 'none';
+            }
         }
         
-
         toggleRsbsaAvailability();
         toggleFishrAvailability();
 
-
-        console.log('Updated sections - Classification:', classification, 'Agencies:', selectedAgencies);
+        console.log('Updated sections - Classification:', classification, 'Agencies:', selectedAgencies, 'Wizard:', isWizard);
     }
 
     function toggleAssociation() {
@@ -811,7 +812,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function toggleRsbsaAvailability() {
-        const isApplicable = classificationSelect && classificationSelect.value === 'Farmer';
+        const isApplicable = classificationSelect && (classificationSelect.value === 'Farmer' || classificationSelect.value === 'Farmer & Fisherfolk');
 
         toggleSectionAvailability(
             rsbsaAvailabilitySelect,
@@ -846,7 +847,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function toggleFishrAvailability() {
-        const isApplicable = classificationSelect && classificationSelect.value === 'Fisherfolk';
+        const isApplicable = classificationSelect && (classificationSelect.value === 'Fisherfolk' || classificationSelect.value === 'Farmer & Fisherfolk');
 
         toggleSectionAvailability(
             fishrAvailabilitySelect,

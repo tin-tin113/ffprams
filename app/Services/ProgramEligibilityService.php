@@ -9,29 +9,45 @@ use Illuminate\Database\Eloquent\Collection;
 class ProgramEligibilityService
 {
     /**
-     * Get programs eligible for a beneficiary based on agency and classification.
-     * Checks ALL registered agencies via pivot table (supports multi-agency beneficiaries).
+     * Convert a beneficiary classification to the set of program classification
+     * values that the beneficiary is eligible for.
+     *
+     * Beneficiaries store: 'Farmer' | 'Fisherfolk' | 'Farmer & Fisherfolk'
+     * Programs store:      'Farmer' | 'Fisherfolk' | 'Both'
+     */
+    public static function eligibleProgramClassifications(string $beneficiaryClassification): array
+    {
+        $eligible = ['Both'];
+
+        if ($beneficiaryClassification === 'Farmer' || $beneficiaryClassification === 'Farmer & Fisherfolk') {
+            $eligible[] = 'Farmer';
+        }
+
+        if ($beneficiaryClassification === 'Fisherfolk' || $beneficiaryClassification === 'Farmer & Fisherfolk') {
+            $eligible[] = 'Fisherfolk';
+        }
+
+        return $eligible;
+    }
+
+    /**
+     * Get programs eligible for a beneficiary based on classification.
      */
     public static function getEligiblePrograms(Beneficiary $beneficiary): Collection
     {
+        $programClassifications = self::eligibleProgramClassifications(
+            (string) $beneficiary->classification
+        );
+
         return ProgramName::where('is_active', true)
-            ->where(function ($query) use ($beneficiary) {
-                if ($beneficiary->classification === 'Both') {
-                    // Beneficiary is both, so they are eligible for any classification
-                    $query->whereIn('classification', ['Farmer', 'Fisherfolk', 'Both']);
-                } else {
-                    // Beneficiary is specific, program must be their classification or Both
-                    $query->whereIn('classification', [$beneficiary->classification, 'Both']);
-                }
-            })
+            ->whereIn('classification', $programClassifications)
             ->with('agency')
             ->orderBy('name')
             ->get();
     }
 
     /**
-     * Check if a program is eligible for a beneficiary.
-     * Checks ALL registered agencies via pivot table (supports multi-agency beneficiaries).
+     * Check if a beneficiary is eligible for a given program.
      */
     public static function isEligible(Beneficiary $beneficiary, ProgramName $program): bool
     {
@@ -39,15 +55,15 @@ class ProgramEligibilityService
             return false;
         }
 
-        if ($program->classification === 'Both' || $beneficiary->classification === 'Both') {
-            return true;
-        }
-
-        return $program->classification === $beneficiary->classification;
+        return in_array(
+            $program->classification,
+            self::eligibleProgramClassifications((string) $beneficiary->classification),
+            true
+        );
     }
 
     /**
-     * Get eligibility reason message.
+     * Get a human-readable ineligibility reason.
      */
     public static function getIneligibilityReason(Beneficiary $beneficiary, ProgramName $program): string
     {
@@ -55,7 +71,9 @@ class ProgramEligibilityService
             return 'This program is currently inactive.';
         }
 
-        if ($program->classification !== 'Both' && $beneficiary->classification !== 'Both' && $program->classification !== $beneficiary->classification) {
+        $eligible = self::eligibleProgramClassifications((string) $beneficiary->classification);
+
+        if (! in_array($program->classification, $eligible, true)) {
             return "Beneficiary classification '{$beneficiary->classification}' does not match program requirement '{$program->classification}'.";
         }
 

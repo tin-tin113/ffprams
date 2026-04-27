@@ -15,30 +15,27 @@ class AgencyFormFieldController extends Controller
     public function getByClassification(Request $request)
     {
         $classification = trim((string) $request->query('classification', ''));
-        $normalizedClassification = strtolower($classification);
-
-        if ($normalizedClassification === '') {
+        if ($classification === '') {
             return response()->json([]);
         }
 
-        $classificationName = match ($normalizedClassification) {
-            'farmer' => 'Farmer',
-            'fisherfolk' => 'Fisherfolk',
-            default => null,
-        };
-
-        if ($classificationName === null) {
-            return response()->json([]);
+        // Handle dual classification
+        $searchTerms = [$classification];
+        $lowerClass = strtolower($classification);
+        if ($lowerClass === 'farmer & fisherfolk' || $lowerClass === 'farmer and fisherfolk' || $lowerClass === 'both') {
+            $searchTerms = ['Farmer', 'Fisherfolk', 'Farmer & Fisherfolk'];
         }
 
-        $agencies = Agency::whereHas('classifications', fn ($q) =>
-            $q->whereRaw('LOWER(name) = ?', [strtolower($classificationName)])
-        )
+        $agencies = Agency::whereHas('classifications', function ($q) use ($searchTerms) {
+            $q->whereIn('name', $searchTerms);
+        })
         ->where('is_active', true)
         ->select('id', 'name', 'full_name')
         ->orderByRaw("CASE UPPER(name) WHEN 'DA' THEN 1 WHEN 'BFAR' THEN 2 WHEN 'DAR' THEN 3 ELSE 100 END")
         ->orderBy('name')
-        ->get();
+        ->get()
+        ->unique('id')
+        ->values();
 
         return response()->json($agencies);
     }

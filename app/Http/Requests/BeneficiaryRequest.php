@@ -69,11 +69,11 @@ class BeneficiaryRequest extends FormRequest
         $contextRules = [
             'rsbsa_unavailability_reason' => [
                 'status' => 'rsbsa_availability_status',
-                'is_applicable' => $classification === 'farmer' && $hasRsbsaField,
+                'is_applicable' => str_contains(strtolower($classification), 'farmer') && $hasRsbsaField,
             ],
             'fishr_unavailability_reason' => [
                 'status' => 'fishr_availability_status',
-                'is_applicable' => $classification === 'fisherfolk' && ($hasRsbsaField || $hasFishrField),
+                'is_applicable' => str_contains(strtolower($classification), 'fisherfolk') && ($hasRsbsaField || $hasFishrField),
             ],
         ];
 
@@ -151,19 +151,21 @@ class BeneficiaryRequest extends FormRequest
                     ) : [];
 
                     // Dynamic agency-classification validation using new system
-                    $classificationModel = \App\Models\Classification::where('name', $classification)->first();
-                    if ($classificationModel) {
-                        $agenciesQuery = $classificationModel->agencies()
-                            ->where('is_active', true)
-                            ->pluck('agencies.id');
+                    $classifications = $classification === 'Farmer & Fisherfolk'
+                        ? ['Farmer', 'Fisherfolk', 'Farmer & Fisherfolk']
+                        : [$classification];
 
-                        $validAgencyIds = $agenciesQuery ? $agenciesQuery->toArray() : [];
+                    $validAgencyIds = \App\Models\Classification::whereIn('name', $classifications)
+                        ->with(['agencies' => fn($q) => $q->where('is_active', true)])
+                        ->get()
+                        ->flatMap(fn($c) => $c->agencies->pluck('id'))
+                        ->unique()
+                        ->toArray();
 
-                        foreach ($agencyIds as $agencyId) {
-                            if (is_array($validAgencyIds) && !in_array($agencyId, $validAgencyIds, true)) {
-                                $agency = Agency::find($agencyId);
-                                $fail("Agency '{$agency->name}' is not applicable to '{$classification}' classification.");
-                            }
+                    foreach ($agencyIds as $agencyId) {
+                        if (!in_array($agencyId, $validAgencyIds)) {
+                            $agency = Agency::find($agencyId);
+                            $fail("Agency '{$agency->name}' is not applicable to '{$classification}' classification.");
                         }
                     }
 
@@ -201,7 +203,7 @@ class BeneficiaryRequest extends FormRequest
             'registered_at'    => ['required', 'date', 'before_or_equal:today'],
             'classification'   => [
                 'required',
-                Rule::in(['Farmer', 'Fisherfolk']),
+                Rule::in(['Farmer', 'Fisherfolk', 'Farmer & Fisherfolk']),
                 function ($attribute, $value, $fail) {
                     // Lock classification if editing and registration numbers exist
                     $beneficiaryId = $this->route('beneficiary')?->id;
@@ -234,7 +236,10 @@ class BeneficiaryRequest extends FormRequest
         $hasRsbsaField = in_array('rsbsa_number', $selectedAgencyFieldNames, true);
         $hasFishrField = in_array('fishr_number', $selectedAgencyFieldNames, true);
 
-        if ($classification === 'Farmer' && $hasFarmerSection && $hasRsbsaField) {
+        $isFarmer = str_contains($classification, 'Farmer');
+        $isFisherfolk = str_contains($classification, 'Fisherfolk');
+
+        if ($isFarmer && $hasFarmerSection && $hasRsbsaField) {
             $rules['rsbsa_availability_status'] = ['required', 'in:provided,not_available_yet,not_applicable,to_be_verified'];
             $rules['rsbsa_unavailability_reason'] = ['nullable', 'string', 'max:500'];
             $rules['rsbsa_number'] = [$rsbsaNumberRequired ? 'required_if:rsbsa_availability_status,provided' : 'nullable', 'nullable', 'string', 'max:50', Rule::unique('beneficiaries', 'rsbsa_number')->ignore($beneficiaryId)];
@@ -245,7 +250,7 @@ class BeneficiaryRequest extends FormRequest
             $rules['organization_membership'] = [$organizationMembershipRequired ? 'required_if:rsbsa_availability_status,provided' : 'nullable', 'nullable', 'string', 'max:255'];
         }
 
-        if ($classification === 'Fisherfolk' && $hasFisherfolkSection && ($hasRsbsaField || $hasFishrField)) {
+        if ($isFisherfolk && $hasFisherfolkSection && ($hasRsbsaField || $hasFishrField)) {
             $rules['fishr_availability_status'] = ['required', 'in:provided,not_available_yet,not_applicable,to_be_verified'];
             $rules['fishr_unavailability_reason'] = ['nullable', 'string', 'max:500'];
 

@@ -236,7 +236,14 @@ class AllocationController extends Controller
         }
 
         if (!empty($classification)) {
-            $beneficiaries->where('classification', $classification);
+            if ($classification === 'Farmer & Fisherfolk') {
+                $beneficiaries->where('classification', 'Farmer & Fisherfolk');
+            } else {
+                $beneficiaries->where(function ($q) use ($classification) {
+                    $q->where('classification', $classification)
+                      ->orWhere('classification', 'Farmer & Fisherfolk');
+                });
+            }
         }
 
         if (!empty($agencyId)) {

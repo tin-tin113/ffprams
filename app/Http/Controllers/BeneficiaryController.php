@@ -57,8 +57,24 @@ class BeneficiaryController extends Controller
             ])
             ->withCount('attachments')
             ->when($request->filled('barangay_id'), fn ($q) => $q->where('barangay_id', (int) $request->barangay_id))
-            ->when($request->filled('agency_id'), fn ($q) => $q->where('agency_id', (int) $request->agency_id))
-            ->when($request->filled('classification'), fn ($q) => $q->where('classification', $request->classification))
+            ->when($request->filled('agency_id'), function ($q) use ($request) {
+                $agencyId = (int) $request->agency_id;
+                $q->where(function ($sub) use ($agencyId) {
+                    $sub->where('agency_id', $agencyId)
+                        ->orWhereHas('agencies', fn ($aq) => $aq->where('agencies.id', $agencyId));
+                });
+            })
+            ->when($request->filled('classification'), function ($q) use ($request) {
+                $classification = $request->classification;
+                if ($classification === 'Farmer & Fisherfolk') {
+                    $q->where('classification', 'Farmer & Fisherfolk');
+                } else {
+                    $q->where(function ($sub) use ($classification) {
+                        $sub->where('classification', $classification)
+                            ->orWhere('classification', 'Farmer & Fisherfolk');
+                    });
+                }
+            })
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->when($documentFilter === 'with', fn ($q) => $q->has('attachments'))
             ->when($documentFilter === 'without', fn ($q) => $q->doesntHave('attachments'))
@@ -85,10 +101,14 @@ class BeneficiaryController extends Controller
         $barangays = Barangay::orderBy('name')->get();
         $agencies = Agency::active()->orderBy('name')->get();
 
+        $totalBeneficiaries = Beneficiary::count();
+        $withDocuments = Beneficiary::has('attachments')->count();
+
         $summary = [
-            'total_all' => Beneficiary::count(),
+            'total_all' => $totalBeneficiaries,
             'total_active' => Beneficiary::where('status', 'Active')->count(),
-            'with_documents' => Beneficiary::has('attachments')->count(),
+            'with_documents' => $withDocuments,
+            'without_documents' => $totalBeneficiaries - $withDocuments,
             'new_this_month' => Beneficiary::whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
                 ->count(),
