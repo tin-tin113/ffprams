@@ -26,7 +26,7 @@ class DashboardController extends Controller
 
         $totalBoth = DB::table('beneficiaries')
             ->whereNull('deleted_at')
-            ->where('classification', 'Both')
+            ->where('classification', 'Farmer & Fisherfolk')
             ->count();
 
         // Distribution event counts
@@ -245,14 +245,25 @@ class DashboardController extends Controller
 
     private function getBeneficiaryBreakdownChart(): array
     {
-        $farmers = DB::table('beneficiaries')->whereNull('deleted_at')->where('classification', 'Farmer')->count();
+        $farmers    = DB::table('beneficiaries')->whereNull('deleted_at')->where('classification', 'Farmer')->count();
         $fisherfolk = DB::table('beneficiaries')->whereNull('deleted_at')->where('classification', 'Fisherfolk')->count();
+        $both       = DB::table('beneficiaries')->whereNull('deleted_at')->where('classification', 'Farmer & Fisherfolk')->count();
+
+        $labels = ['Farmers', 'Fisherfolk'];
+        $data   = [$farmers, $fisherfolk];
+        $colors = ['#198754', '#0dcaf0'];
+
+        if ($both > 0) {
+            $labels[] = 'Farmer & Fisherfolk';
+            $data[]   = $both;
+            $colors[] = '#6f42c1';
+        }
 
         return [
-            'labels' => ['Farmers', 'Fisherfolk'],
-            'data' => [$farmers, $fisherfolk],
-            'colors' => ['#198754', '#0dcaf0'],
-            'total' => $farmers + $fisherfolk,
+            'labels' => $labels,
+            'data'   => $data,
+            'colors' => $colors,
+            'total'  => $farmers + $fisherfolk + $both,
         ];
     }
 

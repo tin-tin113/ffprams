@@ -110,7 +110,6 @@
     .filter-select-wrapper .form-select { padding-left: 35px; border-radius: 10px; border: 1px solid #e2e8f0; font-size: 0.85rem; height: 40px; background-color: #f8fafc; font-weight: 500; }
     .filter-select-wrapper .form-select:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
 
-    .summary-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
     .stat-card { 
         background: #fff; 
         border-radius: 1.25rem; 
@@ -385,10 +384,9 @@
         .modal-stat-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 575.98px) { 
-        #map { height: 45vh; min-height: 350px; } 
-        .filters-bar { padding: 0.6rem; } 
-        .summary-stats { grid-template-columns: repeat(2, 1fr); } 
-        .barangay-info-modal .modal-dialog { max-width: calc(100vw - 1rem); } 
+        #map { height: 45vh; min-height: 350px; }
+        .filters-bar { padding: 0.6rem; }
+        .barangay-info-modal .modal-dialog { max-width: calc(100vw - 1rem); }
         .modal-stat-grid { grid-template-columns: 1fr; }
     }
     .btn-copy-success {
@@ -399,6 +397,7 @@
     .js-copy-contact {
         transition: all 0.2s ease;
     }
+
 </style>
 @endpush
 
@@ -428,10 +427,10 @@
                             <i class="bi bi-compass"></i>
                             <select id="quadrantFilter" class="form-select">
                                 <option value="">Quadrants</option>
-                                <option value="Quadrant 1">Quadrant 1</option>
-                                <option value="Quadrant 2">Quadrant 2</option>
-                                <option value="Quadrant 3">Quadrant 3</option>
-                                <option value="Quadrant 4">Quadrant 4</option>
+                                <option value="Quadrant 1">Q1 · North</option>
+                                <option value="Quadrant 2">Q2 · West</option>
+                                <option value="Quadrant 3">Q3 · Southwest</option>
+                                <option value="Quadrant 4">Q4 · East</option>
                             </select>
                         </div>
                         <div class="filter-select-wrapper">
@@ -453,30 +452,45 @@
                                 <option value="both">Farmer & Fisherfolk</option>
                             </select>
                         </div>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary px-3 rounded-3 d-flex align-items-center gap-2" id="statsDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false" title="View Summary Stats" style="height:40px;">
+                                <i class="bi bi-bar-chart-line"></i>
+                                <span class="small fw-semibold d-none d-sm-inline">Stats</span>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end p-3 shadow-sm border-0 rounded-4" style="min-width:300px;" aria-labelledby="statsDropdownBtn">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <div class="p-2 rounded-3 bg-light text-center">
+                                            <div class="fw-bold text-success fs-5 mb-0" id="stat-barangays">--</div>
+                                            <div class="text-muted" style="font-size:0.7rem;font-weight:600;text-transform:uppercase;">Barangays</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="p-2 rounded-3 bg-light text-center">
+                                            <div class="fw-bold text-primary fs-5 mb-0" id="stat-beneficiaries">--</div>
+                                            <div class="text-muted" style="font-size:0.7rem;font-weight:600;text-transform:uppercase;">Beneficiaries</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="p-2 rounded-3 bg-light text-center">
+                                            <div class="fw-bold text-warning fs-5 mb-0" id="stat-events">--</div>
+                                            <div class="text-muted" style="font-size:0.7rem;font-weight:600;text-transform:uppercase;">Total Events</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="p-2 rounded-3 bg-light text-center">
+                                            <div class="fw-bold text-info fs-5 mb-0" id="stat-reach">--%</div>
+                                            <div class="text-muted" style="font-size:0.7rem;font-weight:600;text-transform:uppercase;">Municipality Reach</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <button class="btn btn-dark px-3 rounded-3" id="clearFilters" title="Reset Filters">
                             <i class="bi bi-arrow-counterclockwise"></i>
                         </button>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <div class="summary-stats">
-            <div class="stat-card">
-                <div class="stat-value text-success" id="stat-barangays">--</div>
-                <div class="stat-label">Barangays</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value text-primary" id="stat-beneficiaries">--</div>
-                <div class="stat-label">Total Beneficiaries</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value text-warning" id="stat-events">--</div>
-                <div class="stat-label">Total Events</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value text-info" id="stat-reach">--%</div>
-                <div class="stat-label">Municipality Reach</div>
             </div>
         </div>
 
@@ -653,6 +667,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return div;
     };
     legend.addTo(map);
+
 
     let markers = {};
     let barangayDataMap = {};
