@@ -398,6 +398,62 @@
         transition: all 0.2s ease;
     }
 
+    /* Enhanced stat card icon boxes */
+    .modal-stat-card { display: flex; align-items: center; gap: 0.85rem; text-align: left; }
+    .modal-stat-card .stat-icon-box { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.2rem; }
+    .modal-stat-card .stat-icon-box.icon-dark    { background: #f1f5f9; color: #1e293b; }
+    .modal-stat-card .stat-icon-box.icon-primary { background: #dbeafe; color: #2563eb; }
+    .modal-stat-card .stat-icon-box.icon-success { background: #dcfce7; color: #15803d; }
+    .modal-stat-card .stat-icon-box.icon-info    { background: #cffafe; color: #0e7490; }
+    .modal-stat-card .stat-text { display: flex; flex-direction: column; min-width: 0; }
+
+    /* Right-column tab pills */
+    .modal-right-tabs .nav-link { font-size: 0.8rem; font-weight: 700; color: #64748b; border-radius: 10px; padding: 0.4rem 1rem; }
+    .modal-right-tabs .nav-link.active { background: #10b981; color: #fff; }
+    .modal-right-tabs .nav-link:hover:not(.active) { background: #f0fdf4; color: #059669; }
+
+    /* Event card colored left border */
+    .event-card { border-left: 4px solid transparent !important; border-radius: 12px; transition: box-shadow 0.2s ease; }
+    .event-card:hover { box-shadow: 0 6px 16px rgba(0,0,0,0.07); }
+    .event-card.status-completed { border-left-color: #10b981 !important; }
+    .event-card.status-ongoing   { border-left-color: #f59e0b !important; }
+    .event-card.status-pending   { border-left-color: #3b82f6 !important; }
+    .event-card.status-default   { border-left-color: #94a3b8 !important; }
+
+    /* Skeleton loading animation */
+    @keyframes skeleton-shimmer {
+        0%   { background-position: -400px 0; }
+        100% { background-position: 400px 0; }
+    }
+    .skeleton-line {
+        background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+        background-size: 800px 100%;
+        animation: skeleton-shimmer 1.4s infinite linear;
+        border-radius: 6px;
+    }
+    .skeleton-card {
+        background: #fff;
+        border: 1px solid #f3f4f6;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 0.6rem;
+    }
+
+    /* Beneficiary filter bar */
+    .benef-filter-bar { padding: 0.5rem 0.25rem 0.75rem; display: flex; gap: 0.5rem; align-items: center; }
+    .benef-filter-bar input { flex: 1; font-size: 0.82rem; border-radius: 10px; border: 1px solid #e2e8f0; padding: 0.35rem 0.75rem 0.35rem 2rem; background: #f8fafc; }
+    .benef-filter-bar input:focus { outline: none; border-color: #10b981; background: #fff; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+    .benef-filter-bar .search-icon { position: absolute; left: 0.6rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.8rem; pointer-events: none; }
+    .benef-filter-bar .filter-search-wrap { position: relative; flex: 1; }
+    .benef-filter-bar select { font-size: 0.78rem; border-radius: 10px; border: 1px solid #e2e8f0; padding: 0.35rem 0.6rem; background: #f8fafc; color: #475569; font-weight: 600; cursor: pointer; }
+    .benef-filter-bar select:focus { outline: none; border-color: #10b981; }
+
+    /* Distribution summary 2x2 mini grid */
+    .dist-summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .dist-summary-cell { background: #fff; border: 1.5px dashed #e2e8f0; border-radius: 12px; padding: 0.75rem 1rem; }
+    .dist-summary-cell .ds-label { font-size: 0.68rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 0.2rem; }
+    .dist-summary-cell .ds-value { font-size: 1.15rem; font-weight: 800; line-height: 1.1; }
+
 </style>
 @endpush
 
@@ -519,28 +575,41 @@
             </div>
             <div class="modal-body p-4">
                 <!-- Summary Stats Row -->
-                <div class="modal-stat-grid">
+                <div class="modal-stat-grid mb-4">
                     <div class="modal-stat-card">
-                        <span class="label">Total Beneficiaries</span>
-                        <span class="value" id="panel-total-benef">0</span>
+                        <div class="stat-icon-box icon-dark"><i class="bi bi-people-fill"></i></div>
+                        <div class="stat-text">
+                            <span class="value" id="panel-total-benef">0</span>
+                            <span class="label">Total Beneficiaries</span>
+                        </div>
                     </div>
                     <div class="modal-stat-card">
-                        <span class="label">Reached / Served</span>
-                        <span class="value text-primary" id="panel-reached">0</span>
+                        <div class="stat-icon-box icon-primary"><i class="bi bi-person-check-fill"></i></div>
+                        <div class="stat-text">
+                            <span class="value text-primary" id="panel-reached">0</span>
+                            <span class="label">Reached / Served</span>
+                        </div>
                     </div>
                     <div class="modal-stat-card">
-                        <span class="label">Farmers</span>
-                        <span class="value text-success" id="panel-farmers">0</span>
+                        <div class="stat-icon-box icon-success"><i class="bi bi-tree-fill"></i></div>
+                        <div class="stat-text">
+                            <span class="value text-success" id="panel-farmers">0</span>
+                            <span class="label">Farmers</span>
+                        </div>
                     </div>
                     <div class="modal-stat-card">
-                        <span class="label">Fisherfolk</span>
-                        <span class="value text-info" id="panel-fisherfolk">0</span>
+                        <div class="stat-icon-box icon-info"><i class="bi bi-water"></i></div>
+                        <div class="stat-text">
+                            <span class="value text-info" id="panel-fisherfolk">0</span>
+                            <span class="label">Fisherfolk</span>
+                        </div>
                     </div>
                 </div>
 
                 <div class="row g-4">
-                    <!-- Left Column: Details -->
+                    <!-- Left Column -->
                     <div class="col-lg-4">
+                        <!-- Section 1: Status & Reach -->
                         <div class="info-section">
                             <div class="info-section-title"><i class="bi bi-activity"></i>Status & Reach</div>
                             <div class="p-4 bg-light rounded-4 border">
@@ -560,49 +629,93 @@
                                         <span class="text-muted small fw-bold">Last Activity</span>
                                         <span id="panel-last-dist" class="text-dark fw-bold small">N/A</span>
                                     </div>
+                                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                                        <span class="text-muted small fw-bold">First Activity</span>
+                                        <span id="panel-first-dist" class="text-dark fw-bold small">N/A</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Section 2: Distribution Summary (merged) -->
                         <div class="info-section mb-0">
-                            <div class="info-section-title"><i class="bi bi-cash-stack"></i>Financial Overview</div>
-                            <div class="d-flex flex-column gap-3">
-                                <div class="p-3 bg-white rounded-4 border-dashed">
-                                    <div class="text-muted small fw-bold mb-1">Total Fund Allocated</div>
-                                    <div class="fw-bold text-dark h4 mb-0" id="panel-fund-allocated">₱0</div>
+                            <div class="info-section-title"><i class="bi bi-cash-stack"></i>Distribution Summary</div>
+                            <div class="dist-summary-grid">
+                                <div class="dist-summary-cell">
+                                    <div class="ds-label">Fund Allocated</div>
+                                    <div class="ds-value text-dark" id="panel-fund-allocated">₱0</div>
                                 </div>
-                                <div class="p-3 bg-white rounded-4 border-dashed">
-                                    <div class="text-muted small fw-bold mb-1">Distribution Events</div>
-                                    <div class="fw-bold text-dark h5 mb-0" id="panel-total-events">0 Events</div>
+                                <div class="dist-summary-cell">
+                                    <div class="ds-label">Total Events</div>
+                                    <div class="ds-value text-dark" id="panel-total-events">0</div>
+                                </div>
+                                <div class="dist-summary-cell">
+                                    <div class="ds-label">Event-Based</div>
+                                    <div class="ds-value text-primary" id="panel-event-allocations">—</div>
+                                </div>
+                                <div class="dist-summary-cell">
+                                    <div class="ds-label">Direct</div>
+                                    <div class="ds-value text-warning" id="panel-direct-allocations">—</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Right Column: Directory -->
+
+                    <!-- Right Column: Tabbed (Events / Beneficiaries) -->
                     <div class="col-lg-8">
-                        <div class="info-section mb-0 h-100 d-flex flex-column">
-                            <div class="info-section-title d-flex justify-content-between align-items-center">
-                                <span><i class="bi bi-list-stars"></i>Beneficiary Directory</span>
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill" style="font-size: 0.7rem;">
-                                        <span id="panel-beneficiary-count">0</span> Total Records
-                                    </span>
+                        <div class="d-flex align-items-center mb-3">
+                            <ul class="nav nav-pills modal-right-tabs gap-1" id="barangayTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="tab-events-btn"
+                                        data-bs-toggle="pill" data-bs-target="#tab-events"
+                                        type="button" role="tab" aria-selected="true">
+                                        <i class="bi bi-calendar2-event me-1"></i>Events
+                                        <span class="badge bg-warning-subtle text-warning ms-1 rounded-pill" style="font-size:0.65rem;" id="panel-events-count">0</span>
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="tab-beneficiaries-btn"
+                                        data-bs-toggle="pill" data-bs-target="#tab-beneficiaries"
+                                        type="button" role="tab" aria-selected="false">
+                                        <i class="bi bi-list-stars me-1"></i>Beneficiaries
+                                        <span class="badge bg-success-subtle text-success ms-1 rounded-pill" style="font-size:0.65rem;" id="panel-beneficiary-count">0</span>
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="tab-content" id="barangayTabContent">
+                            <!-- Events Tab -->
+                            <div class="tab-pane fade show active" id="tab-events" role="tabpanel">
+                                <div id="panel-events-list" class="beneficiary-list" style="max-height: 520px; overflow-y: auto;">
+                                    <div class="text-center py-3 text-muted small">Loading...</div>
                                 </div>
                             </div>
-                            
-                            <div class="flex-grow-1 bg-white rounded-4 border p-2" style="background: #f8fafc !important;">
-                                <div id="panel-beneficiary-list" class="beneficiary-list p-2" style="max-height: 550px; overflow-y: auto;">
-                                    <!-- Loaded via AJAX -->
+
+                            <!-- Beneficiaries Tab -->
+                            <div class="tab-pane fade" id="tab-beneficiaries" role="tabpanel">
+                                <div class="benef-filter-bar" id="benef-filter-bar" style="display:none;">
+                                    <div class="filter-search-wrap">
+                                        <i class="bi bi-search search-icon"></i>
+                                        <input type="text" id="benef-search" placeholder="Search by name...">
+                                    </div>
+                                    <select id="benef-class-filter">
+                                        <option value="">All</option>
+                                        <option value="Farmer">Farmer</option>
+                                        <option value="Fisherfolk">Fisherfolk</option>
+                                        <option value="Farmer & Fisherfolk">Both</option>
+                                    </select>
+                                </div>
+                                <div class="bg-white rounded-4 border p-2" style="background: #f8fafc !important;">
+                                    <div id="panel-beneficiary-list" class="beneficiary-list p-2" style="max-height: 480px; overflow-y: auto;">
+                                        <div class="text-center py-4 text-muted small">Switch to this tab to load records.</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
         </div>
     </div>
 </div>
@@ -672,6 +785,9 @@ document.addEventListener('DOMContentLoaded', function () {
     let markers = {};
     let barangayDataMap = {};
     const barangayModal = new bootstrap.Modal(document.getElementById('barangayModal'));
+    let beneficiaryTabLoaded = false;
+    let currentBeneficiaryBarangayId = null;
+    const EVENT_BASE_URL = '{{ url("distribution-events") }}';
 
     async function loadMapData() {
         const agencyId = document.getElementById('agencyFilter').value;
@@ -870,8 +986,20 @@ document.addEventListener('DOMContentLoaded', function () {
     function openBarangayModal(barangay) {
         document.getElementById('panel-barangay-name').textContent = barangay.name;
         document.getElementById('panel-quadrant-badge').textContent = barangay.quadrant || 'N/A';
-        document.getElementById('panel-coverage').textContent = `${barangay.coverage_rate}%`;
-        document.getElementById('panel-coverage-bar').style.width = `${barangay.coverage_rate}%`;
+        const rate = barangay.coverage_rate || 0;
+        document.getElementById('panel-coverage').textContent = `${rate}%`;
+        const bar = document.getElementById('panel-coverage-bar');
+        bar.style.width = `${rate}%`;
+        bar.style.background = rate >= 70
+            ? 'linear-gradient(90deg, #10b981, #34d399)'
+            : rate >= 30
+                ? 'linear-gradient(90deg, #f59e0b, #fbbf24)'
+                : 'linear-gradient(90deg, #ef4444, #f87171)';
+        document.getElementById('panel-coverage').className = rate >= 70
+            ? 'fw-bold text-success fs-5'
+            : rate >= 30
+                ? 'fw-bold text-warning fs-5'
+                : 'fw-bold text-danger fs-5';
         
         const status = barangay.distribution_status || 'none';
         const sb = document.getElementById('panel-status-badge');
@@ -879,19 +1007,43 @@ document.addEventListener('DOMContentLoaded', function () {
         sb.className = `badge-info ${status}`;
         
         document.getElementById('panel-last-dist').textContent = barangay.last_distribution_date ? new Date(barangay.last_distribution_date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
-        
+        document.getElementById('panel-first-dist').textContent = barangay.first_distribution_date ? new Date(barangay.first_distribution_date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
+
         document.getElementById('panel-total-benef').textContent = (barangay.total_beneficiaries || 0).toLocaleString();
         document.getElementById('panel-reached').textContent = (barangay.beneficiaries_reached || 0).toLocaleString();
         document.getElementById('panel-farmers').textContent = (barangay.total_farmers || 0).toLocaleString();
         document.getElementById('panel-fisherfolk').textContent = (barangay.total_fisherfolk || 0).toLocaleString();
-        document.getElementById('panel-total-events').textContent = (barangay.total_events || 0).toLocaleString() + ' Events';
-        
+        document.getElementById('panel-total-events').textContent = (barangay.total_events || 0).toLocaleString();
+
         const fa = Number(barangay.total_fund_allocated || 0);
         document.getElementById('panel-fund-allocated').textContent = '₱' + fa.toLocaleString('en-PH', {minimumFractionDigits: 0});
 
-        loadBeneficiaries(barangay.id);
+        // Reset lazy-loaded tabs
+        document.getElementById('panel-event-allocations').textContent = '—';
+        document.getElementById('panel-direct-allocations').textContent = '—';
+        document.getElementById('panel-events-count').textContent = '0';
+        document.getElementById('panel-events-list').innerHTML = eventSkeleton(3);
+        document.getElementById('panel-beneficiary-list').innerHTML = '<div class="text-center py-4 text-muted small">Switch to this tab to load records.</div>';
+        document.getElementById('panel-beneficiary-count').textContent = '0';
+
+        beneficiaryTabLoaded = false;
+        currentBeneficiaryBarangayId = barangay.id;
+        document.getElementById('benef-filter-bar').style.display = 'none';
+        document.getElementById('benef-search').value = '';
+        document.getElementById('benef-class-filter').value = '';
+        bootstrap.Tab.getOrCreateInstance(document.getElementById('tab-events-btn')).show();
+
+        loadEvents(barangay.id);
         barangayModal.show();
     }
+
+    // Lazy-load beneficiaries only when tab is clicked
+    document.getElementById('tab-beneficiaries-btn').addEventListener('shown.bs.tab', function () {
+        if (!beneficiaryTabLoaded && currentBeneficiaryBarangayId !== null) {
+            loadBeneficiaries(currentBeneficiaryBarangayId);
+            beneficiaryTabLoaded = true;
+        }
+    });
 
     // Search Functionality
     document.getElementById('mapSearch').addEventListener('input', function(e) {
@@ -961,65 +1113,179 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
+    function eventSkeleton(count = 3) {
+        return Array.from({ length: count }, () => `
+            <div class="skeleton-card">
+                <div class="d-flex gap-2 mb-2 align-items-center">
+                    <div class="skeleton-line" style="height:13px; width:55%;"></div>
+                    <div class="skeleton-line" style="height:13px; width:18%;"></div>
+                    <div class="skeleton-line" style="height:13px; width:15%;"></div>
+                </div>
+                <div class="skeleton-line" style="height:11px; width:70%;"></div>
+            </div>
+        `).join('');
+    }
+
+    function beneficiarySkeleton(count = 4) {
+        return Array.from({ length: count }, () => `
+            <div class="skeleton-card">
+                <div class="d-flex justify-content-between mb-2">
+                    <div>
+                        <div class="skeleton-line mb-1" style="height:13px; width:140px;"></div>
+                        <div class="skeleton-line" style="height:10px; width:80px;"></div>
+                    </div>
+                    <div class="skeleton-line" style="height:20px; width:60px; border-radius:8px;"></div>
+                </div>
+                <div class="skeleton-line mb-3" style="height:10px; width:110px;"></div>
+                <div class="d-flex gap-2">
+                    <div class="skeleton-line flex-grow-1" style="height:30px; border-radius:8px;"></div>
+                    <div class="skeleton-line" style="height:30px; width:36px; border-radius:8px;"></div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function loadEvents(barangayId) {
+        fetch(`/api/barangay/${barangayId}/events`, { headers: { 'Accept': 'application/json' } })
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('panel-event-allocations').textContent = (data.event_allocations || 0).toLocaleString();
+            document.getElementById('panel-direct-allocations').textContent = (data.direct_allocations || 0).toLocaleString();
+            document.getElementById('panel-events-count').textContent = (data.events || []).length;
+
+            const container = document.getElementById('panel-events-list');
+            if (!data.events || data.events.length === 0) {
+                container.innerHTML = '<div class="text-center py-3 text-muted small">No distribution events found</div>';
+                return;
+            }
+
+            const statusClass = { 'Completed': 'success', 'Ongoing': 'warning', 'Pending': 'primary' };
+            const statusBorder = { 'Completed': 'status-completed', 'Ongoing': 'status-ongoing', 'Pending': 'status-pending' };
+            const typeLabel = { 'physical': 'Physical', 'financial': 'Financial' };
+
+            let html = '';
+            data.events.forEach(ev => {
+                const sc = statusClass[ev.status] || 'secondary';
+                const bc = statusBorder[ev.status] || 'status-default';
+                const tl = typeLabel[ev.type] || ev.type;
+                const date = ev.distribution_date ? new Date(ev.distribution_date).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
+                html += `
+                    <div class="p-3 mb-2 bg-white border event-card ${bc}" style="font-size: 0.82rem;">
+                        <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <span class="fw-bold text-dark">${escapeHtml(ev.program_name)}</span>
+                                <span class="badge bg-${sc}-subtle text-${sc} border border-${sc}" style="font-size:0.63rem;">${ev.status}</span>
+                                <span class="badge bg-light text-muted border" style="font-size:0.63rem;">${tl}</span>
+                            </div>
+                            <a href="${EVENT_BASE_URL}/${ev.id}"
+                               class="btn btn-sm btn-light border flex-shrink-0"
+                               style="font-size:0.7rem; padding: 2px 8px; white-space:nowrap;"
+                               title="View event details">
+                                <i class="bi bi-arrow-right-circle"></i>
+                            </a>
+                        </div>
+                        <div class="text-muted">
+                            <i class="bi bi-calendar3 me-1"></i>${date}
+                            &nbsp;·&nbsp;<i class="bi bi-box me-1"></i>${escapeHtml(ev.resource_type)}
+                            &nbsp;·&nbsp;<span style="font-size:0.72rem;">${ev.total_distributed}/${ev.total_allocated} served</span>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        })
+        .catch(() => {
+            document.getElementById('panel-events-list').innerHTML = '<div class="text-center py-3 text-danger small">Failed to load events</div>';
+        });
+    }
+
+    let allBeneficiaries = [];
+
+    function renderBeneficiaryList(items) {
+        const container = document.getElementById('panel-beneficiary-list');
+        if (items.length === 0) {
+            container.innerHTML = '<div class="text-center py-4 text-muted small">No matching beneficiaries</div>';
+            return;
+        }
+        let html = '';
+        items.forEach(benef => {
+            const classification = benef.classification || 'Unknown';
+            const classColor = classification === 'Farmer' ? 'success' : classification === 'Fisherfolk' ? 'info' : 'warning';
+            const safeName = escapeHtml(benef.full_name || benef.name || 'N/A');
+            const safeCode = escapeHtml(benef.beneficiary_code || ('BEN-' + benef.id));
+            const safeContact = benef.contact_number ? escapeHtml(benef.contact_number) : 'N/A';
+            const hasContact = !!(benef.contact_number && String(benef.contact_number).trim() !== '');
+
+            const chips = [];
+            if (benef.is_urgent) chips.push('<span class="chip chip-urgent">Urgent</span>');
+            if (benef.is_unverified_profile) chips.push('<span class="chip chip-unverified">Unverified</span>');
+            if (benef.has_duplicate_risk) chips.push('<span class="chip chip-duplicate">Duplicate Risk</span>');
+
+            html += `
+                <div class="beneficiary-item">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <div class="fw-bold text-dark" style="font-size: 0.95rem;">${safeName}</div>
+                            <div class="text-muted" style="font-size: 0.75rem; letter-spacing: 0.5px;">${safeCode}</div>
+                        </div>
+                        <span class="badge bg-${classColor}-subtle text-${classColor} border border-${classColor}" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;">${classification.toUpperCase()}</span>
+                    </div>
+                    <div class="small text-muted mb-2">
+                        <i class="bi bi-telephone me-1"></i> ${safeContact}
+                    </div>
+                    ${chips.length ? `<div class="chip-row mb-3">${chips.join('')}</div>` : ''}
+                    <div class="d-flex gap-2">
+                        <a href="${benef.profile_url}" class="btn btn-sm btn-light border flex-grow-1 fw-bold" style="font-size: 0.75rem;">View</a>
+                        <button type="button" class="btn btn-sm btn-light border js-copy-contact" data-contact="${safeContact}" ${hasContact ? '' : 'disabled'}>
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function applyBeneficiaryFilter() {
+        const search = document.getElementById('benef-search').value.toLowerCase().trim();
+        const cls = document.getElementById('benef-class-filter').value;
+        const filtered = allBeneficiaries.filter(b => {
+            const name = (b.full_name || b.name || '').toLowerCase();
+            const matchName = !search || name.includes(search);
+            const matchClass = !cls || b.classification === cls;
+            return matchName && matchClass;
+        });
+        renderBeneficiaryList(filtered);
+    }
+
     function loadBeneficiaries(barangayId) {
         const container = document.getElementById('panel-beneficiary-list');
         const countBadge = document.getElementById('panel-beneficiary-count');
 
-
-        container.innerHTML = '<div class="text-center py-4"><div class="spinner-border spinner-border-sm text-success"></div><div class="small text-muted mt-2">Fetching records...</div></div>';
+        container.innerHTML = beneficiarySkeleton(4);
 
         fetch(`/api/barangay/${barangayId}/beneficiaries`, {
             headers: { 'Accept': 'application/json' }
         })
         .then(response => response.json())
         .then(data => {
-            countBadge.textContent = data.beneficiaries.length;
+            allBeneficiaries = data.beneficiaries || [];
+            countBadge.textContent = allBeneficiaries.length;
 
-            if (data.beneficiaries.length === 0) {
+            if (allBeneficiaries.length === 0) {
                 container.innerHTML = '<div class="text-center py-4 text-muted small">No beneficiaries found</div>';
+                document.getElementById('benef-filter-bar').style.display = 'none';
                 return;
             }
 
-            let html = '';
-            data.beneficiaries.forEach(benef => {
-                const classification = benef.classification || 'Unknown';
-                const classColor = classification === 'Farmer' ? 'success' : classification === 'Fisherfolk' ? 'info' : 'warning';
-                const safeName = escapeHtml(benef.full_name || benef.name || 'N/A');
-                const safeCode = escapeHtml(benef.beneficiary_code || ('BEN-' + benef.id));
-                const safeContact = benef.contact_number ? escapeHtml(benef.contact_number) : 'N/A';
-                const hasContact = !!(benef.contact_number && String(benef.contact_number).trim() !== '');
-
-                const chips = [];
-                if (benef.is_urgent) chips.push('<span class="chip chip-urgent">Urgent</span>');
-                if (benef.is_unverified_profile) chips.push('<span class="chip chip-unverified">Unverified</span>');
-                if (benef.has_duplicate_risk) chips.push('<span class="chip chip-duplicate">Duplicate Risk</span>');
-
-                html += `
-                    <div class="beneficiary-item">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div>
-                                <div class="fw-bold text-dark" style="font-size: 0.95rem;">${safeName}</div>
-                                <div class="text-muted" style="font-size: 0.75rem; letter-spacing: 0.5px;">${safeCode}</div>
-                            </div>
-                            <span class="badge bg-${classColor}-subtle text-${classColor} border border-${classColor}" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;">${classification.toUpperCase()}</span>
-                        </div>
-                        <div class="small text-muted mb-2">
-                            <i class="bi bi-telephone me-1"></i> ${safeContact}
-                        </div>
-                        ${chips.length ? `<div class="chip-row mb-3">${chips.join('')}</div>` : ''}
-                        <div class="d-flex gap-2">
-                            <a href="${benef.profile_url}" class="btn btn-sm btn-light border flex-grow-1 fw-bold" style="font-size: 0.75rem;">View</a>
-                            <button type="button" class="btn btn-sm btn-light border js-copy-contact" data-contact="${safeContact}" ${hasContact ? '' : 'disabled'}>
-                                <i class="bi bi-clipboard"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-
+            document.getElementById('benef-filter-bar').style.display = 'flex';
+            renderBeneficiaryList(allBeneficiaries);
         });
     }
+    // Beneficiary filter listeners
+    document.getElementById('benef-search').addEventListener('input', applyBeneficiaryFilter);
+    document.getElementById('benef-class-filter').addEventListener('change', applyBeneficiaryFilter);
+
     // Delegated Copy Event
     document.addEventListener('click', async function(e) {
         const btn = e.target.closest('.js-copy-contact');

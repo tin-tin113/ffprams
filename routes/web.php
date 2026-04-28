@@ -141,6 +141,8 @@ Route::middleware(['auth', 'verified', 'role:admin,staff'])->group(function () {
     Route::get('geo-map/data', [GeoMapController::class, 'mapData'])->name('geo-map.data');
     Route::get('api/barangay/{barangay}/beneficiaries', [GeoMapController::class, 'getBeneficiariesByBarangay'])
         ->name('api.barangay.beneficiaries');
+    Route::get('api/barangay/{barangay}/events', [GeoMapController::class, 'getEventsByBarangay'])
+        ->name('api.barangay.events');
 
     // API endpoints for eligible programs (used by allocation forms)
     Route::get('api/eligible-programs/{beneficiary}', [AllocationController::class, 'getEligiblePrograms'])

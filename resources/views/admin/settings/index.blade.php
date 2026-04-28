@@ -351,6 +351,8 @@
                                             $groupRequired = (bool) ($groupMeta->is_required ?? false);
                                             $groupIsActive = (bool) $options->contains(fn ($option) => (bool) $option->is_active);
                                             $groupOptionsCount = $options->count();
+                                            $isPersonalCoreGroup = \App\Support\BeneficiaryCoreFields::isPersonalInformationCoreFieldName($group);
+                                            $isCoreOptionBased = $isPersonalCoreGroup && $isOptionBasedGroup;
                                             $collapseId = 'globalFieldOptionsGroup' . $loop->index;
                                         @endphp
                                         <tr class="global-field-group-row" data-collapse-target="#{{ $collapseId }}">
@@ -382,6 +384,15 @@
                                                     <span class="badge bg-light text-dark border">
                                                         {{ $groupOptionsCount }} {{ Str::plural('option', $groupOptionsCount) }}
                                                     </span>
+                                                    @if ($isCoreOptionBased)
+                                                        <button class="btn btn-sm btn-outline-success add-core-option-btn"
+                                                                data-field-group="{{ $group }}"
+                                                                data-field-type="{{ $groupType }}"
+                                                                data-placement="personal_information"
+                                                                title="Add option to {{ Str::title(str_replace('_', ' ', $group)) }}">
+                                                            <i class="bi bi-plus"></i> Add Option
+                                                        </button>
+                                                    @endif
                                                     <button class="btn btn-sm btn-outline-secondary global-options-toggle"
                                                             type="button"
                                                             data-bs-toggle="collapse"
@@ -424,7 +435,8 @@
                                                                                     data-sort-order="{{ $option->sort_order }}"
                                                                                     data-required="{{ $option->is_required ? '1' : '0' }}"
                                                                                     data-active="{{ $option->is_active ? '1' : '0' }}"
-                                                                                    title="Edit">
+                                                                                    @if ($isPersonalCoreGroup) data-core-locked="1" @endif
+                                                                                    title="{{ $isPersonalCoreGroup ? 'Edit option label / value' : 'Edit' }}">
                                                                                 <i class="bi bi-pencil"></i>
                                                                             </button>
                                                                             <button class="btn btn-outline-danger delete-global-field-btn"
@@ -2544,16 +2556,18 @@ document.addEventListener('DOMContentLoaded', function() {
         globalFieldModalTitle.textContent = isEdit ? 'Edit Global Form Field' : 'Add Global Form Field';
         globalFieldSaveBtn.textContent = isEdit ? 'Update Field' : 'Save Field';
         globalFieldGroupInput.readOnly = false;
+        globalFieldTypeInput.disabled = false;
         globalFieldGroupHelp.textContent = isEdit
             ? 'Field group can be updated while editing this option.'
             : 'Lowercase, alphanumeric, and underscores only.';
-
     }
 
     function resetGlobalFieldForm() {
         globalFieldForm.reset();
         globalFieldIdInput.value = '';
         globalFieldTypeInput.value = 'dropdown';
+        globalFieldTypeInput.disabled = false;
+        globalFieldGroupInput.readOnly = false;
         globalFieldActiveInput.checked = true;
         applyGlobalFieldTypeState(globalFieldTypeInput.value);
         clearGlobalFieldErrors();
@@ -2627,7 +2641,27 @@ document.addEventListener('DOMContentLoaded', function() {
             globalFieldActiveInput.checked = this.dataset.active !== '0';
             clearGlobalFieldErrors();
 
+            const isCoreLocked = this.dataset.coreLocked === '1';
+            globalFieldGroupInput.readOnly = isCoreLocked;
+            globalFieldTypeInput.disabled = isCoreLocked;
+            if (isCoreLocked) {
+                globalFieldModalTitle.textContent = 'Edit Option (Schema-managed Field)';
+                globalFieldGroupHelp.textContent = 'Schema-managed — field group and type cannot be changed.';
+            }
+
             bootstrap.Modal.getOrCreateInstance(globalFieldModal).show();
+        });
+    });
+
+    document.querySelectorAll('.add-core-option-btn').forEach((btn) => {
+        btn.addEventListener('click', function() {
+            window.openAddGlobalFieldModal(this.dataset.placement, 'Option');
+            globalFieldGroupInput.value = this.dataset.fieldGroup || '';
+            globalFieldGroupInput.readOnly = true;
+            globalFieldTypeInput.value = this.dataset.fieldType || 'dropdown';
+            globalFieldTypeInput.disabled = true;
+            applyGlobalFieldTypeState(globalFieldTypeInput.value);
+            globalFieldGroupHelp.textContent = 'Schema-managed — field group is fixed.';
         });
     });
 

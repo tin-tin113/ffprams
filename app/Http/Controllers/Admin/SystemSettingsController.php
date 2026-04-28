@@ -1341,14 +1341,20 @@ class SystemSettingsController extends Controller
         $validated['field_type'] = strtolower(trim((string) $validated['field_type']));
 
         if ($this->isPersonalInformationCoreFieldName($validated['field_group'])) {
-            return response()->json([
-                'success' => false,
-                'errors' => [
-                    'field_group' => [
-                        "Core personal-information field '{$validated['field_group']}' is schema-managed and cannot be edited from Settings.",
+            $existingCoreGroup = FormFieldOption::where('field_group', $validated['field_group'])->first();
+            if (!$existingCoreGroup) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => [
+                        'field_group' => [
+                            "Core personal-information field '{$validated['field_group']}' is schema-managed and cannot be created from Settings.",
+                        ],
                     ],
-                ],
-            ], 422);
+                ], 422);
+            }
+            // Lock type and placement to match the existing core group
+            $validated['field_type'] = (string) $existingCoreGroup->field_type;
+            $validated['placement_section'] = (string) $existingCoreGroup->placement_section;
         }
 
         $isOptionBased = in_array($validated['field_type'], FormFieldOption::optionBasedFieldTypes(), true);
@@ -1493,17 +1499,6 @@ class SystemSettingsController extends Controller
 
     public function updateFormField(Request $request, FormFieldOption $formFieldOption): JsonResponse
     {
-        if ($this->isPersonalInformationCoreFieldName((string) $formFieldOption->field_group)) {
-            return response()->json([
-                'success' => false,
-                'errors' => [
-                    'field_group' => [
-                        "Core personal-information field '{$formFieldOption->field_group}' is schema-managed and cannot be edited from Settings.",
-                    ],
-                ],
-            ], 422);
-        }
-
         $validated = $request->validate([
             'field_group' => ['sometimes', 'string', 'max:100'],
             'field_type' => ['required', Rule::in(FormFieldOption::supportedFieldTypes())],
@@ -1531,12 +1526,24 @@ class SystemSettingsController extends Controller
             ], 422);
         }
 
-        if ($this->isPersonalInformationCoreFieldName($targetFieldGroup)) {
+        // For core personal-info fields: allow the update but lock field_group, field_type, and placement_section
+        if ($this->isPersonalInformationCoreFieldName((string) $formFieldOption->field_group)) {
+            $validated['field_group'] = (string) $formFieldOption->field_group;
+            $validated['field_type'] = (string) $formFieldOption->field_type;
+            $validated['placement_section'] = (string) $formFieldOption->placement_section;
+            $targetFieldGroup = (string) $formFieldOption->field_group;
+        }
+
+        // Block moving a non-core option into a core group
+        if (
+            $this->isPersonalInformationCoreFieldName($targetFieldGroup)
+            && !$this->isPersonalInformationCoreFieldName((string) $formFieldOption->field_group)
+        ) {
             return response()->json([
                 'success' => false,
                 'errors' => [
                     'field_group' => [
-                        "Core personal-information field '{$targetFieldGroup}' is schema-managed and cannot be edited from Settings.",
+                        "Core personal-information field '{$targetFieldGroup}' is schema-managed and cannot be assigned from Settings.",
                     ],
                 ],
             ], 422);
@@ -1839,13 +1846,6 @@ class SystemSettingsController extends Controller
 
     public function destroyFormField(FormFieldOption $formFieldOption): JsonResponse
     {
-        if ($this->isPersonalInformationCoreFieldName((string) $formFieldOption->field_group)) {
-            return response()->json([
-                'success' => false,
-                'message' => "Core personal-information field '{$formFieldOption->field_group}' is schema-managed and cannot be deleted from Settings.",
-            ], 422);
-        }
-
         $usageCount = $this->globalFormFieldOptionUsageCount($formFieldOption);
         $groupUsageCount = $this->globalFormFieldGroupUsageCount((string) $formFieldOption->field_group);
         $remainingGroupRows = FormFieldOption::query()

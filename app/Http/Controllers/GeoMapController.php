@@ -375,6 +375,72 @@ class GeoMapController extends Controller
     }
 
     /**
+     * Fetch distribution events and allocation counts for a specific barangay
+     */
+    public function getEventsByBarangay($barangayId): JsonResponse
+    {
+        try {
+            $events = DB::table('distribution_events')
+                ->leftJoin('program_names', 'distribution_events.program_name_id', '=', 'program_names.id')
+                ->leftJoin('resource_types', 'distribution_events.resource_type_id', '=', 'resource_types.id')
+                ->leftJoin('barangays', 'distribution_events.barangay_id', '=', 'barangays.id')
+                ->whereNull('distribution_events.deleted_at')
+                ->where('distribution_events.barangay_id', $barangayId)
+                ->select(
+                    'distribution_events.id',
+                    'distribution_events.distribution_date',
+                    'distribution_events.status',
+                    'distribution_events.type',
+                    'program_names.name as program_name',
+                    'resource_types.name as resource_type',
+                )
+                ->selectRaw('(SELECT COUNT(*) FROM allocations WHERE allocations.distribution_event_id = distribution_events.id AND allocations.deleted_at IS NULL) as total_allocated')
+                ->selectRaw('(SELECT COUNT(*) FROM allocations WHERE allocations.distribution_event_id = distribution_events.id AND allocations.distributed_at IS NOT NULL AND allocations.deleted_at IS NULL) as total_distributed')
+                ->orderByDesc('distribution_events.distribution_date')
+                ->get()
+                ->map(fn($e) => [
+                    'id'              => $e->id,
+                    'program_name'    => $e->program_name ?? 'N/A',
+                    'resource_type'   => $e->resource_type ?? 'N/A',
+                    'distribution_date' => $e->distribution_date,
+                    'status'          => $e->status,
+                    'type'            => $e->type,
+                    'total_allocated' => (int) $e->total_allocated,
+                    'total_distributed' => (int) $e->total_distributed,
+                ]);
+
+            $eventAllocations = DB::table('allocations')
+                ->join('beneficiaries', 'allocations.beneficiary_id', '=', 'beneficiaries.id')
+                ->whereNull('allocations.deleted_at')
+                ->whereNull('beneficiaries.deleted_at')
+                ->where('allocations.release_method', '=', 'event')
+                ->where('beneficiaries.barangay_id', $barangayId)
+                ->count();
+
+            $directAllocations = DB::table('allocations')
+                ->join('beneficiaries', 'allocations.beneficiary_id', '=', 'beneficiaries.id')
+                ->whereNull('allocations.deleted_at')
+                ->whereNull('beneficiaries.deleted_at')
+                ->where('allocations.release_method', '=', 'direct')
+                ->where('beneficiaries.barangay_id', $barangayId)
+                ->count();
+
+            return response()->json([
+                'events'             => $events,
+                'event_allocations'  => $eventAllocations,
+                'direct_allocations' => $directAllocations,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('GeoMapController::getEventsByBarangay error', [
+                'error'       => $e->getMessage(),
+                'barangay_id' => $barangayId,
+            ]);
+
+            return response()->json(['error' => 'Failed to load events.'], 500);
+        }
+    }
+
+    /**
      * Fetch all beneficiaries for a specific barangay
      */
     public function getBeneficiariesByBarangay($barangayId): JsonResponse
