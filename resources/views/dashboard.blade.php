@@ -447,15 +447,6 @@
             </div>
         </div>
 
-        {{-- Assistance Purpose Distribution --}}
-        <div class="col-lg-6">
-            <div class="chart-card">
-                <div class="chart-card-title">Assistance Purpose</div>
-                <div style="position: relative; height: 240px;">
-                    <canvas id="assistancePurposeChart"></canvas>
-                </div>
-            </div>
-        </div>
     </div>
 
     {{-- SECTION 5B: GEOGRAPHIC & TEMPORAL INSIGHTS --}}
@@ -827,50 +818,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     x: {
                         ticks: { font: { size: 11, weight: '500' }, color: '#1a1d29' },
                         grid: { display: false, drawBorder: false }
-                    }
-                }
-            }
-        });
-    }
-});
-
-// 6. ASSISTANCE PURPOSE DISTRIBUTION
-document.addEventListener('DOMContentLoaded', function () {
-    const purposeData = @json($assistancePurposeDistribution ?? ['labels' => [], 'data' => []]);
-    if (purposeData.data && purposeData.data.length > 0) {
-        new Chart(document.getElementById('assistancePurposeChart'), {
-            type: 'doughnut',
-            data: {
-                labels: purposeData.labels,
-                datasets: [{
-                    data: purposeData.data,
-                    backgroundColor: ['#6f42c1', '#20c997', '#fd7e14'],
-                    borderColor: 'white',
-                    borderWidth: 3
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { intersect: false },
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { font: { size: 11, weight: '500' }, padding: 15, color: '#6c757d' }
-                    },
-                    tooltip: {
-                        ...tooltipConfig,
-                        callbacks: {
-                            title: function(context) {
-                                return context[0]?.label || 'Purpose';
-                            },
-                            label: function(context) {
-                                const total = purposeData.data.reduce((a, b) => a + b, 0);
-                                const value = context.parsed;
-                                const percentage = ((value / total) * 100).toFixed(1);
-                                return ['Count: ' + value.toLocaleString(), 'Percentage: ' + percentage + '%'];
-                            }
-                        }
                     }
                 }
             }

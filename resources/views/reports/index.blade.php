@@ -811,7 +811,6 @@
 
     $farmersTotal = (int) $beneficiariesPerBarangay->sum('total_farmers');
     $fisherfolkTotal = (int) $beneficiariesPerBarangay->sum('total_fisherfolk');
-    $bothTotal = (int) $beneficiariesPerBarangay->sum('total_both');
     $kpiTotalBeneficiaries = (int) $beneficiariesPerBarangay->sum('grand_total');
     $kpiResourcesDistributed = (float) $resourceDistribution->sum('total_quantity_distributed');
     $kpiFinancialReleased = (float) $financialSummary->sum('total_amount_disbursed');
@@ -925,7 +924,6 @@
     $beneficiaryMixRows = collect([
         ['label' => 'Farmers', 'value' => $farmersTotal, 'color' => '#16a34a'],
         ['label' => 'Fisherfolk', 'value' => $fisherfolkTotal, 'color' => '#2563eb'],
-        ['label' => 'Both', 'value' => $bothTotal, 'color' => '#0ea5e9'],
     ])->map(function ($row) use ($kpiTotalBeneficiaries) {
         $row['percent'] = $kpiTotalBeneficiaries > 0
             ? ((float) $row['value'] / $kpiTotalBeneficiaries) * 100
@@ -1146,17 +1144,6 @@
             <div class="overview-chart-grid">
                 <div class="card report-card border-0">
                     <div class="card-header report-card-header">
-                        <span class="report-card-title"><i class="bi bi-pie-chart me-1"></i> Delivery Channel Mix</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="report-chart-wrap compact-donut">
-                            <canvas id="overviewChannelSplitChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card report-card border-0">
-                    <div class="card-header report-card-header">
                         <span class="report-card-title"><i class="bi bi-graph-up me-1"></i> Reach and Momentum Trend</span>
                     </div>
                     <div class="card-body">
@@ -1184,6 +1171,17 @@
                     <div class="card-body">
                         <div class="report-chart-wrap">
                             <canvas id="overviewFinancialFlowChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card report-card border-0">
+                    <div class="card-header report-card-header">
+                        <span class="report-card-title"><i class="bi bi-people me-1"></i> Beneficiary Coverage Overview</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-chart-wrap">
+                            <canvas id="overviewCoverageChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -1268,6 +1266,17 @@
                     </div>
                 @endif
             </div>
+
+            <div class="card report-card border-0 mt-3">
+                <div class="card-header report-card-header">
+                    <span class="report-card-title"><i class="bi bi-arrow-left-right me-1"></i> Year-over-Year Beneficiary Reach ({{ $currentYear }} vs {{ $prevYear }})</span>
+                </div>
+                <div class="card-body">
+                    <div class="report-chart-wrap">
+                        <canvas id="yoyComparisonChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div
@@ -1302,29 +1311,6 @@
                     <div class="insight-label">Average Per Covered Barangay</div>
                     <div class="insight-value">{{ number_format($avgBeneficiariesPerCoveredBarangay, 1) }}</div>
                     <div class="insight-note">Across {{ number_format($kpiBarangaysCovered) }} covered barangays</div>
-                </div>
-            </div>
-
-            <div class="beneficiary-kpi-grid mb-4">
-                <div class="beneficiary-kpi-card">
-                    <div class="beneficiary-kpi-label">Coverage Rate</div>
-                    <div class="beneficiary-kpi-value">{{ number_format($coverageRate, 1) }}%</div>
-                    <div class="beneficiary-kpi-meta">{{ number_format($reachedCount) }} reached out of {{ number_format($totalBeneficiaries) }}</div>
-                </div>
-                <div class="beneficiary-kpi-card">
-                    <div class="beneficiary-kpi-label">Top 3 Concentration</div>
-                    <div class="beneficiary-kpi-value">{{ number_format($topThreeBarangayConcentrationPct, 1) }}%</div>
-                    <div class="beneficiary-kpi-meta">Share of beneficiaries in the 3 most served barangays</div>
-                </div>
-                <div class="beneficiary-kpi-card">
-                    <div class="beneficiary-kpi-label">Average Per Covered Barangay</div>
-                    <div class="beneficiary-kpi-value">{{ number_format($avgBeneficiariesPerCoveredBarangay, 1) }}</div>
-                    <div class="beneficiary-kpi-meta">Across {{ number_format($kpiBarangaysCovered) }} barangays with beneficiaries</div>
-                </div>
-                <div class="beneficiary-kpi-card">
-                    <div class="beneficiary-kpi-label">Dominant Classification</div>
-                    <div class="beneficiary-kpi-value">{{ $dominantBeneficiaryMixLabel }}</div>
-                    <div class="beneficiary-kpi-meta">{{ number_format($dominantBeneficiaryMixPercent, 1) }}% of all registered beneficiaries</div>
                 </div>
             </div>
 
@@ -1435,7 +1421,6 @@
                                     <th>Barangay</th>
                                     <th class="text-center">Farmers</th>
                                     <th class="text-center">Fisherfolk</th>
-                                    <th class="text-center">Both</th>
                                     <th class="text-center">Grand Total</th>
                                 </tr>
                             </thead>
@@ -1446,12 +1431,11 @@
                                         <td>{{ $row->barangay->name }}</td>
                                         <td class="text-center">{{ number_format($row->total_farmers) }}</td>
                                         <td class="text-center">{{ number_format($row->total_fisherfolk) }}</td>
-                                        <td class="text-center">{{ number_format($row->total_both) }}</td>
                                         <td class="text-center fw-bold">{{ number_format($row->grand_total) }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="empty-state">
+                                        <td colspan="5" class="empty-state">
                                             <i class="bi bi-inbox fs-3 d-block mb-2"></i>
                                             No beneficiary data available.
                                         </td>
@@ -1464,7 +1448,6 @@
                                         <td colspan="2">Total</td>
                                         <td class="text-center">{{ number_format($beneficiariesPerBarangay->sum('total_farmers')) }}</td>
                                         <td class="text-center">{{ number_format($beneficiariesPerBarangay->sum('total_fisherfolk')) }}</td>
-                                        <td class="text-center">{{ number_format($beneficiariesPerBarangay->sum('total_both')) }}</td>
                                         <td class="text-center">{{ number_format($beneficiariesPerBarangay->sum('grand_total')) }}</td>
                                     </tr>
                                 </tfoot>
@@ -1751,6 +1734,29 @@
                     </div>
                 </div>
             </div>
+
+            <div class="card report-card border-0 mt-3 mb-4">
+                <div class="card-header report-card-header">
+                    <span class="report-card-title"><i class="bi bi-calendar-week me-1"></i> Beneficiary Registration Trend ({{ $currentYear }})</span>
+                </div>
+                <div class="card-body">
+                    <div class="report-chart-wrap">
+                        <canvas id="registrationTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card report-card border-0 mb-4">
+                <div class="card-header report-card-header">
+                    <span class="report-card-title"><i class="bi bi-clipboard-check me-1"></i> Beneficiary Profile Completeness</span>
+                    <span class="text-muted small ms-2">Based on all {{ number_format($totalBeneficiaries) }} registered beneficiaries</span>
+                </div>
+                <div class="card-body">
+                    <div class="report-chart-wrap" style="max-height:200px;">
+                        <canvas id="profileCompletenessChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div
@@ -1797,19 +1803,6 @@
                     </div>
                 </div>
             </details>
-
-            @if($financialSummary->sum('total_amount_disbursed') > 0)
-                <div class="card report-card border-0 mb-4">
-                    <div class="card-header report-card-header">
-                        <span class="report-card-title"><i class="bi bi-pie-chart-fill me-1"></i> Financial Channel Mix (Event vs Direct)</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="report-chart-wrap compact-donut">
-                            <canvas id="financialChannelMixChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            @endif
 
             <div class="card report-card border-0 mb-4">
                 <div class="card-header report-card-header">
@@ -1960,6 +1953,19 @@
                     </div>
                 </div>
             </div>
+
+            @if(!empty($liquidationHealthStatus))
+                <div class="card report-card border-0 mt-3 mb-4">
+                    <div class="card-header report-card-header">
+                        <span class="report-card-title"><i class="bi bi-shield-check me-1"></i> Liquidation Health — Financial Events Pipeline</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-chart-wrap compact-donut">
+                            <canvas id="liquidationHealthChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
 
         <div
@@ -2020,19 +2026,6 @@
                 </div>
             @endif
 
-            @if($barangayInsights->sum('total_events') > 0)
-                <div class="card report-card border-0 mb-4">
-                    <div class="card-header report-card-header">
-                        <span class="report-card-title"><i class="bi bi-diagram-2 me-1"></i> Barangay Event Status Mix</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="report-chart-wrap">
-                            <canvas id="barangayEventMixChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
             <div class="card report-card border-0 mb-4">
                 <div class="card-header report-card-header">
                     <span class="report-card-title"><i class="bi bi-pin-map me-1"></i> Barangay Performance Snapshot</span>
@@ -2077,6 +2070,19 @@
                     </div>
                 </div>
             </div>
+
+            @if($barangayEfficiency->count())
+                <div class="card report-card border-0 mt-3 mb-4">
+                    <div class="card-header report-card-header">
+                        <span class="report-card-title"><i class="bi bi-bullseye me-1"></i> Barangay Coverage Rate (Beneficiaries Reached %)</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-chart-wrap">
+                            <canvas id="barangayCoverageRateChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
 
         <div
@@ -2228,6 +2234,32 @@
                     </div>
                 </div>
             </div>
+
+            @if($agencyReachRate->count())
+                <div class="card report-card border-0 mt-3 mb-4">
+                    <div class="card-header report-card-header">
+                        <span class="report-card-title"><i class="bi bi-person-check me-1"></i> Agency Reach Rate — Registered vs Reached Beneficiaries</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-chart-wrap">
+                            <canvas id="agencyReachRateChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            @if($resourceByAgency->count())
+                <div class="card report-card border-0 mb-4">
+                    <div class="card-header report-card-header">
+                        <span class="report-card-title"><i class="bi bi-boxes me-1"></i> Resource Types Distributed by Agency</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-chart-wrap">
+                            <canvas id="resourceByAgencyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
 
         <div
@@ -2451,6 +2483,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const beneficiaryMixData = @json($beneficiaryMixRows->values());
     const beneficiaryPriorityData = @json($unreachedByBarangay->take(10)->values());
     const barangayInsightsData = @json($barangayInsights->values());
+    const barangayEfficiencyData = @json($barangayEfficiency->values());
     const agencySummaryData = @json($agencySummary->values());
     const programCategoryData = @json($programCategorySummary->values());
     const complianceOverviewData = @json($complianceOverview);
@@ -2486,6 +2519,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 '<div class="text-muted small mt-2">No data available for this chart in the selected year.</div>'
             );
         }
+    }
+
+    function showEmptyChart(canvasId, message) {
+        const el = document.getElementById(canvasId);
+        if (!el) return;
+        el.style.display = 'none';
+        const msg = message || 'No data available for the selected period.';
+        el.parentElement.insertAdjacentHTML('beforeend',
+            '<div class="d-flex flex-column align-items-center justify-content-center text-muted py-4 empty-chart-placeholder">'
+            + '<i class="bi bi-bar-chart-line fs-2 mb-2 opacity-50"></i>'
+            + '<div class="small">' + msg + '</div>'
+            + '</div>'
+        );
     }
 
     function topRowsBy(rows, field, limit) {
@@ -2614,45 +2660,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function initializeOverviewChannelSplitChart() {
-        const eventQty = resourceDistributionData.reduce(function (sum, row) {
-            return sum + toNumber(row.event_quantity_distributed);
-        }, 0);
-        const directQty = resourceDistributionData.reduce(function (sum, row) {
-            return sum + toNumber(row.direct_quantity_distributed);
-        }, 0);
-
-        if (eventQty <= 0 && directQty <= 0) {
-            return;
-        }
-
-        createChartIfNeeded('overviewChannelSplitChart', function (canvas) {
-            return new Chart(canvas, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Event Channel', 'Direct Channel'],
-                    datasets: [
-                        {
-                            data: [eventQty, directQty],
-                            backgroundColor: ['rgba(22, 163, 74, 0.74)', 'rgba(37, 99, 235, 0.74)'],
-                            borderColor: ['rgba(22, 163, 74, 1)', 'rgba(37, 99, 235, 1)'],
-                            borderWidth: 1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom' }
-                    }
-                }
-            });
-        });
-    }
-
     function initializeOverviewReachTrendChart() {
         if (!monthlyData.length) {
+            showEmptyChart('overviewReachTrendChart', 'No distribution data for ' + {{ $currentYear }} + '. Add completed events to see the trend.');
             return;
         }
 
@@ -2719,6 +2729,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function initializeOverviewTopResourcesChart() {
         if (!resourceDistributionData.length) {
+            showEmptyChart('overviewTopResourcesChart', 'No resource distributions recorded yet.');
             return;
         }
 
@@ -2758,6 +2769,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function initializeOverviewFinancialFlowChart() {
         if (!financialSummaryData.length) {
+            showEmptyChart('overviewFinancialFlowChart', 'No financial assistance disbursed yet.');
             return;
         }
 
@@ -2803,8 +2815,50 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function initializeOverviewCoverageChart() {
+        const reached    = {{ (int) $reachedCount }};
+        const unreached  = {{ (int) $unreachedTotal }};
+        const total      = reached + unreached;
+
+        if (total === 0) {
+            showEmptyChart('overviewCoverageChart', 'No beneficiaries registered yet.');
+            return;
+        }
+
+        createChartIfNeeded('overviewCoverageChart', function(canvas) {
+            return new Chart(canvas, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Reached', 'Unreached'],
+                    datasets: [{
+                        data: [reached, unreached],
+                        backgroundColor: ['rgba(22, 163, 74, 0.75)', 'rgba(220, 53, 69, 0.65)'],
+                        borderColor: ['rgba(22, 163, 74, 1)', 'rgba(220, 53, 69, 1)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : '0.0';
+                                    return ctx.label + ': ' + ctx.parsed.toLocaleString() + ' (' + pct + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    }
+
     function initializeBeneficiariesChart() {
         if (!beneficiariesByBarangayData.length) {
+            showEmptyChart('barangayBeneficiariesChart', 'No beneficiary-barangay data available.');
             return;
         }
 
@@ -2860,6 +2914,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function initializeBeneficiaryCompositionByBarangayChart() {
         if (!beneficiariesByBarangayData.length) {
+            showEmptyChart('beneficiaryCompositionByBarangayChart', 'No beneficiary composition data available.');
             return;
         }
 
@@ -2885,13 +2940,6 @@ document.addEventListener('DOMContentLoaded', function () {
                             data: rows.map(function (row) { return toNumber(row.total_fisherfolk); }),
                             backgroundColor: 'rgba(37, 99, 235, 0.72)',
                             borderColor: 'rgba(37, 99, 235, 1)',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Both',
-                            data: rows.map(function (row) { return toNumber(row.total_both); }),
-                            backgroundColor: 'rgba(14, 165, 233, 0.72)',
-                            borderColor: 'rgba(14, 165, 233, 1)',
                             borderWidth: 1
                         }
                     ]
@@ -3128,6 +3176,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function initializeStatusPerBarangayChart() {
         if (!statusPerBarangayData.length) {
+            showEmptyChart('statusPerBarangayChart', 'No allocation status data per barangay yet.');
             return;
         }
 
@@ -3335,49 +3384,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function initializeFinancialChannelMixChart() {
-        if (!financialSummaryData.length) {
-            return;
-        }
-
-        createChartIfNeeded('financialChannelMixChart', function (canvas) {
-            const eventAmount = financialSummaryData.reduce(function (sum, row) {
-                return sum + toNumber(row.event_amount_disbursed);
-            }, 0);
-            const directAmount = financialSummaryData.reduce(function (sum, row) {
-                return sum + toNumber(row.direct_amount_disbursed);
-            }, 0);
-
-            if (eventAmount <= 0 && directAmount <= 0) {
-                return null;
-            }
-
-            return new Chart(canvas, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Event', 'Direct'],
-                    datasets: [
-                        {
-                            data: [eventAmount, directAmount],
-                            backgroundColor: ['rgba(22, 163, 74, 0.72)', 'rgba(37, 99, 235, 0.72)'],
-                            borderColor: ['rgba(22, 163, 74, 1)', 'rgba(37, 99, 235, 1)'],
-                            borderWidth: 1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom' }
-                    }
-                }
-            });
-        });
-    }
-
     function initializeFinancialPerBarangayChart() {
         if (!financialPerBarangayData.length) {
+            showEmptyChart('financialPerBarangayChart', 'No financial disbursement data per barangay yet.');
             return;
         }
 
@@ -3470,71 +3479,6 @@ document.addEventListener('DOMContentLoaded', function () {
                             beginAtZero: true,
                             position: 'right',
                             grid: { drawOnChartArea: false }
-                        }
-                    }
-                }
-            });
-        });
-    }
-
-    function initializeBarangayEventMixChart() {
-        if (!barangayInsightsData.length) {
-            return;
-        }
-
-        createChartIfNeeded('barangayEventMixChart', function (canvas) {
-            const rows = topRowsBy(barangayInsightsData, 'total_events', 10)
-                .filter(function (row) {
-                    return toNumber(row.total_events) > 0;
-                });
-
-            if (!rows.length) {
-                return null;
-            }
-
-            return new Chart(canvas, {
-                type: 'bar',
-                data: {
-                    labels: rows.map(function (row) { return row.barangay_name; }),
-                    datasets: [
-                        {
-                            label: 'Pending',
-                            data: rows.map(function (row) { return toNumber(row.pending_events); }),
-                            backgroundColor: 'rgba(37, 99, 235, 0.72)',
-                            borderColor: 'rgba(37, 99, 235, 1)',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Ongoing',
-                            data: rows.map(function (row) { return toNumber(row.ongoing_events); }),
-                            backgroundColor: 'rgba(217, 119, 6, 0.72)',
-                            borderColor: 'rgba(217, 119, 6, 1)',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Completed',
-                            data: rows.map(function (row) { return toNumber(row.completed_events); }),
-                            backgroundColor: 'rgba(22, 163, 74, 0.72)',
-                            borderColor: 'rgba(22, 163, 74, 1)',
-                            borderWidth: 1
-                        }
-                    ]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom' }
-                    },
-                    scales: {
-                        x: {
-                            stacked: true,
-                            beginAtZero: true,
-                            ticks: { stepSize: 1 }
-                        },
-                        y: {
-                            stacked: true
                         }
                     }
                 }
@@ -3931,20 +3875,367 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // NEW CHARTS ——————————————————————————————————————————
+
+    function initializeYoYComparisonChart() {
+        const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const currentData = @json($monthlyDistribution->pluck('total_beneficiaries', 'month_number'));
+        const prevData    = @json($prevYearMonthly->pluck('total_beneficiaries', 'month_number'));
+        const currentYear = {{ $currentYear }};
+        const prevYear    = {{ $prevYear }};
+
+        const currentArr = monthNames.map(function(_, i) { return toNumber(currentData[i + 1] || 0); });
+        const prevArr    = monthNames.map(function(_, i) { return toNumber(prevData[i + 1]    || 0); });
+
+        if (currentArr.every(function(v) { return v === 0; }) && prevArr.every(function(v) { return v === 0; })) {
+            showEmptyChart('yoyComparisonChart', 'No beneficiary reach data for ' + prevYear + ' or ' + currentYear + '. Complete distributions to see the comparison.');
+            return;
+        }
+
+        createChartIfNeeded('yoyComparisonChart', function(canvas) {
+            return new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: monthNames,
+                    datasets: [
+                        {
+                            label: String(currentYear),
+                            data: currentArr,
+                            backgroundColor: 'rgba(37, 99, 235, 0.70)',
+                            borderColor: 'rgba(37, 99, 235, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: String(prevYear),
+                            data: prevArr,
+                            backgroundColor: 'rgba(156, 163, 175, 0.60)',
+                            borderColor: 'rgba(107, 114, 128, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                    }
+                }
+            });
+        });
+    }
+
+    function initializeRegistrationTrendChart() {
+        const monthNames   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const trendData    = @json($registrationTrend);
+        const farmers      = trendData.map(function(r) { return toNumber(r.farmers); });
+        const fisherfolk   = trendData.map(function(r) { return toNumber(r.fisherfolk); });
+
+        if (farmers.every(function(v){ return v === 0; }) && fisherfolk.every(function(v){ return v === 0; })) {
+            showEmptyChart('registrationTrendChart', 'No new beneficiary registrations recorded for ' + {{ $currentYear }} + '.');
+            return;
+        }
+
+        createChartIfNeeded('registrationTrendChart', function(canvas) {
+            return new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: monthNames,
+                    datasets: [
+                        {
+                            label: 'Farmers',
+                            data: farmers,
+                            borderColor: 'rgba(22, 163, 74, 1)',
+                            backgroundColor: 'rgba(22, 163, 74, 0.12)',
+                            fill: true,
+                            tension: 0.35
+                        },
+                        {
+                            label: 'Fisherfolk',
+                            data: fisherfolk,
+                            borderColor: 'rgba(37, 99, 235, 1)',
+                            backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                            fill: true,
+                            tension: 0.35
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        });
+    }
+
+    function initializeProfileCompletenessChart() {
+        const completenessData = @json($profileCompleteness);
+        const labels = completenessData.map(function(r) { return r.label; });
+        const complete   = completenessData.map(function(r) { return toNumber(r.pct); });
+        const incomplete = completenessData.map(function(r) { return Math.max(0, 100 - toNumber(r.pct)); });
+
+        createChartIfNeeded('profileCompletenessChart', function(canvas) {
+            return new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Complete (%)',
+                            data: complete,
+                            backgroundColor: 'rgba(22, 163, 74, 0.75)',
+                            borderColor: 'rgba(22, 163, 74, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Incomplete (%)',
+                            data: incomplete,
+                            backgroundColor: 'rgba(220, 53, 69, 0.45)',
+                            borderColor: 'rgba(220, 53, 69, 0.8)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    return ctx.dataset.label + ': ' + ctx.parsed.x.toFixed(1) + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { stacked: true, max: 100, ticks: { callback: function(v) { return v + '%'; } } },
+                        y: { stacked: true }
+                    }
+                }
+            });
+        });
+    }
+
+    function initializeLiquidationHealthChart() {
+        const rawData   = @json($liquidationHealthStatus);
+        const statusMap = {
+            not_required: { label: 'Not Required', color: 'rgba(107, 114, 128, 0.72)' },
+            pending:      { label: 'Pending',       color: 'rgba(220, 53, 69, 0.72)' },
+            submitted:    { label: 'Submitted',     color: 'rgba(37, 99, 235, 0.72)' },
+            verified:     { label: 'Verified',      color: 'rgba(22, 163, 74, 0.72)' }
+        };
+        const keys   = Object.keys(rawData).filter(function(k) { return rawData[k] > 0; });
+        if (!keys.length) { showEmptyChart('liquidationHealthChart', 'No financial distribution events recorded yet.'); return; }
+
+        const labels = keys.map(function(k) { return (statusMap[k] || { label: k }).label; });
+        const counts = keys.map(function(k) { return rawData[k]; });
+        const colors = keys.map(function(k) { return (statusMap[k] || { color: 'rgba(156,163,175,0.7)' }).color; });
+
+        createChartIfNeeded('liquidationHealthChart', function(canvas) {
+            return new Chart(canvas, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: colors,
+                        borderColor: colors.map(function(c) { return c.replace('0.72', '1'); }),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    const total = counts.reduce(function(a, b){ return a + b; }, 0);
+                                    return ctx.label + ': ' + ctx.parsed + ' (' + ((ctx.parsed / total) * 100).toFixed(1) + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    function initializeAgencyReachRateChart() {
+        const reachData = @json($agencyReachRate);
+        if (!reachData.length) { showEmptyChart('agencyReachRateChart', 'No agency reach data available.'); return; }
+
+        createChartIfNeeded('agencyReachRateChart', function(canvas) {
+            const labels    = reachData.map(function(r) { return r.agency_name; });
+            const registered = reachData.map(function(r) { return toNumber(r.total_registered); });
+            const reached    = reachData.map(function(r) { return toNumber(r.total_reached); });
+
+            return new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Registered',
+                            data: registered,
+                            backgroundColor: 'rgba(37, 99, 235, 0.60)',
+                            borderColor: 'rgba(37, 99, 235, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Reached',
+                            data: reached,
+                            backgroundColor: 'rgba(22, 163, 74, 0.70)',
+                            borderColor: 'rgba(22, 163, 74, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        });
+    }
+
+    function initializeResourceByAgencyChart() {
+        const rawGroups = @json($resourceByAgency);
+        const agencyNames = Object.keys(rawGroups);
+        if (!agencyNames.length) { showEmptyChart('resourceByAgencyChart', 'No resource distribution data across agencies yet.'); return; }
+
+        // Collect all resource names across agencies
+        const allResourceNames = [];
+        agencyNames.forEach(function(agency) {
+            rawGroups[agency].forEach(function(row) {
+                if (row.resource_name && !allResourceNames.includes(row.resource_name)) {
+                    allResourceNames.push(row.resource_name);
+                }
+            });
+        });
+
+        if (!allResourceNames.length) { showEmptyChart('resourceByAgencyChart', 'No resource distribution data across agencies yet.'); return; }
+
+        const palette = [
+            'rgba(37, 99, 235, 0.72)',
+            'rgba(22, 163, 74, 0.72)',
+            'rgba(220, 53, 69, 0.72)',
+            'rgba(217, 119, 6, 0.72)',
+            'rgba(124, 58, 237, 0.72)',
+            'rgba(14, 165, 233, 0.72)'
+        ];
+
+        const datasets = allResourceNames.map(function(resName, idx) {
+            return {
+                label: resName,
+                data: agencyNames.map(function(agency) {
+                    const row = rawGroups[agency].find(function(r) { return r.resource_name === resName; });
+                    return row ? toNumber(row.allocation_count) : 0;
+                }),
+                backgroundColor: palette[idx % palette.length],
+                borderColor: palette[idx % palette.length].replace('0.72', '1'),
+                borderWidth: 1
+            };
+        });
+
+        createChartIfNeeded('resourceByAgencyChart', function(canvas) {
+            return new Chart(canvas, {
+                type: 'bar',
+                data: { labels: agencyNames, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: {
+                        x: { stacked: false },
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                    }
+                }
+            });
+        });
+    }
+
+    function initializeBarangayCoverageRateChart() {
+        if (!barangayEfficiencyData.length) { showEmptyChart('barangayCoverageRateChart', 'No barangay coverage data available.'); return; }
+
+        const rows = barangayEfficiencyData
+            .filter(function(r) { return toNumber(r.total_beneficiaries) > 0; })
+            .sort(function(a, b) { return toNumber(b.reach_percentage) - toNumber(a.reach_percentage); })
+            .slice(0, 15);
+
+        if (!rows.length) { showEmptyChart('barangayCoverageRateChart', 'No barangays with beneficiary data found.'); return; }
+
+        createChartIfNeeded('barangayCoverageRateChart', function(canvas) {
+            const labels   = rows.map(function(r) { return r.name; });
+            const pcts     = rows.map(function(r) { return toNumber(r.reach_percentage); });
+            const colors   = pcts.map(function(p) {
+                if (p >= 70) return 'rgba(22, 163, 74, 0.75)';
+                if (p >= 40) return 'rgba(217, 119, 6, 0.75)';
+                return 'rgba(220, 53, 69, 0.70)';
+            });
+
+            return new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Coverage Rate (%)',
+                        data: pcts,
+                        backgroundColor: colors,
+                        borderColor: colors.map(function(c) { return c.replace('0.75', '1').replace('0.70', '1'); }),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    const r = rows[ctx.dataIndex];
+                                    return 'Coverage: ' + ctx.parsed.x.toFixed(1) + '% (' + toNumber(r.reached_beneficiaries) + ' / ' + toNumber(r.total_beneficiaries) + ')';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { beginAtZero: true, max: 100, ticks: { callback: function(v) { return v + '%'; } } }
+                    }
+                }
+            });
+        });
+    }
+
+    // ——————————————————————————————————————————————————
+
     const tabChartInitializers = {
         overview: [
-            initializeOverviewChannelSplitChart,
             initializeOverviewReachTrendChart,
             initializeOverviewTopResourcesChart,
             initializeOverviewFinancialFlowChart,
+            initializeOverviewCoverageChart,
             initializeOverviewComplianceRiskChart,
-            initializeMonthlyChart
+            initializeMonthlyChart,
+            initializeYoYComparisonChart
         ],
-        beneficiary: [initializeBeneficiariesChart, initializeBeneficiaryCompositionByBarangayChart, initializeUnreachedChart, initializeBeneficiaryMixChart, initializeBeneficiaryPriorityChart],
+        beneficiary: [initializeBeneficiariesChart, initializeBeneficiaryCompositionByBarangayChart, initializeUnreachedChart, initializeBeneficiaryMixChart, initializeBeneficiaryPriorityChart, initializeRegistrationTrendChart, initializeProfileCompletenessChart],
         allocation: [initializeResourceDistributionChart, initializeAllocationReachByResourceChart, initializeAllocationMonthlyReachChart, initializeAllocationMonthlyQuantityChart, initializeStatusPerBarangayChart],
-        financial: [initializeFinancialSummaryChart, initializeFinancialChannelMixChart, initializeFinancialPerBarangayChart],
-        barangay: [initializeBarangayPerformanceChart, initializeBarangayEventMixChart],
-        agency: [initializeAgencyContributionChart, initializeAgencyFinancialShareChart, initializeAgencyOperationsMixChart],
+        financial: [initializeFinancialSummaryChart, initializeFinancialPerBarangayChart, initializeLiquidationHealthChart],
+        barangay: [initializeBarangayPerformanceChart, initializeBarangayCoverageRateChart],
+        agency: [initializeAgencyContributionChart, initializeAgencyFinancialShareChart, initializeAgencyOperationsMixChart, initializeAgencyReachRateChart, initializeResourceByAgencyChart],
         program: [initializePurposeChart, initializeProgramCategoryChart, initializeProgramEventDirectChart, initializeProgramBeneficiaryReachChart]
     };
 

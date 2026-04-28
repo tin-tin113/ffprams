@@ -783,7 +783,7 @@ class ReportsController extends Controller
             ->leftJoin('beneficiaries as b', function ($join) {
                 $join->on('b.agency_id', '=', 'agencies.id')->whereNull('b.deleted_at');
             })
-            ->leftJoin('allocations as a', function ($join) use ($selectedYear, $topResourceIds) {
+            ->leftJoin('allocations as a', function ($join) use ($topResourceIds) {
                 $join->on('a.beneficiary_id', '=', 'b.id')
                     ->whereNull('a.deleted_at')
                     ->whereNotNull('a.distributed_at')
@@ -791,7 +791,9 @@ class ReportsController extends Controller
             })
             ->leftJoin('resource_types as rt', 'rt.id', '=', 'a.resource_type_id')
             ->selectRaw('rt.name as resource_name, COUNT(DISTINCT a.id) as allocation_count')
+            ->whereNotNull('rt.name')
             ->groupBy('agencies.id', 'agencies.name', 'rt.name')
+            ->having(DB::raw('COUNT(DISTINCT a.id)'), '>', 0)
             ->orderBy('agencies.name')
             ->get()
             ->groupBy('agency_name');
