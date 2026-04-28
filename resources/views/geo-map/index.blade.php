@@ -322,7 +322,7 @@
     .stat-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
 
     /* Modal Dashboard Styling */
-    .modal-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .modal-stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
     .modal-stat-card { 
         background: #f8fafc; 
         border-radius: 1rem; 
@@ -379,9 +379,9 @@
 
     .border-dashed { border: 1.5px dashed #e2e8f0 !important; }
 
-    @media (max-width: 991.98px) { 
-        #map { height: 50vh; min-height: 450px; } 
-        .modal-stat-grid { grid-template-columns: repeat(2, 1fr); }
+    @media (max-width: 991.98px) {
+        #map { height: 50vh; min-height: 450px; }
+        .modal-stat-grid { grid-template-columns: repeat(3, 1fr); }
     }
     @media (max-width: 575.98px) { 
         #map { height: 45vh; min-height: 350px; }
@@ -602,6 +602,13 @@
                         <div class="stat-text">
                             <span class="value text-info" id="panel-fisherfolk">0</span>
                             <span class="label">Fisherfolk</span>
+                        </div>
+                    </div>
+                    <div class="modal-stat-card">
+                        <div class="stat-icon-box icon-warning"><i class="bi bi-people-fill"></i></div>
+                        <div class="stat-text">
+                            <span class="value text-warning" id="panel-both">0</span>
+                            <span class="label">Both</span>
                         </div>
                     </div>
                 </div>
@@ -1011,8 +1018,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         document.getElementById('panel-total-benef').textContent = (barangay.total_beneficiaries || 0).toLocaleString();
         document.getElementById('panel-reached').textContent = (barangay.beneficiaries_reached || 0).toLocaleString();
-        document.getElementById('panel-farmers').textContent = (barangay.total_farmers || 0).toLocaleString();
-        document.getElementById('panel-fisherfolk').textContent = (barangay.total_fisherfolk || 0).toLocaleString();
+        document.getElementById('panel-farmers').textContent = (barangay.total_farmers_only || 0).toLocaleString();
+        document.getElementById('panel-fisherfolk').textContent = (barangay.total_fisherfolk_only || 0).toLocaleString();
+        document.getElementById('panel-both').textContent = (barangay.total_both || 0).toLocaleString();
         document.getElementById('panel-total-events').textContent = (barangay.total_events || 0).toLocaleString();
 
         const fa = Number(barangay.total_fund_allocated || 0);
@@ -1024,7 +1032,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('panel-events-count').textContent = '0';
         document.getElementById('panel-events-list').innerHTML = eventSkeleton(3);
         document.getElementById('panel-beneficiary-list').innerHTML = '<div class="text-center py-4 text-muted small">Switch to this tab to load records.</div>';
-        document.getElementById('panel-beneficiary-count').textContent = '0';
+        document.getElementById('panel-beneficiary-count').textContent = (barangay.total_beneficiaries || 0).toLocaleString();
 
         beneficiaryTabLoaded = false;
         currentBeneficiaryBarangayId = barangay.id;

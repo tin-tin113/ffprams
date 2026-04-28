@@ -83,12 +83,18 @@
                         <span class="badge {{ $programName->is_active ? 'badge-soft-success' : 'badge-soft-danger' }} px-3 py-2 rounded-pill">
                             <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> {{ $programName->is_active ? 'Active' : 'Inactive' }}
                         </span>
+                        <span class="badge badge-soft-secondary px-3 py-2 rounded-pill text-muted">
+                            <i class="bi bi-calendar3 me-1"></i> Created {{ $programName->created_at->format('M d, Y') }}
+                        </span>
                     </div>
                 </div>
             </div>
             <div class="d-flex gap-2">
                 <a href="{{ route('admin.settings.program-names.index') }}" class="btn btn-outline-secondary px-4 rounded-pill">
                     <i class="bi bi-arrow-left me-1"></i> Back
+                </a>
+                <a href="{{ route('admin.settings.program-names.index') }}?edit={{ $programName->id }}" class="btn btn-outline-primary px-4 rounded-pill">
+                    <i class="bi bi-pencil me-1"></i> Edit Program
                 </a>
             </div>
         </div>
@@ -137,12 +143,19 @@
                 <div class="col-md-3">
                     <div class="stat-card shadow-sm border-0 h-100 bg-white p-4">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="stat-card-icon bg-soft-primary text-primary p-3 rounded-circle" style="background: rgba(13, 110, 253, 0.1);">
-                                <i class="bi bi-calendar-check fs-4"></i>
+                            <div class="stat-card-icon p-3 rounded-circle" style="background: rgba(13, 110, 253, 0.1);">
+                                <i class="bi bi-calendar3 fs-4 text-primary"></i>
                             </div>
                             <div>
-                                <div class="stat-card-value text-primary fs-3 fw-bold">{{ number_format($activeDistributionsCount) }}</div>
-                                <div class="stat-card-label fw-bold text-uppercase small text-muted">Active Distributions</div>
+                                <div class="stat-card-value text-primary fs-3 fw-bold">{{ number_format($totalEvents) }}</div>
+                                <div class="stat-card-label fw-bold text-uppercase small text-muted">Total Events</div>
+                                @if($activeDistributionsCount > 0)
+                                    <div class="small text-warning mt-1 fw-semibold">
+                                        <i class="bi bi-circle-fill me-1" style="font-size:0.45rem;vertical-align:middle;"></i>{{ $activeDistributionsCount }} Active
+                                    </div>
+                                @else
+                                    <div class="small text-muted mt-1">{{ $completedEventsCount }} Completed</div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -150,8 +163,8 @@
                 <div class="col-md-3">
                     <div class="stat-card shadow-sm border-0 h-100 bg-white p-4">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="stat-card-icon bg-soft-success text-success p-3 rounded-circle" style="background: rgba(25, 135, 84, 0.1);">
-                                <i class="bi bi-cash-stack fs-4"></i>
+                            <div class="stat-card-icon p-3 rounded-circle" style="background: rgba(25, 135, 84, 0.1);">
+                                <i class="bi bi-cash-stack fs-4 text-success"></i>
                             </div>
                             <div>
                                 <div class="stat-card-value text-success fs-3 fw-bold">₱{{ number_format($totalAllocatedAmount, 2) }}</div>
@@ -163,8 +176,8 @@
                 <div class="col-md-3">
                     <div class="stat-card shadow-sm border-0 h-100 bg-white p-4">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="stat-card-icon bg-soft-info text-info p-3 rounded-circle" style="background: rgba(13, 202, 240, 0.1);">
-                                <i class="bi bi-people-fill fs-4"></i>
+                            <div class="stat-card-icon p-3 rounded-circle" style="background: rgba(13, 202, 240, 0.1);">
+                                <i class="bi bi-people-fill fs-4 text-info"></i>
                             </div>
                             <div>
                                 <div class="stat-card-value text-info fs-3 fw-bold">{{ number_format($totalBeneficiaries) }}</div>
@@ -176,12 +189,13 @@
                 <div class="col-md-3">
                     <div class="stat-card shadow-sm border-0 h-100 bg-white p-4">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="stat-card-icon bg-soft-purple text-purple p-3 rounded-circle" style="background: rgba(139, 92, 246, 0.1);">
-                                <i class="bi bi-file-earmark-check fs-4"></i>
+                            <div class="stat-card-icon p-3 rounded-circle" style="background: rgba(139, 92, 246, 0.1);">
+                                <i class="bi bi-bar-chart-line fs-4" style="color:#8b5cf6;"></i>
                             </div>
                             <div>
-                                <div class="stat-card-value text-purple fs-3 fw-bold">{{ number_format($complianceDocumentsCount) }}</div>
-                                <div class="stat-card-label fw-bold text-uppercase small text-muted">Compliance Files</div>
+                                <div class="stat-card-value fs-3 fw-bold" style="color:#8b5cf6;">{{ $completionRate }}%</div>
+                                <div class="stat-card-label fw-bold text-uppercase small text-muted">Completion Rate</div>
+                                <div class="small text-muted mt-1">{{ $completedEventsCount }} of {{ $totalEvents }} events</div>
                             </div>
                         </div>
                     </div>
@@ -264,9 +278,11 @@
                                     <td><span class="badge badge-soft-primary text-primary border-0">{{ $event->resourceType?->name ?? 'N/A' }}</span></td>
                                     <td>
                                         @if($event->status === 'Completed')
-                                            <span class="badge badge-soft-success px-3 py-2 rounded-pill">Completed</span>
-                                        @elseif($event->status === 'Planned')
-                                            <span class="badge badge-soft-warning px-3 py-2 rounded-pill">Planned</span>
+                                            <span class="badge badge-soft-success px-3 py-2 rounded-pill"><i class="bi bi-check-circle me-1"></i>Completed</span>
+                                        @elseif($event->status === 'Ongoing')
+                                            <span class="badge badge-soft-primary px-3 py-2 rounded-pill"><i class="bi bi-arrow-repeat me-1"></i>Ongoing</span>
+                                        @elseif($event->status === 'Pending')
+                                            <span class="badge badge-soft-warning px-3 py-2 rounded-pill"><i class="bi bi-clock me-1"></i>Pending</span>
                                         @else
                                             <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">{{ $event->status ?? '-' }}</span>
                                         @endif
@@ -456,8 +472,10 @@
                             <thead class="bg-light text-muted">
                                 <tr>
                                     <th class="ps-4">Beneficiary Name</th>
+                                    <th>Barangay</th>
                                     <th>Classification</th>
-                                    <th class="text-end pe-4">Frequency</th>
+                                    <th class="text-end">Total Amount</th>
+                                    <th class="text-end pe-4">Distributions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -468,27 +486,30 @@
                                             <div class="avatar bg-soft-primary text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px">
                                                 <i class="bi bi-person-fill"></i>
                                             </div>
-                                            <div>
-                                                <a href="{{ route('beneficiaries.show', $beneficiary) }}" class="d-block fw-bold text-primary text-decoration-none">
-                                                    {{ $beneficiary->full_name ?? 'N/A' }}
-                                                </a>
-                                                <small class="text-muted">{{ $beneficiary->barangay?->name ?? 'No Barangay' }}</small>
-                                            </div>
+                                            <a href="{{ route('beneficiaries.show', $beneficiary) }}" class="fw-bold text-primary text-decoration-none">
+                                                {{ $beneficiary->full_name ?? 'N/A' }}
+                                            </a>
                                         </div>
                                     </td>
+                                    <td><small class="text-muted">{{ $beneficiary->barangay?->name ?? '—' }}</small></td>
                                     <td>
                                         <span class="badge bg-light border text-dark px-3 py-2 rounded-pill">{{ $beneficiary->classification }}</span>
                                     </td>
+                                    <td class="text-end">
+                                        @php $amt = $beneficiaryAmountTotals[$beneficiary->id] ?? 0; @endphp
+                                        @if($amt > 0)
+                                            <span class="fw-semibold text-success">₱{{ number_format($amt, 2) }}</span>
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                    </td>
                                     <td class="text-end pe-4">
-                                        <div class="d-flex align-items-center justify-content-end gap-2">
-                                            <span class="badge bg-primary px-3 py-2 rounded-pill">{{ $beneficiaryAllocationCounts[$beneficiary->id] ?? 0 }}</span>
-                                            <small class="text-muted">Distributions</small>
-                                        </div>
+                                        <span class="badge bg-primary px-3 py-2 rounded-pill">{{ $beneficiaryAllocationCounts[$beneficiary->id] ?? 0 }}</span>
                                     </td>
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="3" class="text-center py-5 text-muted">No unique beneficiaries recorded yet.</td>
+                                    <td colspan="5" class="text-center py-5 text-muted">No unique beneficiaries recorded yet.</td>
                                 </tr>
                                 @endforelse
                             </tbody>

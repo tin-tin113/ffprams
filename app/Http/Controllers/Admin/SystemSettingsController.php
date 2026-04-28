@@ -124,9 +124,11 @@ class SystemSettingsController extends Controller
         $programNames = $programQuery->paginate(25)->withQueryString();
 
         $summary = [
-            'total' => ProgramName::count(),
-            'active' => ProgramName::where('is_active', true)->count(),
-            'inactive' => ProgramName::where('is_active', false)->count(),
+            'total'         => ProgramName::count(),
+            'active'        => ProgramName::where('is_active', true)->count(),
+            'inactive'      => ProgramName::where('is_active', false)->count(),
+            'active_events' => DistributionEvent::whereIn('status', ['Ongoing', 'Pending'])->count(),
+            'total_docs'    => ProgramLegalRequirement::count(),
         ];
 
         return view('admin.settings.program-names.index', compact('agencies', 'programNames', 'summary', 'agencyClassificationMap'));
@@ -1019,6 +1021,7 @@ class SystemSettingsController extends Controller
 
         $beneficiaries = Beneficiary::query()
             ->whereIn('id', $beneficiaryIds)
+            ->with('barangay:id,name')
             ->when($request->filled('search'), function ($query) use ($request) {
                 $query->where('full_name', 'like', '%' . $request->input('search') . '%');
             })
@@ -1110,13 +1113,26 @@ class SystemSettingsController extends Controller
             ->values();
 
         $totalEvents = $events->total();
+        $completedEventsCount = DistributionEvent::query()
+            ->where('program_name_id', $programName->id)
+            ->where('status', 'Completed')
+            ->count();
         $activeDistributionsCount = DistributionEvent::query()
             ->where('program_name_id', $programName->id)
-            ->whereIn('status', ['Ongoing', 'Pending', 'ongoing', 'pending'])
+            ->whereIn('status', ['Ongoing', 'Pending'])
             ->count();
+        $completionRate = $totalEvents > 0 ? round(($completedEventsCount / $totalEvents) * 100, 1) : 0;
         $complianceDocumentsCount = $programName->legalRequirements->count();
         $totalAllocatedAmount = (float) $allRecords->sum('amount');
         $totalBeneficiaries = $beneficiaryIds->count();
+
+        $beneficiaryAmountTotals = Allocation::query()
+            ->where('program_name_id', $programName->id)
+            ->selectRaw('beneficiary_id, SUM(amount) as total_amount')
+            ->groupBy('beneficiary_id')
+            ->pluck('total_amount', 'beneficiary_id')
+            ->map(fn ($amt) => (float) $amt)
+            ->toArray();
 
         return view('admin.settings.program-names.detail', compact(
             'programName',
@@ -1125,8 +1141,11 @@ class SystemSettingsController extends Controller
             'directAssistanceRecords',
             'beneficiaries',
             'beneficiaryAllocationCounts',
+            'beneficiaryAmountTotals',
             'totalEvents',
+            'completedEventsCount',
             'activeDistributionsCount',
+            'completionRate',
             'complianceDocumentsCount',
             'barangayReach',
             'resourceMix',

@@ -408,7 +408,7 @@ class DistributionEventController extends Controller
             ]);
         }
 
-        return redirect()->route('distribution-events.index')
+        return redirect()->route('distribution-events.show', $event)
             ->with('success', 'Distribution event updated successfully.');
     }
 
