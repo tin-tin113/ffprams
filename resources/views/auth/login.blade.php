@@ -131,17 +131,6 @@
             color: #333;
         }
 
-        .input-with-btn {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .input-with-btn .input-group-custom {
-            flex: 1;
-            margin-bottom: 0;
-        }
-
         .btn-login {
             background: var(--accent-green);
             color: #fff;
@@ -153,6 +142,8 @@
             cursor: pointer;
             transition: background 0.2s ease;
             white-space: nowrap;
+            width: 100%;
+            margin-top: 10px;
         }
 
         .btn-login:hover {
@@ -220,14 +211,6 @@
                 margin: 15px;
                 padding: 30px 25px;
             }
-
-            .input-with-btn {
-                flex-direction: column;
-            }
-
-            .btn-login {
-                width: 100%;
-            }
         }
     </style>
 </head>
@@ -272,24 +255,24 @@
                 >
             </div>
 
-            {{-- Password Input with Login Button --}}
-            <div class="input-with-btn">
-                <div class="input-group-custom">
-                    <span class="input-icon"><i class="bi bi-lock"></i></span>
-                    <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        placeholder="Password"
-                        required
-                        autocomplete="current-password"
-                    >
-                    <button type="button" class="toggle-password" id="togglePasswordBtn" tabindex="-1">
-                        <i class="bi bi-eye"></i>
-                    </button>
-                </div>
-                <button type="submit" class="btn-login"><i class="bi bi-box-arrow-in-right me-1"></i> Login</button>
+            {{-- Password Input --}}
+            <div class="input-group-custom">
+                <span class="input-icon"><i class="bi bi-lock"></i></span>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Password"
+                    required
+                    autocomplete="current-password"
+                >
+                <button type="button" class="toggle-password" id="togglePasswordBtn" tabindex="-1">
+                    <i class="bi bi-eye"></i>
+                </button>
             </div>
+            
+            {{-- Login Button --}}
+            <button type="submit" class="btn-login"><i class="bi bi-box-arrow-in-right me-1"></i> Login</button>
         </form>
 
         <div class="divider">

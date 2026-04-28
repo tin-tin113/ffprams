@@ -130,6 +130,7 @@ class ReportsController extends Controller
         $beneficiariesPerBarangay = Beneficiary::select('barangay_id')
             ->selectRaw("SUM(CASE WHEN classification = 'Farmer' THEN 1 ELSE 0 END) as total_farmers")
             ->selectRaw("SUM(CASE WHEN classification = 'Fisherfolk' THEN 1 ELSE 0 END) as total_fisherfolk")
+            ->selectRaw("SUM(CASE WHEN classification = 'Farmer & Fisherfolk' THEN 1 ELSE 0 END) as total_both")
             ->selectRaw('COUNT(*) as grand_total')
             ->with('barangay')
             ->groupBy('barangay_id')
@@ -470,10 +471,11 @@ class ReportsController extends Controller
             ->orderByDesc('total_amount')
             ->get();
 
-        // BENEFICIARY MIX DATA — Classification breakdown (Farmer / Fisherfolk only)
+        // BENEFICIARY MIX DATA — Classification breakdown
         $beneficiaryMixRows = collect([
             (object) ['label' => 'Farmers', 'value' => (int) Beneficiary::where('classification', 'Farmer')->whereNull('deleted_at')->count(), 'color' => '#10b981'],
             (object) ['label' => 'Fisherfolk', 'value' => (int) Beneficiary::where('classification', 'Fisherfolk')->whereNull('deleted_at')->count(), 'color' => '#3b82f6'],
+            (object) ['label' => 'Farmer & Fisherfolk', 'value' => (int) Beneficiary::where('classification', 'Farmer & Fisherfolk')->whereNull('deleted_at')->count(), 'color' => '#f59e0b'],
         ])->filter(fn ($row) => $row->value > 0);
 
         // UNREACHED BY BARANGAY — Top barangays with beneficiaries never reached by any method
@@ -693,6 +695,7 @@ class ReportsController extends Controller
                 'month'      => $month,
                 'farmers'    => (int) (clone $base)->where('classification', 'Farmer')->count(),
                 'fisherfolk' => (int) (clone $base)->where('classification', 'Fisherfolk')->count(),
+                'both'       => (int) (clone $base)->where('classification', 'Farmer & Fisherfolk')->count(),
             ];
         });
 

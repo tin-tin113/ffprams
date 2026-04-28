@@ -221,7 +221,7 @@
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive beneficiary-table-wrapper">
+            <div class="beneficiary-table-wrapper">
                 <table class="table table-hover align-middle mb-0 table-responsive-cards">
                     <thead class="table-light">
                         <tr>
@@ -237,7 +237,7 @@
                             <th>Documents</th>
                             <th>Status</th>
                             <th>Registered Date</th>
-                            <th class="text-end" style="min-width: 240px;">Actions</th>
+                            <th class="text-center" style="width: 60px; min-width: 60px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -284,28 +284,40 @@
                                     </span>
                                 </td>
                                 <td class="text-muted small" data-label="Registered Date">{{ $beneficiary->registered_at?->format('M d, Y') ?? '—' }}</td>
-                                <td class="text-end text-nowrap" data-label="Actions">
-                                    <a href="{{ route('beneficiaries.show', $beneficiary) }}"
-                                       class="btn btn-sm btn-outline-info me-1" title="View">
-                                        <i class="bi bi-eye"></i> <span class="btn-action-label">View</span>
-                                    </a>
-                                    <a href="{{ route('beneficiaries.edit', $beneficiary) }}"
-                                       class="btn btn-sm btn-outline-warning me-1" title="Edit">
-                                        <i class="bi bi-pencil-square"></i> <span class="btn-action-label">Edit</span>
-                                    </a>
-                                    <a href="{{ route('beneficiaries.attachments.create', $beneficiary) }}"
-                                       class="btn btn-sm btn-outline-primary me-1" title="Upload Documents">
-                                        <i class="bi bi-paperclip"></i> <span class="btn-action-label">Docs</span>
-                                    </a>
-                                    @if(Auth::user()->isAdmin())
-                                        <button type="button"
-                                                class="btn btn-sm btn-outline-danger" title="Delete"
-                                                data-confirm-message="Are you sure you want to delete {{ $beneficiary->full_name }}? This action cannot be undone."
-                                                data-delete-url="{{ route('beneficiaries.destroy', $beneficiary) }}"
-                                                onclick="confirmAction('Confirm Deletion', this.dataset.confirmMessage, this.dataset.deleteUrl, 'DELETE')">
-                                            <i class="bi bi-trash"></i> <span class="btn-action-label">Delete</span>
+                                <td class="text-center" data-label="Actions">
+                                    <div class="dropdown">
+                                        <button class="btn btn-light btn-sm btn-icon-only rounded-circle shadow-none" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-three-dots-vertical"></i>
                                         </button>
-                                    @endif
+                                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2">
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('beneficiaries.show', $beneficiary) }}">
+                                                    <i class="bi bi-eye text-info"></i> View Profile
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('beneficiaries.edit', $beneficiary) }}">
+                                                    <i class="bi bi-pencil-square text-warning"></i> Edit Details
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('beneficiaries.attachments.create', $beneficiary) }}">
+                                                    <i class="bi bi-paperclip text-primary"></i> Upload Documents
+                                                </a>
+                                            </li>
+                                            @if(Auth::user()->isAdmin())
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#"
+                                                   data-confirm-message="Are you sure you want to delete {{ $beneficiary->full_name }}? This action cannot be undone."
+                                                   data-delete-url="{{ route('beneficiaries.destroy', $beneficiary) }}"
+                                                   onclick="event.preventDefault(); confirmAction('Confirm Deletion', this.dataset.confirmMessage, this.dataset.deleteUrl, 'DELETE')">
+                                                    <i class="bi bi-trash"></i> Delete
+                                                </a>
+                                            </li>
+                                            @endif
+                                        </ul>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
@@ -381,8 +393,7 @@
     }
 
     .beneficiary-table-wrapper {
-        max-height: 68vh;
-        overflow: auto;
+        overflow: visible;
     }
 
     .beneficiary-table-wrapper thead th {
@@ -419,26 +430,33 @@
         z-index: 8;
         background: #f8f9fa;
     }
-
-    .beneficiary-table-wrapper td[data-label="Actions"] .btn {
-        padding: 0.2rem 0.42rem;
-        font-size: 0.78rem;
-        line-height: 1.2;
-    }
-
-    .beneficiary-table-wrapper td[data-label="Actions"] .btn .bi {
-        font-size: 0.82rem;
-    }
 }
 
-@media (min-width: 992px) and (max-width: 1500px) {
-    .beneficiary-table-wrapper td[data-label="Actions"] .btn-action-label {
-        display: none;
-    }
+/* Ellipsis action button */
+.btn-icon-only {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
 
-    .beneficiary-table-wrapper td[data-label="Actions"] .btn {
-        padding: 0.22rem 0.4rem;
-    }
+.dropdown-menu {
+    min-width: 180px;
+    border-radius: 10px;
+}
+
+.dropdown-item {
+    font-size: 0.875rem;
+    padding: 0.45rem 1rem;
+    border-radius: 6px;
+    margin: 0 0.25rem;
+    width: auto;
+}
+
+.dropdown-item:hover {
+    background-color: #f1f5f9;
 }
 </style>
 @endpush

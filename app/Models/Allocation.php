@@ -148,6 +148,16 @@ class Allocation extends Model
         return $this->belongsTo(AssistancePurpose::class);
     }
 
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function distributedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'distributed_by');
+    }
+
     public function attachments(): MorphMany
     {
         return $this->morphMany(RecordAttachment::class, 'attachable');

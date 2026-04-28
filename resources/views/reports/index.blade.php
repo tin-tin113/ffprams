@@ -811,6 +811,7 @@
 
     $farmersTotal = (int) $beneficiariesPerBarangay->sum('total_farmers');
     $fisherfolkTotal = (int) $beneficiariesPerBarangay->sum('total_fisherfolk');
+    $bothTotal = (int) $beneficiariesPerBarangay->sum('total_both');
     $kpiTotalBeneficiaries = (int) $beneficiariesPerBarangay->sum('grand_total');
     $kpiResourcesDistributed = (float) $resourceDistribution->sum('total_quantity_distributed');
     $kpiFinancialReleased = (float) $financialSummary->sum('total_amount_disbursed');
@@ -924,6 +925,7 @@
     $beneficiaryMixRows = collect([
         ['label' => 'Farmers', 'value' => $farmersTotal, 'color' => '#16a34a'],
         ['label' => 'Fisherfolk', 'value' => $fisherfolkTotal, 'color' => '#2563eb'],
+        ['label' => 'Farmer & Fisherfolk', 'value' => $bothTotal, 'color' => '#f59e0b'],
     ])->map(function ($row) use ($kpiTotalBeneficiaries) {
         $row['percent'] = $kpiTotalBeneficiaries > 0
             ? ((float) $row['value'] / $kpiTotalBeneficiaries) * 100
@@ -1421,6 +1423,7 @@
                                     <th>Barangay</th>
                                     <th class="text-center">Farmers</th>
                                     <th class="text-center">Fisherfolk</th>
+                                    <th class="text-center">Farmer & Fisherfolk</th>
                                     <th class="text-center">Grand Total</th>
                                 </tr>
                             </thead>
@@ -1431,11 +1434,12 @@
                                         <td>{{ $row->barangay->name }}</td>
                                         <td class="text-center">{{ number_format($row->total_farmers) }}</td>
                                         <td class="text-center">{{ number_format($row->total_fisherfolk) }}</td>
+                                        <td class="text-center">{{ number_format($row->total_both) }}</td>
                                         <td class="text-center fw-bold">{{ number_format($row->grand_total) }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="empty-state">
+                                        <td colspan="6" class="empty-state">
                                             <i class="bi bi-inbox fs-3 d-block mb-2"></i>
                                             No beneficiary data available.
                                         </td>
@@ -1448,6 +1452,7 @@
                                         <td colspan="2">Total</td>
                                         <td class="text-center">{{ number_format($beneficiariesPerBarangay->sum('total_farmers')) }}</td>
                                         <td class="text-center">{{ number_format($beneficiariesPerBarangay->sum('total_fisherfolk')) }}</td>
+                                        <td class="text-center">{{ number_format($beneficiariesPerBarangay->sum('total_both')) }}</td>
                                         <td class="text-center">{{ number_format($beneficiariesPerBarangay->sum('grand_total')) }}</td>
                                     </tr>
                                 </tfoot>
@@ -3931,8 +3936,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const trendData    = @json($registrationTrend);
         const farmers      = trendData.map(function(r) { return toNumber(r.farmers); });
         const fisherfolk   = trendData.map(function(r) { return toNumber(r.fisherfolk); });
+        const both         = trendData.map(function(r) { return toNumber(r.both); });
 
-        if (farmers.every(function(v){ return v === 0; }) && fisherfolk.every(function(v){ return v === 0; })) {
+        if (farmers.every(function(v){ return v === 0; }) && fisherfolk.every(function(v){ return v === 0; }) && both.every(function(v){ return v === 0; })) {
             showEmptyChart('registrationTrendChart', 'No new beneficiary registrations recorded for ' + {{ $currentYear }} + '.');
             return;
         }
@@ -3956,6 +3962,14 @@ document.addEventListener('DOMContentLoaded', function () {
                             data: fisherfolk,
                             borderColor: 'rgba(37, 99, 235, 1)',
                             backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                            fill: true,
+                            tension: 0.35
+                        },
+                        {
+                            label: 'Farmer & Fisherfolk',
+                            data: both,
+                            borderColor: 'rgba(245, 158, 11, 1)',
+                            backgroundColor: 'rgba(245, 158, 11, 0.12)',
                             fill: true,
                             tension: 0.35
                         }

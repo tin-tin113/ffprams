@@ -34,15 +34,11 @@
                                         $badgeClass = match($user->role) {
                                             'admin' => 'bg-danger',
                                             'staff' => 'bg-primary',
-                                            'viewer' => 'bg-info',
-                                            'partner' => 'bg-success',
                                             default => 'bg-secondary'
                                         };
                                         $roleLabel = match($user->role) {
                                             'admin' => 'Admin',
                                             'staff' => 'Staff',
-                                            'viewer' => 'Viewer',
-                                            'partner' => 'Partner',
                                             default => ucfirst($user->role)
                                         };
                                     @endphp
