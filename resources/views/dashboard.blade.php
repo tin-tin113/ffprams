@@ -155,6 +155,122 @@
             color: #6c757d;
         }
 
+        /* Clickable metric cards */
+        .progress-card.clickable {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .progress-card.clickable:hover {
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+            border-color: #c5cad0;
+        }
+
+        .progress-card.clickable:active {
+            transform: translateY(0);
+        }
+
+        .progress-card.clickable .progress-card-header::after {
+            content: '\F282';
+            font-family: 'bootstrap-icons';
+            font-size: 14px;
+            color: #9ca3af;
+            margin-left: auto;
+        }
+
+        /* Drill-down modal styles */
+        .drill-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .drill-summary-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+
+        .drill-summary-card .value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1d29;
+            line-height: 1.2;
+        }
+
+        .drill-summary-card .label {
+            font-size: 11px;
+            color: #6c757d;
+            font-weight: 500;
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .drill-filter-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .drill-filter-tabs .btn {
+            font-size: 12px;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .drill-table-wrapper {
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .drill-table-wrapper table {
+            font-size: 13px;
+            margin: 0;
+        }
+
+        .drill-table-wrapper thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .drill-table-wrapper tbody tr:hover {
+            background: #f0f4ff;
+        }
+
+        .drill-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #9ca3af;
+        }
+
+        .drill-empty i {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .drill-loading {
+            text-align: center;
+            padding: 50px 20px;
+        }
+
+        .drill-loading .spinner-border {
+            width: 2rem;
+            height: 2rem;
+            color: #0d6efd;
+        }
+
         /* Chart Cards */
         .chart-card {
             background: white;
@@ -256,7 +372,7 @@
         <div class="col-lg-3 col-md-6">
             <div class="kpi-master">
                 <div class="kpi-content">
-                    <div class="kpi-icon">
+                    <div class="kpi-icon" style="background: #e8f5e9; color: #2e7d32;">
                         <i class="bi bi-check-circle-fill"></i>
                     </div>
                     <div class="kpi-text">
@@ -271,8 +387,8 @@
         <div class="col-lg-3 col-md-6">
             <div class="kpi-master">
                 <div class="kpi-content">
-                    <div class="kpi-icon">
-                        <i class="bi bi-people-check"></i>
+                    <div class="kpi-icon" style="background: #e3f2fd; color: #1565c0;">
+                        <i class="bi bi-people-fill"></i>
                     </div>
                     <div class="kpi-text">
                         <h3>{{ number_format($reachedBeneficiaries) }}</h3>
@@ -286,7 +402,7 @@
         <div class="col-lg-3 col-md-6">
             <div class="kpi-master">
                 <div class="kpi-content">
-                    <div class="kpi-icon">
+                    <div class="kpi-icon" style="background: #fff3e0; color: #e65100;">
                         <i class="bi bi-cash-stack"></i>
                     </div>
                     <div class="kpi-text">
@@ -301,7 +417,7 @@
         <div class="col-lg-3 col-md-6">
             <div class="kpi-master">
                 <div class="kpi-content">
-                    <div class="kpi-icon">
+                    <div class="kpi-icon" style="background: #f3e5f5; color: #7b1fa2;">
                         <i class="bi bi-calendar-check"></i>
                     </div>
                     <div class="kpi-text">
@@ -321,7 +437,7 @@
     <div class="row g-3 mb-4">
         {{-- Financial Utilization --}}
         <div class="col-lg-4">
-            <div class="progress-card">
+            <div class="progress-card clickable" id="metric-financial-utilization" data-bs-toggle="modal" data-bs-target="#financialUtilizationModal">
                 <div class="progress-card-header">
                     <span class="progress-card-label">Financial Utilization</span>
                     <span class="progress-value" style="--color: #0d6efd;">{{ number_format($financialUtilizationRate, 1) }}%</span>
@@ -335,7 +451,7 @@
 
         {{-- Coverage Gap --}}
         <div class="col-lg-4">
-            <div class="progress-card">
+            <div class="progress-card clickable" id="metric-coverage-gap" data-bs-toggle="modal" data-bs-target="#coverageGapModal">
                 <div class="progress-card-header">
                     <span class="progress-card-label">Coverage Gap</span>
                     <span class="progress-value" style="--color: #dc3545;">{{ number_format($coverageGap['percentage'], 1) }}%</span>
@@ -347,9 +463,9 @@
             </div>
         </div>
 
-        {{-- Event Status --}}
+        {{-- Allocation Rate --}}
         <div class="col-lg-4">
-            <div class="progress-card">
+            <div class="progress-card clickable" id="metric-allocation-rate" data-bs-toggle="modal" data-bs-target="#allocationRateModal">
                 <div class="progress-card-header">
                     <span class="progress-card-label">Allocation Rate</span>
                     <span class="progress-value" style="--color: #198754;">{{ number_format(($totalEventAllocations + $totalDirectAllocations) > 0 ? (($eventDistributed + $directReleased) / ($totalEventAllocations + $totalDirectAllocations)) * 100 : 0, 1) }}%</span>
@@ -447,6 +563,15 @@
             </div>
         </div>
 
+        {{-- Assistance Purpose Distribution --}}
+        <div class="col-lg-6">
+            <div class="chart-card">
+                <div class="chart-card-title">Assistance Purpose Breakdown</div>
+                <div style="position: relative; height: 240px;">
+                    <canvas id="assistancePurposeChart"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
 
     {{-- SECTION 5B: GEOGRAPHIC & TEMPORAL INSIGHTS --}}
@@ -502,6 +627,79 @@
                 <div class="chart-card-title">Monthly Release Method Trend</div>
                 <div style="position: relative; height: 260px;">
                     <canvas id="methodTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ============================= --}}
+    {{-- DRILL-DOWN MODALS             --}}
+    {{-- ============================= --}}
+
+    {{-- Financial Utilization Modal --}}
+    <div class="modal fade" id="financialUtilizationModal" tabindex="-1" aria-labelledby="financialUtilizationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header" style="border-bottom: 2px solid #0d6efd;">
+                    <div>
+                        <h5 class="modal-title" id="financialUtilizationModalLabel">
+                            <i class="bi bi-cash-stack text-primary me-2"></i>Financial Utilization Details
+                        </h5>
+                        <small class="text-muted">Budget allocation and disbursement breakdown</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="financialUtilizationBody">
+                    <div class="drill-loading">
+                        <div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>
+                        <p class="mt-2 text-muted">Loading financial data...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Coverage Gap Modal --}}
+    <div class="modal fade" id="coverageGapModal" tabindex="-1" aria-labelledby="coverageGapModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header" style="border-bottom: 2px solid #dc3545;">
+                    <div>
+                        <h5 class="modal-title" id="coverageGapModalLabel">
+                            <i class="bi bi-people text-danger me-2"></i>Coverage Gap Details
+                        </h5>
+                        <small class="text-muted">Beneficiaries without distributed allocations</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="coverageGapBody">
+                    <div class="drill-loading">
+                        <div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>
+                        <p class="mt-2 text-muted">Loading beneficiary data...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Allocation Rate Modal --}}
+    <div class="modal fade" id="allocationRateModal" tabindex="-1" aria-labelledby="allocationRateModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header" style="border-bottom: 2px solid #198754;">
+                    <div>
+                        <h5 class="modal-title" id="allocationRateModalLabel">
+                            <i class="bi bi-clipboard-data text-success me-2"></i>Allocation Rate Details
+                        </h5>
+                        <small class="text-muted">Distribution progress across all allocations</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="allocationRateBody">
+                    <div class="drill-loading">
+                        <div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>
+                        <p class="mt-2 text-muted">Loading allocation data...</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -825,6 +1023,57 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
+// 6. ASSISTANCE PURPOSE DISTRIBUTION
+document.addEventListener('DOMContentLoaded', function () {
+    const purposeData = @json($assistancePurposeDistribution ?? ['labels' => [], 'data' => []]);
+    if (purposeData.data && purposeData.data.length > 0) {
+        new Chart(document.getElementById('assistancePurposeChart'), {
+            type: 'doughnut',
+            data: {
+                labels: purposeData.labels,
+                datasets: [{
+                    data: purposeData.data,
+                    backgroundColor: ['#6f42c1', '#20c997', '#fd7e14', '#0d6efd', '#198754', '#dc3545', '#00bcd4', '#e91e63'],
+                    borderColor: 'white',
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false },
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { font: { size: 11, weight: '500' }, padding: 10, color: '#6c757d', usePointStyle: true, boxWidth: 8 }
+                    },
+                    tooltip: {
+                        ...tooltipConfig,
+                        callbacks: {
+                            title: function(context) {
+                                return context[0].label || 'Purpose';
+                            },
+                            label: function(context) {
+                                const total = purposeData.data.reduce((a, b) => a + b, 0);
+                                const value = context.parsed;
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return [
+                                    'Count: ' + value.toLocaleString(),
+                                    'Percentage: ' + percentage + '%'
+                                ];
+                            },
+                            afterLabel: function(context) {
+                                const total = purposeData.data.reduce((a, b) => a + b, 0);
+                                return 'Of Total ' + total.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+
 // 7. GEOGRAPHIC COVERAGE BY BARANGAY
 document.addEventListener('DOMContentLoaded', function () {
     const barangayData = @json($barangayDistribution ?? ['labels' => [], 'data' => []]);
@@ -1081,5 +1330,307 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
+// ===================================
+// DRILL-DOWN MODAL LOGIC
+// ===================================
+
+function formatCurrency(value) {
+    return '₱' + Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '<span class="text-muted">—</span>';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function escapeHtml(str) {
+    if (!str) return '<span class="text-muted">—</span>';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function statusBadge(status, color) {
+    const colorMap = {
+        'Disbursed': 'badge-soft-success',
+        'Pending': 'badge-soft-warning',
+        'released': 'badge-soft-success',
+        'planned': 'badge-soft-warning',
+        'ready_for_release': 'badge-soft-info',
+        'not_received': 'badge-soft-danger',
+    };
+    const cls = colorMap[status] || 'badge-soft-secondary';
+    const label = status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    return `<span class="badge ${cls}">${label}</span>`;
+}
+
+// === FINANCIAL UTILIZATION ===
+let financialLoaded = false;
+document.getElementById('financialUtilizationModal').addEventListener('show.bs.modal', function () {
+    if (!financialLoaded) {
+        loadFinancialUtilization();
+        financialLoaded = true;
+    }
+});
+
+function loadFinancialUtilization(filter) {
+    const body = document.getElementById('financialUtilizationBody');
+    body.innerHTML = '<div class="drill-loading"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading financial data...</p></div>';
+
+    const url = new URL('/api/dashboard/financial-utilization', window.location.origin);
+    if (filter) url.searchParams.set('filter', filter);
+
+    fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(r => r.json())
+        .then(data => {
+            const s = data.summary;
+            let html = `
+                <div class="drill-summary-grid">
+                    <div class="drill-summary-card">
+                        <div class="value">${formatCurrency(s.total_budget)}</div>
+                        <div class="label">Total Budget</div>
+                    </div>
+                    <div class="drill-summary-card" style="border-color: #198754;">
+                        <div class="value" style="color: #198754;">${formatCurrency(s.disbursed)}</div>
+                        <div class="label">Disbursed</div>
+                    </div>
+                    <div class="drill-summary-card" style="border-color: #ffc107;">
+                        <div class="value" style="color: #b45309;">${formatCurrency(s.pending)}</div>
+                        <div class="label">Pending</div>
+                    </div>
+                    <div class="drill-summary-card" style="border-color: #0d6efd;">
+                        <div class="value" style="color: #0d6efd;">${s.utilization_rate}%</div>
+                        <div class="label">Utilization Rate</div>
+                    </div>
+                </div>
+
+                <div class="drill-filter-tabs">
+                    <button class="btn ${!filter || filter === '' ? 'btn-primary' : 'btn-outline-secondary'}" onclick="loadFinancialUtilization()">All</button>
+                    <button class="btn ${filter === 'disbursed' ? 'btn-success' : 'btn-outline-secondary'}" onclick="loadFinancialUtilization('disbursed')">Disbursed</button>
+                    <button class="btn ${filter === 'pending' ? 'btn-warning' : 'btn-outline-secondary'}" onclick="loadFinancialUtilization('pending')">Pending</button>
+                </div>
+
+                <div class="mb-2 text-muted" style="font-size:12px;"><i class="bi bi-info-circle me-1"></i>Showing ${data.records.length.toLocaleString()} allocation(s)</div>
+            `;
+
+            if (data.records.length === 0) {
+                html += '<div class="drill-empty"><i class="bi bi-inbox"></i><p>No allocations found</p></div>';
+            } else {
+                html += `<div class="drill-table-wrapper"><table class="table table-hover table-sm">
+                    <thead><tr>
+                        <th>#</th><th>Beneficiary</th><th>Program</th><th>Resource</th><th>Amount</th><th>Method</th><th>Status</th><th>Distributed</th>
+                    </tr></thead><tbody>`;
+                data.records.forEach((r, i) => {
+                    html += `<tr>
+                        <td>${i + 1}</td>
+                        <td>${escapeHtml(r.beneficiary_name)}</td>
+                        <td>${escapeHtml(r.program_name)}</td>
+                        <td>${escapeHtml(r.resource_type)}</td>
+                        <td class="fw-semibold">${formatCurrency(r.amount)}</td>
+                        <td><span class="badge ${r.release_method === 'event' ? 'badge-soft-primary' : 'badge-soft-info'}">${r.release_method === 'event' ? 'Event' : 'Direct'}</span></td>
+                        <td>${statusBadge(r.status)}</td>
+                        <td>${formatDate(r.distributed_at)}</td>
+                    </tr>`;
+                });
+                html += '</tbody></table></div>';
+            }
+            body.innerHTML = html;
+        })
+        .catch(err => {
+            body.innerHTML = '<div class="drill-empty"><i class="bi bi-exclamation-triangle text-danger"></i><p>Failed to load data. Please try again.</p></div>';
+            console.error('Financial drill-down error:', err);
+        });
+}
+
+// === COVERAGE GAP ===
+let coverageLoaded = false;
+document.getElementById('coverageGapModal').addEventListener('show.bs.modal', function () {
+    if (!coverageLoaded) {
+        loadCoverageGap('unreached');
+        coverageLoaded = true;
+    }
+});
+
+function loadCoverageGap(filter) {
+    const body = document.getElementById('coverageGapBody');
+    body.innerHTML = '<div class="drill-loading"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading beneficiary data...</p></div>';
+
+    const url = new URL('/api/dashboard/coverage-gap', window.location.origin);
+    if (filter) url.searchParams.set('filter', filter);
+
+    fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(r => r.json())
+        .then(data => {
+            const s = data.summary;
+            let html = `
+                <div class="drill-summary-grid">
+                    <div class="drill-summary-card">
+                        <div class="value">${s.total_beneficiaries.toLocaleString()}</div>
+                        <div class="label">Total Beneficiaries</div>
+                    </div>
+                    <div class="drill-summary-card" style="border-color: #198754;">
+                        <div class="value" style="color: #198754;">${s.reached.toLocaleString()}</div>
+                        <div class="label">Reached</div>
+                    </div>
+                    <div class="drill-summary-card" style="border-color: #dc3545;">
+                        <div class="value" style="color: #dc3545;">${s.unreached.toLocaleString()}</div>
+                        <div class="label">Unreached</div>
+                    </div>
+                    <div class="drill-summary-card" style="border-color: #dc3545;">
+                        <div class="value" style="color: #dc3545;">${s.gap_percentage}%</div>
+                        <div class="label">Gap Rate</div>
+                    </div>
+                </div>
+
+                <div class="drill-filter-tabs">
+                    <button class="btn ${data.filter === 'unreached' ? 'btn-danger' : 'btn-outline-secondary'}" onclick="loadCoverageGap('unreached')">
+                        <i class="bi bi-person-x me-1"></i>Unreached (${s.unreached.toLocaleString()})
+                    </button>
+                    <button class="btn ${data.filter === 'reached' ? 'btn-success' : 'btn-outline-secondary'}" onclick="loadCoverageGap('reached')">
+                        <i class="bi bi-person-check me-1"></i>Reached (${s.reached.toLocaleString()})
+                    </button>
+                </div>
+
+                <div class="mb-2 text-muted" style="font-size:12px;"><i class="bi bi-info-circle me-1"></i>Showing ${data.records.length.toLocaleString()} beneficiar${data.records.length === 1 ? 'y' : 'ies'}</div>
+            `;
+
+            if (data.records.length === 0) {
+                html += '<div class="drill-empty"><i class="bi bi-inbox"></i><p>No beneficiaries found</p></div>';
+            } else {
+                html += `<div class="drill-table-wrapper"><table class="table table-hover table-sm">
+                    <thead><tr>
+                        <th>#</th><th>Name</th><th>Classification</th><th>Barangay</th><th>Agency</th><th>Contact</th><th>Status</th>
+                    </tr></thead><tbody>`;
+                data.records.forEach((r, i) => {
+                    const classBadge = r.classification === 'Farmer' ? 'badge-soft-success' :
+                                       r.classification === 'Fisherfolk' ? 'badge-soft-info' : 'badge-soft-purple';
+                    html += `<tr>
+                        <td>${i + 1}</td>
+                        <td class="fw-semibold">${escapeHtml(r.full_name)}</td>
+                        <td><span class="badge ${classBadge}">${escapeHtml(r.classification)}</span></td>
+                        <td>${escapeHtml(r.barangay_name)}</td>
+                        <td>${escapeHtml(r.agency_name)}</td>
+                        <td>${escapeHtml(r.contact_number)}</td>
+                        <td>${r.status === 'active' ? '<span class="badge badge-soft-success">Active</span>' : '<span class="badge badge-soft-secondary">' + escapeHtml(r.status) + '</span>'}</td>
+                    </tr>`;
+                });
+                html += '</tbody></table></div>';
+            }
+            body.innerHTML = html;
+        })
+        .catch(err => {
+            body.innerHTML = '<div class="drill-empty"><i class="bi bi-exclamation-triangle text-danger"></i><p>Failed to load data. Please try again.</p></div>';
+            console.error('Coverage gap drill-down error:', err);
+        });
+}
+
+// === ALLOCATION RATE ===
+let allocationLoaded = false;
+document.getElementById('allocationRateModal').addEventListener('show.bs.modal', function () {
+    if (!allocationLoaded) {
+        loadAllocationRate('all');
+        allocationLoaded = true;
+    }
+});
+
+function loadAllocationRate(filter) {
+    const body = document.getElementById('allocationRateBody');
+    body.innerHTML = '<div class="drill-loading"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading allocation data...</p></div>';
+
+    const url = new URL('/api/dashboard/allocation-rate', window.location.origin);
+    if (filter && filter !== 'all') url.searchParams.set('filter', filter);
+
+    fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(r => r.json())
+        .then(data => {
+            const s = data.summary;
+            let html = `
+                <div class="drill-summary-grid">
+                    <div class="drill-summary-card">
+                        <div class="value">${s.total_allocations.toLocaleString()}</div>
+                        <div class="label">Total Allocations</div>
+                    </div>
+                    <div class="drill-summary-card" style="border-color: #198754;">
+                        <div class="value" style="color: #198754;">${s.distributed.toLocaleString()}</div>
+                        <div class="label">Distributed</div>
+                    </div>
+                    <div class="drill-summary-card" style="border-color: #ffc107;">
+                        <div class="value" style="color: #b45309;">${s.pending.toLocaleString()}</div>
+                        <div class="label">Pending</div>
+                    </div>
+                    <div class="drill-summary-card" style="border-color: #198754;">
+                        <div class="value" style="color: #198754;">${s.rate}%</div>
+                        <div class="label">Overall Rate</div>
+                    </div>
+                </div>
+
+                <div class="drill-summary-grid" style="grid-template-columns: 1fr 1fr;">
+                    <div class="drill-summary-card" style="border-left: 3px solid #0d6efd;">
+                        <div class="value" style="font-size:16px;">${s.event_distributed}/${s.event_total}</div>
+                        <div class="label">Event-Based</div>
+                    </div>
+                    <div class="drill-summary-card" style="border-left: 3px solid #198754;">
+                        <div class="value" style="font-size:16px;">${s.direct_distributed}/${s.direct_total}</div>
+                        <div class="label">Direct Release</div>
+                    </div>
+                </div>
+
+                <div class="drill-filter-tabs">
+                    <button class="btn ${!filter || filter === 'all' ? 'btn-primary' : 'btn-outline-secondary'}" onclick="loadAllocationRate('all')">All</button>
+                    <button class="btn ${filter === 'distributed' ? 'btn-success' : 'btn-outline-secondary'}" onclick="loadAllocationRate('distributed')">Distributed</button>
+                    <button class="btn ${filter === 'pending' ? 'btn-warning' : 'btn-outline-secondary'}" onclick="loadAllocationRate('pending')">Pending</button>
+                </div>
+
+                <div class="mb-2 text-muted" style="font-size:12px;"><i class="bi bi-info-circle me-1"></i>Showing ${data.records.length.toLocaleString()} allocation(s)</div>
+            `;
+
+            if (data.records.length === 0) {
+                html += '<div class="drill-empty"><i class="bi bi-inbox"></i><p>No allocations found</p></div>';
+            } else {
+                html += `<div class="drill-table-wrapper"><table class="table table-hover table-sm">
+                    <thead><tr>
+                        <th>#</th><th>Beneficiary</th><th>Program</th><th>Resource</th><th>Method</th><th>Amount</th><th>Status</th><th>Distributed</th>
+                    </tr></thead><tbody>`;
+                data.records.forEach((r, i) => {
+                    let rstatus = 'Planned';
+                    if (r.distributed_at) rstatus = 'Released';
+                    else if (r.release_outcome === 'not_received') rstatus = 'Not Received';
+                    else if (r.is_ready_for_release) rstatus = 'Ready';
+
+                    const statusCls = {
+                        'Released': 'badge-soft-success',
+                        'Ready': 'badge-soft-info',
+                        'Not Received': 'badge-soft-danger',
+                        'Planned': 'badge-soft-warning'
+                    }[rstatus] || 'badge-soft-secondary';
+
+                    html += `<tr>
+                        <td>${i + 1}</td>
+                        <td class="fw-semibold">${escapeHtml(r.beneficiary_name)}</td>
+                        <td>${escapeHtml(r.program_name)}</td>
+                        <td>${escapeHtml(r.resource_type)}</td>
+                        <td><span class="badge ${r.release_method === 'event' ? 'badge-soft-primary' : 'badge-soft-info'}">${r.release_method === 'event' ? 'Event' : 'Direct'}</span></td>
+                        <td>${formatCurrency(r.amount)}</td>
+                        <td><span class="badge ${statusCls}">${rstatus}</span></td>
+                        <td>${formatDate(r.distributed_at)}</td>
+                    </tr>`;
+                });
+                html += '</tbody></table></div>';
+            }
+            body.innerHTML = html;
+        })
+        .catch(err => {
+            body.innerHTML = '<div class="drill-empty"><i class="bi bi-exclamation-triangle text-danger"></i><p>Failed to load data. Please try again.</p></div>';
+            console.error('Allocation rate drill-down error:', err);
+        });
+}
+
+// Reset loaded flags when modals are hidden so data refreshes on next open
+document.getElementById('financialUtilizationModal').addEventListener('hidden.bs.modal', () => { financialLoaded = false; });
+document.getElementById('coverageGapModal').addEventListener('hidden.bs.modal', () => { coverageLoaded = false; });
+document.getElementById('allocationRateModal').addEventListener('hidden.bs.modal', () => { allocationLoaded = false; });
+
 </script>
 @endpush

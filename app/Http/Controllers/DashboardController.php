@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -72,14 +74,14 @@ class DashboardController extends Controller
             ->whereNotNull('distributed_at')
             ->count();
 
-        // Beneficiaries not yet reached (zero allocations)
         $beneficiariesNotYetReached = DB::table('beneficiaries')
             ->whereNull('deleted_at')
             ->whereNotExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('allocations')
                     ->whereColumn('allocations.beneficiary_id', 'beneficiaries.id')
-                    ->whereNull('allocations.deleted_at');
+                    ->whereNull('allocations.deleted_at')
+                    ->whereNotNull('allocations.distributed_at');
             })
             ->count();
 
@@ -456,5 +458,184 @@ class DashboardController extends Controller
             'event' => $eventSeries,
             'direct' => $directSeries,
         ];
+    }
+
+    // === DRILL-DOWN API METHODS ===
+
+    /**
+     * Financial Utilization detail — lists all allocations with disbursed vs total amount.
+     */
+    public function financialUtilizationDetail(Request $request): JsonResponse
+    {
+        $query = DB::table('allocations')
+            ->select(
+                'allocations.id',
+                'beneficiaries.full_name as beneficiary_name',
+                'program_names.name as program_name',
+                'resource_types.name as resource_type',
+                'allocations.amount',
+                'allocations.release_method',
+                'allocations.distributed_at',
+                DB::raw('CASE WHEN allocations.distributed_at IS NOT NULL THEN "Disbursed" ELSE "Pending" END as status')
+            )
+            ->join('beneficiaries', 'allocations.beneficiary_id', '=', 'beneficiaries.id')
+            ->leftJoin('program_names', 'allocations.program_name_id', '=', 'program_names.id')
+            ->leftJoin('resource_types', 'allocations.resource_type_id', '=', 'resource_types.id')
+            ->whereNull('allocations.deleted_at')
+            ->whereNull('beneficiaries.deleted_at')
+            ->orderByDesc('allocations.amount');
+
+        // Optional filter: only disbursed or only pending
+        if ($request->filled('filter')) {
+            if ($request->filter === 'disbursed') {
+                $query->whereNotNull('allocations.distributed_at');
+            } elseif ($request->filter === 'pending') {
+                $query->whereNull('allocations.distributed_at');
+            }
+        }
+
+        $allocations = $query->get();
+
+        // Summary stats
+        $summary = DB::table('allocations')
+            ->selectRaw('SUM(amount) as total_budget, SUM(CASE WHEN distributed_at IS NOT NULL THEN amount ELSE 0 END) as disbursed, SUM(CASE WHEN distributed_at IS NULL THEN amount ELSE 0 END) as pending')
+            ->whereNull('deleted_at')
+            ->first();
+
+        return response()->json([
+            'summary' => [
+                'total_budget' => (float) ($summary->total_budget ?? 0),
+                'disbursed' => (float) ($summary->disbursed ?? 0),
+                'pending' => (float) ($summary->pending ?? 0),
+                'utilization_rate' => $summary->total_budget > 0
+                    ? round(($summary->disbursed / $summary->total_budget) * 100, 1)
+                    : 0,
+            ],
+            'records' => $allocations,
+        ]);
+    }
+
+    /**
+     * Coverage Gap detail — lists unreached beneficiaries (those without any distributed allocation).
+     */
+    public function coverageGapDetail(Request $request): JsonResponse
+    {
+        $filter = $request->input('filter', 'unreached'); // unreached | reached
+
+        $query = DB::table('beneficiaries')
+            ->select(
+                'beneficiaries.id',
+                'beneficiaries.full_name',
+                'beneficiaries.classification',
+                'beneficiaries.contact_number',
+                'beneficiaries.status',
+                'barangays.name as barangay_name',
+                'agencies.name as agency_name'
+            )
+            ->leftJoin('barangays', 'beneficiaries.barangay_id', '=', 'barangays.id')
+            ->leftJoin('agencies', 'beneficiaries.agency_id', '=', 'agencies.id')
+            ->whereNull('beneficiaries.deleted_at');
+
+        if ($filter === 'unreached') {
+            $query->whereNotExists(function ($sub) {
+                $sub->select(DB::raw(1))
+                    ->from('allocations')
+                    ->whereColumn('allocations.beneficiary_id', 'beneficiaries.id')
+                    ->whereNull('allocations.deleted_at')
+                    ->whereNotNull('allocations.distributed_at');
+            });
+        } else {
+            $query->whereExists(function ($sub) {
+                $sub->select(DB::raw(1))
+                    ->from('allocations')
+                    ->whereColumn('allocations.beneficiary_id', 'beneficiaries.id')
+                    ->whereNull('allocations.deleted_at')
+                    ->whereNotNull('allocations.distributed_at');
+            });
+        }
+
+        $beneficiaries = $query->orderBy('beneficiaries.full_name')->get();
+
+        // Summary
+        $total = DB::table('beneficiaries')->whereNull('deleted_at')->count();
+        $unreached = DB::table('beneficiaries')
+            ->whereNull('deleted_at')
+            ->whereNotExists(function ($sub) {
+                $sub->select(DB::raw(1))
+                    ->from('allocations')
+                    ->whereColumn('allocations.beneficiary_id', 'beneficiaries.id')
+                    ->whereNull('allocations.deleted_at')
+                    ->whereNotNull('allocations.distributed_at');
+            })
+            ->count();
+
+        return response()->json([
+            'summary' => [
+                'total_beneficiaries' => $total,
+                'unreached' => $unreached,
+                'reached' => $total - $unreached,
+                'gap_percentage' => $total > 0 ? round(($unreached / $total) * 100, 1) : 0,
+            ],
+            'filter' => $filter,
+            'records' => $beneficiaries,
+        ]);
+    }
+
+    /**
+     * Allocation Rate detail — lists all allocations with their distribution status.
+     */
+    public function allocationRateDetail(Request $request): JsonResponse
+    {
+        $filter = $request->input('filter', 'all'); // all | distributed | pending
+
+        $query = DB::table('allocations')
+            ->select(
+                'allocations.id',
+                'beneficiaries.full_name as beneficiary_name',
+                'program_names.name as program_name',
+                'allocations.release_method',
+                'allocations.amount',
+                'allocations.quantity',
+                'allocations.distributed_at',
+                'allocations.release_outcome',
+                'allocations.is_ready_for_release',
+                'resource_types.name as resource_type'
+            )
+            ->join('beneficiaries', 'allocations.beneficiary_id', '=', 'beneficiaries.id')
+            ->leftJoin('program_names', 'allocations.program_name_id', '=', 'program_names.id')
+            ->leftJoin('resource_types', 'allocations.resource_type_id', '=', 'resource_types.id')
+            ->whereNull('allocations.deleted_at')
+            ->whereNull('beneficiaries.deleted_at');
+
+        if ($filter === 'distributed') {
+            $query->whereNotNull('allocations.distributed_at');
+        } elseif ($filter === 'pending') {
+            $query->whereNull('allocations.distributed_at');
+        }
+
+        $allocations = $query->orderByDesc('allocations.created_at')->get();
+
+        // Summary
+        $totalAllocations = DB::table('allocations')->whereNull('deleted_at')->count();
+        $distributed = DB::table('allocations')->whereNull('deleted_at')->whereNotNull('distributed_at')->count();
+        $eventTotal = DB::table('allocations')->whereNull('deleted_at')->where('release_method', 'event')->count();
+        $eventDist = DB::table('allocations')->whereNull('deleted_at')->where('release_method', 'event')->whereNotNull('distributed_at')->count();
+        $directTotal = DB::table('allocations')->whereNull('deleted_at')->where('release_method', 'direct')->count();
+        $directDist = DB::table('allocations')->whereNull('deleted_at')->where('release_method', 'direct')->whereNotNull('distributed_at')->count();
+
+        return response()->json([
+            'summary' => [
+                'total_allocations' => $totalAllocations,
+                'distributed' => $distributed,
+                'pending' => $totalAllocations - $distributed,
+                'rate' => $totalAllocations > 0 ? round(($distributed / $totalAllocations) * 100, 1) : 0,
+                'event_total' => $eventTotal,
+                'event_distributed' => $eventDist,
+                'direct_total' => $directTotal,
+                'direct_distributed' => $directDist,
+            ],
+            'filter' => $filter,
+            'records' => $allocations,
+        ]);
     }
 }

@@ -29,6 +29,16 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
+// Dashboard drill-down API routes
+Route::middleware(['auth', 'verified'])->prefix('api/dashboard')->group(function () {
+    Route::get('financial-utilization', [DashboardController::class, 'financialUtilizationDetail'])
+        ->name('dashboard.financial-utilization');
+    Route::get('coverage-gap', [DashboardController::class, 'coverageGapDetail'])
+        ->name('dashboard.coverage-gap');
+    Route::get('allocation-rate', [DashboardController::class, 'allocationRateDetail'])
+        ->name('dashboard.allocation-rate');
+});
+
 Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

@@ -1031,6 +1031,7 @@ class SystemSettingsController extends Controller
 
         $beneficiaryAllocationCounts = Allocation::query()
             ->where('program_name_id', $programName->id)
+            ->whereNotNull('distributed_at')
             ->selectRaw('beneficiary_id, COUNT(*) as total')
             ->groupBy('beneficiary_id')
             ->pluck('total', 'beneficiary_id')
@@ -1040,14 +1041,15 @@ class SystemSettingsController extends Controller
         // Analytics datasets used by the detail charts.
         $allRecords = Allocation::query()
             ->where('program_name_id', $programName->id)
-            ->get(['beneficiary_id', 'resource_type_id', 'assistance_purpose_id', 'amount', 'created_at'])
+            ->whereNotNull('distributed_at')
+            ->get(['beneficiary_id', 'resource_type_id', 'assistance_purpose_id', 'amount', 'distributed_at'])
             ->map(function (Allocation $allocation) {
                 return [
                     'beneficiary_id' => $allocation->beneficiary_id,
                     'resource_type_id' => $allocation->resource_type_id,
                     'assistance_purpose_id' => $allocation->assistance_purpose_id,
                     'amount' => (float) ($allocation->amount ?? 0),
-                    'occurred_at' => $allocation->created_at,
+                    'occurred_at' => $allocation->distributed_at,
                 ];
             });
 
@@ -1128,6 +1130,7 @@ class SystemSettingsController extends Controller
 
         $beneficiaryAmountTotals = Allocation::query()
             ->where('program_name_id', $programName->id)
+            ->whereNotNull('distributed_at')
             ->selectRaw('beneficiary_id, SUM(amount) as total_amount')
             ->groupBy('beneficiary_id')
             ->pluck('total_amount', 'beneficiary_id')
