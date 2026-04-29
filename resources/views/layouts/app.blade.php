@@ -133,7 +133,7 @@
             left: 0;
             bottom: 0;
             width: var(--sidebar-width);
-            background-color: var(--sidebar-bg);
+            background: linear-gradient(180deg, #133921 0%, #1a472a 100%);
             z-index: 1050;
             display: flex;
             flex-direction: column;
@@ -142,137 +142,182 @@
             backface-visibility: hidden;
             perspective: 1000px;
             overflow: hidden;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.08);
         }
 
         .sidebar-header {
-            padding: 0.6rem 1rem 0.4rem;
+            padding: 0.8rem 1rem 0.5rem;
             text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            margin-bottom: 0.3rem;
         }
 
         .sidebar-logo {
-            width: 44px;
-            height: 44px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
-            margin-bottom: 0.15rem;
-            border: 2px solid rgba(255,255,255,0.2);
+            margin-bottom: 0.4rem;
+            border: 2px solid rgba(255,255,255,0.15);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-logo:hover {
+            transform: scale(1.05);
         }
 
         .sidebar-title {
-            color: #fff;
-            font-size: 0.62rem;
-            font-weight: 600;
+            color: #f8fafc;
+            font-size: 0.8rem;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            line-height: 1.1;
+            line-height: 1.2;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
         .sidebar-nav {
             flex: 1;
-            overflow: hidden;
-            padding: 0.5rem 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0.3rem 0.75rem;
             display: flex;
             flex-direction: column;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.2) transparent;
+        }
+
+        .sidebar-nav::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .sidebar-nav::-webkit-scrollbar-thumb {
+            background-color: rgba(255,255,255,0.2);
+            border-radius: 4px;
         }
 
         .sidebar-nav .nav {
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 0;
+            gap: 0.15rem;
         }
 
         .sidebar .nav-link {
             display: flex;
             align-items: center;
-            color: rgba(255,255,255,0.7);
-            padding: 0.5rem 1rem;
+            color: rgba(255,255,255,0.65);
+            padding: 0.4rem 0.8rem;
             font-size: 0.8rem;
             font-weight: 500;
-            transition: all 0.2s;
-            border-left: 3px solid transparent;
-            min-height: 44px;
+            border-radius: 0.5rem;
+            transition: all 0.25s ease;
+            min-height: 38px;
             margin: 0;
+            border: 1px solid transparent;
         }
 
         .sidebar .nav-link:hover {
             color: #fff;
-            background-color: var(--sidebar-hover);
+            background-color: rgba(255,255,255,0.06);
+            transform: translateX(3px);
         }
 
         .sidebar .nav-link.active {
             color: #fff;
-            background-color: var(--sidebar-active);
-            border-left-color: var(--accent-green);
-            font-weight: 500;
+            background: linear-gradient(90deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
         /* Extra emphasis for Admin section active links */
         .sidebar-heading:last-of-type ~ .nav-link.active {
-            background-color: var(--sidebar-active);
-            box-shadow: inset 0 0 8px rgba(0,0,0,0.2);
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
         .sidebar .nav-link i {
-            width: 18px;
-            margin-right: 0.5rem;
-            font-size: 1rem;
-            color: var(--accent-green);
+            width: 20px;
+            margin-right: 0.6rem;
+            font-size: 1.05rem;
+            color: rgba(255,255,255,0.4);
+            transition: color 0.2s ease;
+            text-align: center;
         }
 
-        .sidebar .nav-link.active i,
-        .sidebar .nav-link:hover i {
+        .sidebar .nav-link.active i {
             color: var(--accent-green);
+            text-shadow: 0 0 10px rgba(34,197,94,0.4);
+        }
+        
+        .sidebar-heading:last-of-type ~ .nav-link.active i {
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255,255,255,0.4);
+        }
+
+        .sidebar .nav-link:hover i {
+            color: #fff;
         }
 
         .sidebar-heading {
-            font-size: 0.6rem;
+            font-size: 0.65rem;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: rgba(255,255,255,0.4);
-            padding: 0.5rem 1rem 0.15rem;
-            font-weight: 600;
+            letter-spacing: 1.2px;
+            color: rgba(255,255,255,0.35);
+            padding: 0.6rem 0.5rem 0.2rem;
+            font-weight: 700;
         }
 
         .sidebar-user {
-            padding: 0.5rem 1rem;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            background-color: rgba(0,0,0,0.2);
+            padding: 0.6rem 1rem;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            background: rgba(0,0,0,0.15);
+            backdrop-filter: blur(4px);
+            transition: background 0.2s ease;
+        }
+        
+        .sidebar-user:hover {
+            background: rgba(0,0,0,0.25);
         }
 
         .sidebar-user-avatar {
-            width: 28px;
-            height: 28px;
-            background-color: var(--accent-green);
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent-green), #16a34a);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #fff;
-            font-weight: 600;
-            font-size: 0.7rem;
+            font-weight: 700;
+            font-size: 0.8rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border: 2px solid rgba(255,255,255,0.1);
         }
 
         .sidebar-user-info {
-            margin-left: 0.5rem;
+            margin-left: 0.6rem;
             overflow: hidden;
         }
 
         .sidebar-user-name {
-            color: #fff;
-            font-size: 0.7rem;
-            font-weight: 500;
+            color: #f8fafc;
+            font-size: 0.75rem;
+            font-weight: 600;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            line-height: 1.2;
         }
 
         .sidebar-user-role {
-            font-size: 0.55rem;
+            font-size: 0.6rem;
             color: rgba(255,255,255,0.5);
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            margin-top: 0.1rem;
         }
 
         /* --- Sidebar Overlay (mobile) --- */
@@ -1314,26 +1359,18 @@
             if (currentPath.includes('/admin/settings/program-names')) {
                 if (programsLink) {
                     programsLink.classList.add('active');
-                    programsLink.style.backgroundColor = 'var(--sidebar-active)';
-                    programsLink.style.borderLeftColor = 'var(--accent-green)';
                 }
                 if (settingsLink) {
                     settingsLink.classList.remove('active');
-                    settingsLink.style.backgroundColor = '';
-                    settingsLink.style.borderLeftColor = '';
                 }
             }
             // On settings, resource-types, form-fields: System Settings active, Programs inactive
             else if (currentPath.includes('/admin/settings')) {
                 if (settingsLink) {
                     settingsLink.classList.add('active');
-                    settingsLink.style.backgroundColor = 'var(--sidebar-active)';
-                    settingsLink.style.borderLeftColor = 'var(--accent-green)';
                 }
                 if (programsLink) {
                     programsLink.classList.remove('active');
-                    programsLink.style.backgroundColor = '';
-                    programsLink.style.borderLeftColor = '';
                 }
             }
         }
