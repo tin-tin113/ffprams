@@ -836,11 +836,13 @@
         ->filter(fn ($row) => $row->barangay)
         ->map(function ($row) use ($statusByBarangay, $financialByBarangay) {
             $barangayName = $row->barangay->name;
+            $zone = $row->barangay->quadrant ?? 'Unassigned';
             $status = $statusByBarangay->get($barangayName);
             $financial = $financialByBarangay->get($barangayName);
 
             return (object) [
                 'barangay_name' => $barangayName,
+                'zone' => $zone,
                 'beneficiaries_total' => (int) $row->grand_total,
                 'completed_events' => (int) ($status->completed_events ?? 0),
                 'pending_events' => (int) ($status->pending_events ?? 0),
@@ -851,6 +853,16 @@
         })
         ->sortByDesc('financial_amount')
         ->values();
+
+    $zoneInsights = $barangayInsights->groupBy('zone')->map(function ($items, $zone) {
+        return (object) [
+            'zone' => $zone,
+            'beneficiaries_total' => $items->sum('beneficiaries_total'),
+            'total_events' => $items->sum('total_events'),
+            'completed_events' => $items->sum('completed_events'),
+            'financial_amount' => $items->sum('financial_amount'),
+        ];
+    })->sortByDesc('financial_amount')->values();
 
     $resourceByAgency = $resourceDistribution->groupBy(fn ($row) => $row->agency_name ?: 'N/A');
     $financialByAgency = $financialSummary->groupBy(fn ($row) => $row->agency_name ?: 'N/A');
@@ -1980,6 +1992,51 @@
             aria-labelledby="reports-tab-barangay"
             data-report-pane="barangay"
         >
+            <div class="card report-card border-0 mb-4">
+                <div class="card-header report-card-header">
+                    <span class="report-card-title"><i class="bi bi-geo-alt-fill me-1"></i> Socio-Geographic Zone Performance</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 report-data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Socio-Geographic Zone</th>
+                                    <th class="text-center">Total Beneficiaries</th>
+                                    <th class="text-center">Total Events</th>
+                                    <th class="text-center">Completed Events</th>
+                                    <th class="text-end">Total Financial Amount (PHP)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($zoneInsights as $index => $zone)
+                                    <tr>
+                                        <td>{{ $index + 1 }}</td>
+                                        <td class="fw-bold text-primary">{{ $zone->zone }}</td>
+                                        <td class="text-center">{{ number_format($zone->beneficiaries_total) }}</td>
+                                        <td class="text-center">{{ number_format($zone->total_events) }}</td>
+                                        <td class="text-center">{{ number_format($zone->completed_events) }}</td>
+                                        <td class="text-end fw-bold text-success">&#8369;{{ number_format($zone->financial_amount, 2) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="empty-state">No zone data available.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                @if($zoneInsights->count())
+                    <div class="card-body border-top">
+                        <div class="report-chart-wrap" style="height: 320px;">
+                            <canvas id="zonePerformanceChart"></canvas>
+                        </div>
+                    </div>
+                @endif
+            </div>
+
             <div class="insight-grid mb-4">
                 <div class="insight-card">
                     <div class="insight-label">Top Funding Barangay</div>
@@ -2488,6 +2545,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const beneficiaryMixData = @json($beneficiaryMixRows->values());
     const beneficiaryPriorityData = @json($unreachedByBarangay->take(10)->values());
     const barangayInsightsData = @json($barangayInsights->values());
+    const zoneInsightsData = @json($zoneInsights->values());
     const barangayEfficiencyData = @json($barangayEfficiency->values());
     const agencySummaryData = @json($agencySummary->values());
     const programCategoryData = @json($programCategorySummary->values());
@@ -3437,6 +3495,83 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function initializeZonePerformanceChart() {
+        if (!zoneInsightsData.length) {
+            return;
+        }
+
+        createChartIfNeeded('zonePerformanceChart', function (canvas) {
+            return new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: zoneInsightsData.map(function(row) { return row.zone; }),
+                    datasets: [
+                        {
+                            label: 'Beneficiaries',
+                            data: zoneInsightsData.map(function(row) { return toNumber(row.beneficiaries_total); }),
+                            backgroundColor: 'rgba(37, 99, 235, 0.65)',
+                            borderColor: 'rgba(37, 99, 235, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Financial Amount (PHP)',
+                            data: zoneInsightsData.map(function(row) { return toNumber(row.financial_amount); }),
+                            type: 'line',
+                            tension: 0.35,
+                            borderColor: 'rgba(22, 163, 74, 1)',
+                            backgroundColor: 'rgba(22, 163, 74, 0.2)',
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.dataset.yAxisID === 'y1') {
+                                        label += new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(context.raw);
+                                    } else {
+                                        label += new Intl.NumberFormat().format(context.raw);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Beneficiaries' },
+                            ticks: { stepSize: 1 }
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            title: { display: true, text: 'Financial Amount' },
+                            grid: { drawOnChartArea: false },
+                            ticks: {
+                                callback: function(value) {
+                                    if (value >= 1000000) return '₱' + (value / 1000000).toFixed(1) + 'M';
+                                    if (value >= 1000) return '₱' + (value / 1000).toFixed(1) + 'K';
+                                    return '₱' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    }
+
     function initializeBarangayPerformanceChart() {
         if (!barangayInsightsData.length) {
             return;
@@ -4248,7 +4383,7 @@ document.addEventListener('DOMContentLoaded', function () {
         beneficiary: [initializeBeneficiariesChart, initializeBeneficiaryCompositionByBarangayChart, initializeUnreachedChart, initializeBeneficiaryMixChart, initializeBeneficiaryPriorityChart, initializeRegistrationTrendChart, initializeProfileCompletenessChart],
         allocation: [initializeResourceDistributionChart, initializeAllocationReachByResourceChart, initializeAllocationMonthlyReachChart, initializeAllocationMonthlyQuantityChart, initializeStatusPerBarangayChart],
         financial: [initializeFinancialSummaryChart, initializeFinancialPerBarangayChart, initializeLiquidationHealthChart],
-        barangay: [initializeBarangayPerformanceChart, initializeBarangayCoverageRateChart],
+        barangay: [initializeZonePerformanceChart, initializeBarangayPerformanceChart, initializeBarangayCoverageRateChart],
         agency: [initializeAgencyContributionChart, initializeAgencyFinancialShareChart, initializeAgencyOperationsMixChart, initializeAgencyReachRateChart, initializeResourceByAgencyChart],
         program: [initializePurposeChart, initializeProgramCategoryChart, initializeProgramEventDirectChart, initializeProgramBeneficiaryReachChart]
     };

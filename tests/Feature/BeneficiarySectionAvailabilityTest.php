@@ -93,6 +93,14 @@ class BeneficiarySectionAvailabilityTest extends TestCase
             'is_active' => true,
         ]);
 
+        foreach (['Farmer', 'Fisherfolk'] as $classificationName) {
+            $classification = \App\Models\Classification::create([
+                'name' => $classificationName,
+                'description' => $classificationName . ' classification',
+            ]);
+            $classification->agencies()->attach($agency->id);
+        }
+
         AgencyFormField::create([
             'agency_id' => $agency->id,
             'field_name' => 'rsbsa_number',

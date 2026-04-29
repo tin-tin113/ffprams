@@ -105,6 +105,12 @@ class BeneficiaryNativeOptionNormalizationTest extends TestCase
             'is_active' => true,
         ]);
 
+        $classification = \App\Models\Classification::create([
+            'name' => 'Farmer',
+            'description' => 'Farmer classification',
+        ]);
+        $classification->agencies()->attach($agency->id);
+
         $barangay = Barangay::create([
             'name' => 'Normalization Barangay',
             'latitude' => 10.12345678,
