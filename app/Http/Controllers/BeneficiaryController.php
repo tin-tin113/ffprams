@@ -193,6 +193,13 @@ class BeneficiaryController extends Controller
                 unset($validated['agencies']);
                 unset($validated['rsbsa_availability_status'], $validated['fishr_availability_status'], $validated['cloa_ep_availability_status']);
 
+                // Clear government ID fields when user marks them as not available
+                if (($validated['government_id_availability_status'] ?? null) === 'not_available') {
+                    $validated['id_type']   = null;
+                    $validated['id_number'] = null;
+                }
+                unset($validated['government_id_availability_status']);
+
                 // Store unavailability reasons from dynamic fields
                 $customFieldReasons = (array) ($validated['custom_field_unavailability_reasons'] ?? []);
                 $agencyDynamicReasons = [];
@@ -464,6 +471,13 @@ class BeneficiaryController extends Controller
 
             unset($validated['agencies']);
             unset($validated['rsbsa_availability_status'], $validated['fishr_availability_status'], $validated['cloa_ep_availability_status']);
+
+            // Clear government ID fields when user marks them as not available
+            if (($validated['government_id_availability_status'] ?? null) === 'not_available') {
+                $validated['id_type']   = null;
+                $validated['id_number'] = null;
+            }
+            unset($validated['government_id_availability_status']);
 
             // Store unavailability reasons from dynamic fields
             $customFieldReasons = (array) ($validated['custom_field_unavailability_reasons'] ?? []);

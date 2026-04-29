@@ -49,8 +49,6 @@
         'farm_ownership',
         'farm_type',
         'fisherfolk_type',
-        'arb_classification',
-        'ownership_scheme',
     ];
 
     $agencySpecificCoreGroups = \App\Support\BeneficiaryCoreFields::agencySpecificCoreFieldNames();
@@ -296,24 +294,26 @@
             </div>
 
             {{-- Civil Status --}}
+            @php $selectedCivilStatus = old('civil_status', $beneficiary->civil_status ?? ''); @endphp
             <div class="col-12 col-md-3">
                 <label for="civil_status" class="form-label">Civil Status {!! $civilStatusRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('civil_status') is-invalid @enderror" id="civil_status" name="civil_status" {{ $civilStatusRequired ? 'required' : '' }}>
-                    <option value="" disabled {{ old('civil_status', $beneficiary->civil_status ?? '') === '' ? 'selected' : '' }}>Select...</option>
+                    <option value="" disabled {{ $selectedCivilStatus === '' ? 'selected' : '' }}>Select...</option>
                     @foreach($civilStatusOptions as $opt)
-                        <option value="{{ $opt->value }}" {{ old('civil_status', $beneficiary->civil_status ?? '') === $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
+                        <option value="{{ $opt->value }}" {{ ($selectedCivilStatus === $opt->value || $selectedCivilStatus === $opt->label) ? 'selected' : '' }}>{{ $opt->label }}</option>
                     @endforeach
                 </select>
                 @error('civil_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
 
             {{-- Highest Education --}}
+            @php $selectedHighestEducation = old('highest_education', $beneficiary->highest_education ?? ''); @endphp
             <div class="col-12 col-md-3">
                 <label for="highest_education" class="form-label">Highest Education {!! $highestEducationRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('highest_education') is-invalid @enderror" id="highest_education" name="highest_education" {{ $highestEducationRequired ? 'required' : '' }}>
-                    <option value="" {{ old('highest_education', $beneficiary->highest_education ?? '') === '' ? 'selected' : '' }}>Select...</option>
+                    <option value="" {{ $selectedHighestEducation === '' ? 'selected' : '' }}>Select...</option>
                     @foreach($highestEducationOptions as $opt)
-                        <option value="{{ $opt->value }}" {{ old('highest_education', $beneficiary->highest_education ?? '') === $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
+                        <option value="{{ $opt->value }}" {{ ($selectedHighestEducation === $opt->value || $selectedHighestEducation === $opt->label) ? 'selected' : '' }}>{{ $opt->label }}</option>
                     @endforeach
                 </select>
                 @error('highest_education')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -335,11 +335,12 @@
             <div id="government-id-fields-wrapper" class="col-12 col-md-8 contents {{ $governmentIdAvailabilityStatus === 'available' ? '' : 'd-none' }}">
                 <div class="row g-4">
                     <div class="col-12 col-md-6">
+                        @php $selectedIdType = old('id_type', $beneficiary->id_type ?? ''); @endphp
                         <label for="id_type" class="form-label">Government ID Type</label>
                         <select class="form-select @error('id_type') is-invalid @enderror" id="id_type" name="id_type">
-                            <option value="" {{ old('id_type', $beneficiary->id_type ?? '') === '' ? 'selected' : '' }}>Select ID type...</option>
+                            <option value="" {{ $selectedIdType === '' ? 'selected' : '' }}>Select ID type...</option>
                             @foreach($idTypeOptions as $opt)
-                                <option value="{{ $opt->value }}" {{ old('id_type', $beneficiary->id_type ?? '') === $opt->value ? 'selected' : '' }}>{{ $opt->label }}</option>
+                                <option value="{{ $opt->value }}" {{ ($selectedIdType === $opt->value || $selectedIdType === $opt->label) ? 'selected' : '' }}>{{ $opt->label }}</option>
                             @endforeach
                         </select>
                         @error('id_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -455,6 +456,7 @@
 
     <div id="rsbsa-fields-wrapper" class="contents {{ $rsbsaAvailabilityStatus === 'provided' ? '' : 'd-none' }}">
         <div class="row g-4">
+            @php $selectedFarmOwnership = old('farm_ownership', $beneficiary->farm_ownership ?? ''); @endphp
             <div class="col-12 col-md-4">
                 <label for="farm_ownership" class="form-label">Farm Ownership {!! $farmOwnershipRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('farm_ownership') is-invalid @enderror" id="farm_ownership" name="farm_ownership">
@@ -472,7 +474,7 @@
                                 $value = (string) $option;
                             }
                         @endphp
-                        <option value="{{ $value }}" {{ old('farm_ownership', $beneficiary->farm_ownership ?? '') === $value ? 'selected' : '' }}>
+                        <option value="{{ $value }}" {{ ($selectedFarmOwnership === $value || $selectedFarmOwnership === $label) ? 'selected' : '' }}>
                             {{ $label }}
                         </option>
                     @endforeach
@@ -480,6 +482,7 @@
                 @error('farm_ownership')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             
+            @php $selectedFarmType = old('farm_type', $beneficiary->farm_type ?? ''); @endphp
             <div class="col-12 col-md-4">
                 <label for="farm_type" class="form-label">Farm Type {!! $farmTypeRequired ? '<span class="text-danger">*</span>' : '' !!}</label>
                 <select class="form-select @error('farm_type') is-invalid @enderror" id="farm_type" name="farm_type">
@@ -497,7 +500,7 @@
                                 $value = (string) $option;
                             }
                         @endphp
-                        <option value="{{ $value }}" {{ old('farm_type', $beneficiary->farm_type ?? '') === $value ? 'selected' : '' }}>
+                        <option value="{{ $value }}" {{ ($selectedFarmType === $value || $selectedFarmType === $label) ? 'selected' : '' }}>
                             {{ $label }}
                         </option>
                     @endforeach
@@ -580,6 +583,7 @@
         </div>
     </div>
 
+    @php $selectedFisherfolkType = old('fisherfolk_type', $beneficiary->fisherfolk_type ?? ''); @endphp
     <div id="fishr-fields-wrapper" class="contents {{ $fishrAvailabilityStatus === 'provided' ? '' : 'd-none' }}">
         <div class="row g-4">
             <div class="col-12 col-md-4">
@@ -599,7 +603,7 @@
                                 $value = (string) $option;
                             }
                         @endphp
-                        <option value="{{ $value }}" {{ old('fisherfolk_type', $beneficiary->fisherfolk_type ?? '') === $value ? 'selected' : '' }}>
+                        <option value="{{ $value }}" {{ ($selectedFisherfolkType === $value || $selectedFisherfolkType === $label) ? 'selected' : '' }}>
                             {{ $label }}
                         </option>
                     @endforeach
@@ -894,6 +898,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (idTypeField) {
             idTypeField.required = isAvailable;
             if (!isAvailable) {
+                idTypeField.value = '';
                 idTypeField.setCustomValidity('');
             }
         }
@@ -901,6 +906,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (idNumberField) {
             idNumberField.required = isAvailable;
             if (!isAvailable) {
+                idNumberField.value = '';
                 idNumberField.setCustomValidity('');
             }
         }

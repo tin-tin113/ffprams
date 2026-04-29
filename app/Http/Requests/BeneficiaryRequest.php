@@ -804,8 +804,11 @@ class BeneficiaryRequest extends FormRequest
             $hasFisherfolkSection = in_array('fisherfolk_information', $allowedAgencySections, true);
             $hasRsbsaField = in_array('rsbsa_number', $selectedAgencyFieldNames, true);
             $hasFishrField = in_array('fishr_number', $selectedAgencyFieldNames, true);
+            $classification = (string) $this->input('classification', '');
+            $isFarmer = str_contains($classification, 'Farmer');
+            $isFisherfolk = str_contains($classification, 'Fisherfolk');
 
-            if ($hasFarmerSection && $hasRsbsaField) {
+            if ($hasFarmerSection && $hasRsbsaField && $isFarmer) {
                 $status = (string) $this->input('rsbsa_availability_status', '');
                 $reason = $this->input('rsbsa_unavailability_reason');
                 $validStatuses = ['provided', 'not_available_yet', 'not_applicable', 'to_be_verified'];
@@ -823,7 +826,7 @@ class BeneficiaryRequest extends FormRequest
                 }
             }
 
-            if ($hasFisherfolkSection && ($hasRsbsaField || $hasFishrField)) {
+            if ($hasFisherfolkSection && ($hasRsbsaField || $hasFishrField) && $isFisherfolk) {
                 $status = (string) $this->input('fishr_availability_status', '');
                 $reason = $this->input('fishr_unavailability_reason');
                 $validStatuses = ['provided', 'not_available_yet', 'not_applicable', 'to_be_verified'];

@@ -18,6 +18,10 @@
 
     var debounceTimer = null;
     var draftBanner = null;
+    var isRestoring = false; // blocks saves during draft restoration
+
+    // Fields that carry default values and should not count as "meaningful"
+    var NON_MEANINGFUL_FIELDS = ['status', 'registered_at', '_method', 'photo_path', 'barangay_id'];
 
     // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -32,23 +36,29 @@
     function collectFormData() {
         var data = {};
 
-        // Standard inputs (text, date, number, hidden, textarea)
+        // Agency checkboxes have no name attribute and no value attribute —
+        // they must be collected separately using data-agency-id.
+        document.querySelectorAll('.agency-checkbox').forEach(function (el) {
+            var agencyId = el.dataset.agencyId;
+            if (!agencyId) return;
+            if (!data['__agencies__']) data['__agencies__'] = [];
+            if (el.checked) data['__agencies__'].push(agencyId);
+        });
+
         form.querySelectorAll('input, textarea, select').forEach(function (el) {
             var name = el.name;
             if (!name) return;
 
-            // Skip CSRF & file inputs
-            if (name === '_token' || el.type === 'file') return;
+            // Skip CSRF, method override, file inputs, and hidden inputs
+            if (name === '_token' || name === '_method' || el.type === 'file') return;
+            if (el.type === 'hidden') return;
+
+            // Agency checkboxes already handled above
+            if (el.classList.contains('agency-checkbox')) return;
 
             if (el.type === 'checkbox') {
-                // For checkboxes with duplicate hidden+checkbox pattern (value="0" hidden, value="1" checkbox)
                 if (el.value === '1' || el.value === 'on') {
                     data['__cb__' + name] = el.checked ? '1' : '0';
-                }
-                // Agency checkboxes (agencies[])
-                if (el.classList.contains('agency-checkbox')) {
-                    if (!data['__agencies__']) data['__agencies__'] = [];
-                    if (el.checked) data['__agencies__'].push(el.value);
                 }
                 return;
             }
@@ -68,33 +78,51 @@
     function restoreFormData(data) {
         if (!data || typeof data !== 'object') return;
 
-        // 1. Restore agency checkboxes FIRST – they trigger dynamic field rendering
+        isRestoring = true;
+
+        // 1. Restore agency checkboxes FIRST – they trigger dynamic field rendering.
+        //    Check all boxes SILENTLY (no per-checkbox events) then fire ONE change
+        //    to avoid multiple overlapping loadFormFields() async calls.
         var savedAgencies = data['__agencies__'] || [];
         if (savedAgencies.length > 0) {
-            // The agency checkboxes are rendered by beneficiary-dynamic-agencies.js
-            // after a classification change. We need to wait for them to appear.
             waitForAgencyCheckboxes(function () {
+                var anyChecked = false;
                 savedAgencies.forEach(function (agencyId) {
-                    var cb = form.querySelector('.agency-checkbox[value="' + agencyId + '"]');
+                    // Use document.querySelector — agency checkboxes have no name attr
+                    // so they may not be found via form.querySelector in all browsers
+                    var cb = document.querySelector('.agency-checkbox[data-agency-id="' + agencyId + '"]');
                     if (cb && !cb.checked) {
                         cb.checked = true;
-                        cb.dispatchEvent(new Event('change', { bubbles: true }));
+                        anyChecked = true;
                     }
                 });
-                // After agencies are checked, restore dynamic agency fields
-                setTimeout(function () { restoreRemainingFields(data); }, 350);
+
+                // Fire one aggregated change so DynamicAgencyForm collects all
+                // selected agencies at once and issues a single loadFormFields() call.
+                if (anyChecked) {
+                    var firstChecked = document.querySelector('.agency-checkbox:checked');
+                    if (firstChecked) {
+                        firstChecked.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }
+
+                // Wait for the single loadFormFields render to complete, then restore
+                // the field values that were typed into the dynamic agency fields.
+                setTimeout(function () {
+                    restoreRemainingFields(data);
+                    setTimeout(function () { isRestoring = false; }, 500);
+                }, 700);
             });
         } else {
             restoreRemainingFields(data);
+            setTimeout(function () { isRestoring = false; }, 300);
         }
     }
 
     function restoreRemainingFields(data) {
         Object.keys(data).forEach(function (key) {
-            // Skip internal keys
             if (key === '__agencies__' || key === '_token') return;
 
-            // Checkboxes
             if (key.indexOf('__cb__') === 0) {
                 var cbName = key.replace('__cb__', '');
                 var checkbox = form.querySelector('input[type="checkbox"][name="' + cbName + '"][value="1"], input[type="checkbox"][name="' + cbName + '"]');
@@ -109,19 +137,20 @@
             if (!elements.length) return;
 
             elements.forEach(function (el) {
+                if (el.type === 'hidden') return;
                 if (el.type === 'radio') {
                     el.checked = el.value === data[key];
-                } else if (el.type === 'hidden' && el.nextElementSibling && el.nextElementSibling.type === 'checkbox') {
-                    // Skip the hidden "0" companion of a checkbox pair
-                    return;
                 } else {
                     el.value = data[key];
                 }
             });
         });
 
-        // Fire change events on key selects so conditional sections update
-        ['classification', 'rsbsa_availability_status', 'fishr_availability_status',
+        // Fire change events on conditional selects so sections show/hide correctly.
+        // NOTE: 'classification' is intentionally excluded – it was already dispatched
+        // before restoreFormData() was called, and re-firing it would trigger another
+        // full onClassificationChange() cycle that wipes and re-renders the checkboxes.
+        ['rsbsa_availability_status', 'fishr_availability_status',
          'government_id_availability_status', 'association_member', 'has_fishing_vessel',
          'status'].forEach(function (id) {
             var el = document.getElementById(id);
@@ -149,6 +178,7 @@
     // ── Save / Load / Clear ─────────────────────────────────────────────
 
     function saveDraft() {
+        if (isRestoring) return; // never save during restoration
         try {
             var payload = {
                 data: collectFormData(),
@@ -158,7 +188,6 @@
             localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
             showStatus('saved');
         } catch (e) {
-            // localStorage full or disabled – silently fail
             console.warn('Draft save failed:', e);
         }
     }
@@ -187,6 +216,7 @@
     // ── Debounced listener ──────────────────────────────────────────────
 
     function scheduleSave() {
+        if (isRestoring) return;
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(saveDraft, DEBOUNCE_MS);
     }
@@ -225,9 +255,7 @@
 
         document.getElementById('clearDraftBtn').addEventListener('click', function () {
             clearDraft();
-            // Reset the form
             form.reset();
-            // Re-set today's date
             var today = new Date();
             var dateField = document.getElementById('registered_at');
             if (dateField) {
@@ -235,9 +263,7 @@
                     String(today.getMonth() + 1).padStart(2, '0') + '-' +
                     String(today.getDate()).padStart(2, '0');
             }
-            // Reset wizard to step 1
             if (typeof window.wizardGoToStep === 'function') window.wizardGoToStep(1);
-            // Fire change events to reset conditional sections
             ['classification', 'association_member', 'has_fishing_vessel'].forEach(function (id) {
                 var el = document.getElementById(id);
                 if (el) el.dispatchEvent(new Event('change', { bubbles: true }));
@@ -265,7 +291,6 @@
         statusEl.style.opacity = '0';
         statusEl.style.transition = 'opacity 0.3s ease';
 
-        // Place it next to the wizard heading
         var heading = document.querySelector('#beneficiaryWizard') ||
                       document.querySelector('h4.fw-bold');
         if (heading) {
@@ -288,28 +313,41 @@
         }
     }
 
+    // ── Meaningful data check ───────────────────────────────────────────
+
+    function hasMeaningfulData(data) {
+        return Object.keys(data).some(function (key) {
+            // Agency checkboxes: meaningful only if at least one is selected
+            if (key === '__agencies__') return Array.isArray(data[key]) && data[key].length > 0;
+            // Internal checkbox state keys: skip (boolean defaults)
+            if (key.indexOf('__cb__') === 0) return false;
+            // Default-value / system fields: skip
+            if (NON_MEANINGFUL_FIELDS.indexOf(key) !== -1) return false;
+            var val = data[key];
+            return val !== '' && val !== null && val !== undefined;
+        });
+    }
+
     // ── Init ────────────────────────────────────────────────────────────
 
-    // Listen for input changes
     form.addEventListener('input', scheduleSave);
     form.addEventListener('change', scheduleSave);
 
-    // Also listen for agency checkbox changes (they're outside the form sometimes)
+    // Agency checkboxes rendered outside the form (in dynamic-agencies.js)
     document.addEventListener('change', function (e) {
         if (e.target.classList && e.target.classList.contains('agency-checkbox')) {
             scheduleSave();
         }
     });
 
-    // Clear draft on successful AJAX submit
-    // Hook into the existing resetCreateFormState by watching for form resets
+    // Clear draft on successful AJAX submit (form.reset() is called on success)
     var origReset = form.reset;
     form.reset = function () {
         origReset.call(form);
         clearDraft();
     };
 
-    // Also listen for the 'success' toast which signals a successful submit
+    // Also watch for the success toast as a secondary signal
     var observer = new MutationObserver(function (mutations) {
         mutations.forEach(function (m) {
             if (m.target.id === 'beneficiaryToast' && m.target.classList.contains('text-bg-success')) {
@@ -325,41 +363,28 @@
 
     // Try to restore a previous draft
     var draft = loadDraft();
-    if (draft && draft.data) {
-        // Check if the draft has meaningful data (not just empty fields)
-        var hasMeaningfulData = Object.keys(draft.data).some(function (key) {
-            if (key === '__agencies__') return draft.data[key].length > 0;
-            if (key.indexOf('__cb__') === 0) return false; // checkboxes default state doesn't count
-            if (key === 'status' || key === 'registered_at') return false; // defaults don't count
-            var val = draft.data[key];
-            return val !== '' && val !== null && val !== undefined;
-        });
-
-        if (hasMeaningfulData) {
-            // Set classification first so that sections render
-            var classVal = draft.data['classification'];
-            if (classVal) {
-                var classSelect = document.getElementById('classification');
-                if (classSelect) {
-                    classSelect.value = classVal;
-                    classSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                }
+    if (draft && draft.data && hasMeaningfulData(draft.data)) {
+        // Set classification first so that agency checkboxes render
+        var classVal = draft.data['classification'];
+        if (classVal) {
+            var classSelect = document.getElementById('classification');
+            if (classSelect) {
+                classSelect.value = classVal;
+                classSelect.dispatchEvent(new Event('change', { bubbles: true }));
             }
-
-            // Small delay to let classification change propagate
-            setTimeout(function () {
-                restoreFormData(draft.data);
-                createBanner(draft);
-
-                // Restore wizard step if wizard is present
-                if (draft.wizardStep && typeof window.wizardGoToStep === 'function') {
-                    // Delay slightly to let the wizard initialize
-                    setTimeout(function () {
-                        window.wizardGoToStep(draft.wizardStep);
-                    }, 500);
-                }
-            }, 200);
         }
+
+        // Small delay to let classification change propagate before restoring
+        setTimeout(function () {
+            restoreFormData(draft.data);
+            createBanner(draft);
+
+            if (draft.wizardStep && typeof window.wizardGoToStep === 'function') {
+                setTimeout(function () {
+                    window.wizardGoToStep(draft.wizardStep);
+                }, 700);
+            }
+        }, 200);
     }
 
     // Track current wizard step for draft persistence
@@ -379,7 +404,6 @@
         });
     }
 
-    // Track Next/Prev button clicks for wizard step
     ['wizardNextBtn', 'wizardPrevBtn'].forEach(function (btnId) {
         var btn = document.getElementById(btnId);
         if (btn) {

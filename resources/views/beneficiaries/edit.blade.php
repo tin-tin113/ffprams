@@ -35,6 +35,40 @@
             </div>
         </div>
     </div>
+
+    <!-- Edit Confirmation Modal -->
+    <div class="modal fade" id="editConfirmationModal" tabindex="-1" aria-labelledby="editConfirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white border-bottom-0 py-3">
+                    <h5 class="modal-title fw-bold" id="editConfirmationModalLabel">
+                        <i class="bi bi-pencil-square me-2"></i>Confirm Changes
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body px-4 py-4">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="flex-shrink-0 bg-primary bg-opacity-10 rounded-circle p-2">
+                            <i class="bi bi-person-check fs-4 text-primary"></i>
+                        </div>
+                        <div>
+                            <p class="mb-1 fw-semibold">You are about to save changes to:</p>
+                            <p class="mb-2 fs-5 fw-bold text-primary" id="editConfirmBeneficiaryName">{{ $beneficiary->full_name }}</p>
+                            <p class="text-muted small mb-0">Please review your changes before confirming. This will update the beneficiary record immediately.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top-0 py-3 gap-2">
+                    <button type="button" class="btn btn-outline-secondary fw-semibold px-4" data-bs-dismiss="modal">
+                        <i class="bi bi-arrow-left me-1"></i> Go back and review
+                    </button>
+                    <button type="button" id="editConfirmSubmitBtn" class="btn btn-primary fw-bold px-4 shadow-sm">
+                        <i class="bi bi-check-circle me-1"></i> Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -49,6 +83,9 @@ document.addEventListener('DOMContentLoaded', function () {
     var toastEl = document.getElementById('beneficiaryEditToast');
     var toastMessageEl = document.getElementById('beneficiaryEditToastMessage');
     var toast = toastEl ? bootstrap.Toast.getOrCreateInstance(toastEl, { delay: 4500 }) : null;
+    var confirmModalEl = document.getElementById('editConfirmationModal');
+    var confirmModal = confirmModalEl ? bootstrap.Modal.getOrCreateInstance(confirmModalEl) : null;
+    var confirmSubmitBtn = document.getElementById('editConfirmSubmitBtn');
 
     function showToast(type, message) {
         if (!toast || !toastEl || !toastMessageEl) {
@@ -209,17 +246,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    form.addEventListener('submit', function (event) {
-        event.preventDefault();
-
-        clearNotice();
-        clearFieldErrors();
-
-        if (!form.checkValidity()) {
-            form.reportValidity();
-            return;
-        }
-
+    function submitForm() {
+        if (confirmModal) confirmModal.hide();
         setSubmittingState(true);
 
         fetch(form.action, {
@@ -248,7 +276,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (!firstErrorMessage) {
                             firstErrorMessage = messages[0];
                         }
-
                         setFieldError(field, messages[0]);
                     }
                 });
@@ -274,7 +301,31 @@ document.addEventListener('DOMContentLoaded', function () {
         .finally(function () {
             setSubmittingState(false);
         });
+    }
+
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        clearNotice();
+        clearFieldErrors();
+
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        if (confirmModal) {
+            confirmModal.show();
+        } else {
+            submitForm();
+        }
     });
+
+    if (confirmSubmitBtn) {
+        confirmSubmitBtn.addEventListener('click', function () {
+            submitForm();
+        });
+    }
 });
 </script>
 @endpush
