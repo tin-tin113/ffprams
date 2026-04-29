@@ -1078,7 +1078,7 @@
             <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3">
                 <div>
                     <h1 class="reports-title">Reports & Analytics</h1>
-                    <p class="reports-subtitle">Municipality of Enrique B. Magalona - Farmer-Fisherfolk Resource Allocation</p>
+
                 </div>
 
                 <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2">
@@ -4385,15 +4385,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
+            const previousButtonHtml = pdfButton.innerHTML;
+            pdfButton.disabled = true;
+            pdfButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Generating PDF...';
+
+            // Allow the browser to render the loading state before blocking the main thread
+            await new Promise(function (resolve) { setTimeout(resolve, 50); });
+
             const tabKey = activePane.getAttribute('data-report-pane') || 'report';
             const now = new Date();
             const generatedAt = now.toLocaleString();
 
             const exportWrapper = document.createElement('div');
-            exportWrapper.style.position = 'absolute';
-            exportWrapper.style.left = '0';
+            exportWrapper.style.position = 'fixed';
+            exportWrapper.style.left = '-10000px';
             exportWrapper.style.top = '0';
-            exportWrapper.style.zIndex = '-1';
+            exportWrapper.style.zIndex = '-9999';
             exportWrapper.style.pointerEvents = 'none';
             exportWrapper.style.width = '1120px';
             exportWrapper.style.background = '#ffffff';
@@ -4456,10 +4463,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             });
 
-            const previousButtonHtml = pdfButton.innerHTML;
-            pdfButton.disabled = true;
-            pdfButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Generating PDF...';
-
             const pdfOptions = {
                 margin: [10, 10, 10, 10],
                 filename: 'reports-' + tabKey + '-{{ $currentYear }}.pdf',
@@ -4468,7 +4471,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     scale: 2,
                     useCORS: true,
                     backgroundColor: '#ffffff',
-                    scrollY: 0,
                     windowWidth: 1120
                 },
                 jsPDF: {

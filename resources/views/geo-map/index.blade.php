@@ -255,7 +255,7 @@
         letter-spacing: -0.2px;
     }
 
-    .tooltip-quadrant {
+    .tooltip-zone {
         font-size: 9px;
         padding: 2px 6px;
         border-radius: 4px;
@@ -454,6 +454,30 @@
     .dist-summary-cell .ds-label { font-size: 0.68rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 0.2rem; }
     .dist-summary-cell .ds-value { font-size: 1.15rem; font-weight: 800; line-height: 1.1; }
 
+    /* No-results overlay */
+    .map-no-results {
+        display: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 500;
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-radius: 1rem;
+        padding: 2rem 3rem;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border: 1px solid rgba(0,0,0,0.05);
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        pointer-events: none;
+    }
+    /* Hide tooltips while search is active — prevents auto-show on hover */
+    #map.searching .leaflet-tooltip { display: none !important; }
+
 </style>
 @endpush
 
@@ -480,13 +504,12 @@
                             </select>
                         </div>
                         <div class="filter-select-wrapper">
-                            <i class="bi bi-compass"></i>
+                            <i class="bi bi-geo-alt"></i>
                             <select id="quadrantFilter" class="form-select">
-                                <option value="">Quadrants</option>
-                                <option value="Quadrant 1">Q1 · North</option>
-                                <option value="Quadrant 2">Q2 · West</option>
-                                <option value="Quadrant 3">Q3 · Southwest</option>
-                                <option value="Quadrant 4">Q4 · East</option>
+                                <option value="">Zones</option>
+                                <option value="Urban Center">Urban Center</option>
+                                <option value="Coastal Area">Coastal Area</option>
+                                <option value="Upland & Inland">Upland & Inland</option>
                             </select>
                         </div>
                         <div class="filter-select-wrapper">
@@ -551,6 +574,11 @@
         </div>
 
         <div id="map"></div>
+        <div id="mapNoResults" class="map-no-results">
+            <i class="bi bi-search fs-2 text-muted"></i>
+            <div class="fw-bold text-dark">No barangays found</div>
+            <div class="text-muted small">Try a different search term or zone name</div>
+        </div>
     </div>
 </div>
 
@@ -566,7 +594,7 @@
                     <div>
                         <div class="d-flex align-items-center gap-2">
                             <h4 class="modal-title fw-bold mb-0" id="panel-barangay-name">Barangay Name</h4>
-                            <span class="badge bg-white text-dark opacity-75" id="panel-quadrant-badge" style="font-size: 0.7rem;">Q1</span>
+                            <span class="badge bg-white text-dark opacity-75" id="panel-quadrant-badge" style="font-size: 0.7rem;">Zone</span>
                         </div>
                         <p class="mb-0 small text-white-50">E.B. Magalona, Negros Occidental</p>
                     </div>
@@ -875,7 +903,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <div class="tooltip-card">
                         <div class="tooltip-header">
                             <span class="tooltip-title">${barangay.name}</span>
-                            <span class="tooltip-quadrant">${barangay.quadrant || 'N/A'}</span>
+                            <span class="tooltip-zone">${barangay.quadrant || 'N/A'}</span>
                         </div>
                         <div class="tooltip-body">
                             <div class="tooltip-row">
@@ -958,18 +986,56 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function applyClientFilters() {
-        const search = document.getElementById('mapSearch').value.toLowerCase();
+        const search = document.getElementById('mapSearch').value.toLowerCase().trim();
+        const visibleData = [];
 
-        Object.values(markers).forEach(marker => {
-            const bId = Object.keys(markers).find(key => markers[key] === marker);
+        // Fix #2: O(n) iteration using Object.entries instead of O(n²) reverse lookup
+        Object.entries(markers).forEach(([bId, marker]) => {
             const b = barangayDataMap[bId];
-            
-            let visible = true;
-            if (search && !b.name.toLowerCase().includes(search)) visible = false;
+            if (!b) return;
 
-            if (visible) marker.addTo(map);
-            else map.removeLayer(marker);
+            let visible = true;
+            if (search) {
+                // Fix #6: Match both barangay name AND zone
+                const nameMatch = b.name.toLowerCase().includes(search);
+                const zoneMatch = (b.quadrant || '').toLowerCase().includes(search);
+                if (!nameMatch && !zoneMatch) visible = false;
+            }
+
+            if (visible) {
+                marker.addTo(map);
+                visibleData.push(b);
+            } else {
+                map.removeLayer(marker);
+            }
         });
+
+        // Fix #1: Update stats to reflect the filtered results
+        updateGlobalStats(visibleData);
+
+        // Fix #3: Show/hide empty-state overlay
+        const noResults = document.getElementById('mapNoResults');
+        noResults.style.display = (visibleData.length === 0 && search) ? 'flex' : 'none';
+
+        // Suppress tooltips while search is active so pin content doesn't auto-show
+        if (search) {
+            map.getContainer().classList.add('searching');
+        } else {
+            map.getContainer().classList.remove('searching');
+        }
+
+        // Zoom to visible markers — tooltips are suppressed by CSS while searching
+        if (search && visibleData.length > 0) {
+            const visibleMarkers = visibleData.map(b => markers[b.id]).filter(Boolean);
+            if (visibleMarkers.length > 0) {
+                const group = new L.featureGroup(visibleMarkers);
+                map.flyToBounds(group.getBounds().pad(0.2), { maxZoom: 14, duration: 0.8 });
+            }
+        } else if (!search && Object.keys(markers).length > 0) {
+            // Reset to default view when search is cleared
+            const group = new L.featureGroup(Object.values(markers));
+            map.fitBounds(group.getBounds().pad(0.1), { maxZoom: INITIAL_ZOOM, animate: true });
+        }
     }
 
     function animateNumber(id, finalValue) {
@@ -1053,18 +1119,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Search Functionality
-    document.getElementById('mapSearch').addEventListener('input', function(e) {
-        const query = e.target.value.toLowerCase();
-        for (let id in barangayDataMap) {
-            if (barangayDataMap[id].name.toLowerCase().includes(query)) {
-                const b = barangayDataMap[id];
-                map.flyTo([b.latitude, b.longitude], 15);
-                setTimeout(() => openBarangayModal(b), 800);
-                break;
-            }
-        }
-    });
 
     const escapeHtml = (value) => {
         return String(value ?? '').replace(/[&<>"']/g, function (char) {
@@ -1316,7 +1370,12 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('quadrantFilter').addEventListener('change', loadMapData);
     document.getElementById('statusFilter').addEventListener('change', loadMapData);
     document.getElementById('sectorFilter').addEventListener('change', loadMapData);
-    document.getElementById('mapSearch').addEventListener('input', applyClientFilters);
+    // Fix #5: Debounce search input (200ms) to avoid excessive re-filtering
+    let searchDebounceTimer;
+    document.getElementById('mapSearch').addEventListener('input', () => {
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(applyClientFilters, 200);
+    });
 
     document.getElementById('clearFilters').addEventListener('click', () => {
         document.getElementById('agencyFilter').value = '';
