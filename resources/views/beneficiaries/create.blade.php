@@ -582,4 +582,5 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 <script src="{{ asset('js/beneficiary-wizard.js') }}"></script>
+<script src="{{ asset('js/beneficiary-draft.js') }}"></script>
 @endpush
